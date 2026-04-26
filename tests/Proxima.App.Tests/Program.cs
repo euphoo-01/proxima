@@ -17,7 +17,7 @@ internal static class Program
         Domain_HasNoForbiddenDependencies();
         DesignSystem_FilesExist();
         DesignSystem_ControlsExposeBindingProperties();
-        FigmaInspection_DocumentsSourceAndLimitations();
+        FigmaInspection_DocumentsCustomMcpSource();
         Console.WriteLine("Proxima.App.Tests baseline checks passed.");
     }
 
@@ -116,7 +116,7 @@ internal static class Program
         Assert(DataTableHeaderCell.TextProperty.Name == nameof(DataTableHeaderCell.Text), "DataTableHeaderCell must expose TextProperty.");
     }
 
-    private static void FigmaInspection_DocumentsSourceAndLimitations()
+    private static void FigmaInspection_DocumentsCustomMcpSource()
     {
         string inspection = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "docs/figma-inspection.md"));
         string[] requiredPhrases =
@@ -124,10 +124,12 @@ internal static class Program
             "Drxcen3JN69XP0fnYxkgOi",
             "62:497",
             "62:498",
+            "62:2751",
+            "mcp__figma__",
             "Extracted Tokens",
             "Screenshots",
             "Differences from Figma",
-            "Starter plan MCP call limit",
+            "Structured node data captured",
         ];
 
         foreach (string phrase in requiredPhrases)

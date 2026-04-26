@@ -41,7 +41,7 @@ public class BentoCard : ContentControl
         AvaloniaProperty.Register<BentoCard, Thickness>(nameof(CardPadding), new Thickness(24));
 
     public static readonly StyledProperty<CornerRadius> CardCornerRadiusProperty =
-        AvaloniaProperty.Register<BentoCard, CornerRadius>(nameof(CardCornerRadius), new CornerRadius(12));
+        AvaloniaProperty.Register<BentoCard, CornerRadius>(nameof(CardCornerRadius), new CornerRadius(16));
 
     public string? Title
     {

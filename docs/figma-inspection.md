@@ -5,18 +5,34 @@
 - URL: https://www.figma.com/design/Drxcen3JN69XP0fnYxkgOi/Proxima-2?node-id=62-497&p=f&t=5bNwquv4cza52Z5Z-0
 - File key: `Drxcen3JN69XP0fnYxkgOi`
 - Starting node: `62:497`
-- Access status: Partial access. Metadata and frame-level design context were retrieved through Figma MCP; screenshot export and variable extraction hit the Starter plan MCP call limit after the Tax frame context was extracted.
+- Access status: Available through two MCP providers. The custom `mcp__figma__` server was used for the final inspection because it exposes full node metadata without the Starter-plan quota that limited the first pass.
 - Inspection timestamp: 2026-04-27
 
 ## Pages / Frames Inspected
 
 | Page | Frame | Node ID | Purpose |
 | --- | --- | --- | --- |
-| Mockup | Canvas | `62:497` | Starting canvas containing desktop and mobile screens. |
+| Wireframe | Components | `2:2` | Component inventory: Nav Item, Bento Card, Button, Top Bar, Sidebar, Badge, Input, Table. |
+| Wireframe | Dashboard | `2:3` | Early desktop wireframe with 1920x1080 shell and 6-column grid. |
+| Mockup | Canvas | `62:497` | Starting canvas containing final desktop and mobile screens. |
 | Mockup | Tax | `62:498` | Desktop authenticated shell, header, sidebar and bento tax dashboard. |
-| Mockup | Settings | `62:763` | Desktop account/settings bento layout, inspected through metadata. |
-| Mockup | Register | `94:2133` | Mobile registration/auth form, inspected through metadata. |
-| Mockup | Settings | `94:1953` | Mobile account/settings layout, inspected through metadata. |
+| Mockup | Tax / Sidebar | `62:2751` | Sidebar instance: 256px width, 24px padding and `#F8FAFC` surface. |
+| Mockup | Tax / Main Content | `62:2750` | Main content frame: 1024px width, header + section layout. |
+| Mockup | Tax / Header | `62:2384` | Header: 1024x88, padding 32x24, background blur 24. |
+| Mockup | Tax / Section | `62:519` | Content section: 1024x930, padding 32, vertical gap 32. |
+| Mockup | Tax / Metric Row | `62:520` | Three-column metric grid: 960x180, 24px column gap. |
+| Mockup | Tax / Total Tax Due | `62:521` | Metric card: 304x180, radius 12, padding 28, shadow 0/1/2 at 5%. |
+| Mockup | Settings | `62:763` | Desktop account/settings bento layout. |
+| Mockup | Goals | `62:962` | Desktop goals layout. |
+| Mockup | All assets | `62:1195` | Desktop assets/table layout. |
+| Mockup | Asset | `62:1521` | Desktop asset detail layout. |
+| Mockup | Dashboard | `62:1882` | Desktop dashboard bento layout. |
+| Mockup | Login | `62:2149` | Desktop unlock/login layout. |
+| Mockup | Register | `62:2417` | Desktop registration layout. |
+| Mockup | Mobile Login | `94:731` | Mobile unlock/login layout. |
+| Mockup | Mobile Dashboard | `94:767` | Mobile dashboard layout. |
+| Mockup | Mobile Settings | `94:1953` | Mobile account/settings layout. |
+| Mockup | Mobile Register | `94:2133` | Mobile registration/auth form. |
 
 ## Extracted Tokens
 
@@ -50,8 +66,9 @@
 
 ### Radii
 
-- Button/nav item: 8px.
-- Bento card: 12px in inspected Tax frame.
+- Button/nav item/input: 8px.
+- Metric cards in inspected Tax frame: 12px.
+- Reusable Bento Card component: 16px.
 - User card/avatar container: 16px and fully rounded avatar.
 - Pills: 9999px.
 
@@ -61,8 +78,10 @@
 - Sidebar padding: 24px.
 - Main content width: 1024px.
 - Header height: 88px.
+- Header padding: 32px horizontal, 24px vertical.
 - Content padding: 32px.
 - Bento grid gap: 24px.
+- Section vertical gap: 32px.
 - Card padding: 24px or 28px depending on card density.
 - Metric card height: 180px.
 - Wide grid row heights: 272px and 288px.
@@ -77,9 +96,10 @@
 
 | Screen | File |
 | --- | --- |
-| Tax | Inline render returned by `get_design_context` for node `62:498`; file export blocked by Figma Starter MCP call limit. |
-| Login/Register | Metadata inspected at `94:2133`; screenshot export blocked by Figma Starter MCP call limit. |
-| Settings | Metadata inspected at `62:763` and `94:1953`; screenshot export blocked by Figma Starter MCP call limit. |
+| Tax | Structured node data captured from custom MCP for `62:498`, `62:2751`, `62:2750`, `62:2384`, `62:519`, `62:520`, `62:521`. |
+| Login/Register | Structured node data captured from custom MCP for `62:2149`, `62:2417`, `94:731`, `94:2133`. |
+| Settings | Structured node data captured from custom MCP for `62:763` and `94:1953`. |
+| Dashboard / Assets / Goals / Asset | Structured node data captured from custom MCP for `62:1882`, `62:1195`, `62:962`, `62:1521` and mobile counterparts. |
 
 See `docs/figma/screens/README.md` for export status.
 
@@ -87,11 +107,11 @@ See `docs/figma/screens/README.md` for export status.
 
 - Avalonia tokens intentionally map Figma values to reusable resources instead of hardcoding colors and spacing in views.
 - Controls are implemented as binding-friendly Avalonia custom controls with styled properties.
-- The design system starts with Tax-frame-derived shell/bento primitives because it provided the strongest available MCP context.
+- The design system uses final Mockup nodes for shell/grid dimensions and Wireframe component nodes for reusable primitive behavior.
 - Later screen modules should inspect their own nodes before implementing final page layouts.
 
 ## Differences from Figma
 
-- Pixel-perfect matching is not claimed for Module 01 because screenshot file export and variable extraction were blocked by the Figma MCP Starter plan call limit.
+- Pixel-perfect matching is not claimed for Module 01 because this iteration establishes reusable primitives, not final screen-by-screen implementations.
 - Fonts use Manrope as the design intent with Segoe UI fallback; exact packaged font embedding is deferred.
 - Icons from Figma are not embedded yet; controls expose icon/content slots for later module-specific usage.

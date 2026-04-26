@@ -4,7 +4,7 @@
         <Setter Property="FontSize" Value="14" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Small}" />
-        <Setter Property="Padding" Value="20,10" />
+        <Setter Property="Padding" Value="24,12" />
     </Style>
 
     <Style Selector="Button.proxima-primary">

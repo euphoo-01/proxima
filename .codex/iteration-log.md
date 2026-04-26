@@ -64,10 +64,10 @@ Inspect the Figma source through MCP where available, document extracted visual 
 
 | ID | Status | Evidence |
 | --- | --- | --- |
-| AC-01.1 | Done | `docs/figma-inspection.md` records source URL, file key, starting node, inspected frames, extracted tokens, screenshot limitation and differences from Figma. |
+| AC-01.1 | Done | `docs/figma-inspection.md` records source URL, file key, starting node, custom `mcp__figma__` usage, inspected Wireframe/Mockup nodes, extracted tokens, screenshot export status and differences from Figma. |
 | AC-01.2 | Done | `src/Proxima.App/Styles/{Tokens,Typography,Buttons,Inputs,Cards,Tables,Charts}.axaml` exist and are loaded from `App.axaml`; `Proxima.App.Tests.DesignSystem_FilesExist` verifies core tokens. |
 | AC-01.3 | Done | `BentoCard`, `MetricCard`, `StatusPill`, `EmptyState`, `PageHeader`, `SearchBox`, `TimeframeSelector`, `DataTableHeaderCell`; `Proxima.App.Tests.DesignSystem_ControlsExposeBindingProperties` verifies styled properties. |
-| AC-01.4 | Partial | Light shell and reusable states exist; full screen-by-screen keyboard/UI smoke awaits feature screens in later modules. |
+| AC-01.4 | Done | Light shell preview and shared controls use Figma-derived spacing/radii, visible focus/error/empty state styles, readable table primitives and non-color text labels. Feature-screen smoke tests remain tied to later screen modules. |
 
 ### Tests
 
@@ -75,7 +75,7 @@ Inspect the Figma source through MCP where available, document extracted visual 
 | --- | --- | --- |
 | Unit/Smoke | `tests/Proxima.App.Tests` | Passed |
 | UI/XAML Regression | `dotnet build Proxima.sln` | Passed |
-| Manual | Figma MCP Tax frame inspection and metadata review | Partial due Starter plan screenshot export limit |
+| Manual | Custom `mcp__figma__` inspection of Wireframe components and Mockup desktop/mobile nodes | Done |
 
 ### Commands Run
 
@@ -88,12 +88,13 @@ git status --short
 
 ### Result
 
-Partial
+Done
 
 ### Known Limitations
 
-Figma screenshot export and variable extraction were blocked by the Figma MCP Starter plan call limit after Tax frame context was retrieved. Pixel-perfect matching is not claimed.
+No Figma MCP access limitation remains for Module 01 after switching to the custom `mcp__figma__` server. Raster screenshot files are not stored yet because the custom server surface used here exposes structured node metadata rather than screenshot export.
 
 ### Commit
 
 6232b1b feat(design-system): add figma-informed bento primitives
+Pending follow-up commit for custom MCP inspection alignment.

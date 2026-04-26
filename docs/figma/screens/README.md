@@ -1,5 +1,5 @@
 # Figma Screen Exports
 
-Figma MCP returned metadata and an inline Tax frame render, but screenshot file export was blocked by the Starter plan MCP call limit during Module 01.
+Module 01 used the custom `mcp__figma__` server for final inspection. It returned structured node metadata for desktop and mobile screens, including exact frame sizes, colors, radii, padding, layout modes and component names.
 
-Do not treat the current Avalonia UI as pixel-perfect. Later UI modules should export screen references when tool quota is available.
+Raster screenshot files are not stored in this folder yet because the custom server surface available in this session exposes node data, not screenshot export. Later UI modules should add exported reference images if a screenshot/export tool is connected.
