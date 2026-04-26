@@ -4,5 +4,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Styles>
         <FluentTheme />
+        <StyleInclude Source="avares://Proxima.App/Styles/Tokens.axaml" />
+        <StyleInclude Source="avares://Proxima.App/Styles/Typography.axaml" />
+        <StyleInclude Source="avares://Proxima.App/Styles/Buttons.axaml" />
+        <StyleInclude Source="avares://Proxima.App/Styles/Inputs.axaml" />
+        <StyleInclude Source="avares://Proxima.App/Styles/Cards.axaml" />
+        <StyleInclude Source="avares://Proxima.App/Styles/Tables.axaml" />
+        <StyleInclude Source="avares://Proxima.App/Styles/Charts.axaml" />
     </Application.Styles>
 </Application>

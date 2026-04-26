@@ -1,0 +1,59 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Styles.Resources>
+        <Color x:Key="ProximaColor.Page">#F8FAFB</Color>
+        <Color x:Key="ProximaColor.Sidebar">#F8FAFC</Color>
+        <Color x:Key="ProximaColor.Surface">#FFFFFF</Color>
+        <Color x:Key="ProximaColor.SurfaceSubtle">#F2F4F5</Color>
+        <Color x:Key="ProximaColor.TextPrimary">#001629</Color>
+        <Color x:Key="ProximaColor.Brand">#002B49</Color>
+        <Color x:Key="ProximaColor.TextSecondary">#42474D</Color>
+        <Color x:Key="ProximaColor.TextMuted">#64748B</Color>
+        <Color x:Key="ProximaColor.TextFaint">#94A3B8</Color>
+        <Color x:Key="ProximaColor.Border">#E2E8F0</Color>
+        <Color x:Key="ProximaColor.BorderSubtle">#EDEEF0</Color>
+        <Color x:Key="ProximaColor.Success">#1B6D24</Color>
+        <Color x:Key="ProximaColor.SuccessSurface">#A3F69C</Color>
+        <Color x:Key="ProximaColor.Warning">#B7791F</Color>
+        <Color x:Key="ProximaColor.WarningSurface">#FEF3C7</Color>
+        <Color x:Key="ProximaColor.Danger">#93000A</Color>
+        <Color x:Key="ProximaColor.DangerSurface">#FFFFEFEE</Color>
+        <Color x:Key="ProximaColor.Focus">#002B49</Color>
+
+        <SolidColorBrush x:Key="ProximaBrush.Page" Color="{StaticResource ProximaColor.Page}" />
+        <SolidColorBrush x:Key="ProximaBrush.Sidebar" Color="{StaticResource ProximaColor.Sidebar}" />
+        <SolidColorBrush x:Key="ProximaBrush.Surface" Color="{StaticResource ProximaColor.Surface}" />
+        <SolidColorBrush x:Key="ProximaBrush.SurfaceSubtle" Color="{StaticResource ProximaColor.SurfaceSubtle}" />
+        <SolidColorBrush x:Key="ProximaBrush.TextPrimary" Color="{StaticResource ProximaColor.TextPrimary}" />
+        <SolidColorBrush x:Key="ProximaBrush.Brand" Color="{StaticResource ProximaColor.Brand}" />
+        <SolidColorBrush x:Key="ProximaBrush.TextSecondary" Color="{StaticResource ProximaColor.TextSecondary}" />
+        <SolidColorBrush x:Key="ProximaBrush.TextMuted" Color="{StaticResource ProximaColor.TextMuted}" />
+        <SolidColorBrush x:Key="ProximaBrush.TextFaint" Color="{StaticResource ProximaColor.TextFaint}" />
+        <SolidColorBrush x:Key="ProximaBrush.Border" Color="{StaticResource ProximaColor.Border}" />
+        <SolidColorBrush x:Key="ProximaBrush.BorderSubtle" Color="{StaticResource ProximaColor.BorderSubtle}" />
+        <SolidColorBrush x:Key="ProximaBrush.Success" Color="{StaticResource ProximaColor.Success}" />
+        <SolidColorBrush x:Key="ProximaBrush.SuccessSurface" Color="{StaticResource ProximaColor.SuccessSurface}" />
+        <SolidColorBrush x:Key="ProximaBrush.Warning" Color="{StaticResource ProximaColor.Warning}" />
+        <SolidColorBrush x:Key="ProximaBrush.WarningSurface" Color="{StaticResource ProximaColor.WarningSurface}" />
+        <SolidColorBrush x:Key="ProximaBrush.Danger" Color="{StaticResource ProximaColor.Danger}" />
+        <SolidColorBrush x:Key="ProximaBrush.DangerSurface" Color="{StaticResource ProximaColor.DangerSurface}" />
+        <SolidColorBrush x:Key="ProximaBrush.Focus" Color="{StaticResource ProximaColor.Focus}" />
+
+        <CornerRadius x:Key="ProximaRadius.Small">8</CornerRadius>
+        <CornerRadius x:Key="ProximaRadius.Card">12</CornerRadius>
+        <CornerRadius x:Key="ProximaRadius.Large">16</CornerRadius>
+        <CornerRadius x:Key="ProximaRadius.Pill">9999</CornerRadius>
+
+        <Thickness x:Key="ProximaSpace.4">4</Thickness>
+        <Thickness x:Key="ProximaSpace.8">8</Thickness>
+        <Thickness x:Key="ProximaSpace.12">12</Thickness>
+        <Thickness x:Key="ProximaSpace.16">16</Thickness>
+        <Thickness x:Key="ProximaSpace.20">20</Thickness>
+        <Thickness x:Key="ProximaSpace.24">24</Thickness>
+        <Thickness x:Key="ProximaSpace.28">28</Thickness>
+        <Thickness x:Key="ProximaSpace.32">32</Thickness>
+
+        <BoxShadows x:Key="ProximaShadow.Card">0 1 2 0 #0D000000</BoxShadows>
+        <BoxShadows x:Key="ProximaShadow.Nav">0 1 1 0 #0D000000</BoxShadows>
+    </Styles.Resources>
+</Styles>

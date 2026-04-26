@@ -1,38 +1,73 @@
 <Window
     x:Class="Proxima.App.MainWindow"
     xmlns="https://github.com/avaloniaui"
+    xmlns:controls="using:Proxima.App.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="Proxima"
     Width="1180"
     Height="760"
     MinWidth="960"
     MinHeight="640"
-    Background="#F5F7FA">
-    <Grid RowDefinitions="Auto,*" Margin="32">
-        <TextBlock
-            FontSize="32"
-            FontWeight="SemiBold"
-            Foreground="#182230"
-            Text="Proxima" />
-        <Border
-            Grid.Row="1"
-            Margin="0,24,0,0"
-            Padding="28"
-            Background="White"
-            BorderBrush="#E4E7EC"
-            BorderThickness="1"
-            CornerRadius="28">
-            <StackPanel Spacing="12">
+    Background="{StaticResource ProximaBrush.Page}">
+    <Grid ColumnDefinitions="256,*">
+        <Border Background="{StaticResource ProximaBrush.Sidebar}" Padding="24">
+            <Grid RowDefinitions="Auto,*,Auto">
                 <TextBlock
-                    FontSize="22"
-                    FontWeight="SemiBold"
-                    Foreground="#182230"
-                    Text="Engineering baseline ready" />
-                <TextBlock
-                    FontSize="15"
-                    Foreground="#667085"
-                    Text="Module 00 establishes the production solution structure before feature iterations." />
-            </StackPanel>
+                    FontFamily="{StaticResource ProximaFont.Family}"
+                    FontSize="24"
+                    FontWeight="ExtraBold"
+                    Foreground="{StaticResource ProximaBrush.Brand}"
+                    Text="Proxima" />
+                <StackPanel Grid.Row="1" Margin="0,40,0,0" Spacing="8">
+                    <Border Padding="16,12" Background="{StaticResource ProximaBrush.Surface}" BoxShadow="{StaticResource ProximaShadow.Nav}" CornerRadius="{StaticResource ProximaRadius.Small}">
+                        <TextBlock Classes="proxima-body" FontWeight="Bold" Foreground="{StaticResource ProximaBrush.Brand}" Text="Дешборд" />
+                    </Border>
+                    <TextBlock Classes="proxima-body" Margin="16,12" Text="Все активы" />
+                    <TextBlock Classes="proxima-body" Margin="16,12" Text="Налоги" />
+                    <TextBlock Classes="proxima-body" Margin="16,12" Text="Цели" />
+                </StackPanel>
+                <Border Grid.Row="2" BorderBrush="{StaticResource ProximaBrush.Border}" BorderThickness="0,1,0,0" Padding="0,24,0,0">
+                    <TextBlock Classes="proxima-caption" Text="Частный инвестор" />
+                </Border>
+            </Grid>
         </Border>
+
+        <Grid Grid.Column="1" RowDefinitions="88,*">
+            <Border Padding="32,24" Background="{StaticResource ProximaBrush.Page}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Classes="proxima-body" Foreground="{StaticResource ProximaBrush.Brand}" Text="Дизайн-система" />
+                        <TextBlock Classes="proxima-body" Foreground="{StaticResource ProximaBrush.TextFaint}" Text="› Proxima" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="proxima-secondary" Content="Создать портфель" />
+                </Grid>
+            </Border>
+
+            <ScrollViewer Grid.Row="1">
+                <StackPanel Margin="32" Spacing="24">
+                    <controls:PageHeader Title="Bento UI baseline" Subtitle="Reusable Avalonia controls and Figma-derived tokens are available for feature modules.">
+                        <Button Classes="proxima-primary" Content="Экспортировать отчёт" />
+                    </controls:PageHeader>
+
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="24">
+                        <controls:MetricCard Label="Всего налогов" Value="14,280.50 BYN" Footer="По курсу НБРБ" />
+                        <controls:MetricCard Grid.Column="1" CardBackground="{StaticResource ProximaBrush.SurfaceSubtle}" Label="Облагаемая база" Value="109,850.00" Footer="BYN" />
+                        <controls:MetricCard Grid.Column="2" CardBackground="{StaticResource ProximaBrush.SuccessSurface}" Label="Льготы" Value="4,215.00 BYN" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+                        <controls:BentoCard Title="Двойной налог" Subtitle="Figma-derived card primitive">
+                            <StackPanel Spacing="16">
+                                <Border Height="40" Background="{StaticResource ProximaBrush.Brand}" CornerRadius="{StaticResource ProximaRadius.Small}" />
+                                <controls:StatusPill Text="ОЖИДАЕТСЯ" />
+                            </StackPanel>
+                        </controls:BentoCard>
+                        <controls:BentoCard Grid.Column="1" Title="States">
+                            <controls:EmptyState Title="Нет данных" Message="Пустые состояния готовы для таблиц, графиков и импортов." />
+                        </controls:BentoCard>
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </Window>

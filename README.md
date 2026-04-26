@@ -62,3 +62,5 @@ https://www.figma.com/design/Drxcen3JN69XP0fnYxkgOi/Proxima-2?node-id=62-497&p=f
 ```
 
 UI implementation modules must inspect the Figma file through MCP before implementing authenticated screens. If MCP is unavailable, the UI must be explicitly documented as approximated from the design-system spec.
+
+Module 01 inspected the Figma Tax frame and metadata through MCP. Screenshot file export and variable extraction were blocked by the Figma MCP Starter plan call limit, so the current design system should be treated as Figma-informed rather than pixel-perfect.
