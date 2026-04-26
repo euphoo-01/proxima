@@ -96,4 +96,4 @@ Figma screenshot export and variable extraction were blocked by the Figma MCP St
 
 ### Commit
 
-Pending
+6232b1b feat(design-system): add figma-informed bento primitives
