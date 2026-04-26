@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <BuildInParallel>false</BuildInParallel>
+    <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,15 @@
+<Project>
+  <Target Name="VSTest" DependsOnTargets="Build">
+    <Message
+      Condition="'$(IsTestProject)' == 'true'"
+      Importance="High"
+      Text="Running Proxima test runner: $(TargetPath)" />
+    <Exec
+      Condition="'$(IsTestProject)' == 'true'"
+      Command="dotnet &quot;$(TargetPath)&quot;" />
+    <Message
+      Condition="'$(IsTestProject)' != 'true'"
+      Importance="High"
+      Text="Skipping VSTest for non-test project: $(MSBuildProjectName)" />
+  </Target>
+</Project>

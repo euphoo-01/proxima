@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Proxima.Application\Proxima.Application.csproj" />
+    <ProjectReference Include="..\Proxima.Domain\Proxima.Domain.csproj" />
+  </ItemGroup>
+</Project>

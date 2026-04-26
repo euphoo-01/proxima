@@ -1,0 +1,48 @@
+# Build outputs
+bin/
+obj/
+artifacts/
+TestResults/
+coverage/
+
+# IDE state
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Local .NET CLI state created inside the workspace for sandboxed commands
+.dotnet/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+secrets.json
+*.pfx
+*.key
+*.pem
+appsettings.*.local.json
+
+# Logs and diagnostics
+logs/
+*.log
+
+# PostgreSQL/local data directories
+pgdata/
+postgres-data/
+data/postgres/
+docker/postgres/data/
+
+# Sensitive imported financial files
+raw-broker-reports/
+imports/raw/
+*.broker.csv
+*.broker.pdf
+
+# OS files
+.DS_Store
+Thumbs.db

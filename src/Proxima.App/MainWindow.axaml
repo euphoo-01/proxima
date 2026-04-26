@@ -1,0 +1,38 @@
+<Window
+    x:Class="Proxima.App.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Proxima"
+    Width="1180"
+    Height="760"
+    MinWidth="960"
+    MinHeight="640"
+    Background="#F5F7FA">
+    <Grid RowDefinitions="Auto,*" Margin="32">
+        <TextBlock
+            FontSize="32"
+            FontWeight="SemiBold"
+            Foreground="#182230"
+            Text="Proxima" />
+        <Border
+            Grid.Row="1"
+            Margin="0,24,0,0"
+            Padding="28"
+            Background="White"
+            BorderBrush="#E4E7EC"
+            BorderThickness="1"
+            CornerRadius="28">
+            <StackPanel Spacing="12">
+                <TextBlock
+                    FontSize="22"
+                    FontWeight="SemiBold"
+                    Foreground="#182230"
+                    Text="Engineering baseline ready" />
+                <TextBlock
+                    FontSize="15"
+                    Foreground="#667085"
+                    Text="Module 00 establishes the production solution structure before feature iterations." />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

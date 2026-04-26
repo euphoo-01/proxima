@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Proxima.App\Proxima.App.csproj" />
+    <ProjectReference Include="..\..\src\Proxima.Analytics\Proxima.Analytics.csproj" />
+    <ProjectReference Include="..\..\src\Proxima.Application\Proxima.Application.csproj" />
+    <ProjectReference Include="..\..\src\Proxima.Domain\Proxima.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Proxima.Importing\Proxima.Importing.csproj" />
+    <ProjectReference Include="..\..\src\Proxima.Infrastructure\Proxima.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Proxima.Reporting\Proxima.Reporting.csproj" />
+    <ProjectReference Include="..\..\src\Proxima.Sync\Proxima.Sync.csproj" />
+    <ProjectReference Include="..\Proxima.Analytics.Tests\Proxima.Analytics.Tests.csproj" />
+    <ProjectReference Include="..\Proxima.Application.Tests\Proxima.Application.Tests.csproj" />
+    <ProjectReference Include="..\Proxima.Domain.Tests\Proxima.Domain.Tests.csproj" />
+    <ProjectReference Include="..\Proxima.Importing.Tests\Proxima.Importing.Tests.csproj" />
+    <ProjectReference Include="..\Proxima.Infrastructure.Tests\Proxima.Infrastructure.Tests.csproj" />
+  </ItemGroup>
+
+  <Target Name="VSTest" DependsOnTargets="Build">
+    <Exec Command="&quot;$(TargetPath)&quot;" />
+  </Target>
+</Project>
