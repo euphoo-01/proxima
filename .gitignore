@@ -4,6 +4,8 @@ obj/
 artifacts/
 TestResults/
 coverage/
+pp.xml
+*.pp.xml
 
 # IDE state
 .vs/
