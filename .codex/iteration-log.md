@@ -97,4 +97,4 @@ No Figma MCP access limitation remains for Module 01 after switching to the cust
 ### Commit
 
 6232b1b feat(design-system): add figma-informed bento primitives
-Pending follow-up commit for custom MCP inspection alignment.
+3781e9e fix(design-system): align bento primitives with custom figma mcp
