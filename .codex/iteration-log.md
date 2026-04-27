@@ -151,4 +151,4 @@ Module 02 uses a durable local JSON profile store as the current repository impl
 
 ### Commit
 
-Pending
+b95f171 security(auth): add local profile setup and unlock
