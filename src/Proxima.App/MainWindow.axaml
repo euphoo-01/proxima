@@ -9,65 +9,207 @@
     MinWidth="960"
     MinHeight="640"
     Background="{StaticResource ProximaBrush.Page}">
-    <Grid ColumnDefinitions="256,*">
-        <Border Background="{StaticResource ProximaBrush.Sidebar}" Padding="24">
-            <Grid RowDefinitions="Auto,*,Auto">
-                <TextBlock
-                    FontFamily="{StaticResource ProximaFont.Family}"
-                    FontSize="24"
-                    FontWeight="ExtraBold"
-                    Foreground="{StaticResource ProximaBrush.Brand}"
-                    Text="Proxima" />
-                <StackPanel Grid.Row="1" Margin="0,40,0,0" Spacing="8">
-                    <Border Padding="16,12" Background="{StaticResource ProximaBrush.Surface}" BoxShadow="{StaticResource ProximaShadow.Nav}" CornerRadius="{StaticResource ProximaRadius.Small}">
-                        <TextBlock Classes="proxima-body" FontWeight="Bold" Foreground="{StaticResource ProximaBrush.Brand}" Text="Дешборд" />
-                    </Border>
-                    <TextBlock Classes="proxima-body" Margin="16,12" Text="Все активы" />
-                    <TextBlock Classes="proxima-body" Margin="16,12" Text="Налоги" />
-                    <TextBlock Classes="proxima-body" Margin="16,12" Text="Цели" />
-                </StackPanel>
-                <Border Grid.Row="2" BorderBrush="{StaticResource ProximaBrush.Border}" BorderThickness="0,1,0,0" Padding="0,24,0,0">
-                    <TextBlock Classes="proxima-caption" Text="Частный инвестор" />
-                </Border>
-            </Grid>
-        </Border>
+    <Grid>
+        <Grid IsVisible="{Binding IsSetupMode}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.05*" />
+                <ColumnDefinition Width="0.95*" />
+            </Grid.ColumnDefinitions>
 
-        <Grid Grid.Column="1" RowDefinitions="88,*">
-            <Border Padding="32,24" Background="{StaticResource ProximaBrush.Page}">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Classes="proxima-body" Foreground="{StaticResource ProximaBrush.Brand}" Text="Дизайн-система" />
-                        <TextBlock Classes="proxima-body" Foreground="{StaticResource ProximaBrush.TextFaint}" Text="› Proxima" />
+            <Border Padding="56" Background="{StaticResource ProximaBrush.Page}">
+                <StackPanel VerticalAlignment="Center" Spacing="24">
+                    <TextBlock
+                        FontFamily="{StaticResource ProximaFont.Family}"
+                        FontSize="44"
+                        FontWeight="ExtraBold"
+                        Foreground="{StaticResource ProximaBrush.TextPrimary}"
+                        LineHeight="50"
+                        Text="Proxima" />
+                    <TextBlock
+                        MaxWidth="460"
+                        Classes="proxima-body"
+                        FontSize="18"
+                        LineHeight="28"
+                        Text="Локальное финансовое рабочее место. Данные остаются на этом устройстве, вход защищён паролем."
+                        TextWrapping="Wrap" />
+                    <Border
+                        MaxWidth="460"
+                        Padding="20"
+                        Background="{StaticResource ProximaBrush.Surface}"
+                        BorderBrush="{StaticResource ProximaBrush.BorderSubtle}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource ProximaRadius.Large}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="proxima-card-title" Text="Локальная защита" />
+                            <TextBlock Classes="proxima-caption" Text="Пароль хешируется PBKDF2-SHA256 с уникальной salt. Plaintext-пароль не сохраняется." TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1" Padding="48" Background="{StaticResource ProximaBrush.Sidebar}">
+                <Border
+                    MaxWidth="420"
+                    Padding="32"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="{StaticResource ProximaBrush.Surface}"
+                    BorderBrush="{StaticResource ProximaBrush.BorderSubtle}"
+                    BorderThickness="1"
+                    BoxShadow="{StaticResource ProximaShadow.Card}"
+                    CornerRadius="{StaticResource ProximaRadius.Large}">
+                    <StackPanel Spacing="18">
+                        <TextBlock Classes="proxima-page-title" FontSize="30" Text="Создать профиль" />
+                        <TextBlock Classes="proxima-body" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+
+                        <TextBox Watermark="Имя" Text="{Binding DisplayName}" />
+                        <TextBox Watermark="Логин" Text="{Binding Login}" />
+                        <ComboBox SelectedIndex="{Binding SelectedRoleIndex}">
+                            <ComboBoxItem Content="Частный инвестор" />
+                            <ComboBoxItem Content="Финансовый аналитик" />
+                        </ComboBox>
+                        <TextBox
+                            x:Name="SetupPasswordBox"
+                            TextChanged="SetupPasswordChanged"
+                            PasswordChar="•"
+                            Watermark="Пароль" />
+                        <TextBox
+                            x:Name="SetupPasswordConfirmationBox"
+                            TextChanged="SetupPasswordChanged"
+                            PasswordChar="•"
+                            Watermark="Повторите пароль" />
+
+                        <TextBlock
+                            Classes="proxima-caption"
+                            Foreground="{StaticResource ProximaBrush.Danger}"
+                            Text="{Binding ValidationMessage}"
+                            TextWrapping="Wrap" />
+                        <Button
+                            Classes="proxima-primary"
+                            Click="CreateProfileClicked"
+                            Content="Создать и разблокировать"
+                            IsEnabled="{Binding CanCreateProfile}" />
                     </StackPanel>
-                    <Button Grid.Column="1" Classes="proxima-secondary" Content="Создать портфель" />
+                </Border>
+            </Border>
+        </Grid>
+
+        <Grid IsVisible="{Binding IsLoginMode}">
+            <Border Padding="56" Background="{StaticResource ProximaBrush.Page}">
+                <Border
+                    MaxWidth="420"
+                    Padding="32"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="{StaticResource ProximaBrush.Surface}"
+                    BorderBrush="{StaticResource ProximaBrush.BorderSubtle}"
+                    BorderThickness="1"
+                    BoxShadow="{StaticResource ProximaShadow.Card}"
+                    CornerRadius="{StaticResource ProximaRadius.Large}">
+                    <StackPanel Spacing="18">
+                        <TextBlock
+                            FontFamily="{StaticResource ProximaFont.Family}"
+                            FontSize="30"
+                            FontWeight="ExtraBold"
+                            Foreground="{StaticResource ProximaBrush.TextPrimary}"
+                            Text="Разблокировать Proxima" />
+                        <TextBlock Classes="proxima-body" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+                        <TextBox Watermark="Логин" Text="{Binding UnlockLogin}" />
+                        <TextBox
+                            x:Name="UnlockPasswordBox"
+                            KeyDown="UnlockPasswordKeyDown"
+                            PasswordChar="•"
+                            Watermark="Пароль" />
+                        <TextBlock
+                            Classes="proxima-caption"
+                            Foreground="{StaticResource ProximaBrush.Danger}"
+                            Text="{Binding FailedAttemptsMessage}"
+                            TextWrapping="Wrap" />
+                        <Button
+                            Classes="proxima-primary"
+                            Click="UnlockClicked"
+                            Content="Разблокировать"
+                            IsEnabled="{Binding CanUnlock}" />
+                        <Button
+                            Classes="proxima-secondary"
+                            Click="ForgotPasswordClicked"
+                            Content="Забыли пароль?" />
+                        <Border
+                            Padding="16"
+                            Background="{StaticResource ProximaBrush.DangerSurface}"
+                            CornerRadius="{StaticResource ProximaRadius.Card}"
+                            IsVisible="{Binding ShowRecoveryInfo}">
+                            <TextBlock
+                                Classes="proxima-caption"
+                                Foreground="{StaticResource ProximaBrush.Danger}"
+                                Text="Proxima не может восстановить локальный пароль. Если зашифрованные данные уже существуют, сброс пароля не должен уничтожать их без явного решения пользователя."
+                                TextWrapping="Wrap" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Border>
+        </Grid>
+
+        <Grid ColumnDefinitions="256,*" IsVisible="{Binding IsUnlocked}">
+            <Border Background="{StaticResource ProximaBrush.Sidebar}" Padding="24">
+                <Grid RowDefinitions="Auto,*,Auto">
+                    <TextBlock
+                        FontFamily="{StaticResource ProximaFont.Family}"
+                        FontSize="24"
+                        FontWeight="ExtraBold"
+                        Foreground="{StaticResource ProximaBrush.Brand}"
+                        Text="Proxima" />
+                    <StackPanel Grid.Row="1" Margin="0,40,0,0" Spacing="8">
+                        <Border Padding="16,12" Background="{StaticResource ProximaBrush.Surface}" BoxShadow="{StaticResource ProximaShadow.Nav}" CornerRadius="{StaticResource ProximaRadius.Small}">
+                            <TextBlock Classes="proxima-body" FontWeight="Bold" Foreground="{StaticResource ProximaBrush.Brand}" Text="Дешборд" />
+                        </Border>
+                        <TextBlock Classes="proxima-body" Margin="16,12" Text="Все активы" />
+                        <TextBlock Classes="proxima-body" Margin="16,12" Text="Налоги" />
+                        <TextBlock Classes="proxima-body" Margin="16,12" Text="Цели" />
+                    </StackPanel>
+                    <Border Grid.Row="2" BorderBrush="{StaticResource ProximaBrush.Border}" BorderThickness="0,1,0,0" Padding="0,24,0,0">
+                        <TextBlock Classes="proxima-caption" Text="Локальный профиль" />
+                    </Border>
                 </Grid>
             </Border>
 
-            <ScrollViewer Grid.Row="1">
-                <StackPanel Margin="32" Spacing="24">
-                    <controls:PageHeader Title="Bento UI baseline" Subtitle="Reusable Avalonia controls and Figma-derived tokens are available for feature modules.">
-                        <Button Classes="proxima-primary" Content="Экспортировать отчёт" />
-                    </controls:PageHeader>
-
-                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="24">
-                        <controls:MetricCard Label="Всего налогов" Value="14,280.50 BYN" Footer="По курсу НБРБ" />
-                        <controls:MetricCard Grid.Column="1" CardBackground="{StaticResource ProximaBrush.SurfaceSubtle}" Label="Облагаемая база" Value="109,850.00" Footer="BYN" />
-                        <controls:MetricCard Grid.Column="2" CardBackground="{StaticResource ProximaBrush.SuccessSurface}" Label="Льготы" Value="4,215.00 BYN" />
+            <Grid Grid.Column="1" RowDefinitions="88,*">
+                <Border Padding="32,24" Background="{StaticResource ProximaBrush.Page}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Classes="proxima-body" Foreground="{StaticResource ProximaBrush.Brand}" Text="Дешборд" />
+                            <TextBlock Classes="proxima-body" Foreground="{StaticResource ProximaBrush.TextFaint}" Text="› Proxima" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Classes="proxima-secondary" Content="Создать портфель" />
                     </Grid>
+                </Border>
 
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
-                        <controls:BentoCard Title="Двойной налог" Subtitle="Figma-derived card primitive">
-                            <StackPanel Spacing="16">
-                                <Border Height="40" Background="{StaticResource ProximaBrush.Brand}" CornerRadius="{StaticResource ProximaRadius.Small}" />
-                                <controls:StatusPill Text="ОЖИДАЕТСЯ" />
-                            </StackPanel>
-                        </controls:BentoCard>
-                        <controls:BentoCard Grid.Column="1" Title="States">
-                            <controls:EmptyState Title="Нет данных" Message="Пустые состояния готовы для таблиц, графиков и импортов." />
-                        </controls:BentoCard>
-                    </Grid>
-                </StackPanel>
-            </ScrollViewer>
+                <ScrollViewer Grid.Row="1">
+                    <StackPanel Margin="32" Spacing="24">
+                        <controls:PageHeader Title="Proxima разблокирована" Subtitle="Auth gate активен; следующий модуль подключит полноценную навигацию и данные портфеля.">
+                            <Button Classes="proxima-primary" Content="Импортировать" />
+                        </controls:PageHeader>
+
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="24">
+                            <controls:MetricCard Label="Статус" Value="Local" Footer="Данные на устройстве" />
+                            <controls:MetricCard Grid.Column="1" CardBackground="{StaticResource ProximaBrush.SurfaceSubtle}" Label="Профиль" Value="Protected" Footer="PBKDF2-SHA256" />
+                            <controls:MetricCard Grid.Column="2" CardBackground="{StaticResource ProximaBrush.SuccessSurface}" Label="Доступ" Value="Unlocked" />
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+                            <controls:BentoCard Title="Следующий шаг" Subtitle="Module 03">
+                                <StackPanel Spacing="16">
+                                    <Border Height="40" Background="{StaticResource ProximaBrush.Brand}" CornerRadius="{StaticResource ProximaRadius.Small}" />
+                                    <controls:StatusPill Text="НАВИГАЦИЯ" />
+                                </StackPanel>
+                            </controls:BentoCard>
+                            <controls:BentoCard Grid.Column="1" Title="Состояния">
+                                <controls:EmptyState Title="Данные портфеля ещё не созданы" Message="PostgreSQL, seed и портфели будут добавлены в следующих модулях." />
+                            </controls:BentoCard>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

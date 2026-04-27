@@ -1,7 +1,10 @@
 using Proxima.Analytics;
 using Proxima.App.Controls;
+using Proxima.App.ViewModels;
 using Proxima.Application;
+using Proxima.Application.Auth;
 using Proxima.Domain;
+using Proxima.Domain.Auth;
 using Proxima.Importing;
 using Proxima.Infrastructure;
 using Proxima.Reporting;
@@ -18,6 +21,8 @@ internal static class Program
         DesignSystem_FilesExist();
         DesignSystem_ControlsExposeBindingProperties();
         FigmaInspection_DocumentsCustomMcpSource();
+        AuthUi_UsesMaskedPasswordInputsAndRecoveryCopy();
+        AuthViewModel_InitializesSetupAndUnlockStates();
         Console.WriteLine("Proxima.App.Tests baseline checks passed.");
     }
 
@@ -138,6 +143,27 @@ internal static class Program
         }
     }
 
+    private static void AuthUi_UsesMaskedPasswordInputsAndRecoveryCopy()
+    {
+        string xaml = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "src/Proxima.App/MainWindow.axaml"));
+        Assert(xaml.Contains("PasswordChar=\"•\"", StringComparison.Ordinal), "Auth UI must use masked password inputs.");
+        Assert(xaml.Contains("PasswordChar=\"•\"", StringComparison.Ordinal), "Password inputs must be masked.");
+        Assert(xaml.Contains("ForgotPasswordClicked", StringComparison.Ordinal), "Auth UI must expose forgot-password recovery action.");
+        Assert(xaml.Contains("IsVisible=\"{Binding IsUnlocked}\"", StringComparison.Ordinal), "Shell must be gated by unlock state.");
+    }
+
+    private static void AuthViewModel_InitializesSetupAndUnlockStates()
+    {
+        AuthViewModel setupViewModel = new(new TestAuthService(needsSetup: true));
+        setupViewModel.InitializeAsync().GetAwaiter().GetResult();
+        Assert(setupViewModel.IsSetupMode, "Empty auth store must show setup mode.");
+        Assert(!setupViewModel.IsUnlocked, "Setup mode must not start unlocked.");
+
+        AuthViewModel unlockViewModel = new(new TestAuthService(needsSetup: false));
+        unlockViewModel.InitializeAsync().GetAwaiter().GetResult();
+        Assert(unlockViewModel.IsLoginMode, "Existing profile must show unlock mode.");
+    }
+
     private static string FindRepositoryRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
@@ -160,6 +186,45 @@ internal static class Program
         if (!condition)
         {
             throw new InvalidOperationException(message);
+        }
+    }
+
+    private sealed class TestAuthService(bool needsSetup) : ILocalAuthService
+    {
+        public Task<bool> NeedsFirstRunSetupAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(needsSetup);
+        }
+
+        public Task<AuthResult> CreateProfileAsync(CreateProfileRequest request, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            LocalUserProfile profile = new(
+                Guid.NewGuid(),
+                request.DisplayName,
+                request.Login,
+                request.Role,
+                new PasswordCredential("test", [1], [2], 1, 1),
+                DateTimeOffset.UtcNow,
+                DateTimeOffset.UtcNow,
+                0);
+            return Task.FromResult(AuthResult.Success(profile));
+        }
+
+        public Task<AuthResult> UnlockAsync(string login, string password, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            LocalUserProfile profile = new(
+                Guid.NewGuid(),
+                "Demo",
+                login,
+                UserRole.PrivateInvestor,
+                new PasswordCredential("test", [1], [2], 1, 1),
+                DateTimeOffset.UtcNow,
+                DateTimeOffset.UtcNow,
+                0);
+            return Task.FromResult(AuthResult.Success(profile));
         }
     }
 }

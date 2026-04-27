@@ -51,7 +51,7 @@ dotnet test
 dotnet run --project src/Proxima.App/Proxima.App.csproj
 ```
 
-The current repository state contains the engineering baseline only. Database setup, demo credentials, migrations and application features are implemented in later module iterations.
+The app currently starts with local first-run setup. The profile is stored in the user local application data folder and the password is saved only as PBKDF2-SHA256 metadata, salt and hash. PostgreSQL migrations, seed/demo credentials and portfolio data are implemented in later persistence modules.
 
 ## Figma
 

@@ -98,3 +98,57 @@ No Figma MCP access limitation remains for Module 01 after switching to the cust
 
 6232b1b feat(design-system): add figma-informed bento primitives
 3781e9e fix(design-system): align bento primitives with custom figma mcp
+
+## Iteration 02 — Local Authentication, Profile Setup & App Unlock
+
+### Scope
+
+Implement first-run local profile setup, returning-user unlock, password policy validation, PBKDF2 password hashing, generic authentication failures, recovery explanation and a gated Avalonia shell.
+
+### User Stories Checked
+
+- [x] US-02.1 — First-time user creates a local protected profile.
+- [x] US-02.2 — Returning user unlocks Proxima locally.
+- [x] US-02.3 — User receives clear feedback on authentication errors.
+- [x] US-02.4 — User can understand password recovery limitation.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-02.1 | Partial | First-run setup collects display name, login, role and password confirmation; validation disables create action; successful setup persists a local profile and unlocks. PostgreSQL-backed records are deferred to the persistence module. |
+| AC-02.2 | Done | Returning launch shows unlock mode when a profile exists; login/password unlock succeeds; wrong password shows generic error; masked input and Enter submit are implemented. |
+| AC-02.3 | Done | Passwords are hashed with PBKDF2-SHA256, unique salt and constant-time comparison; plaintext password is not stored in the local profile store. |
+| AC-02.4 | Partial | Failed attempts increment and show delay warning; unknown login and wrong password share a generic error; forgot-password explanation is visible. DB connection failure handling is deferred until PostgreSQL is introduced. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit | `tests/Proxima.Application.Tests` password policy and auth service tests | Passed |
+| Integration | `tests/Proxima.Infrastructure.Tests` PBKDF2 and JSON persistence tests | Passed |
+| UI/Smoke | `tests/Proxima.App.Tests` masked input/recovery/shell gate checks | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+dotnet test tests/Proxima.Application.Tests/Proxima.Application.Tests.csproj
+dotnet test tests/Proxima.Infrastructure.Tests/Proxima.Infrastructure.Tests.csproj
+dotnet test tests/Proxima.App.Tests/Proxima.App.Tests.csproj
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Module 02 uses a durable local JSON profile store as the current repository implementation. PostgreSQL/EF Core auth persistence, migrations, DB connection failure screen and seed/demo credentials remain deferred to the persistence module.
+
+### Commit
+
+Pending

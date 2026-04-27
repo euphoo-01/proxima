@@ -1,0 +1,10 @@
+namespace Proxima.Application.Auth;
+
+public interface ILocalAuthService
+{
+    Task<bool> NeedsFirstRunSetupAsync(CancellationToken cancellationToken = default);
+
+    Task<AuthResult> CreateProfileAsync(CreateProfileRequest request, CancellationToken cancellationToken = default);
+
+    Task<AuthResult> UnlockAsync(string login, string password, CancellationToken cancellationToken = default);
+}
