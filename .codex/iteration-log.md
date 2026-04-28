@@ -253,4 +253,4 @@ Module 04 is currently backed by local JSON storage for portfolios. PostgreSQL/E
 
 ### Commit
 
-Pending
+c09be30 feat(portfolios): add scoped portfolio service and shell CRUD
