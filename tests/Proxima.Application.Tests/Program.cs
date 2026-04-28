@@ -1,6 +1,8 @@
 using Proxima.Application;
 using Proxima.Application.Auth;
+using Proxima.Application.Portfolios;
 using Proxima.Domain.Auth;
+using Proxima.Domain.Portfolios;
 
 namespace Proxima.Application.Tests;
 
@@ -14,7 +16,46 @@ internal static class Program
         PasswordValidator_AcceptsStrongPassword();
         await AuthService_CreatesProfileAndUnlocks().ConfigureAwait(false);
         await AuthService_ReturnsGenericErrorForUnknownLoginAndWrongPassword().ConfigureAwait(false);
+        PortfolioService_CreateUpdateArchiveFlow().GetAwaiter().GetResult();
+        PortfolioService_IsolatesByOwner().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.Application.Tests passed.");
+    }
+
+    private static async Task PortfolioService_CreateUpdateArchiveFlow()
+    {
+        MemoryPortfolioRepository repository = new();
+        PortfolioService service = new(repository);
+        Guid owner = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+        PortfolioOperationResult created = await service.CreateAsync(new CreatePortfolioRequest(owner, "Main", "USD", null, null)).ConfigureAwait(false);
+        Assert(created.Succeeded, "Portfolio create should succeed.");
+
+        PortfolioOperationResult updated = await service.UpdateAsync(new UpdatePortfolioRequest(owner, created.Portfolio!.Id, "Main 2", "EUR", "Desc", "Client")).ConfigureAwait(false);
+        Assert(updated.Succeeded, "Portfolio update should succeed.");
+        Assert(updated.Portfolio!.BaseCurrency == "EUR", "Portfolio currency should update.");
+
+        PortfolioOperationResult archived = await service.ArchiveAsync(owner, created.Portfolio.Id).ConfigureAwait(false);
+        Assert(archived.Succeeded, "Portfolio archive should succeed.");
+
+        IReadOnlyList<Portfolio> active = await service.ListActiveAsync(owner).ConfigureAwait(false);
+        Assert(active.Count == 0, "Archived portfolio should be hidden from active list.");
+    }
+
+    private static async Task PortfolioService_IsolatesByOwner()
+    {
+        MemoryPortfolioRepository repository = new();
+        PortfolioService service = new(repository);
+        Guid first = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid second = Guid.Parse("22222222-2222-2222-2222-222222222222");
+
+        await service.CreateAsync(new CreatePortfolioRequest(first, "Owner A", "USD", null, null)).ConfigureAwait(false);
+        await service.CreateAsync(new CreatePortfolioRequest(second, "Owner B", "USD", null, null)).ConfigureAwait(false);
+
+        IReadOnlyList<Portfolio> firstList = await service.ListActiveAsync(first).ConfigureAwait(false);
+        IReadOnlyList<Portfolio> secondList = await service.ListActiveAsync(second).ConfigureAwait(false);
+
+        Assert(firstList.Count == 1 && firstList[0].Name == "Owner A", "Owner A should only see own portfolio.");
+        Assert(secondList.Count == 1 && secondList[0].Name == "Owner B", "Owner B should only see own portfolio.");
     }
 
     private static void PasswordValidator_RejectsWeakPasswords()
@@ -134,6 +175,44 @@ internal static class Program
         public bool Verify(string password, PasswordCredential credential)
         {
             return credential.Hash.SequenceEqual(System.Text.Encoding.UTF8.GetBytes("hashed:" + password));
+        }
+    }
+
+    private sealed class MemoryPortfolioRepository : IPortfolioRepository
+    {
+        private readonly List<Portfolio> _portfolios = [];
+
+        public Task<IReadOnlyList<Portfolio>> ListByOwnerAsync(Guid ownerUserId, bool includeArchived, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            IEnumerable<Portfolio> query = _portfolios.Where(item => item.OwnerUserId == ownerUserId);
+            if (!includeArchived)
+            {
+                query = query.Where(item => !item.IsArchived);
+            }
+
+            return Task.FromResult<IReadOnlyList<Portfolio>>(query.ToArray());
+        }
+
+        public Task<Portfolio?> FindByIdAsync(Guid ownerUserId, Guid portfolioId, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(_portfolios.FirstOrDefault(item => item.OwnerUserId == ownerUserId && item.Id == portfolioId));
+        }
+
+        public Task AddAsync(Portfolio portfolio, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _portfolios.Add(portfolio);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(Portfolio portfolio, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            int index = _portfolios.FindIndex(item => item.Id == portfolio.Id && item.OwnerUserId == portfolio.OwnerUserId);
+            _portfolios[index] = portfolio;
+            return Task.CompletedTask;
         }
     }
 }

@@ -3,8 +3,10 @@ using Proxima.App.Controls;
 using Proxima.App.ViewModels;
 using Proxima.Application;
 using Proxima.Application.Auth;
+using Proxima.Application.Portfolios;
 using Proxima.Domain;
 using Proxima.Domain.Auth;
+using Proxima.Domain.Portfolios;
 using Proxima.Importing;
 using Proxima.Infrastructure;
 using Proxima.Reporting;
@@ -25,7 +27,7 @@ internal static class Program
         AuthViewModel_InitializesSetupAndUnlockStates();
         NavigationService_RegistersRoutesAndSupportsBack();
         ShellViewModel_UpdatesActivePageAndBreadcrumb();
-        ShellViewModel_PreservesSelectedPortfolioAcrossNavigation();
+        ShellViewModel_PreservesSelectedPortfolioAcrossNavigation().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.App.Tests baseline checks passed.");
     }
 
@@ -160,12 +162,12 @@ internal static class Program
 
     private static void AuthViewModel_InitializesSetupAndUnlockStates()
     {
-        AuthViewModel setupViewModel = new(new TestAuthService(needsSetup: true));
+        AuthViewModel setupViewModel = new(new TestAuthService(needsSetup: true), CreateShellViewModel());
         setupViewModel.InitializeAsync().GetAwaiter().GetResult();
         Assert(setupViewModel.IsSetupMode, "Empty auth store must show setup mode.");
         Assert(!setupViewModel.IsUnlocked, "Setup mode must not start unlocked.");
 
-        AuthViewModel unlockViewModel = new(new TestAuthService(needsSetup: false));
+        AuthViewModel unlockViewModel = new(new TestAuthService(needsSetup: false), CreateShellViewModel());
         unlockViewModel.InitializeAsync().GetAwaiter().GetResult();
         Assert(unlockViewModel.IsLoginMode, "Existing profile must show unlock mode.");
     }
@@ -187,7 +189,7 @@ internal static class Program
 
     private static void ShellViewModel_UpdatesActivePageAndBreadcrumb()
     {
-        ShellViewModel shell = new(new ShellNavigationService());
+        ShellViewModel shell = CreateShellViewModel();
         shell.Navigate("taxes");
         Assert(shell.IsTaxesPage, "Shell should activate taxes page.");
         Assert(shell.Breadcrumb == "Налоги", "Shell should update breadcrumb.");
@@ -198,10 +200,11 @@ internal static class Program
         Assert(shell.CanGoBack, "Shell should allow back navigation after deep link.");
     }
 
-    private static void ShellViewModel_PreservesSelectedPortfolioAcrossNavigation()
+    private static async Task ShellViewModel_PreservesSelectedPortfolioAcrossNavigation()
     {
-        ShellViewModel shell = new(new ShellNavigationService());
-        PortfolioOption second = shell.Portfolios.Skip(1).First();
+        ShellViewModel shell = CreateShellViewModel();
+        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111")).ConfigureAwait(false);
+        PortfolioOption second = shell.PortfolioOptions.Skip(1).First();
         shell.SelectedPortfolio = second;
 
         shell.Navigate("goals");
@@ -210,11 +213,16 @@ internal static class Program
         shell.OpenCreatePortfolioDialog();
         shell.NewPortfolioName = "Новый портфель";
         shell.NewPortfolioCurrency = "EUR";
-        shell.CreatePortfolio();
+        await shell.CreatePortfolioAsync().ConfigureAwait(false);
 
         PortfolioOption? selected = shell.SelectedPortfolio;
         Assert(selected is not null, "Newly created portfolio must become selected.");
         Assert(selected!.Name == "Новый портфель", "Created portfolio should be selected.");
+    }
+
+    private static ShellViewModel CreateShellViewModel()
+    {
+        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService());
     }
 
     private static string FindRepositoryRoot()
@@ -278,6 +286,54 @@ internal static class Program
                 DateTimeOffset.UtcNow,
                 0);
             return Task.FromResult(AuthResult.Success(profile));
+        }
+    }
+
+    private sealed class TestPortfolioService : IPortfolioService
+    {
+        private readonly List<Portfolio> _items =
+        [
+            new(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), Guid.Parse("11111111-1111-1111-1111-111111111111"), "Личный портфель", "USD", null, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
+            new(Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"), Guid.Parse("11111111-1111-1111-1111-111111111111"), "Дивиденды BYN", "BYN", null, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
+        ];
+
+        public Task<IReadOnlyList<Portfolio>> ListActiveAsync(Guid ownerUserId, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult<IReadOnlyList<Portfolio>>(_items.Where(item => item.OwnerUserId == ownerUserId && !item.IsArchived).ToArray());
+        }
+
+        public Task<PortfolioOperationResult> CreateAsync(CreatePortfolioRequest request, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Portfolio portfolio = new(Guid.NewGuid(), request.OwnerUserId, request.Name, request.BaseCurrency, request.Description, request.ClientLabel, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+            _items.Add(portfolio);
+            return Task.FromResult(PortfolioOperationResult.Success(portfolio));
+        }
+
+        public Task<PortfolioOperationResult> UpdateAsync(UpdatePortfolioRequest request, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Portfolio existing = _items.First(item => item.Id == request.PortfolioId);
+            Portfolio updated = existing with
+            {
+                Name = request.Name,
+                BaseCurrency = request.BaseCurrency,
+                Description = request.Description,
+                ClientLabel = request.ClientLabel,
+                UpdatedAt = DateTimeOffset.UtcNow,
+            };
+            _items[_items.FindIndex(item => item.Id == request.PortfolioId)] = updated;
+            return Task.FromResult(PortfolioOperationResult.Success(updated));
+        }
+
+        public Task<PortfolioOperationResult> ArchiveAsync(Guid ownerUserId, Guid portfolioId, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Portfolio existing = _items.First(item => item.Id == portfolioId);
+            Portfolio archived = existing with { IsArchived = true, UpdatedAt = DateTimeOffset.UtcNow };
+            _items[_items.FindIndex(item => item.Id == portfolioId)] = archived;
+            return Task.FromResult(PortfolioOperationResult.Success(archived));
         }
     }
 }

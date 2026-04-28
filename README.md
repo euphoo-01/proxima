@@ -51,7 +51,7 @@ dotnet test
 dotnet run --project src/Proxima.App/Proxima.App.csproj
 ```
 
-The app currently starts with local first-run setup. The profile is stored in the user local application data folder and the password is saved only as PBKDF2-SHA256 metadata, salt and hash. PostgreSQL migrations, seed/demo credentials and portfolio data are implemented in later persistence modules.
+The app currently supports local first-run setup and shell-level portfolio management. Local profile and portfolio data are stored in user local application data JSON stores. Passwords are saved only as PBKDF2-SHA256 metadata, salt and hash. PostgreSQL migrations and EF Core/Npgsql persistence are still implemented in later persistence modules.
 
 ## Figma
 

@@ -1,7 +1,10 @@
 using Proxima.Infrastructure;
 using Proxima.Application.Auth;
+using Proxima.Application.Portfolios;
 using Proxima.Domain.Auth;
+using Proxima.Domain.Portfolios;
 using Proxima.Infrastructure.Auth;
+using Proxima.Infrastructure.Portfolios;
 
 namespace Proxima.Infrastructure.Tests;
 
@@ -13,6 +16,7 @@ internal static class Program
         Assert(assemblyName == "Proxima.Infrastructure", "Infrastructure assembly name must be Proxima.Infrastructure.");
         Pbkdf2Hasher_VerifiesPasswordAndUsesUniqueSalt();
         await JsonRepository_PersistsProfileWithoutPlaintextPassword().ConfigureAwait(false);
+        await JsonPortfolioRepository_StoresAndFiltersByOwner().ConfigureAwait(false);
         Console.WriteLine("Proxima.Infrastructure.Tests passed.");
     }
 
@@ -61,6 +65,30 @@ internal static class Program
             .UnlockAsync("demo", "Proxima2026!")
             .ConfigureAwait(false);
         Assert(unlocked.Succeeded, "Reloaded profile must unlock with correct password.");
+    }
+
+    private static async Task JsonPortfolioRepository_StoresAndFiltersByOwner()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "proxima-portfolio-tests", Guid.NewGuid().ToString("N"));
+        string filePath = Path.Combine(directory, "portfolios.json");
+        JsonPortfolioRepository repository = new(filePath);
+        PortfolioService service = new(repository);
+
+        Guid firstOwner = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid secondOwner = Guid.Parse("22222222-2222-2222-2222-222222222222");
+
+        PortfolioOperationResult first = await service.CreateAsync(new CreatePortfolioRequest(firstOwner, "Owner1", "USD", null, null)).ConfigureAwait(false);
+        PortfolioOperationResult second = await service.CreateAsync(new CreatePortfolioRequest(secondOwner, "Owner2", "EUR", null, null)).ConfigureAwait(false);
+        Assert(first.Succeeded && second.Succeeded, "Portfolio create should persist for multiple owners.");
+
+        IReadOnlyList<Portfolio> firstList = await service.ListActiveAsync(firstOwner).ConfigureAwait(false);
+        IReadOnlyList<Portfolio> secondList = await service.ListActiveAsync(secondOwner).ConfigureAwait(false);
+        Assert(firstList.Count == 1 && firstList[0].Name == "Owner1", "Owner1 should only see own portfolios.");
+        Assert(secondList.Count == 1 && secondList[0].Name == "Owner2", "Owner2 should only see own portfolios.");
+
+        await service.ArchiveAsync(firstOwner, first.Portfolio!.Id).ConfigureAwait(false);
+        IReadOnlyList<Portfolio> firstAfterArchive = await service.ListActiveAsync(firstOwner).ConfigureAwait(false);
+        Assert(firstAfterArchive.Count == 0, "Archived portfolio should be hidden from active list.");
     }
 
     private static void Assert(bool condition, string message)

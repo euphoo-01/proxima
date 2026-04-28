@@ -203,3 +203,54 @@ Portfolio switching currently updates shell state and safe fallbacks only. Cross
 ### Commit
 
 f2456ad feat(shell): add routed sidebar and topbar portfolio state
+
+## Iteration 04 — Portfolio Management
+
+### Scope
+
+Implement portfolio domain/application/infrastructure services with user-scoped CRUD (create/list/update/archive) and connect shell topbar dialogs to real portfolio use cases.
+
+### User Stories Checked
+
+- [x] US-04.1 — Private investor can create a portfolio.
+- [x] US-04.2 — Financial consultant can separate client portfolios.
+- [x] US-04.3 — User can manage portfolio metadata.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-04.1 | Done | Topbar create dialog now includes required name/base currency and optional description/client label; service validation prevents empty fields and duplicate active names; newly created portfolio is selected. |
+| AC-04.2 | Done | Portfolio selector is loaded from owner-scoped repository data; archived portfolios are hidden by default; selected portfolio is preserved in shell state. |
+| AC-04.3 | Partial | Rename and base-currency update are implemented through manage dialog and persisted in repository; display refresh works in shell state. DB persistence is deferred to persistence module. |
+| AC-04.4 | Partial | Archive action is implemented from manage dialog and safely reselects another portfolio or empty state; hard delete is intentionally not implemented yet. |
+| AC-04.5 | Partial | Owner-scoped repository/service and tests enforce user isolation for portfolios; cross-module assets/transactions/goals/report scoping will be completed when those modules persist portfolio-linked data. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit | `tests/Proxima.Application.Tests` portfolio service validation/update/archive/isolation | Passed |
+| Integration | `tests/Proxima.Infrastructure.Tests` JSON portfolio repository owner-filter and archive behavior | Passed |
+| UI/Smoke | `tests/Proxima.App.Tests` shell portfolio selection/create flow checks | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Module 04 is currently backed by local JSON storage for portfolios. PostgreSQL/EF Core persistence, migration-based schema and full downstream data scoping with assets/transactions/goals/reports are deferred to subsequent modules.
+
+### Commit
+
+Pending

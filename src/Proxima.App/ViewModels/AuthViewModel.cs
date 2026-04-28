@@ -3,7 +3,7 @@ using Proxima.Domain.Auth;
 
 namespace Proxima.App.ViewModels;
 
-public sealed class AuthViewModel(ILocalAuthService authService) : ViewModelBase
+public sealed class AuthViewModel(ILocalAuthService authService, ShellViewModel shell) : ViewModelBase
 {
     private readonly PasswordPolicyValidator _passwordPolicy = new();
     private string _displayName = string.Empty;
@@ -18,7 +18,7 @@ public sealed class AuthViewModel(ILocalAuthService authService) : ViewModelBase
     private string _validationMessage = string.Empty;
     private int _failedAttempts;
 
-    public ShellViewModel Shell { get; } = new(new ShellNavigationService());
+    public ShellViewModel Shell { get; } = shell;
 
     public string DisplayName
     {
@@ -177,6 +177,7 @@ public sealed class AuthViewModel(ILocalAuthService authService) : ViewModelBase
                 UnlockLogin = result.Profile!.Login;
                 IsSetupMode = false;
                 IsUnlocked = true;
+                await Shell.InitializeAsync(result.Profile.Id, cancellationToken).ConfigureAwait(true);
                 Shell.Navigate("dashboard");
                 StatusMessage = "Профиль создан. Proxima разблокирована.";
                 ValidationMessage = string.Empty;
@@ -211,6 +212,7 @@ public sealed class AuthViewModel(ILocalAuthService authService) : ViewModelBase
             {
                 _failedAttempts = 0;
                 IsUnlocked = true;
+                await Shell.InitializeAsync(result.Profile!.Id, cancellationToken).ConfigureAwait(true);
                 Shell.Navigate("dashboard");
                 StatusMessage = "Proxima разблокирована.";
                 OnPropertyChanged(nameof(FailedAttemptsMessage));

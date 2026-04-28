@@ -2,14 +2,14 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Proxima.App.ViewModels;
 using Proxima.Infrastructure.Auth;
+using Proxima.Infrastructure.Portfolios;
 
 namespace Proxima.App;
 
 public partial class MainWindow : Window
 {
     public MainWindow()
-        : this(new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(
-            ProximaAuthComposition.GetDefaultProfileStorePath())))
+        : this(CreateDefaultViewModel())
     {
     }
 
@@ -21,6 +21,14 @@ public partial class MainWindow : Window
     }
 
     private AuthViewModel ViewModel => (AuthViewModel)DataContext!;
+
+    private static AuthViewModel CreateDefaultViewModel()
+    {
+        string profileStorePath = ProximaAuthComposition.GetDefaultProfileStorePath();
+        string portfolioStorePath = ProximaPortfolioComposition.GetDefaultPortfolioStorePath();
+        ShellViewModel shell = new(new ShellNavigationService(), ProximaPortfolioComposition.CreatePortfolioService(portfolioStorePath));
+        return new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell);
+    }
 
     private TextBox SetupPassword => this.FindControl<TextBox>("SetupPasswordBox")!;
 
@@ -97,8 +105,28 @@ public partial class MainWindow : Window
         ViewModel.Shell.CancelCreatePortfolioDialog();
     }
 
-    private void SaveCreatePortfolioClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    private async void SaveCreatePortfolioClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
     {
-        ViewModel.Shell.CreatePortfolio();
+        await ViewModel.Shell.CreatePortfolioAsync().ConfigureAwait(true);
+    }
+
+    private void OpenManagePortfolioClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.OpenManagePortfolioDialog();
+    }
+
+    private void CancelManagePortfolioClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.CancelManagePortfolioDialog();
+    }
+
+    private async void SaveManagePortfolioClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.SavePortfolioChangesAsync().ConfigureAwait(true);
+    }
+
+    private async void ArchivePortfolioClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.ArchiveSelectedPortfolioAsync().ConfigureAwait(true);
     }
 }

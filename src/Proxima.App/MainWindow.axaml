@@ -204,7 +204,7 @@
 
             <Grid Grid.Column="1" RowDefinitions="88,*">
                 <Border Padding="32,24" Background="{StaticResource ProximaBrush.Page}">
-                    <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="12">
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="12">
                         <Button
                             Classes="proxima-secondary"
                             Click="GoBackClicked"
@@ -217,7 +217,7 @@
                         <ComboBox
                             Grid.Column="2"
                             MinWidth="220"
-                            ItemsSource="{Binding Shell.Portfolios}"
+                            ItemsSource="{Binding Shell.PortfolioOptions}"
                             SelectedItem="{Binding Shell.SelectedPortfolio}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
@@ -225,13 +225,18 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <TextBlock
+                        <Button
                             Grid.Column="3"
+                            Classes="proxima-secondary"
+                            Click="OpenManagePortfolioClicked"
+                            Content="Управлять" />
+                        <TextBlock
+                            Grid.Column="4"
                             Classes="proxima-caption"
                             VerticalAlignment="Center"
                             Text="{Binding Shell.StatusText}" />
                         <Button
-                            Grid.Column="4"
+                            Grid.Column="5"
                             Classes="proxima-primary"
                             Click="OpenCreatePortfolioClicked"
                             Content="Создать портфель" />
@@ -305,10 +310,40 @@
                     <TextBlock Classes="proxima-card-title" Text="Создать портфель" />
                     <TextBox Watermark="Название портфеля" Text="{Binding Shell.NewPortfolioName}" />
                     <ComboBox SelectedItem="{Binding Shell.NewPortfolioCurrency}" ItemsSource="{Binding Shell.Currencies}" />
+                    <TextBox Watermark="Описание (опционально)" Text="{Binding Shell.NewPortfolioDescription}" />
+                    <TextBox Watermark="Клиентская метка (опционально)" Text="{Binding Shell.NewPortfolioClientLabel}" />
                     <TextBlock Classes="proxima-caption" Foreground="{StaticResource ProximaBrush.Danger}" Text="{Binding Shell.CreatePortfolioValidation}" TextWrapping="Wrap" />
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
                         <Button Classes="proxima-secondary" Click="CancelCreatePortfolioClicked" Content="Отмена" />
                         <Button Classes="proxima-primary" Click="SaveCreatePortfolioClicked" Content="Создать" IsEnabled="{Binding Shell.CanCreatePortfolio}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <Border
+            Background="#88001629"
+            IsVisible="{Binding Shell.IsManagePortfolioDialogOpen, FallbackValue=False}">
+            <Border
+                Width="460"
+                Padding="28"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource ProximaBrush.Surface}"
+                BorderBrush="{StaticResource ProximaBrush.BorderSubtle}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource ProximaRadius.Large}">
+                <StackPanel Spacing="14">
+                    <TextBlock Classes="proxima-card-title" Text="Управление портфелем" />
+                    <TextBox Watermark="Название портфеля" Text="{Binding Shell.EditPortfolioName}" />
+                    <ComboBox SelectedItem="{Binding Shell.EditPortfolioCurrency}" ItemsSource="{Binding Shell.Currencies}" />
+                    <TextBox Watermark="Описание (опционально)" Text="{Binding Shell.EditPortfolioDescription}" />
+                    <TextBox Watermark="Клиентская метка (опционально)" Text="{Binding Shell.EditPortfolioClientLabel}" />
+                    <TextBlock Classes="proxima-caption" Foreground="{StaticResource ProximaBrush.Danger}" Text="{Binding Shell.ManagePortfolioValidation}" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                        <Button Classes="proxima-secondary" Click="CancelManagePortfolioClicked" Content="Отмена" />
+                        <Button Classes="proxima-secondary" Click="ArchivePortfolioClicked" Content="Архивировать" />
+                        <Button Classes="proxima-primary" Click="SaveManagePortfolioClicked" Content="Сохранить" IsEnabled="{Binding Shell.CanSavePortfolioChanges}" />
                     </StackPanel>
                 </StackPanel>
             </Border>
