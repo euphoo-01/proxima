@@ -202,4 +202,4 @@ Portfolio switching currently updates shell state and safe fallbacks only. Cross
 
 ### Commit
 
-Pending
+f2456ad feat(shell): add routed sidebar and topbar portfolio state
