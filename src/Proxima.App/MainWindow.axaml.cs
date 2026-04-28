@@ -63,4 +63,42 @@ public partial class MainWindow : Window
     {
         ViewModel.ToggleRecoveryInfo();
     }
+
+    private void NavigateSidebarClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string route })
+        {
+            ViewModel.Shell.Navigate(route);
+        }
+    }
+
+    private void GoBackClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.GoBack();
+    }
+
+    private void OpenAssetDetailsClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.OpenAssetDetails();
+    }
+
+    private void OpenManualImportClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.OpenManualImport();
+    }
+
+    private void OpenCreatePortfolioClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.OpenCreatePortfolioDialog();
+    }
+
+    private void CancelCreatePortfolioClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.CancelCreatePortfolioDialog();
+    }
+
+    private void SaveCreatePortfolioClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.CreatePortfolio();
+    }
 }

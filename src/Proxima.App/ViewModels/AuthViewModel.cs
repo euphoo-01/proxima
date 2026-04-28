@@ -18,6 +18,8 @@ public sealed class AuthViewModel(ILocalAuthService authService) : ViewModelBase
     private string _validationMessage = string.Empty;
     private int _failedAttempts;
 
+    public ShellViewModel Shell { get; } = new(new ShellNavigationService());
+
     public string DisplayName
     {
         get => _displayName;
@@ -175,6 +177,7 @@ public sealed class AuthViewModel(ILocalAuthService authService) : ViewModelBase
                 UnlockLogin = result.Profile!.Login;
                 IsSetupMode = false;
                 IsUnlocked = true;
+                Shell.Navigate("dashboard");
                 StatusMessage = "Профиль создан. Proxima разблокирована.";
                 ValidationMessage = string.Empty;
                 return;
@@ -208,6 +211,7 @@ public sealed class AuthViewModel(ILocalAuthService authService) : ViewModelBase
             {
                 _failedAttempts = 0;
                 IsUnlocked = true;
+                Shell.Navigate("dashboard");
                 StatusMessage = "Proxima разблокирована.";
                 OnPropertyChanged(nameof(FailedAttemptsMessage));
                 return;

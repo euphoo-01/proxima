@@ -23,6 +23,9 @@ internal static class Program
         FigmaInspection_DocumentsCustomMcpSource();
         AuthUi_UsesMaskedPasswordInputsAndRecoveryCopy();
         AuthViewModel_InitializesSetupAndUnlockStates();
+        NavigationService_RegistersRoutesAndSupportsBack();
+        ShellViewModel_UpdatesActivePageAndBreadcrumb();
+        ShellViewModel_PreservesSelectedPortfolioAcrossNavigation();
         Console.WriteLine("Proxima.App.Tests baseline checks passed.");
     }
 
@@ -150,6 +153,9 @@ internal static class Program
         Assert(xaml.Contains("PasswordChar=\"•\"", StringComparison.Ordinal), "Password inputs must be masked.");
         Assert(xaml.Contains("ForgotPasswordClicked", StringComparison.Ordinal), "Auth UI must expose forgot-password recovery action.");
         Assert(xaml.Contains("IsVisible=\"{Binding IsUnlocked}\"", StringComparison.Ordinal), "Shell must be gated by unlock state.");
+        Assert(xaml.Contains("Tag=\"settings\"", StringComparison.Ordinal), "Sidebar must contain Settings route.");
+        Assert(xaml.Contains("SelectedItem=\"{Binding Shell.SelectedPortfolio}\"", StringComparison.Ordinal), "Topbar must bind portfolio selector.");
+        Assert(xaml.Contains("OpenCreatePortfolioClicked", StringComparison.Ordinal), "Topbar create-portfolio button must open dialog.");
     }
 
     private static void AuthViewModel_InitializesSetupAndUnlockStates()
@@ -162,6 +168,53 @@ internal static class Program
         AuthViewModel unlockViewModel = new(new TestAuthService(needsSetup: false));
         unlockViewModel.InitializeAsync().GetAwaiter().GetResult();
         Assert(unlockViewModel.IsLoginMode, "Existing profile must show unlock mode.");
+    }
+
+    private static void NavigationService_RegistersRoutesAndSupportsBack()
+    {
+        ShellNavigationService navigation = new();
+        navigation.Register(new ShellRoute("dashboard", ShellPage.Dashboard, "Дешборд", "Дешборд"));
+        navigation.Register(new ShellRoute("assets", ShellPage.Assets, "Все активы", "Все активы"));
+
+        ShellRoute first = navigation.Navigate("dashboard", pushHistory: false);
+        ShellRoute second = navigation.Navigate("assets");
+        ShellRoute back = navigation.GoBack();
+
+        Assert(first.Route == "dashboard", "Navigation should open dashboard route.");
+        Assert(second.Route == "assets", "Navigation should open assets route.");
+        Assert(back.Route == "dashboard", "Back navigation should return previous route.");
+    }
+
+    private static void ShellViewModel_UpdatesActivePageAndBreadcrumb()
+    {
+        ShellViewModel shell = new(new ShellNavigationService());
+        shell.Navigate("taxes");
+        Assert(shell.IsTaxesPage, "Shell should activate taxes page.");
+        Assert(shell.Breadcrumb == "Налоги", "Shell should update breadcrumb.");
+
+        shell.Navigate("assets");
+        shell.OpenAssetDetails();
+        Assert(shell.IsAssetDetailsPage, "Shell should navigate to asset details.");
+        Assert(shell.CanGoBack, "Shell should allow back navigation after deep link.");
+    }
+
+    private static void ShellViewModel_PreservesSelectedPortfolioAcrossNavigation()
+    {
+        ShellViewModel shell = new(new ShellNavigationService());
+        PortfolioOption second = shell.Portfolios.Skip(1).First();
+        shell.SelectedPortfolio = second;
+
+        shell.Navigate("goals");
+        Assert(shell.SelectedPortfolio == second, "Selected portfolio must persist while switching pages.");
+
+        shell.OpenCreatePortfolioDialog();
+        shell.NewPortfolioName = "Новый портфель";
+        shell.NewPortfolioCurrency = "EUR";
+        shell.CreatePortfolio();
+
+        PortfolioOption? selected = shell.SelectedPortfolio;
+        Assert(selected is not null, "Newly created portfolio must become selected.");
+        Assert(selected!.Name == "Новый портфель", "Created portfolio should be selected.");
     }
 
     private static string FindRepositoryRoot()

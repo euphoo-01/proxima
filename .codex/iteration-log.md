@@ -152,3 +152,54 @@ Module 02 uses a durable local JSON profile store as the current repository impl
 ### Commit
 
 b95f171 security(auth): add local profile setup and unlock
+
+## Iteration 03 — Shell, Navigation, Sidebar & Topbar
+
+### Scope
+
+Implement authenticated shell navigation with routed page state, active sidebar links, breadcrumbs, portfolio selector state, back navigation and create-portfolio dialog behavior.
+
+### User Stories Checked
+
+- [x] US-03.1 — User can move between core sections.
+- [x] US-03.2 — User always knows current location.
+- [x] US-03.3 — User can switch current portfolio globally.
+- [x] US-03.4 — User can create a portfolio from topbar.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-03.1 | Done | Auth screens stay separate; unlocked shell uses persistent sidebar + topbar layout and supports target desktop sizes through fixed shell dimensions and scrollable content. |
+| AC-03.2 | Done | Sidebar contains Dashboard/Assets/Taxes/Goals/Settings links, active route updates via `ShellNavigationService` and `ShellViewModel`, content switches without restart, back navigation exists for detail/import routes. |
+| AC-03.3 | Done | Breadcrumbs and page title derive from routes; portfolio selector is stateful; create-portfolio action opens modal and updates selected portfolio; status indicator is shown in topbar. |
+| AC-03.4 | Partial | Selected portfolio is preserved while navigating and detail pages handle unsafe switch via safe fallback to asset list; data reload semantics are stubbed because data-query modules are not yet implemented. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit | `tests/Proxima.App.Tests` navigation service, breadcrumb, portfolio state tests | Passed |
+| UI/Smoke | `tests/Proxima.App.Tests` sidebar/topbar/auth shell checks | Passed |
+| Regression | `dotnet build Proxima.sln`, `dotnet test Proxima.sln` | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Portfolio switching currently updates shell state and safe fallbacks only. Cross-page data reload/invalidation will be wired once portfolio/assets/analytics query modules are implemented.
+
+### Commit
+
+Pending
