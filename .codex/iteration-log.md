@@ -305,4 +305,4 @@ JSON-backed storage is still used instead of PostgreSQL/EF Core. Hard-delete wor
 
 ### Commit
 
-Pending
+7c92baf feat(assets): add asset service and bento assets table workflows
