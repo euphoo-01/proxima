@@ -255,15 +255,56 @@
                             <controls:MetricCard Grid.Column="2" CardBackground="{StaticResource ProximaBrush.SuccessSurface}" Label="Статус" Value="Активно" Footer="Shell готов" />
                         </Grid>
 
-                        <Grid IsVisible="{Binding Shell.IsAssetsPage}" ColumnDefinitions="*,*" ColumnSpacing="24">
-                            <controls:BentoCard Title="Активы" Subtitle="Раздел активов для выбранного портфеля">
-                                <StackPanel Spacing="12">
-                                    <TextBlock Classes="proxima-body" Text="Выберите актив или импортируйте данные вручную." TextWrapping="Wrap" />
-                                    <Button Classes="proxima-primary" Click="OpenAssetDetailsClicked" Content="Открыть детали актива" HorizontalAlignment="Left" />
-                                </StackPanel>
+                        <Grid IsVisible="{Binding Shell.IsAssetsPage}" RowDefinitions="Auto,*" RowSpacing="24">
+                            <controls:BentoCard Title="Реестр активов" Subtitle="Поиск, сортировка и быстрые действия">
+                                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+                                    <TextBox Watermark="Поиск по имени, тикеру, тегу" Text="{Binding Shell.AssetSearchQuery}" />
+                                    <ComboBox Grid.Column="1" SelectedItem="{Binding Shell.AssetSort}" ItemsSource="{Binding Shell.AssetSortOptions}" MinWidth="170" />
+                                    <TextBlock Grid.Column="2" Classes="proxima-caption" VerticalAlignment="Center" Text="{Binding Shell.AssetStatusText}" />
+                                    <Button Grid.Column="3" Classes="proxima-primary" Click="OpenCreateAssetClicked" Content="Добавить актив" />
+                                </Grid>
                             </controls:BentoCard>
-                            <controls:BentoCard Grid.Column="1" Title="Состояние данных">
-                                <controls:EmptyState Title="Нет загруженных активов" Message="После импорта или ручного добавления список появится здесь." />
+
+                            <controls:BentoCard Grid.Row="1" Title="Список активов" Subtitle="{Binding Shell.SelectedAssetTitle}">
+                                <StackPanel Spacing="12">
+                                    <Grid ColumnDefinitions="2*,1.1*,1*,1*,1*,1.1*,1.1*,1.4*,Auto" IsVisible="{Binding Shell.HasAssets}">
+                                        <TextBlock Classes="proxima-caption" Text="Актив" />
+                                        <TextBlock Grid.Column="1" Classes="proxima-caption" Text="Тип" />
+                                        <TextBlock Grid.Column="2" Classes="proxima-caption" Text="Кол-во" />
+                                        <TextBlock Grid.Column="3" Classes="proxima-caption" Text="Avg" />
+                                        <TextBlock Grid.Column="4" Classes="proxima-caption" Text="Current" />
+                                        <TextBlock Grid.Column="5" Classes="proxima-caption" Text="Value" />
+                                        <TextBlock Grid.Column="6" Classes="proxima-caption" Text="P&amp;L" />
+                                        <TextBlock Grid.Column="7" Classes="proxima-caption" Text="Теги" />
+                                        <TextBlock Grid.Column="8" Classes="proxima-caption" Text="Действия" />
+                                    </Grid>
+
+                                    <ItemsControl ItemsSource="{Binding Shell.FilteredAssets}" IsVisible="{Binding Shell.HasAssets}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Padding="10" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Card}">
+                                                    <Grid ColumnDefinitions="2*,1.1*,1*,1*,1*,1.1*,1.1*,1.4*,Auto" ColumnSpacing="8">
+                                                        <Button
+                                                            Classes="proxima-secondary"
+                                                            HorizontalAlignment="Left"
+                                                            Click="SelectAssetClicked"
+                                                            Content="{Binding Name}" />
+                                                        <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding TypeLabel}" />
+                                                        <TextBlock Grid.Column="2" Classes="proxima-body" Text="{Binding Quantity, StringFormat={}{0:0.####}}" />
+                                                        <TextBlock Grid.Column="3" Classes="proxima-body" Text="{Binding AverageBuyPrice, StringFormat={}{0:0.##}}" />
+                                                        <TextBlock Grid.Column="4" Classes="proxima-body" Text="{Binding CurrentPrice, StringFormat={}{0:0.##}}" />
+                                                        <TextBlock Grid.Column="5" Classes="proxima-body" Text="{Binding Value, StringFormat={}{0:0.##}}" />
+                                                        <TextBlock Grid.Column="6" Classes="proxima-body" Text="{Binding ProfitLoss, StringFormat={}{0:0.##}}" />
+                                                        <TextBlock Grid.Column="7" Classes="proxima-caption" Text="{Binding TagsText}" TextWrapping="Wrap" />
+                                                        <Button Grid.Column="8" Classes="proxima-secondary" Content="⋯" Click="OpenEditAssetClicked" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <controls:EmptyState IsVisible="{Binding Shell.IsAssetTableEmpty}" Title="Нет активов" Message="Добавьте актив вручную или через импорт в следующем модуле." />
+                                </StackPanel>
                             </controls:BentoCard>
                         </Grid>
 
@@ -344,6 +385,81 @@
                         <Button Classes="proxima-secondary" Click="CancelManagePortfolioClicked" Content="Отмена" />
                         <Button Classes="proxima-secondary" Click="ArchivePortfolioClicked" Content="Архивировать" />
                         <Button Classes="proxima-primary" Click="SaveManagePortfolioClicked" Content="Сохранить" IsEnabled="{Binding Shell.CanSavePortfolioChanges}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <Border
+            Background="#88001629"
+            IsVisible="{Binding Shell.IsCreateAssetDialogOpen, FallbackValue=False}">
+            <Border
+                Width="520"
+                Padding="28"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource ProximaBrush.Surface}"
+                BorderBrush="{StaticResource ProximaBrush.BorderSubtle}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource ProximaRadius.Large}">
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="proxima-card-title" Text="Добавить актив" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <TextBox Watermark="Тикер" Text="{Binding Shell.AssetTicker}" />
+                        <TextBox Grid.Column="1" Watermark="Название" Text="{Binding Shell.AssetName}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <ComboBox SelectedItem="{Binding Shell.AssetType}" ItemsSource="{Binding Shell.AssetTypes}" />
+                        <TextBox Grid.Column="1" Watermark="Валюта" Text="{Binding Shell.AssetCurrency}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <TextBox Watermark="Количество" Text="{Binding Shell.AssetQuantity}" />
+                        <TextBox Grid.Column="1" Watermark="Средняя цена" Text="{Binding Shell.AssetAverageBuyPrice}" />
+                    </Grid>
+                    <TextBox Watermark="Текущая цена" Text="{Binding Shell.AssetCurrentPrice}" />
+                    <TextBox Watermark="Теги через запятую" Text="{Binding Shell.AssetTags}" />
+                    <TextBlock Classes="proxima-caption" Foreground="{StaticResource ProximaBrush.Danger}" Text="{Binding Shell.AssetValidation}" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                        <Button Classes="proxima-secondary" Click="CancelCreateAssetClicked" Content="Отмена" />
+                        <Button Classes="proxima-primary" Click="SaveCreateAssetClicked" Content="Сохранить" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <Border
+            Background="#88001629"
+            IsVisible="{Binding Shell.IsEditAssetDialogOpen, FallbackValue=False}">
+            <Border
+                Width="520"
+                Padding="28"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource ProximaBrush.Surface}"
+                BorderBrush="{StaticResource ProximaBrush.BorderSubtle}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource ProximaRadius.Large}">
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="proxima-card-title" Text="Изменить актив" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <TextBox Watermark="Тикер" Text="{Binding Shell.AssetTicker}" />
+                        <TextBox Grid.Column="1" Watermark="Название" Text="{Binding Shell.AssetName}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <ComboBox SelectedItem="{Binding Shell.AssetType}" ItemsSource="{Binding Shell.AssetTypes}" />
+                        <TextBox Grid.Column="1" Watermark="Валюта" Text="{Binding Shell.AssetCurrency}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <TextBox Watermark="Количество" Text="{Binding Shell.AssetQuantity}" />
+                        <TextBox Grid.Column="1" Watermark="Средняя цена" Text="{Binding Shell.AssetAverageBuyPrice}" />
+                    </Grid>
+                    <TextBox Watermark="Текущая цена" Text="{Binding Shell.AssetCurrentPrice}" />
+                    <TextBox Watermark="Теги через запятую" Text="{Binding Shell.AssetTags}" />
+                    <TextBlock Classes="proxima-caption" Foreground="{StaticResource ProximaBrush.Danger}" Text="{Binding Shell.AssetValidation}" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                        <Button Classes="proxima-secondary" Click="CancelEditAssetClicked" Content="Отмена" />
+                        <Button Classes="proxima-secondary" Click="ArchiveAssetClicked" Content="Архивировать" />
+                        <Button Classes="proxima-primary" Click="SaveEditAssetClicked" Content="Сохранить" />
                     </StackPanel>
                 </StackPanel>
             </Border>

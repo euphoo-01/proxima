@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using Proxima.Application.Assets;
 using Proxima.Application.Portfolios;
+using Proxima.Domain.Assets;
 using Proxima.Domain.Portfolios;
 
 namespace Proxima.App.ViewModels;
@@ -8,6 +10,7 @@ public sealed class ShellViewModel : ViewModelBase
 {
     private readonly ShellNavigationService _navigation;
     private readonly IPortfolioService _portfolios;
+    private readonly IAssetService _assets;
     private Guid _ownerUserId;
 
     private string _activeRoute = "dashboard";
@@ -30,18 +33,40 @@ public sealed class ShellViewModel : ViewModelBase
     private string _editPortfolioDescription = string.Empty;
     private string _editPortfolioClientLabel = string.Empty;
     private string _managePortfolioValidation = string.Empty;
+    private string _assetSearchQuery = string.Empty;
+    private string _assetSort = "value_desc";
+    private string _assetStatusText = "Активы не загружены.";
+    private bool _isCreateAssetDialogOpen;
+    private bool _isEditAssetDialogOpen;
+    private string _assetValidation = string.Empty;
+    private AssetRowViewModel? _selectedAsset;
+    private string _assetTicker = string.Empty;
+    private string _assetName = string.Empty;
+    private string _assetCurrency = "USD";
+    private string _assetExchange = string.Empty;
+    private string _assetIsin = string.Empty;
+    private string _assetTags = string.Empty;
+    private string _assetNotes = string.Empty;
+    private decimal _assetQuantity;
+    private decimal _assetAverageBuyPrice;
+    private decimal _assetCurrentPrice;
+    private AssetType _assetType = AssetType.Stock;
 
-    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios)
+    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets)
     {
         _navigation = navigation;
         _portfolios = portfolios;
+        _assets = assets;
         RegisterRoutes();
         ApplyRoute(_navigation.Navigate("dashboard", pushHistory: false));
     }
 
     public ObservableCollection<PortfolioOption> PortfolioOptions { get; } = [];
+    public ObservableCollection<AssetRowViewModel> Assets { get; } = [];
+    public ObservableCollection<AssetRowViewModel> FilteredAssets { get; } = [];
 
     public IEnumerable<string> Currencies => new[] { "USD", "EUR", "BYN", "RUB" };
+    public IEnumerable<AssetType> AssetTypes => Enum.GetValues<AssetType>();
 
     public string ActiveRoute
     {
@@ -192,6 +217,135 @@ public sealed class ShellViewModel : ViewModelBase
         && !string.IsNullOrWhiteSpace(EditPortfolioName)
         && string.IsNullOrWhiteSpace(ManagePortfolioValidation);
 
+    public string AssetSearchQuery
+    {
+        get => _assetSearchQuery;
+        set
+        {
+            if (SetProperty(ref _assetSearchQuery, value))
+            {
+                RefreshAssetTable();
+            }
+        }
+    }
+
+    public string AssetSort
+    {
+        get => _assetSort;
+        set
+        {
+            if (SetProperty(ref _assetSort, value))
+            {
+                RefreshAssetTable();
+            }
+        }
+    }
+
+    public IEnumerable<string> AssetSortOptions => new[]
+    {
+        "value_desc",
+        "name_asc",
+        "pnl_desc",
+    };
+
+    public string AssetStatusText
+    {
+        get => _assetStatusText;
+        private set => SetProperty(ref _assetStatusText, value);
+    }
+
+    public bool HasAssets => FilteredAssets.Count > 0;
+    public bool IsAssetTableEmpty => !HasAssets;
+    public bool IsCreateAssetDialogOpen
+    {
+        get => _isCreateAssetDialogOpen;
+        private set => SetProperty(ref _isCreateAssetDialogOpen, value);
+    }
+
+    public bool IsEditAssetDialogOpen
+    {
+        get => _isEditAssetDialogOpen;
+        private set => SetProperty(ref _isEditAssetDialogOpen, value);
+    }
+
+    public string AssetValidation
+    {
+        get => _assetValidation;
+        private set => SetProperty(ref _assetValidation, value);
+    }
+
+    public AssetRowViewModel? SelectedAsset
+    {
+        get => _selectedAsset;
+        set => SetProperty(ref _selectedAsset, value);
+    }
+
+    public string AssetTicker
+    {
+        get => _assetTicker;
+        set => SetProperty(ref _assetTicker, value);
+    }
+
+    public string AssetName
+    {
+        get => _assetName;
+        set => SetProperty(ref _assetName, value);
+    }
+
+    public string AssetCurrency
+    {
+        get => _assetCurrency;
+        set => SetProperty(ref _assetCurrency, value);
+    }
+
+    public string AssetExchange
+    {
+        get => _assetExchange;
+        set => SetProperty(ref _assetExchange, value);
+    }
+
+    public string AssetIsin
+    {
+        get => _assetIsin;
+        set => SetProperty(ref _assetIsin, value);
+    }
+
+    public string AssetTags
+    {
+        get => _assetTags;
+        set => SetProperty(ref _assetTags, value);
+    }
+
+    public string AssetNotes
+    {
+        get => _assetNotes;
+        set => SetProperty(ref _assetNotes, value);
+    }
+
+    public decimal AssetQuantity
+    {
+        get => _assetQuantity;
+        set => SetProperty(ref _assetQuantity, value);
+    }
+
+    public decimal AssetAverageBuyPrice
+    {
+        get => _assetAverageBuyPrice;
+        set => SetProperty(ref _assetAverageBuyPrice, value);
+    }
+
+    public decimal AssetCurrentPrice
+    {
+        get => _assetCurrentPrice;
+        set => SetProperty(ref _assetCurrentPrice, value);
+    }
+
+    public AssetType AssetType
+    {
+        get => _assetType;
+        set => SetProperty(ref _assetType, value);
+    }
+
     public bool IsDashboardPage => ActiveRoute.Equals("dashboard", StringComparison.Ordinal);
     public bool IsAssetsPage => ActiveRoute.Equals("assets", StringComparison.Ordinal);
     public bool IsTaxesPage => ActiveRoute.Equals("taxes", StringComparison.Ordinal);
@@ -225,6 +379,12 @@ public sealed class ShellViewModel : ViewModelBase
 
     public void OpenAssetDetails()
     {
+        if (SelectedAsset is null)
+        {
+            AssetStatusText = "Выберите актив в таблице.";
+            return;
+        }
+
         Navigate("assets/details");
     }
 
@@ -438,6 +598,7 @@ public sealed class ShellViewModel : ViewModelBase
         }
 
         StatusText = $"Текущий портфель: {SelectedPortfolio.Name} ({SelectedPortfolio.Currency})";
+        _ = ReloadAssetsAsync(CancellationToken.None);
     }
 
     private async Task ReloadPortfoliosAsync(CancellationToken cancellationToken, Guid? preferPortfolioId = null)
@@ -466,5 +627,214 @@ public sealed class ShellViewModel : ViewModelBase
 
         SelectedPortfolio = selected;
         OnPropertyChanged(nameof(PortfolioOptions));
+        await ReloadAssetsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public void OpenCreateAssetDialog()
+    {
+        ResetAssetForm();
+        IsCreateAssetDialogOpen = true;
+    }
+
+    public void CancelCreateAssetDialog()
+    {
+        IsCreateAssetDialogOpen = false;
+    }
+
+    public async Task CreateAssetAsync(CancellationToken cancellationToken = default)
+    {
+        if (SelectedPortfolio is null)
+        {
+            AssetValidation = "Сначала выберите портфель.";
+            return;
+        }
+
+        AssetOperationResult result = await _assets.CreateAsync(new CreateAssetRequest(
+            SelectedPortfolio.Id,
+            AssetTicker,
+            AssetName,
+            AssetType,
+            AssetCurrency,
+            AssetExchange,
+            AssetIsin,
+            ParseTags(AssetTags),
+            AssetNotes,
+            AssetQuantity,
+            AssetAverageBuyPrice,
+            AssetCurrentPrice), cancellationToken).ConfigureAwait(false);
+
+        if (!result.Succeeded)
+        {
+            AssetValidation = result.Message;
+            return;
+        }
+
+        IsCreateAssetDialogOpen = false;
+        await ReloadAssetsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public void OpenEditAssetDialog(AssetRowViewModel asset)
+    {
+        SelectedAsset = asset;
+        AssetTicker = asset.Ticker;
+        AssetName = asset.Name;
+        AssetType = asset.Type;
+        AssetCurrency = asset.Currency;
+        AssetExchange = string.Empty;
+        AssetIsin = string.Empty;
+        AssetTags = string.Join(",", asset.Tags);
+        AssetNotes = string.Empty;
+        AssetQuantity = asset.Quantity;
+        AssetAverageBuyPrice = asset.AverageBuyPrice;
+        AssetCurrentPrice = asset.CurrentPrice;
+        AssetValidation = string.Empty;
+        IsEditAssetDialogOpen = true;
+    }
+
+    public void CancelEditAssetDialog()
+    {
+        IsEditAssetDialogOpen = false;
+    }
+
+    public async Task SaveAssetChangesAsync(CancellationToken cancellationToken = default)
+    {
+        if (SelectedPortfolio is null || SelectedAsset is null)
+        {
+            AssetValidation = "Актив не выбран.";
+            return;
+        }
+
+        AssetOperationResult result = await _assets.UpdateAsync(new UpdateAssetRequest(
+            SelectedPortfolio.Id,
+            SelectedAsset.Id,
+            AssetTicker,
+            AssetName,
+            AssetType,
+            AssetCurrency,
+            AssetExchange,
+            AssetIsin,
+            ParseTags(AssetTags),
+            AssetNotes,
+            AssetQuantity,
+            AssetAverageBuyPrice,
+            AssetCurrentPrice), cancellationToken).ConfigureAwait(false);
+
+        if (!result.Succeeded)
+        {
+            AssetValidation = result.Message;
+            return;
+        }
+
+        IsEditAssetDialogOpen = false;
+        await ReloadAssetsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task ArchiveSelectedAssetAsync(CancellationToken cancellationToken = default)
+    {
+        if (SelectedPortfolio is null || SelectedAsset is null)
+        {
+            AssetStatusText = "Актив не выбран.";
+            return;
+        }
+
+        AssetOperationResult result = await _assets.ArchiveAsync(SelectedPortfolio.Id, SelectedAsset.Id, cancellationToken).ConfigureAwait(false);
+        if (!result.Succeeded)
+        {
+            AssetStatusText = result.Message;
+            return;
+        }
+
+        IsEditAssetDialogOpen = false;
+        await ReloadAssetsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public string SelectedAssetTitle => SelectedAsset is null ? "Актив не выбран" : $"{SelectedAsset.Name} ({SelectedAsset.Ticker})";
+
+    private async Task ReloadAssetsAsync(CancellationToken cancellationToken)
+    {
+        Assets.Clear();
+        if (SelectedPortfolio is null)
+        {
+            RefreshAssetTable();
+            return;
+        }
+
+        IReadOnlyList<Asset> items = await _assets.ListActiveAsync(SelectedPortfolio.Id, cancellationToken).ConfigureAwait(false);
+        foreach (Asset asset in items)
+        {
+            decimal value = asset.Quantity * asset.CurrentPrice;
+            decimal pnl = asset.Quantity * (asset.CurrentPrice - asset.AverageBuyPrice);
+            Assets.Add(new AssetRowViewModel(
+                asset.Id,
+                asset.Name,
+                asset.Ticker,
+                asset.Type,
+                asset.Currency,
+                asset.Quantity,
+                asset.AverageBuyPrice,
+                asset.CurrentPrice,
+                value,
+                pnl,
+                asset.Tags));
+        }
+
+        RefreshAssetTable();
+    }
+
+    private void RefreshAssetTable()
+    {
+        IEnumerable<AssetRowViewModel> query = Assets;
+        if (!string.IsNullOrWhiteSpace(AssetSearchQuery))
+        {
+            string term = AssetSearchQuery.Trim();
+            query = query.Where(item =>
+                item.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || item.Ticker.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || item.Tags.Any(tag => tag.Contains(term, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        query = AssetSort switch
+        {
+            "name_asc" => query.OrderBy(static item => item.Name, StringComparer.OrdinalIgnoreCase),
+            "pnl_desc" => query.OrderByDescending(static item => item.ProfitLoss),
+            _ => query.OrderByDescending(static item => item.Value),
+        };
+
+        FilteredAssets.Clear();
+        foreach (AssetRowViewModel item in query)
+        {
+            FilteredAssets.Add(item);
+        }
+
+        if (SelectedAsset is not null && FilteredAssets.All(item => item.Id != SelectedAsset.Id))
+        {
+            SelectedAsset = null;
+        }
+
+        AssetStatusText = FilteredAssets.Count == 0 ? "Нет активов для отображения." : $"Активов: {FilteredAssets.Count}";
+        OnPropertyChanged(nameof(HasAssets));
+        OnPropertyChanged(nameof(IsAssetTableEmpty));
+        OnPropertyChanged(nameof(SelectedAssetTitle));
+    }
+
+    private static IReadOnlyList<string> ParseTags(string raw)
+    {
+        return raw.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+    }
+
+    private void ResetAssetForm()
+    {
+        AssetTicker = string.Empty;
+        AssetName = string.Empty;
+        AssetType = AssetType.Stock;
+        AssetCurrency = SelectedPortfolio?.Currency ?? "USD";
+        AssetExchange = string.Empty;
+        AssetIsin = string.Empty;
+        AssetTags = string.Empty;
+        AssetNotes = string.Empty;
+        AssetQuantity = 0;
+        AssetAverageBuyPrice = 0;
+        AssetCurrentPrice = 0;
+        AssetValidation = string.Empty;
     }
 }

@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Proxima.App.ViewModels;
+using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Portfolios;
 
@@ -26,7 +27,11 @@ public partial class MainWindow : Window
     {
         string profileStorePath = ProximaAuthComposition.GetDefaultProfileStorePath();
         string portfolioStorePath = ProximaPortfolioComposition.GetDefaultPortfolioStorePath();
-        ShellViewModel shell = new(new ShellNavigationService(), ProximaPortfolioComposition.CreatePortfolioService(portfolioStorePath));
+        string assetStorePath = ProximaAssetComposition.GetDefaultAssetStorePath();
+        ShellViewModel shell = new(
+            new ShellNavigationService(),
+            ProximaPortfolioComposition.CreatePortfolioService(portfolioStorePath),
+            ProximaAssetComposition.CreateAssetService(assetStorePath));
         return new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell);
     }
 
@@ -128,5 +133,52 @@ public partial class MainWindow : Window
     private async void ArchivePortfolioClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
     {
         await ViewModel.Shell.ArchiveSelectedPortfolioAsync().ConfigureAwait(true);
+    }
+
+    private void OpenCreateAssetClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.OpenCreateAssetDialog();
+    }
+
+    private void CancelCreateAssetClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.CancelCreateAssetDialog();
+    }
+
+    private async void SaveCreateAssetClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.CreateAssetAsync().ConfigureAwait(true);
+    }
+
+    private void OpenEditAssetClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: AssetRowViewModel asset })
+        {
+            ViewModel.Shell.OpenEditAssetDialog(asset);
+        }
+    }
+
+    private void CancelEditAssetClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.CancelEditAssetDialog();
+    }
+
+    private async void SaveEditAssetClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.SaveAssetChangesAsync().ConfigureAwait(true);
+    }
+
+    private async void ArchiveAssetClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.ArchiveSelectedAssetAsync().ConfigureAwait(true);
+    }
+
+    private void SelectAssetClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: AssetRowViewModel asset })
+        {
+            ViewModel.Shell.SelectedAsset = asset;
+            ViewModel.Shell.OpenAssetDetails();
+        }
     }
 }

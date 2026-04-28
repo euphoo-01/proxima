@@ -254,3 +254,55 @@ Module 04 is currently backed by local JSON storage for portfolios. PostgreSQL/E
 ### Commit
 
 c09be30 feat(portfolios): add scoped portfolio service and shell CRUD
+
+## Iteration 05 — Asset Management
+
+### Scope
+
+Implement asset domain/application/infrastructure flows, wire assets page with create/edit/archive/search/sort interactions, and support safe navigation to asset-details route from selected asset rows.
+
+### User Stories Checked
+
+- [x] US-05.1 — User can track different asset classes.
+- [x] US-05.2 — User can categorize assets using tags.
+- [x] US-05.3 — User can open detailed asset view.
+- [ ] US-05.4 — User can maintain assets safely.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-05.1 | Partial | Domain `Asset` now stores portfolio linkage, ticker/name/type/currency, optional exchange/isin, tags, notes payload field, timestamps, and numeric position fields. Dedicated cryptographic notes encryption is deferred. |
+| AC-05.2 | Partial | Create/update/archive are implemented via `AssetService` + shell dialogs; required field validation and ticker normalization are covered by tests. Hard-delete with transaction-impact guard is deferred until transaction module. |
+| AC-05.3 | Partial | Assets table shows key columns (name/ticker/type/position/avg/current/value/P&L/tags) plus actions; search by name/ticker/tag and sorting by name/value/P&L are implemented. |
+| AC-05.4 | Partial | Tags are assignable and persisted; filtering by tags works in table search. Visual tag-color mapping and allocation chart integration are deferred to dashboard/analytics modules. |
+| AC-05.5 | Done | Clicking asset title selects asset and opens details route; missing selection prevents unsafe navigation and keeps user on assets page with status message. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit | `tests/Proxima.Application.Tests` (`AssetService_NormalizesTickerAndArchives`) | Passed |
+| Integration | `tests/Proxima.Infrastructure.Tests` (`JsonAssetRepository_StoresAndArchives`) | Passed |
+| UI/Smoke | `tests/Proxima.App.Tests` (`ShellViewModel_FiltersAndSortsAssets`) | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+JSON-backed storage is still used instead of PostgreSQL/EF Core. Hard-delete workflow with transaction-aware confirmation is deferred to Module 06+. Notes use temporary payload obfuscation and will be replaced by app-level encryption service in the security/persistence iterations.
+
+### Commit
+
+Pending

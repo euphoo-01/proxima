@@ -2,8 +2,10 @@ using Proxima.Analytics;
 using Proxima.App.Controls;
 using Proxima.App.ViewModels;
 using Proxima.Application;
+using Proxima.Application.Assets;
 using Proxima.Application.Auth;
 using Proxima.Application.Portfolios;
+using Proxima.Domain.Assets;
 using Proxima.Domain;
 using Proxima.Domain.Auth;
 using Proxima.Domain.Portfolios;
@@ -28,6 +30,7 @@ internal static class Program
         NavigationService_RegistersRoutesAndSupportsBack();
         ShellViewModel_UpdatesActivePageAndBreadcrumb();
         ShellViewModel_PreservesSelectedPortfolioAcrossNavigation().GetAwaiter().GetResult();
+        ShellViewModel_FiltersAndSortsAssets().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.App.Tests baseline checks passed.");
     }
 
@@ -195,9 +198,9 @@ internal static class Program
         Assert(shell.Breadcrumb == "Налоги", "Shell should update breadcrumb.");
 
         shell.Navigate("assets");
-        shell.OpenAssetDetails();
-        Assert(shell.IsAssetDetailsPage, "Shell should navigate to asset details.");
-        Assert(shell.CanGoBack, "Shell should allow back navigation after deep link.");
+        shell.Navigate("assets/details");
+        Assert(shell.IsAssetDetailsPage, "Shell should navigate to asset details route.");
+        Assert(shell.CanGoBack, "Shell should allow back navigation after route change.");
     }
 
     private static async Task ShellViewModel_PreservesSelectedPortfolioAcrossNavigation()
@@ -222,7 +225,21 @@ internal static class Program
 
     private static ShellViewModel CreateShellViewModel()
     {
-        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService());
+        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService());
+    }
+
+    private static async Task ShellViewModel_FiltersAndSortsAssets()
+    {
+        ShellViewModel shell = CreateShellViewModel();
+        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111")).ConfigureAwait(false);
+
+        shell.AssetSearchQuery = "tech";
+        Assert(shell.FilteredAssets.Count == 1, "Search should filter by tags.");
+
+        shell.AssetSearchQuery = string.Empty;
+        shell.AssetSort = "name_asc";
+        Assert(shell.FilteredAssets.Count >= 2, "Asset list should load for selected portfolio.");
+        Assert(string.Compare(shell.FilteredAssets[0].Name, shell.FilteredAssets[1].Name, StringComparison.OrdinalIgnoreCase) <= 0, "Sort by name must be ascending.");
     }
 
     private static string FindRepositoryRoot()
@@ -334,6 +351,47 @@ internal static class Program
             Portfolio archived = existing with { IsArchived = true, UpdatedAt = DateTimeOffset.UtcNow };
             _items[_items.FindIndex(item => item.Id == portfolioId)] = archived;
             return Task.FromResult(PortfolioOperationResult.Success(archived));
+        }
+    }
+
+    private sealed class TestAssetService : IAssetService
+    {
+        private readonly List<Asset> _items =
+        [
+            new(Guid.Parse("aaaaaaaa-1111-1111-1111-111111111111"), Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), "AAPL", "Apple", AssetType.Stock, "USD", null, null, ["tech"], null, 10, 150, 190, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
+            new(Guid.Parse("bbbbbbbb-1111-1111-1111-111111111111"), Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), "BND", "US Bond ETF", AssetType.Etf, "USD", null, null, ["bonds"], null, 15, 70, 73, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
+        ];
+
+        public Task<IReadOnlyList<Asset>> ListActiveAsync(Guid portfolioId, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult<IReadOnlyList<Asset>>(_items.Where(item => item.PortfolioId == portfolioId && !item.IsArchived).ToArray());
+        }
+
+        public Task<AssetOperationResult> CreateAsync(CreateAssetRequest request, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Asset created = new(Guid.NewGuid(), request.PortfolioId, request.Ticker.Trim().ToUpperInvariant(), request.Name, request.Type, request.Currency.ToUpperInvariant(), request.Exchange, request.Isin, request.Tags ?? [], null, request.Quantity, request.AverageBuyPrice, request.CurrentPrice, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+            _items.Add(created);
+            return Task.FromResult(AssetOperationResult.Success(created));
+        }
+
+        public Task<AssetOperationResult> UpdateAsync(UpdateAssetRequest request, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Asset existing = _items.First(item => item.Id == request.AssetId);
+            Asset updated = existing with { Name = request.Name, Ticker = request.Ticker.Trim().ToUpperInvariant(), UpdatedAt = DateTimeOffset.UtcNow };
+            _items[_items.FindIndex(item => item.Id == request.AssetId)] = updated;
+            return Task.FromResult(AssetOperationResult.Success(updated));
+        }
+
+        public Task<AssetOperationResult> ArchiveAsync(Guid portfolioId, Guid assetId, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Asset existing = _items.First(item => item.PortfolioId == portfolioId && item.Id == assetId);
+            Asset archived = existing with { IsArchived = true, UpdatedAt = DateTimeOffset.UtcNow };
+            _items[_items.FindIndex(item => item.Id == assetId)] = archived;
+            return Task.FromResult(AssetOperationResult.Success(archived));
         }
     }
 }

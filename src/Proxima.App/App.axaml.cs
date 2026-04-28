@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Proxima.App.ViewModels;
+using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Portfolios;
 
@@ -20,7 +21,11 @@ public partial class App : global::Avalonia.Application
         {
             string profileStorePath = ProximaAuthComposition.GetDefaultProfileStorePath();
             string portfolioStorePath = ProximaPortfolioComposition.GetDefaultPortfolioStorePath();
-            ShellViewModel shell = new(new ShellNavigationService(), ProximaPortfolioComposition.CreatePortfolioService(portfolioStorePath));
+            string assetStorePath = ProximaAssetComposition.GetDefaultAssetStorePath();
+            ShellViewModel shell = new(
+                new ShellNavigationService(),
+                ProximaPortfolioComposition.CreatePortfolioService(portfolioStorePath),
+                ProximaAssetComposition.CreateAssetService(assetStorePath));
             desktop.MainWindow = new MainWindow(new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell));
         }
 

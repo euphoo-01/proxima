@@ -1,6 +1,8 @@
 using Proxima.Application;
+using Proxima.Application.Assets;
 using Proxima.Application.Auth;
 using Proxima.Application.Portfolios;
+using Proxima.Domain.Assets;
 using Proxima.Domain.Auth;
 using Proxima.Domain.Portfolios;
 
@@ -18,7 +20,26 @@ internal static class Program
         await AuthService_ReturnsGenericErrorForUnknownLoginAndWrongPassword().ConfigureAwait(false);
         PortfolioService_CreateUpdateArchiveFlow().GetAwaiter().GetResult();
         PortfolioService_IsolatesByOwner().GetAwaiter().GetResult();
+        AssetService_NormalizesTickerAndArchives().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.Application.Tests passed.");
+    }
+
+    private static async Task AssetService_NormalizesTickerAndArchives()
+    {
+        MemoryAssetRepository repository = new();
+        AssetService service = new(repository);
+        Guid portfolioId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+        AssetOperationResult created = await service.CreateAsync(new CreateAssetRequest(
+            portfolioId, " aapl ", "Apple", AssetType.Stock, "usd", null, null, ["tech", "growth"], "note", 3m, 100m, 120m)).ConfigureAwait(false);
+        Assert(created.Succeeded, "Asset create should succeed.");
+        Assert(created.Asset!.Ticker == "AAPL", "Ticker should be normalized to uppercase.");
+
+        AssetOperationResult archived = await service.ArchiveAsync(portfolioId, created.Asset.Id).ConfigureAwait(false);
+        Assert(archived.Succeeded, "Asset archive should succeed.");
+
+        IReadOnlyList<Asset> active = await service.ListActiveAsync(portfolioId).ConfigureAwait(false);
+        Assert(active.Count == 0, "Archived asset should not appear in active list.");
     }
 
     private static async Task PortfolioService_CreateUpdateArchiveFlow()
@@ -212,6 +233,44 @@ internal static class Program
             cancellationToken.ThrowIfCancellationRequested();
             int index = _portfolios.FindIndex(item => item.Id == portfolio.Id && item.OwnerUserId == portfolio.OwnerUserId);
             _portfolios[index] = portfolio;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class MemoryAssetRepository : IAssetRepository
+    {
+        private readonly List<Asset> _items = [];
+
+        public Task<IReadOnlyList<Asset>> ListByPortfolioAsync(Guid portfolioId, bool includeArchived, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            IEnumerable<Asset> query = _items.Where(item => item.PortfolioId == portfolioId);
+            if (!includeArchived)
+            {
+                query = query.Where(item => !item.IsArchived);
+            }
+
+            return Task.FromResult<IReadOnlyList<Asset>>(query.ToArray());
+        }
+
+        public Task<Asset?> FindByIdAsync(Guid portfolioId, Guid assetId, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(_items.FirstOrDefault(item => item.PortfolioId == portfolioId && item.Id == assetId));
+        }
+
+        public Task AddAsync(Asset asset, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _items.Add(asset);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(Asset asset, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            int index = _items.FindIndex(item => item.PortfolioId == asset.PortfolioId && item.Id == asset.Id);
+            _items[index] = asset;
             return Task.CompletedTask;
         }
     }

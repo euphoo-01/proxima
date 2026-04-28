@@ -1,8 +1,11 @@
 using Proxima.Infrastructure;
+using Proxima.Application.Assets;
 using Proxima.Application.Auth;
 using Proxima.Application.Portfolios;
+using Proxima.Domain.Assets;
 using Proxima.Domain.Auth;
 using Proxima.Domain.Portfolios;
+using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Portfolios;
 
@@ -17,7 +20,29 @@ internal static class Program
         Pbkdf2Hasher_VerifiesPasswordAndUsesUniqueSalt();
         await JsonRepository_PersistsProfileWithoutPlaintextPassword().ConfigureAwait(false);
         await JsonPortfolioRepository_StoresAndFiltersByOwner().ConfigureAwait(false);
+        await JsonAssetRepository_StoresAndArchives().ConfigureAwait(false);
         Console.WriteLine("Proxima.Infrastructure.Tests passed.");
+    }
+
+    private static async Task JsonAssetRepository_StoresAndArchives()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "proxima-asset-tests", Guid.NewGuid().ToString("N"));
+        string filePath = Path.Combine(directory, "assets.json");
+        JsonAssetRepository repository = new(filePath);
+        AssetService service = new(repository);
+        Guid portfolioId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+        AssetOperationResult created = await service.CreateAsync(new CreateAssetRequest(
+            portfolioId, "btc", "Bitcoin", AssetType.Crypto, "usd", null, null, ["crypto"], null, 0.5m, 50000m, 62000m)).ConfigureAwait(false);
+        Assert(created.Succeeded, "Asset create should persist.");
+
+        IReadOnlyList<Asset> list = await service.ListActiveAsync(portfolioId).ConfigureAwait(false);
+        Assert(list.Count == 1 && list[0].Ticker == "BTC", "Asset should load from JSON storage.");
+
+        AssetOperationResult archived = await service.ArchiveAsync(portfolioId, created.Asset!.Id).ConfigureAwait(false);
+        Assert(archived.Succeeded, "Asset archive should persist.");
+        IReadOnlyList<Asset> active = await service.ListActiveAsync(portfolioId).ConfigureAwait(false);
+        Assert(active.Count == 0, "Archived asset should be hidden from active list.");
     }
 
     private static void Pbkdf2Hasher_VerifiesPasswordAndUsesUniqueSalt()
