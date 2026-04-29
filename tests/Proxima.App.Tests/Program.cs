@@ -5,6 +5,7 @@ using Proxima.Application;
 using Proxima.Application.Assets;
 using Proxima.Application.Auth;
 using Proxima.Application.Portfolios;
+using Proxima.Application.Quotes;
 using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
 using Proxima.Domain;
@@ -228,7 +229,7 @@ internal static class Program
 
     private static ShellViewModel CreateShellViewModel()
     {
-        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService(), new TestImportService());
+        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService(), new TestImportService(), new TestQuoteRefreshService());
     }
 
     private static async Task ShellViewModel_FiltersAndSortsAssets()
@@ -459,6 +460,15 @@ internal static class Program
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(new ImportPreview(true, string.Empty, [], false));
+        }
+    }
+
+    private sealed class TestQuoteRefreshService : IQuoteRefreshService
+    {
+        public Task<QuoteRefreshSummary> RefreshPortfolioAsync(Guid portfolioId, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new QuoteRefreshSummary(1, 0, 0, "Quotes: updated=1, cached=0, failed=0"));
         }
     }
 }

@@ -2,6 +2,7 @@ using Proxima.Infrastructure;
 using Proxima.Application.Assets;
 using Proxima.Application.Auth;
 using Proxima.Application.Portfolios;
+using Proxima.Application.Quotes;
 using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
 using Proxima.Domain.Auth;
@@ -10,6 +11,7 @@ using Proxima.Domain.Transactions;
 using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Portfolios;
+using Proxima.Infrastructure.Quotes;
 using Proxima.Infrastructure.Transactions;
 
 namespace Proxima.Infrastructure.Tests;
@@ -25,7 +27,22 @@ internal static class Program
         await JsonPortfolioRepository_StoresAndFiltersByOwner().ConfigureAwait(false);
         await JsonAssetRepository_StoresAndArchives().ConfigureAwait(false);
         await JsonTransactionRepository_StoresAndArchives().ConfigureAwait(false);
+        await JsonQuoteCacheRepository_UpsertsByAsset().ConfigureAwait(false);
         Console.WriteLine("Proxima.Infrastructure.Tests passed.");
+    }
+
+    private static async Task JsonQuoteCacheRepository_UpsertsByAsset()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "proxima-quote-cache-tests", Guid.NewGuid().ToString("N"));
+        string path = Path.Combine(directory, "quotes.json");
+        JsonQuoteCacheRepository repository = new(path);
+        Guid assetId = Guid.Parse("aaaaaaaa-1111-1111-1111-111111111111");
+
+        await repository.UpsertLatestAsync(new QuoteCacheEntry(assetId, "AAPL", 100m, "USD", DateTimeOffset.UtcNow.AddMinutes(-10), "mock"), CancellationToken.None).ConfigureAwait(false);
+        await repository.UpsertLatestAsync(new QuoteCacheEntry(assetId, "AAPL", 120m, "USD", DateTimeOffset.UtcNow, "mock"), CancellationToken.None).ConfigureAwait(false);
+
+        QuoteCacheEntry? latest = await repository.FindLatestByAssetIdAsync(assetId, CancellationToken.None).ConfigureAwait(false);
+        Assert(latest is not null && latest.Price == 120m, "Latest quote must overwrite older quote for same asset.");
     }
 
     private static async Task JsonTransactionRepository_StoresAndArchives()

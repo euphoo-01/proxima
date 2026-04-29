@@ -260,11 +260,13 @@
 
                         <Grid IsVisible="{Binding Shell.IsAssetsPage}" RowDefinitions="Auto,Auto,*" RowSpacing="24">
                             <controls:BentoCard Title="Реестр активов" Subtitle="Поиск, сортировка и быстрые действия">
-                                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+                                <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12">
                                     <TextBox Watermark="Поиск по имени, тикеру, тегу" Text="{Binding Shell.AssetSearchQuery}" />
                                     <ComboBox Grid.Column="1" SelectedItem="{Binding Shell.AssetSort}" ItemsSource="{Binding Shell.AssetSortOptions}" MinWidth="170" />
                                     <TextBlock Grid.Column="2" Classes="proxima-caption" VerticalAlignment="Center" Text="{Binding Shell.AssetStatusText}" />
-                                    <Button Grid.Column="3" Classes="proxima-primary" Click="OpenCreateAssetClicked" Content="Добавить актив" />
+                                    <TextBlock Grid.Column="3" Classes="proxima-caption" VerticalAlignment="Center" Text="{Binding Shell.QuotesStatusText}" />
+                                    <Button Grid.Column="4" Classes="proxima-secondary" Click="RefreshQuotesClicked" Content="Обновить котировки" IsEnabled="{Binding Shell.CanRefreshQuotes}" />
+                                    <Button Grid.Column="5" Classes="proxima-primary" Click="OpenCreateAssetClicked" Content="Добавить актив" />
                                 </Grid>
                             </controls:BentoCard>
 

@@ -410,3 +410,56 @@ Drag&drop UX is approximated via path input field. Commit flow is all-or-stop in
 ### Commit
 
 0f7b0cb feat(import): add csv preview pipeline and manual fallback modal
+
+## Iteration 08 — Quotes, Market Data & Offline Cache
+
+### Scope
+
+Implement quote provider abstraction, mock provider, cache repository, and manual quote refresh flow in assets UI with cached fallback on provider failure.
+
+### User Stories Checked
+
+- [x] US-08.1 — User sees updated market prices online.
+- [x] US-08.2 — User can work offline.
+- [x] US-08.3 — User sees quote update status.
+- [x] US-08.4 — Developer can add providers.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-08.1 | Partial | `IQuoteProvider`, typed provider errors, `MockQuoteProvider`, and quote payload (price/currency/timestamp/source + optional OHLC/volume fields) implemented. Real providers deferred. |
+| AC-08.2 | Partial | Latest quotes cached via `JsonQuoteCacheRepository`; refresh uses cached values when provider fails and updates UI status. Historical quote series for charts deferred. |
+| AC-08.3 | Partial | Provider contract uses ticker/currency only; no transaction data sent. API-key management not required for mock provider; redacted logging policy preserved (no raw payload logging added). |
+| AC-08.4 | Partial | Manual refresh button exists and UI remains responsive; failures are non-blocking and summarized in status text. Interval refresh and advanced rate-limit backoff remain stubs/deferred. |
+| AC-08.5 | Partial | Quote model supports optional OHLC and volume fields, but asset details candle retrieval/rendering still deferred to analytics/chart modules. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit | `tests/Proxima.Application.Tests` (`QuoteRefreshService_UsesCacheOnProviderFailure`) | Passed |
+| Integration | `tests/Proxima.Infrastructure.Tests` (`JsonQuoteCacheRepository_UpsertsByAsset`) | Passed |
+| UI/Smoke | `dotnet test Proxima.sln` (assets page quote refresh wiring + shell test suite) | Passed |
+| Security/Privacy | Provider API accepts ticker/currency only and no transaction payload paths were introduced | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Mock quote provider is used for deterministic demo mode. No real market API integration or historical OHLC persistence yet; scheduled refresh strategy is deferred.
+
+### Commit
+
+Pending

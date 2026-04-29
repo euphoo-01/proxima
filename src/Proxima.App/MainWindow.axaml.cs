@@ -4,6 +4,7 @@ using Proxima.App.ViewModels;
 using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Portfolios;
+using Proxima.Infrastructure.Quotes;
 using Proxima.Infrastructure.Transactions;
 using Proxima.Importing;
 
@@ -31,12 +32,14 @@ public partial class MainWindow : Window
         string portfolioStorePath = ProximaPortfolioComposition.GetDefaultPortfolioStorePath();
         string assetStorePath = ProximaAssetComposition.GetDefaultAssetStorePath();
         string transactionStorePath = ProximaTransactionComposition.GetDefaultTransactionStorePath();
+        string quoteCachePath = ProximaQuoteComposition.GetDefaultQuoteCacheStorePath();
         ShellViewModel shell = new(
             new ShellNavigationService(),
             ProximaPortfolioComposition.CreatePortfolioService(portfolioStorePath),
             ProximaAssetComposition.CreateAssetService(assetStorePath),
             ProximaTransactionComposition.CreateTransactionService(transactionStorePath, assetStorePath),
-            ProximaImportComposition.CreateImportService());
+            ProximaImportComposition.CreateImportService(),
+            ProximaQuoteComposition.CreateQuoteRefreshService(assetStorePath, quoteCachePath));
         return new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell);
     }
 
@@ -251,5 +254,10 @@ public partial class MainWindow : Window
     private async void CommitImportClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
     {
         await ViewModel.Shell.CommitImportAsync().ConfigureAwait(true);
+    }
+
+    private async void RefreshQuotesClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.RefreshQuotesAsync().ConfigureAwait(true);
     }
 }

@@ -2,6 +2,7 @@ using Proxima.Application;
 using Proxima.Application.Assets;
 using Proxima.Application.Auth;
 using Proxima.Application.Portfolios;
+using Proxima.Application.Quotes;
 using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
 using Proxima.Domain.Auth;
@@ -24,7 +25,25 @@ internal static class Program
         PortfolioService_IsolatesByOwner().GetAwaiter().GetResult();
         AssetService_NormalizesTickerAndArchives().GetAwaiter().GetResult();
         TransactionService_ValidatesCrossPortfolioAsset().GetAwaiter().GetResult();
+        QuoteRefreshService_UsesCacheOnProviderFailure().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.Application.Tests passed.");
+    }
+
+    private static async Task QuoteRefreshService_UsesCacheOnProviderFailure()
+    {
+        MemoryAssetRepository assets = new();
+        MemoryQuoteCacheRepository cache = new();
+        Guid portfolioId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        Asset asset = new(Guid.Parse("aaaaaaaa-1111-1111-1111-111111111111"), portfolioId, "FAIL-X", "Fail Asset", AssetType.Stock, "USD", null, null, [], null, 1m, 0m, 0m, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+        await assets.AddAsync(asset, CancellationToken.None).ConfigureAwait(false);
+        await cache.UpsertLatestAsync(new QuoteCacheEntry(asset.Id, asset.Ticker, 123.45m, "USD", DateTimeOffset.UtcNow, "cache"), CancellationToken.None).ConfigureAwait(false);
+
+        QuoteRefreshService service = new(assets, new FailingQuoteProvider(), cache);
+        QuoteRefreshSummary summary = await service.RefreshPortfolioAsync(portfolioId).ConfigureAwait(false);
+
+        Assert(summary.CachedCount == 1, "Cached quote should be used when provider fails.");
+        Asset? updated = await assets.FindByIdAsync(portfolioId, asset.Id, CancellationToken.None).ConfigureAwait(false);
+        Assert(updated is not null && updated.CurrentPrice == 123.45m, "Cached price should patch asset.");
     }
 
     private static async Task TransactionService_ValidatesCrossPortfolioAsset()
@@ -335,6 +354,34 @@ internal static class Program
             int index = _items.FindIndex(item => item.PortfolioId == transaction.PortfolioId && item.Id == transaction.Id);
             _items[index] = transaction;
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class MemoryQuoteCacheRepository : IQuoteCacheRepository
+    {
+        private readonly Dictionary<Guid, QuoteCacheEntry> _items = [];
+
+        public Task<QuoteCacheEntry?> FindLatestByAssetIdAsync(Guid assetId, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _items.TryGetValue(assetId, out QuoteCacheEntry? value);
+            return Task.FromResult(value);
+        }
+
+        public Task UpsertLatestAsync(QuoteCacheEntry entry, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _items[entry.AssetId] = entry;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FailingQuoteProvider : IQuoteProvider
+    {
+        public Task<QuoteProviderResult> GetLatestQuoteAsync(string ticker, string currency, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(QuoteProviderResult.Failure(QuoteProviderErrorKind.Network, "offline"));
         }
     }
 }

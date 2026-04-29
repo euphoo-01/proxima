@@ -11,3 +11,5 @@
 - Manual transaction form currently prioritizes type-level validation and asset scoping, while field-by-field inline error UX and full portfolio analytics recalculation are deferred to analytics/persistence modules.
 - Module 07 adds CSV import preview, PDF parser stub, and commit-to-transactions flow, but drag&drop/file-picker UX is simplified to manual file-path input in the modal.
 - Import commit currently stops on first failed row and does not provide true DB transaction rollback guarantees until PostgreSQL/EF Core persistence module is implemented.
+- Module 08 adds quote provider abstraction, mock quotes, and offline JSON cache fallback, but historical OHLC storage and real API integrations are deferred.
+- Quote refresh is manual for now; scheduled interval refresh and advanced rate-limit retry/backoff are documented stubs and not fully implemented yet.

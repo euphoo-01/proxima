@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Proxima.Application.Assets;
 using Proxima.Application.Portfolios;
+using Proxima.Application.Quotes;
 using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
 using Proxima.Domain.Portfolios;
@@ -15,6 +16,7 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly IPortfolioService _portfolios;
     private readonly IAssetService _assets;
     private readonly ITransactionService _transactions;
+    private readonly IQuoteRefreshService _quotes;
     private readonly IImportService _importService;
     private Guid _ownerUserId;
 
@@ -80,14 +82,17 @@ public sealed class ShellViewModel : ViewModelBase
     private string _importMessage = string.Empty;
     private bool _importHasPdfLimitWarning;
     private bool _isImportPreviewVisible;
+    private bool _isRefreshingQuotes;
+    private string _quotesStatusText = "Котировки не обновлялись.";
 
-    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService)
+    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService, IQuoteRefreshService quotes)
     {
         _navigation = navigation;
         _portfolios = portfolios;
         _assets = assets;
         _transactions = transactions;
         _importService = importService;
+        _quotes = quotes;
         RegisterRoutes();
         ApplyRoute(_navigation.Navigate("dashboard", pushHistory: false));
     }
@@ -195,6 +200,8 @@ public sealed class ShellViewModel : ViewModelBase
             {
                 HandlePortfolioSwitch();
             }
+
+            OnPropertyChanged(nameof(CanRefreshQuotes));
         }
     }
 
@@ -548,6 +555,26 @@ public sealed class ShellViewModel : ViewModelBase
         private set => SetProperty(ref _isImportPreviewVisible, value);
     }
 
+    public bool IsRefreshingQuotes
+    {
+        get => _isRefreshingQuotes;
+        private set
+        {
+            if (SetProperty(ref _isRefreshingQuotes, value))
+            {
+                OnPropertyChanged(nameof(CanRefreshQuotes));
+            }
+        }
+    }
+
+    public string QuotesStatusText
+    {
+        get => _quotesStatusText;
+        private set => SetProperty(ref _quotesStatusText, value);
+    }
+
+    public bool CanRefreshQuotes => !IsRefreshingQuotes && SelectedPortfolio is not null;
+
     public bool IsDashboardPage => ActiveRoute.Equals("dashboard", StringComparison.Ordinal);
     public bool IsAssetsPage => ActiveRoute.Equals("assets", StringComparison.Ordinal);
     public bool IsTaxesPage => ActiveRoute.Equals("taxes", StringComparison.Ordinal);
@@ -714,6 +741,26 @@ public sealed class ShellViewModel : ViewModelBase
         await ReloadTransactionsAsync(cancellationToken).ConfigureAwait(false);
         ImportMessage = $"Импортировано строк: {selectedRows.Count}.";
         IsImportDialogOpen = false;
+    }
+
+    public async Task RefreshQuotesAsync(CancellationToken cancellationToken = default)
+    {
+        if (SelectedPortfolio is null || IsRefreshingQuotes)
+        {
+            return;
+        }
+
+        IsRefreshingQuotes = true;
+        try
+        {
+            QuoteRefreshSummary summary = await _quotes.RefreshPortfolioAsync(SelectedPortfolio.Id, cancellationToken).ConfigureAwait(false);
+            await ReloadAssetsAsync(cancellationToken).ConfigureAwait(false);
+            QuotesStatusText = summary.Message;
+        }
+        finally
+        {
+            IsRefreshingQuotes = false;
+        }
     }
 
     public void OpenCreatePortfolioDialog()
