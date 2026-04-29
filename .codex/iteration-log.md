@@ -462,4 +462,4 @@ Mock quote provider is used for deterministic demo mode. No real market API inte
 
 ### Commit
 
-Pending
+7e0712e feat(quotes): add mock provider and offline quote cache refresh
