@@ -409,4 +409,4 @@ Drag&drop UX is approximated via path input field. Commit flow is all-or-stop in
 
 ### Commit
 
-Pending
+0f7b0cb feat(import): add csv preview pipeline and manual fallback modal
