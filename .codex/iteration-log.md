@@ -516,4 +516,4 @@ The dashboard currently exposes a timeframe-driven history summary instead of a 
 
 ### Commit
 
-Pending
+ec0eab0 feat(dashboard): add portfolio overview calculations and dashboard widgets
