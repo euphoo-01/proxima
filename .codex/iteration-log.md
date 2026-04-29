@@ -463,3 +463,57 @@ Mock quote provider is used for deterministic demo mode. No real market API inte
 ### Commit
 
 7e0712e feat(quotes): add mock provider and offline quote cache refresh
+
+## Iteration 09 — Dashboard
+
+### Scope
+
+Implement dashboard calculations and UI sections for total value, delta state, allocation, timeframe summary, and latest transactions that react to portfolio switching and existing asset/transaction data.
+
+### User Stories Checked
+
+- [x] US-09.1 — User sees total capital instantly.
+- [x] US-09.2 — User understands 24h movement.
+- [x] US-09.3 — User sees capital history.
+- [x] US-09.4 — User sees diversification.
+- [x] US-09.5 — User can inspect recent transactions.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-09.1 | Done | Total value card is computed from asset values with decimal-safe math and empty fallback text; refresh source already uses latest/cached quotes from Module 08. |
+| AC-09.2 | Partial | Delta block supports positive/negative/neutral states and explicit `Недостаточно данных` fallback. Full prior-24h quote baseline is deferred due missing historical quotes. |
+| AC-09.3 | Partial | Timeframe selector (`1D/7D/1M`) and history summary are implemented; full chart rendering with axes/tooltips is deferred. |
+| AC-09.4 | Done | Latest transactions block supports search and sort by name/price/type/date and handles empty state via ItemsControl data presence. |
+| AC-09.5 | Done | Allocation-by-tag calculation implemented with `Без категории` bucket; values are derived from current portfolio values and rendered in legend-style rows. |
+| AC-09.6 | Done | Dashboard is rebuilt on portfolio switch and on asset/transaction reload, preventing stale previous-portfolio values. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit | `tests/Proxima.Analytics.Tests` (`DashboardCalculator_TotalValueAndAllocation`, `DashboardCalculator_LatestTransactionsSortAndSearch`) | Passed |
+| Integration | `tests/Proxima.App.Tests` (`ShellViewModel_ComputesDashboardCards`) plus full solution tests | Passed |
+| UI/Smoke | `dotnet test Proxima.sln` and dashboard bindings compile/load | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+The dashboard currently exposes a timeframe-driven history summary instead of a fully rendered chart with axes/tooltips. Complete 24h delta requires historical quote snapshots that will be added in subsequent modules.
+
+### Commit
+
+Pending

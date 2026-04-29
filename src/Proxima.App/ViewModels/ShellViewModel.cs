@@ -3,6 +3,7 @@ using Proxima.Application.Assets;
 using Proxima.Application.Portfolios;
 using Proxima.Application.Quotes;
 using Proxima.Application.Transactions;
+using Proxima.Analytics.Dashboard;
 using Proxima.Domain.Assets;
 using Proxima.Domain.Portfolios;
 using Proxima.Domain.Transactions;
@@ -84,6 +85,14 @@ public sealed class ShellViewModel : ViewModelBase
     private bool _isImportPreviewVisible;
     private bool _isRefreshingQuotes;
     private string _quotesStatusText = "Котировки не обновлялись.";
+    private string _dashboardTotalValue = "0";
+    private string _dashboardDeltaValue = "Недостаточно данных";
+    private string _dashboardDeltaKind = "Neutral";
+    private string _dashboardDeltaFooter = "24h";
+    private string _dashboardTimeframe = "7D";
+    private string _dashboardTransactionsSearch = string.Empty;
+    private string _dashboardTransactionsSort = "date_desc";
+    private string _dashboardHistorySummary = "Недостаточно данных";
 
     public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService, IQuoteRefreshService quotes)
     {
@@ -103,6 +112,8 @@ public sealed class ShellViewModel : ViewModelBase
     public ObservableCollection<TransactionRowViewModel> Transactions { get; } = [];
     public ObservableCollection<TransactionRowViewModel> FilteredTransactions { get; } = [];
     public ObservableCollection<ImportPreviewRowViewModel> ImportPreviewRows { get; } = [];
+    public ObservableCollection<TransactionRowViewModel> DashboardLatestTransactions { get; } = [];
+    public ObservableCollection<DashboardAllocationRowViewModel> DashboardAllocations { get; } = [];
 
     public IEnumerable<string> Currencies => new[] { "USD", "EUR", "BYN", "RUB" };
     public IEnumerable<AssetType> AssetTypes => Enum.GetValues<AssetType>();
@@ -574,6 +585,76 @@ public sealed class ShellViewModel : ViewModelBase
     }
 
     public bool CanRefreshQuotes => !IsRefreshingQuotes && SelectedPortfolio is not null;
+
+    public string DashboardTotalValue
+    {
+        get => _dashboardTotalValue;
+        private set => SetProperty(ref _dashboardTotalValue, value);
+    }
+
+    public string DashboardDeltaValue
+    {
+        get => _dashboardDeltaValue;
+        private set => SetProperty(ref _dashboardDeltaValue, value);
+    }
+
+    public string DashboardDeltaKind
+    {
+        get => _dashboardDeltaKind;
+        private set => SetProperty(ref _dashboardDeltaKind, value);
+    }
+
+    public string DashboardDeltaFooter
+    {
+        get => _dashboardDeltaFooter;
+        private set => SetProperty(ref _dashboardDeltaFooter, value);
+    }
+
+    public string DashboardTimeframe
+    {
+        get => _dashboardTimeframe;
+        set
+        {
+            if (SetProperty(ref _dashboardTimeframe, value))
+            {
+                RebuildDashboard();
+            }
+        }
+    }
+
+    public IEnumerable<string> DashboardTimeframes => ["1D", "7D", "1M"];
+
+    public string DashboardTransactionsSearch
+    {
+        get => _dashboardTransactionsSearch;
+        set
+        {
+            if (SetProperty(ref _dashboardTransactionsSearch, value))
+            {
+                RebuildDashboard();
+            }
+        }
+    }
+
+    public string DashboardTransactionsSort
+    {
+        get => _dashboardTransactionsSort;
+        set
+        {
+            if (SetProperty(ref _dashboardTransactionsSort, value))
+            {
+                RebuildDashboard();
+            }
+        }
+    }
+
+    public IEnumerable<string> DashboardTransactionSortOptions => ["date_desc", "name_asc", "price_desc", "type_asc"];
+
+    public string DashboardHistorySummary
+    {
+        get => _dashboardHistorySummary;
+        private set => SetProperty(ref _dashboardHistorySummary, value);
+    }
 
     public bool IsDashboardPage => ActiveRoute.Equals("dashboard", StringComparison.Ordinal);
     public bool IsAssetsPage => ActiveRoute.Equals("assets", StringComparison.Ordinal);
@@ -1323,6 +1404,7 @@ public sealed class ShellViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasAssets));
         OnPropertyChanged(nameof(IsAssetTableEmpty));
         OnPropertyChanged(nameof(SelectedAssetTitle));
+        RebuildDashboard();
     }
 
     private async Task ReloadTransactionsAsync(CancellationToken cancellationToken)
@@ -1403,6 +1485,58 @@ public sealed class ShellViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasTransactions));
         OnPropertyChanged(nameof(IsTransactionTableEmpty));
         OnPropertyChanged(nameof(SelectedTransactionTitle));
+        RebuildDashboard();
+    }
+
+    private void RebuildDashboard()
+    {
+        List<DashboardAssetSnapshot> assets = Assets
+            .Select(asset => new DashboardAssetSnapshot(asset.Id, asset.Name, asset.Ticker, asset.Quantity, asset.CurrentPrice, asset.Value, asset.Tags))
+            .ToList();
+        List<DashboardTransactionSnapshot> transactions = Transactions
+            .Select(row => new DashboardTransactionSnapshot(row.Id, row.AssetName, row.Ticker, row.TypeLabel, row.TradeDate, row.Price, row.GrossAmount))
+            .ToList();
+
+        decimal total = PortfolioDashboardCalculator.CalculateTotalValue(assets);
+        DashboardTotalValue = total == 0m ? "Пустой портфель" : $"{total:0.##} {SelectedPortfolio?.Currency ?? "USD"}";
+
+        Delta24h delta = PortfolioDashboardCalculator.Calculate24hDelta(assets, []);
+        if (!delta.HasEnoughData || delta.Percent is null)
+        {
+            DashboardDeltaValue = "Недостаточно данных";
+            DashboardDeltaKind = "Neutral";
+            DashboardDeltaFooter = "24h";
+        }
+        else
+        {
+            DashboardDeltaValue = $"{delta.Absolute:0.##} ({delta.Percent:0.##}%)";
+            DashboardDeltaKind = delta.Absolute > 0 ? "Positive" : delta.Absolute < 0 ? "Negative" : "Neutral";
+            DashboardDeltaFooter = "24h";
+        }
+
+        DashboardAllocations.Clear();
+        IReadOnlyList<AllocationSlice> slices = PortfolioDashboardCalculator.BuildAllocationByTag(assets);
+        foreach (AllocationSlice slice in slices)
+        {
+            decimal pct = total == 0m ? 0m : (slice.Value / total * 100m);
+            DashboardAllocations.Add(new DashboardAllocationRowViewModel(slice.Tag, slice.Value, pct));
+        }
+
+        DashboardLatestTransactions.Clear();
+        foreach (DashboardTransactionSnapshot row in PortfolioDashboardCalculator.LatestTransactions(
+                     transactions,
+                     DashboardTransactionsSearch,
+                     DashboardTransactionsSort))
+        {
+            TransactionRowViewModel? mapped = Transactions.FirstOrDefault(item => item.Id == row.TransactionId);
+            if (mapped is not null)
+            {
+                DashboardLatestTransactions.Add(mapped);
+            }
+        }
+
+        IReadOnlyList<(DateTimeOffset Time, decimal Value)> history = PortfolioDashboardCalculator.BuildHistorySeries(transactions, DashboardTimeframe);
+        DashboardHistorySummary = history.Count == 0 ? "Недостаточно данных" : $"Точек в графике: {history.Count}";
     }
 
     private static IReadOnlyList<string> ParseTags(string raw)

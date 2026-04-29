@@ -10,6 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Proxima.Analytics\Proxima.Analytics.csproj" />
     <ProjectReference Include="..\Proxima.Application\Proxima.Application.csproj" />
     <ProjectReference Include="..\Proxima.Infrastructure\Proxima.Infrastructure.csproj" />
     <ProjectReference Include="..\Proxima.Importing\Proxima.Importing.csproj" />

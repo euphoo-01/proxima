@@ -35,6 +35,7 @@ internal static class Program
         ShellViewModel_PreservesSelectedPortfolioAcrossNavigation().GetAwaiter().GetResult();
         ShellViewModel_FiltersAndSortsAssets().GetAwaiter().GetResult();
         ShellViewModel_LoadsAndFiltersTransactions().GetAwaiter().GetResult();
+        ShellViewModel_ComputesDashboardCards().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.App.Tests baseline checks passed.");
     }
 
@@ -258,6 +259,16 @@ internal static class Program
         shell.TransactionSort = "amount_desc";
         Assert(shell.FilteredTransactions.Count >= 2, "Transaction list should load for selected portfolio.");
         Assert(shell.FilteredTransactions[0].GrossAmount >= shell.FilteredTransactions[1].GrossAmount, "Amount sort must be descending.");
+    }
+
+    private static async Task ShellViewModel_ComputesDashboardCards()
+    {
+        ShellViewModel shell = CreateShellViewModel();
+        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111")).ConfigureAwait(false);
+
+        Assert(!string.IsNullOrWhiteSpace(shell.DashboardTotalValue), "Dashboard total value should be calculated.");
+        Assert(shell.DashboardAllocations.Count > 0, "Dashboard allocation should be populated.");
+        Assert(shell.DashboardLatestTransactions.Count > 0, "Dashboard latest transactions should be populated.");
     }
 
     private static string FindRepositoryRoot()

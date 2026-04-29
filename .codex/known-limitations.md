@@ -13,3 +13,5 @@
 - Import commit currently stops on first failed row and does not provide true DB transaction rollback guarantees until PostgreSQL/EF Core persistence module is implemented.
 - Module 08 adds quote provider abstraction, mock quotes, and offline JSON cache fallback, but historical OHLC storage and real API integrations are deferred.
 - Quote refresh is manual for now; scheduled interval refresh and advanced rate-limit retry/backoff are documented stubs and not fully implemented yet.
+- Module 09 adds dashboard cards, allocation and latest-transaction widgets with timeframe selector, but chart rendering is currently summary-based (no full plotted visual line/candle yet).
+- 24h delta currently falls back to “Недостаточно данных” unless historical/previous quote snapshots are available; full historical quote model is deferred.
