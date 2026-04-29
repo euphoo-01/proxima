@@ -517,3 +517,56 @@ The dashboard currently exposes a timeframe-driven history summary instead of a 
 ### Commit
 
 ec0eab0 feat(dashboard): add portfolio overview calculations and dashboard widgets
+
+## Iteration 10 — Asset Details & Asset Analytics View
+
+### Scope
+
+Implement asset details analytics view with base/advanced metrics, timeframe-driven OHLC fallback state, and transaction table strictly scoped to selected asset.
+
+### User Stories Checked
+
+- [x] US-10.1 — User analyzes selected asset.
+- [x] US-10.2 — User reads key metrics quickly.
+- [x] US-10.3 — Professional user sees advanced risk metrics.
+- [x] US-10.4 — User reviews transactions for one asset.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-10.1 | Done | Asset details route opens from assets list, uses selected asset context, updates title/breadcrumb, supports not-found fallback and back navigation. |
+| AC-10.2 | Partial | Timeframes `1h/1d/7d/30d` and OHLC fallback state are implemented; real candlestick rendering/tooltips/axes are deferred without external OHLC feed. |
+| AC-10.3 | Partial | Base metrics section renders SMA50/SMA200/RSI/ATR with unavailable placeholders for missing market/fundamental fields and explanatory help text. |
+| AC-10.4 | Partial | Advanced metrics section renders Sharpe/Sortino/Calmar/MDD/VaR/CVaR/Z-Score and placeholders for metrics requiring benchmark/orderbook inputs. |
+| AC-10.5 | Partial | Metric rows include explanatory text and deterministic calculations; explicit unit/risk labeling exists but full tooltip UX is still simplified. |
+| AC-10.6 | Done | Asset details transaction table includes only selected asset operations and keeps edit action path via transaction editor button. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit | `tests/Proxima.Analytics.Tests` (`AssetDetailsCalculator_CoreMetrics`) | Passed |
+| Integration | `tests/Proxima.App.Tests` (`ShellViewModel_BuildsAssetDetailsMetrics`) | Passed |
+| UI/Smoke | `dotnet test Proxima.sln` plus asset details route and bindings compile/load | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Asset details currently use deterministic OHLC fallback series and no real candle dataset from providers. Some advanced metrics require external benchmark/orderbook data and therefore render unavailable placeholders.
+
+### Commit
+
+Pending

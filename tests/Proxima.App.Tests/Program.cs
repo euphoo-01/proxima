@@ -36,6 +36,7 @@ internal static class Program
         ShellViewModel_FiltersAndSortsAssets().GetAwaiter().GetResult();
         ShellViewModel_LoadsAndFiltersTransactions().GetAwaiter().GetResult();
         ShellViewModel_ComputesDashboardCards().GetAwaiter().GetResult();
+        ShellViewModel_BuildsAssetDetailsMetrics().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.App.Tests baseline checks passed.");
     }
 
@@ -269,6 +270,18 @@ internal static class Program
         Assert(!string.IsNullOrWhiteSpace(shell.DashboardTotalValue), "Dashboard total value should be calculated.");
         Assert(shell.DashboardAllocations.Count > 0, "Dashboard allocation should be populated.");
         Assert(shell.DashboardLatestTransactions.Count > 0, "Dashboard latest transactions should be populated.");
+    }
+
+    private static async Task ShellViewModel_BuildsAssetDetailsMetrics()
+    {
+        ShellViewModel shell = CreateShellViewModel();
+        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111")).ConfigureAwait(false);
+        shell.SelectedAsset = shell.FilteredAssets.First();
+        shell.OpenAssetDetails();
+
+        Assert(shell.AssetDetailsBaseMetrics.Count > 0, "Asset details base metrics should be built.");
+        Assert(shell.AssetDetailsAdvancedMetrics.Count > 0, "Asset details advanced metrics should be built.");
+        Assert(shell.AssetDetailsTransactions.All(item => item.AssetId == shell.SelectedAsset!.Id), "Asset details transactions must be scoped to selected asset.");
     }
 
     private static string FindRepositoryRoot()

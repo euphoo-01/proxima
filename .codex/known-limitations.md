@@ -15,3 +15,5 @@
 - Quote refresh is manual for now; scheduled interval refresh and advanced rate-limit retry/backoff are documented stubs and not fully implemented yet.
 - Module 09 adds dashboard cards, allocation and latest-transaction widgets with timeframe selector, but chart rendering is currently summary-based (no full plotted visual line/candle yet).
 - 24h delta currently falls back to “Недостаточно данных” unless historical/previous quote snapshots are available; full historical quote model is deferred.
+- Module 10 adds asset-details metrics and scoped transaction table with OHLC fallback state, but real OHLC provider integration and true candlestick rendering are still deferred.
+- Several advanced metrics (beta/correlation/implied volatility/spread-depth) display deterministic placeholders or unavailable states when benchmark/orderbook inputs are absent.

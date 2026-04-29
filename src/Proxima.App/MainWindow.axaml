@@ -398,14 +398,63 @@
                             </controls:BentoCard>
                         </Grid>
 
-                        <controls:BentoCard IsVisible="{Binding Shell.IsAssetDetailsPage}" Title="Детали актива" Subtitle="Карточка детализации для сценария back-navigation">
-                            <StackPanel Spacing="12">
-                                <TextBlock Classes="proxima-body" Text="Детали привязаны к текущему портфелю. При переключении портфеля отображается безопасный возврат в список активов." TextWrapping="Wrap" />
-                                <TextBlock Classes="proxima-caption" Text="{Binding Shell.SelectedAssetTitle}" />
-                                <TextBlock Classes="proxima-caption" Text="{Binding Shell.TransactionStatusText}" />
-                                <Button Classes="proxima-secondary" Click="GoBackClicked" Content="Вернуться назад" HorizontalAlignment="Left" />
-                            </StackPanel>
-                        </controls:BentoCard>
+                        <Grid IsVisible="{Binding Shell.IsAssetDetailsPage}" RowDefinitions="Auto,Auto,Auto" RowSpacing="24">
+                            <controls:BentoCard Title="Детали актива" Subtitle="{Binding Shell.SelectedAssetTitle}">
+                                <StackPanel Spacing="12">
+                                    <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
+                                        <ComboBox SelectedItem="{Binding Shell.AssetDetailsTimeframe}" ItemsSource="{Binding Shell.AssetDetailsTimeframes}" MinWidth="110" />
+                                        <controls:StatusPill Grid.Column="1" Text="OHLC" />
+                                        <TextBlock Grid.Column="2" Classes="proxima-caption" VerticalAlignment="Center" Text="{Binding Shell.AssetDetailsChartState}" />
+                                    </Grid>
+                                    <TextBlock Classes="proxima-caption" IsVisible="{Binding Shell.AssetDetailsNotFound}" Text="Актив не найден или удалён." />
+                                    <Button Classes="proxima-secondary" Click="GoBackClicked" Content="Вернуться назад" HorizontalAlignment="Left" />
+                                </StackPanel>
+                            </controls:BentoCard>
+
+                            <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="24">
+                                <controls:BentoCard Title="Базовые метрики">
+                                    <ItemsControl ItemsSource="{Binding Shell.AssetDetailsBaseMetrics}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnDefinitions="1.3*,1*,1*" Margin="0,0,0,6" ColumnSpacing="8">
+                                                    <TextBlock Classes="proxima-body" Text="{Binding Name}" />
+                                                    <TextBlock Grid.Column="1" Classes="proxima-caption" Text="{Binding Value}" />
+                                                    <TextBlock Grid.Column="2" Classes="proxima-caption" Text="{Binding HelpText}" TextWrapping="Wrap" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </controls:BentoCard>
+                                <controls:BentoCard Grid.Column="1" Title="Risk Metrics">
+                                    <ItemsControl ItemsSource="{Binding Shell.AssetDetailsAdvancedMetrics}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnDefinitions="1.3*,1*,1*" Margin="0,0,0,6" ColumnSpacing="8">
+                                                    <TextBlock Classes="proxima-body" Text="{Binding Name}" />
+                                                    <TextBlock Grid.Column="1" Classes="proxima-caption" Text="{Binding Value}" />
+                                                    <TextBlock Grid.Column="2" Classes="proxima-caption" Text="{Binding Risk}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </controls:BentoCard>
+                            </Grid>
+
+                            <controls:BentoCard Grid.Row="2" Title="Транзакции актива" Subtitle="Фильтр только по выбранному активу">
+                                <ItemsControl ItemsSource="{Binding Shell.AssetDetailsTransactions}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="1.2*,1*,1*,Auto" Margin="0,0,0,6" ColumnSpacing="8">
+                                                <TextBlock Classes="proxima-body" Text="{Binding TradeDate, StringFormat={}{0:yyyy-MM-dd}}" />
+                                                <TextBlock Grid.Column="1" Classes="proxima-caption" Text="{Binding TypeLabel}" />
+                                                <TextBlock Grid.Column="2" Classes="proxima-caption" Text="{Binding GrossAmount, StringFormat={}{0:0.##}}" />
+                                                <Button Grid.Column="3" Classes="proxima-secondary" Content="⋯" Click="OpenEditTransactionClicked" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </controls:BentoCard>
+                        </Grid>
 
                         <controls:BentoCard IsVisible="{Binding Shell.IsManualImportPage}" Title="Ручной импорт" Subtitle="Маршрут ручного ввода/импорта">
                             <controls:EmptyState Title="Импорт пока не выполнен" Message="Следующий модуль подключит pipeline импорта и обработку ошибок." />

@@ -1,4 +1,5 @@
 using Proxima.Analytics;
+using Proxima.Analytics.AssetDetails;
 using Proxima.Analytics.Dashboard;
 
 namespace Proxima.Analytics.Tests;
@@ -11,7 +12,33 @@ internal static class Program
         Assert(assemblyName == "Proxima.Analytics", "Analytics assembly name must be Proxima.Analytics.");
         DashboardCalculator_TotalValueAndAllocation();
         DashboardCalculator_LatestTransactionsSortAndSearch();
+        AssetDetailsCalculator_CoreMetrics();
         Console.WriteLine("Proxima.Analytics.Tests passed.");
+    }
+
+    private static void AssetDetailsCalculator_CoreMetrics()
+    {
+        List<decimal> closes = Enumerable.Range(1, 260).Select(i => 100m + i).ToList();
+        List<decimal> highs = closes.Select(v => v + 2m).ToList();
+        List<decimal> lows = closes.Select(v => v - 2m).ToList();
+
+        decimal? sma50 = AssetDetailsCalculator.Sma(closes, 50);
+        decimal? rsi = AssetDetailsCalculator.Rsi(closes, 14);
+        decimal? atr = AssetDetailsCalculator.Atr(highs, lows, closes, 14);
+        Assert(sma50 is not null && sma50 > 0m, "SMA should be computed for sufficient series.");
+        Assert(rsi is not null, "RSI should be computed for sufficient series.");
+        Assert(atr is not null && atr > 0m, "ATR should be computed for sufficient series.");
+
+        IReadOnlyList<double> returns = AssetDetailsCalculator.Returns(closes);
+        Assert(AssetDetailsCalculator.Sharpe(returns) is not null, "Sharpe should compute for valid returns.");
+        Assert(AssetDetailsCalculator.Sortino(returns) is not null, "Sortino should compute for valid returns.");
+        Assert(AssetDetailsCalculator.VaR(returns, 0.95) is not null, "VaR should compute.");
+        Assert(AssetDetailsCalculator.CVaR(returns, 0.95) is not null, "CVaR should compute.");
+        Assert(AssetDetailsCalculator.ZScore(closes.Select(v => (double)v).ToArray()) is not null, "Z-Score should compute.");
+
+        double[] benchmark = returns.Select(v => v * 0.8d).ToArray();
+        Assert(AssetDetailsCalculator.Beta(returns, benchmark) is not null, "Beta should compute with benchmark.");
+        Assert(AssetDetailsCalculator.Correlation(returns, benchmark) is not null, "Correlation should compute with benchmark.");
     }
 
     private static void DashboardCalculator_TotalValueAndAllocation()

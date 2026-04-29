@@ -8,6 +8,7 @@ using Proxima.Domain.Assets;
 using Proxima.Domain.Portfolios;
 using Proxima.Domain.Transactions;
 using Proxima.Importing;
+using Proxima.Analytics.AssetDetails;
 
 namespace Proxima.App.ViewModels;
 
@@ -93,6 +94,9 @@ public sealed class ShellViewModel : ViewModelBase
     private string _dashboardTransactionsSearch = string.Empty;
     private string _dashboardTransactionsSort = "date_desc";
     private string _dashboardHistorySummary = "Недостаточно данных";
+    private string _assetDetailsTimeframe = "1d";
+    private string _assetDetailsChartState = "Нет данных";
+    private bool _assetDetailsNotFound;
 
     public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService, IQuoteRefreshService quotes)
     {
@@ -114,6 +118,9 @@ public sealed class ShellViewModel : ViewModelBase
     public ObservableCollection<ImportPreviewRowViewModel> ImportPreviewRows { get; } = [];
     public ObservableCollection<TransactionRowViewModel> DashboardLatestTransactions { get; } = [];
     public ObservableCollection<DashboardAllocationRowViewModel> DashboardAllocations { get; } = [];
+    public ObservableCollection<AssetMetric> AssetDetailsBaseMetrics { get; } = [];
+    public ObservableCollection<AssetMetric> AssetDetailsAdvancedMetrics { get; } = [];
+    public ObservableCollection<TransactionRowViewModel> AssetDetailsTransactions { get; } = [];
 
     public IEnumerable<string> Currencies => new[] { "USD", "EUR", "BYN", "RUB" };
     public IEnumerable<AssetType> AssetTypes => Enum.GetValues<AssetType>();
@@ -656,6 +663,32 @@ public sealed class ShellViewModel : ViewModelBase
         private set => SetProperty(ref _dashboardHistorySummary, value);
     }
 
+    public string AssetDetailsTimeframe
+    {
+        get => _assetDetailsTimeframe;
+        set
+        {
+            if (SetProperty(ref _assetDetailsTimeframe, value))
+            {
+                RebuildAssetDetails();
+            }
+        }
+    }
+
+    public IEnumerable<string> AssetDetailsTimeframes => ["1h", "1d", "7d", "30d"];
+
+    public string AssetDetailsChartState
+    {
+        get => _assetDetailsChartState;
+        private set => SetProperty(ref _assetDetailsChartState, value);
+    }
+
+    public bool AssetDetailsNotFound
+    {
+        get => _assetDetailsNotFound;
+        private set => SetProperty(ref _assetDetailsNotFound, value);
+    }
+
     public bool IsDashboardPage => ActiveRoute.Equals("dashboard", StringComparison.Ordinal);
     public bool IsAssetsPage => ActiveRoute.Equals("assets", StringComparison.Ordinal);
     public bool IsTaxesPage => ActiveRoute.Equals("taxes", StringComparison.Ordinal);
@@ -696,6 +729,7 @@ public sealed class ShellViewModel : ViewModelBase
         }
 
         Navigate("assets/details");
+        RebuildAssetDetails();
     }
 
     public void OpenManualImport()
@@ -1486,6 +1520,7 @@ public sealed class ShellViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsTransactionTableEmpty));
         OnPropertyChanged(nameof(SelectedTransactionTitle));
         RebuildDashboard();
+        RebuildAssetDetails();
     }
 
     private void RebuildDashboard()
@@ -1537,6 +1572,75 @@ public sealed class ShellViewModel : ViewModelBase
 
         IReadOnlyList<(DateTimeOffset Time, decimal Value)> history = PortfolioDashboardCalculator.BuildHistorySeries(transactions, DashboardTimeframe);
         DashboardHistorySummary = history.Count == 0 ? "Недостаточно данных" : $"Точек в графике: {history.Count}";
+    }
+
+    private void RebuildAssetDetails()
+    {
+        AssetDetailsBaseMetrics.Clear();
+        AssetDetailsAdvancedMetrics.Clear();
+        AssetDetailsTransactions.Clear();
+
+        if (SelectedAsset is null)
+        {
+            AssetDetailsNotFound = true;
+            AssetDetailsChartState = "Актив не найден";
+            return;
+        }
+
+        AssetDetailsNotFound = false;
+        List<decimal> closes = BuildSyntheticCloseSeries(SelectedAsset.CurrentPrice);
+        List<decimal> highs = closes.Select(static value => value * 1.01m).ToList();
+        List<decimal> lows = closes.Select(static value => value * 0.99m).ToList();
+
+        AssetDetailsSnapshot snapshot = new(
+            SelectedAsset.Name,
+            SelectedAsset.Ticker,
+            SelectedAsset.CurrentPrice,
+            SelectedAsset.Quantity,
+            SelectedAsset.AverageBuyPrice,
+            SelectedAsset.Value,
+            closes,
+            highs,
+            lows);
+
+        foreach (AssetMetric metric in AssetDetailsCalculator.BuildBaseMetrics(snapshot))
+        {
+            AssetDetailsBaseMetrics.Add(metric);
+        }
+
+        foreach (AssetMetric metric in AssetDetailsCalculator.BuildAdvancedMetrics(snapshot))
+        {
+            AssetDetailsAdvancedMetrics.Add(metric);
+        }
+
+        foreach (TransactionRowViewModel tx in Transactions.Where(item => item.AssetId == SelectedAsset.Id).OrderByDescending(item => item.TradeDate))
+        {
+            AssetDetailsTransactions.Add(tx);
+        }
+
+        AssetDetailsChartState = closes.Count == 0
+            ? "Нет данных OHLC"
+            : $"OHLC fallback · {AssetDetailsTimeframe}";
+    }
+
+    private static List<decimal> BuildSyntheticCloseSeries(decimal lastPrice)
+    {
+        if (lastPrice <= 0)
+        {
+            return [];
+        }
+
+        List<decimal> prices = [];
+        decimal seed = lastPrice * 0.9m;
+        for (int i = 0; i < 60; i++)
+        {
+            decimal drift = (i % 7 - 3) * 0.004m;
+            seed *= 1m + drift;
+            prices.Add(seed <= 0m ? lastPrice : seed);
+        }
+
+        prices[^1] = lastPrice;
+        return prices;
     }
 
     private static IReadOnlyList<string> ParseTags(string raw)
