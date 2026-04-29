@@ -670,4 +670,4 @@ Projection chart visualization (curve/target line/reach point) is currently summ
 
 ### Commit
 
-Pending
+671a874 feat(goals): add goal forecasting and portfolio-scoped goal CRUD
