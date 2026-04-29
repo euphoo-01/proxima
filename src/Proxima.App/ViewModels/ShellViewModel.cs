@@ -9,6 +9,7 @@ using Proxima.Domain.Portfolios;
 using Proxima.Domain.Transactions;
 using Proxima.Importing;
 using Proxima.Analytics.AssetDetails;
+using Proxima.Analytics.Engine;
 
 namespace Proxima.App.ViewModels;
 
@@ -1532,7 +1533,9 @@ public sealed class ShellViewModel : ViewModelBase
             .Select(row => new DashboardTransactionSnapshot(row.Id, row.AssetName, row.Ticker, row.TypeLabel, row.TradeDate, row.Price, row.GrossAmount))
             .ToList();
 
-        decimal total = PortfolioDashboardCalculator.CalculateTotalValue(assets);
+        decimal total = PortfolioAnalyticsEngine.TotalValue(
+            assets.Select(item => new PositionInput(item.Quantity, item.Price, item.Price)),
+            cash: 0m);
         DashboardTotalValue = total == 0m ? "Пустой портфель" : $"{total:0.##} {SelectedPortfolio?.Currency ?? "USD"}";
 
         Delta24h delta = PortfolioDashboardCalculator.Calculate24hDelta(assets, []);
@@ -1612,6 +1615,15 @@ public sealed class ShellViewModel : ViewModelBase
         {
             AssetDetailsAdvancedMetrics.Add(metric);
         }
+
+        IReadOnlyList<double> returns = AssetDetailsCalculator.Returns(snapshot.ClosePrices);
+        MetricResult engineSharpe = PortfolioAnalyticsEngine.Sharpe(returns);
+        AssetDetailsAdvancedMetrics.Add(new AssetMetric(
+            $"{engineSharpe.Name} (Engine)",
+            engineSharpe.Value is null ? "Недоступно" : $"{engineSharpe.Value:0.####}",
+            engineSharpe.Unit,
+            engineSharpe.Availability == MetricAvailability.Available ? AssetRiskLevel.Medium : AssetRiskLevel.Unavailable,
+            engineSharpe.Explanation));
 
         foreach (TransactionRowViewModel tx in Transactions.Where(item => item.AssetId == SelectedAsset.Id).OrderByDescending(item => item.TradeDate))
         {

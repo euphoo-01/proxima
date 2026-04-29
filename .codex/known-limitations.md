@@ -17,3 +17,5 @@
 - 24h delta currently falls back to “Недостаточно данных” unless historical/previous quote snapshots are available; full historical quote model is deferred.
 - Module 10 adds asset-details metrics and scoped transaction table with OHLC fallback state, but real OHLC provider integration and true candlestick rendering are still deferred.
 - Several advanced metrics (beta/correlation/implied volatility/spread-depth) display deterministic placeholders or unavailable states when benchmark/orderbook inputs are absent.
+- Module 11 introduces a dedicated analytics engine with typed metric results and documented formulas, but currency conversion abstraction is still a stub (no live FX provider integration yet).
+- Some portfolio-level realized P&L flows remain simplified until full lot-matching and tax-aware accounting modules are implemented.

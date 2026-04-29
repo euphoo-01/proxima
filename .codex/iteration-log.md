@@ -570,3 +570,54 @@ Asset details currently use deterministic OHLC fallback series and no real candl
 ### Commit
 
 660d0f8 feat(asset-details): add risk metrics and scoped asset analytics view
+
+## Iteration 11 — Analytics Engine
+
+### Scope
+
+Create a reusable analytics engine module with typed metric results and deterministic formulas, and integrate engine usage into dashboard/asset-details paths.
+
+### User Stories Checked
+
+- [x] US-11.1 — User receives correct portfolio calculations.
+- [x] US-11.2 — User receives risk-aware analytics.
+- [x] US-11.3 — Developer can extend metrics safely.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-11.1 | Partial | Money and position calculations use `decimal`; ROI zero-denominator handling and average-cost buy/sell helpers implemented. Full currency-conversion abstraction is documented but still stubbed. |
+| AC-11.2 | Done | Portfolio total/allocation logic returns stable values and handles empty sets safely; dashboard uses engine-backed total value path. |
+| AC-11.3 | Done | Volatility/MDD/Sharpe/Sortino/VaR/CVaR return typed availability-aware results for insufficient or edge datasets. |
+| AC-11.4 | Partial | SMA/RSI/ATR/Z-score/correlation logic implemented and tested; Hurst and full indicator suite remain deferred placeholders. |
+| AC-11.5 | Done | Engine metrics return typed `MetricResult` metadata (name, value, unit, availability, explanation, severity). Analytics module remains UI-free and unit-testable. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit | `tests/Proxima.Analytics.Tests` (`PortfolioAnalyticsEngine_CoreCalculations`) | Passed |
+| Integration | `tests/Proxima.App.Tests` and dashboard/asset-details rebuild paths compile and run with engine integration | Passed |
+| Review | `docs/analytics-formulas.md` created with assumptions and formulas | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Currency conversion abstraction is not yet backed by a live FX provider. Some advanced indicators (e.g. Hurst and deeper liquidity metrics) remain deferred to later analytics iterations.
+
+### Commit
+
+Pending

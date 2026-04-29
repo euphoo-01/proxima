@@ -1,6 +1,7 @@
 using Proxima.Analytics;
 using Proxima.Analytics.AssetDetails;
 using Proxima.Analytics.Dashboard;
+using Proxima.Analytics.Engine;
 
 namespace Proxima.Analytics.Tests;
 
@@ -13,7 +14,39 @@ internal static class Program
         DashboardCalculator_TotalValueAndAllocation();
         DashboardCalculator_LatestTransactionsSortAndSearch();
         AssetDetailsCalculator_CoreMetrics();
+        PortfolioAnalyticsEngine_CoreCalculations();
         Console.WriteLine("Proxima.Analytics.Tests passed.");
+    }
+
+    private static void PortfolioAnalyticsEngine_CoreCalculations()
+    {
+        PositionInput[] positions =
+        [
+            new(2m, 100m, 120m, 1m),
+            new(1m, 50m, 70m, 0m),
+        ];
+        decimal total = PortfolioAnalyticsEngine.TotalValue(positions, cash: 10m);
+        Assert(total == 320m, "Total value should include cash.");
+
+        decimal pnl = PortfolioAnalyticsEngine.UnrealizedPnl(positions[0]);
+        Assert(pnl == 39m, "PnL should include fees.");
+
+        decimal? roi = PortfolioAnalyticsEngine.Roi(100m, pnl);
+        Assert(roi is not null && roi > 0m, "ROI should compute for non-zero invested.");
+        Assert(PortfolioAnalyticsEngine.Roi(0m, 10m) is null, "ROI should be unavailable for zero denominator.");
+
+        decimal avgAfterBuy = PortfolioAnalyticsEngine.AverageCostAfterBuy(2m, 100m, 1m, 130m, 2m);
+        Assert(avgAfterBuy > 100m, "Average cost should increase after higher buy with fees.");
+        Assert(PortfolioAnalyticsEngine.AverageCostAfterSell(3m, avgAfterBuy, 1m) == avgAfterBuy, "Sell keeps average cost for remaining units.");
+
+        double[] returns = [0.01, -0.02, 0.015, -0.005, 0.02];
+        Assert(PortfolioAnalyticsEngine.Volatility(returns).Availability == MetricAvailability.Available, "Volatility should be available.");
+        Assert(PortfolioAnalyticsEngine.MaxDrawdown([100d, 95d, 110d, 90d]).Value > 0d, "MDD should compute.");
+        Assert(PortfolioAnalyticsEngine.Sharpe(returns).Availability == MetricAvailability.Available, "Sharpe should compute.");
+        Assert(PortfolioAnalyticsEngine.Sortino(returns).Availability == MetricAvailability.Available, "Sortino should compute.");
+        Assert(PortfolioAnalyticsEngine.VaR(returns).Availability == MetricAvailability.Available, "VaR should compute.");
+        Assert(PortfolioAnalyticsEngine.CVaR(returns).Availability == MetricAvailability.Available, "CVaR should compute.");
+        Assert(PortfolioAnalyticsEngine.Correlation(returns, returns.Select(v => v * 0.8d).ToArray()).Availability == MetricAvailability.Available, "Correlation should compute.");
     }
 
     private static void AssetDetailsCalculator_CoreMetrics()
