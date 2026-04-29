@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Proxima.Application.Assets;
+using Proxima.Application.Goals;
 using Proxima.Application.Portfolios;
 using Proxima.Application.Quotes;
 using Proxima.Application.Transactions;
@@ -21,6 +22,7 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly ITransactionService _transactions;
     private readonly IQuoteRefreshService _quotes;
     private readonly IImportService _importService;
+    private readonly IGoalService _goals;
     private Guid _ownerUserId;
 
     private string _activeRoute = "dashboard";
@@ -98,8 +100,17 @@ public sealed class ShellViewModel : ViewModelBase
     private string _assetDetailsTimeframe = "1d";
     private string _assetDetailsChartState = "Нет данных";
     private bool _assetDetailsNotFound;
+    private bool _isCreateGoalDialogOpen;
+    private bool _isEditGoalDialogOpen;
+    private string _goalValidation = string.Empty;
+    private GoalRowViewModel? _selectedGoal;
+    private string _goalTitle = string.Empty;
+    private decimal _goalTargetAmount;
+    private string _goalCurrency = "USD";
+    private decimal _goalMonthlyContribution;
+    private decimal? _goalExpectedAnnualReturn = 8m;
 
-    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService, IQuoteRefreshService quotes)
+    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService, IQuoteRefreshService quotes, IGoalService goals)
     {
         _navigation = navigation;
         _portfolios = portfolios;
@@ -107,6 +118,7 @@ public sealed class ShellViewModel : ViewModelBase
         _transactions = transactions;
         _importService = importService;
         _quotes = quotes;
+        _goals = goals;
         RegisterRoutes();
         ApplyRoute(_navigation.Navigate("dashboard", pushHistory: false));
     }
@@ -122,6 +134,8 @@ public sealed class ShellViewModel : ViewModelBase
     public ObservableCollection<AssetMetric> AssetDetailsBaseMetrics { get; } = [];
     public ObservableCollection<AssetMetric> AssetDetailsAdvancedMetrics { get; } = [];
     public ObservableCollection<TransactionRowViewModel> AssetDetailsTransactions { get; } = [];
+    public ObservableCollection<GoalRowViewModel> Goals { get; } = [];
+    public bool IsGoalsEmpty => Goals.Count == 0;
 
     public IEnumerable<string> Currencies => new[] { "USD", "EUR", "BYN", "RUB" };
     public IEnumerable<AssetType> AssetTypes => Enum.GetValues<AssetType>();
@@ -690,6 +704,60 @@ public sealed class ShellViewModel : ViewModelBase
         private set => SetProperty(ref _assetDetailsNotFound, value);
     }
 
+    public bool IsCreateGoalDialogOpen
+    {
+        get => _isCreateGoalDialogOpen;
+        private set => SetProperty(ref _isCreateGoalDialogOpen, value);
+    }
+
+    public bool IsEditGoalDialogOpen
+    {
+        get => _isEditGoalDialogOpen;
+        private set => SetProperty(ref _isEditGoalDialogOpen, value);
+    }
+
+    public string GoalValidation
+    {
+        get => _goalValidation;
+        private set => SetProperty(ref _goalValidation, value);
+    }
+
+    public GoalRowViewModel? SelectedGoal
+    {
+        get => _selectedGoal;
+        set => SetProperty(ref _selectedGoal, value);
+    }
+
+    public string GoalTitle
+    {
+        get => _goalTitle;
+        set => SetProperty(ref _goalTitle, value);
+    }
+
+    public decimal GoalTargetAmount
+    {
+        get => _goalTargetAmount;
+        set => SetProperty(ref _goalTargetAmount, value);
+    }
+
+    public string GoalCurrency
+    {
+        get => _goalCurrency;
+        set => SetProperty(ref _goalCurrency, value);
+    }
+
+    public decimal GoalMonthlyContribution
+    {
+        get => _goalMonthlyContribution;
+        set => SetProperty(ref _goalMonthlyContribution, value);
+    }
+
+    public decimal? GoalExpectedAnnualReturn
+    {
+        get => _goalExpectedAnnualReturn;
+        set => SetProperty(ref _goalExpectedAnnualReturn, value);
+    }
+
     public bool IsDashboardPage => ActiveRoute.Equals("dashboard", StringComparison.Ordinal);
     public bool IsAssetsPage => ActiveRoute.Equals("assets", StringComparison.Ordinal);
     public bool IsTaxesPage => ActiveRoute.Equals("taxes", StringComparison.Ordinal);
@@ -704,6 +772,7 @@ public sealed class ShellViewModel : ViewModelBase
     {
         _ownerUserId = ownerUserId;
         await ReloadPortfoliosAsync(cancellationToken).ConfigureAwait(false);
+        await ReloadGoalsAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public void Navigate(string route)
@@ -877,6 +946,111 @@ public sealed class ShellViewModel : ViewModelBase
         {
             IsRefreshingQuotes = false;
         }
+    }
+
+    public void OpenCreateGoalDialog()
+    {
+        GoalTitle = string.Empty;
+        GoalTargetAmount = 0m;
+        GoalCurrency = SelectedPortfolio?.Currency ?? "USD";
+        GoalMonthlyContribution = 0m;
+        GoalExpectedAnnualReturn = 8m;
+        GoalValidation = string.Empty;
+        IsCreateGoalDialogOpen = true;
+    }
+
+    public void CancelCreateGoalDialog()
+    {
+        IsCreateGoalDialogOpen = false;
+    }
+
+    public async Task CreateGoalAsync(CancellationToken cancellationToken = default)
+    {
+        if (SelectedPortfolio is null)
+        {
+            GoalValidation = "Выберите портфель.";
+            return;
+        }
+
+        GoalOperationResult result = await _goals.CreateAsync(new CreateGoalRequest(
+            SelectedPortfolio.Id,
+            GoalTitle,
+            GoalTargetAmount,
+            GoalCurrency,
+            GoalMonthlyContribution,
+            GoalExpectedAnnualReturn,
+            null), cancellationToken).ConfigureAwait(false);
+        if (!result.Succeeded)
+        {
+            GoalValidation = result.Message;
+            return;
+        }
+
+        IsCreateGoalDialogOpen = false;
+        await ReloadGoalsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public void OpenEditGoalDialog(GoalRowViewModel goal)
+    {
+        SelectedGoal = goal;
+        GoalTitle = goal.Title;
+        GoalTargetAmount = goal.TargetAmount;
+        GoalCurrency = goal.Currency;
+        GoalMonthlyContribution = goal.MonthlyContribution;
+        GoalExpectedAnnualReturn = goal.ExpectedAnnualReturnPercent;
+        GoalValidation = string.Empty;
+        IsEditGoalDialogOpen = true;
+    }
+
+    public void CancelEditGoalDialog()
+    {
+        IsEditGoalDialogOpen = false;
+    }
+
+    public async Task SaveGoalChangesAsync(CancellationToken cancellationToken = default)
+    {
+        if (SelectedPortfolio is null || SelectedGoal is null)
+        {
+            GoalValidation = "Цель не выбрана.";
+            return;
+        }
+
+        GoalOperationResult result = await _goals.UpdateAsync(new UpdateGoalRequest(
+            SelectedPortfolio.Id,
+            SelectedGoal.Id,
+            GoalTitle,
+            GoalTargetAmount,
+            GoalCurrency,
+            GoalMonthlyContribution,
+            GoalExpectedAnnualReturn,
+            null), cancellationToken).ConfigureAwait(false);
+        if (!result.Succeeded)
+        {
+            GoalValidation = result.Message;
+            return;
+        }
+
+        IsEditGoalDialogOpen = false;
+        await ReloadGoalsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task ArchiveSelectedGoalAsync(CancellationToken cancellationToken = default)
+    {
+        if (SelectedPortfolio is null || SelectedGoal is null)
+        {
+            GoalValidation = "Цель не выбрана.";
+            return;
+        }
+
+        GoalOperationResult result = await _goals.ArchiveAsync(SelectedPortfolio.Id, SelectedGoal.Id, cancellationToken).ConfigureAwait(false);
+        if (!result.Succeeded)
+        {
+            GoalValidation = result.Message;
+            return;
+        }
+
+        IsEditGoalDialogOpen = false;
+        await ReloadGoalsAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public void OpenCreatePortfolioDialog()
@@ -1117,6 +1291,7 @@ public sealed class ShellViewModel : ViewModelBase
         OnPropertyChanged(nameof(PortfolioOptions));
         await ReloadAssetsAsync(cancellationToken).ConfigureAwait(false);
         await ReloadTransactionsAsync(cancellationToken).ConfigureAwait(false);
+        await ReloadGoalsAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public void OpenCreateAssetDialog()
@@ -1633,6 +1808,36 @@ public sealed class ShellViewModel : ViewModelBase
         AssetDetailsChartState = closes.Count == 0
             ? "Нет данных OHLC"
             : $"OHLC fallback · {AssetDetailsTimeframe}";
+    }
+
+    private async Task ReloadGoalsAsync(CancellationToken cancellationToken)
+    {
+        Goals.Clear();
+        if (SelectedPortfolio is null)
+        {
+            OnPropertyChanged(nameof(IsGoalsEmpty));
+            return;
+        }
+
+        decimal currentPortfolioValue = Assets.Sum(item => item.Value);
+        IReadOnlyList<Proxima.Domain.Goals.Goal> items = await _goals.ListActiveAsync(SelectedPortfolio.Id, cancellationToken).ConfigureAwait(false);
+        foreach (Proxima.Domain.Goals.Goal goal in items)
+        {
+            GoalForecast forecast = _goals.Forecast(goal, currentPortfolioValue);
+            string summary = forecast.Reachable
+                ? $"{forecast.MonthsToGoal} мес · {forecast.ProjectedValue:0.##} {goal.Currency}"
+                : forecast.Message;
+            Goals.Add(new GoalRowViewModel(
+                goal.Id,
+                goal.Title,
+                goal.TargetAmount,
+                goal.Currency,
+                goal.MonthlyContribution,
+                goal.ExpectedAnnualReturnPercent,
+                summary));
+        }
+
+        OnPropertyChanged(nameof(IsGoalsEmpty));
     }
 
     private static List<decimal> BuildSyntheticCloseSeries(decimal lastPrice)

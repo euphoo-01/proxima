@@ -621,3 +621,53 @@ Currency conversion abstraction is not yet backed by a live FX provider. Some ad
 ### Commit
 
 2b741ba feat(analytics): add typed portfolio analytics engine and formulas
+
+## Iteration 12 — Goals & Compound Interest Forecast
+
+### Scope
+
+Implement goals CRUD, monthly compound forecast calculation, and goals page interactions with create/edit/archive flows scoped to selected portfolio.
+
+### User Stories Checked
+
+- [x] US-12.1 — User creates financial goals.
+- [x] US-12.2 — User forecasts time to goal.
+- [x] US-12.3 — User receives motivation through visualization.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-12.1 | Done | Goal create/edit/archive implemented via `GoalService` and `JsonGoalRepository` with validation rules and goals list rendering on goals page. |
+| AC-12.2 | Partial | Forecast inputs (monthly contribution + expected return) are editable in create/edit dialogs; quick amount buttons are deferred. |
+| AC-12.3 | Done | Compound monthly forecast implemented in `GoalService.Forecast`, including zero/negative handling, months-to-goal, estimated date, and unreachable message. |
+| AC-12.4 | Partial | Goals page shows forecast summaries and assumptions via text; full projection curve/target-line chart with tooltip is deferred. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit | `tests/Proxima.Application.Tests` (`GoalService_ForecastAndValidation`) | Passed |
+| Integration | `tests/Proxima.Infrastructure.Tests` (`JsonGoalRepository_StoresAndArchives`) | Passed |
+| UI/Smoke | `dotnet test Proxima.sln` includes goals bindings/DI through app test graph | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Projection chart visualization (curve/target line/reach point) is currently summarized textually in goal rows. Return assumptions are user-input only; automatic inference from portfolio history is deferred.
+
+### Commit
+
+Pending

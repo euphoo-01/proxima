@@ -4,12 +4,14 @@ using Proxima.App.ViewModels;
 using Proxima.Application;
 using Proxima.Application.Assets;
 using Proxima.Application.Auth;
+using Proxima.Application.Goals;
 using Proxima.Application.Portfolios;
 using Proxima.Application.Quotes;
 using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
 using Proxima.Domain;
 using Proxima.Domain.Auth;
+using Proxima.Domain.Goals;
 using Proxima.Domain.Portfolios;
 using Proxima.Domain.Transactions;
 using Proxima.Importing;
@@ -231,7 +233,7 @@ internal static class Program
 
     private static ShellViewModel CreateShellViewModel()
     {
-        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService(), new TestImportService(), new TestQuoteRefreshService());
+        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService(), new TestImportService(), new TestQuoteRefreshService(), new TestGoalService());
     }
 
     private static async Task ShellViewModel_FiltersAndSortsAssets()
@@ -493,6 +495,45 @@ internal static class Program
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(new QuoteRefreshSummary(1, 0, 0, "Quotes: updated=1, cached=0, failed=0"));
+        }
+    }
+
+    private sealed class TestGoalService : IGoalService
+    {
+        public Task<IReadOnlyList<Goal>> ListActiveAsync(Guid portfolioId, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            IReadOnlyList<Goal> goals =
+            [
+                new(Guid.Parse("aaaaaaaa-3333-3333-3333-333333333333"), portfolioId, "FIRE", 100000m, "USD", 1000m, 8m, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
+            ];
+            return Task.FromResult(goals);
+        }
+
+        public Task<GoalOperationResult> CreateAsync(CreateGoalRequest request, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Goal goal = new(Guid.NewGuid(), request.PortfolioId, request.Title, request.TargetAmount, request.Currency, request.MonthlyContribution, request.ExpectedAnnualReturnPercent, request.TargetDate, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+            return Task.FromResult(GoalOperationResult.Success(goal));
+        }
+
+        public Task<GoalOperationResult> UpdateAsync(UpdateGoalRequest request, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Goal goal = new(request.GoalId, request.PortfolioId, request.Title, request.TargetAmount, request.Currency, request.MonthlyContribution, request.ExpectedAnnualReturnPercent, request.TargetDate, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+            return Task.FromResult(GoalOperationResult.Success(goal));
+        }
+
+        public Task<GoalOperationResult> ArchiveAsync(Guid portfolioId, Guid goalId, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Goal goal = new(goalId, portfolioId, "Archived", 1m, "USD", 0m, null, null, true, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+            return Task.FromResult(GoalOperationResult.Success(goal));
+        }
+
+        public GoalForecast Forecast(Goal goal, decimal currentPortfolioValue)
+        {
+            return new GoalForecast(true, 24, DateTimeOffset.UtcNow.AddMonths(24), goal.TargetAmount, "ok");
         }
     }
 }

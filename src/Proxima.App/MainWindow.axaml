@@ -464,8 +464,26 @@
                             <controls:StatusPill Text="ИНФОРМАЦИОННЫЙ РАСЧЕТ" />
                         </controls:BentoCard>
 
-                        <controls:BentoCard IsVisible="{Binding Shell.IsGoalsPage}" Title="Цели" Subtitle="Раздел целей и прогнозов">
-                            <controls:EmptyState Title="Нет созданных целей" Message="Цели появятся после запуска соответствующего модуля." />
+                        <controls:BentoCard IsVisible="{Binding Shell.IsGoalsPage}" Title="Цели" Subtitle="Финансовые цели и прогноз достижения">
+                            <StackPanel Spacing="12">
+                                <Button Classes="proxima-primary" Content="Добавить цель" HorizontalAlignment="Left" Click="OpenCreateGoalClicked" />
+                                <ItemsControl ItemsSource="{Binding Shell.Goals}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Padding="10" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Card}">
+                                                <Grid ColumnDefinitions="1.2*,1*,1*,1.5*,Auto" ColumnSpacing="8">
+                                                    <TextBlock Classes="proxima-body" Text="{Binding Title}" />
+                                                    <TextBlock Grid.Column="1" Classes="proxima-caption" Text="{Binding TargetAmount, StringFormat={}{0:0.##}}" />
+                                                    <TextBlock Grid.Column="2" Classes="proxima-caption" Text="{Binding MonthlyContribution, StringFormat={}{0:0.##}/mo}" />
+                                                    <TextBlock Grid.Column="3" Classes="proxima-caption" Text="{Binding ForecastSummary}" TextWrapping="Wrap" />
+                                                    <Button Grid.Column="4" Classes="proxima-secondary" Content="⋯" Click="OpenEditGoalClicked" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <controls:EmptyState IsVisible="{Binding Shell.IsGoalsEmpty}" Title="Нет целей" Message="Добавьте первую цель для расчёта прогноза." />
+                            </StackPanel>
                         </controls:BentoCard>
 
                         <controls:BentoCard IsVisible="{Binding Shell.IsSettingsPage}" Title="Настройки" Subtitle="Параметры приложения и приватности">
@@ -732,6 +750,55 @@
                         <Button Classes="proxima-secondary" Click="PreviewImportClicked" Content="Предпросмотр" />
                         <Button Classes="proxima-secondary" Click="OpenManualImportClicked" Content="Ввести вручную" />
                         <Button Classes="proxima-primary" Click="CommitImportClicked" Content="Сохранить" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <Border
+            Background="#88001629"
+            IsVisible="{Binding Shell.IsCreateGoalDialogOpen, FallbackValue=False}">
+            <Border Width="520" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{StaticResource ProximaBrush.Surface}" BorderBrush="{StaticResource ProximaBrush.BorderSubtle}" BorderThickness="1" CornerRadius="{StaticResource ProximaRadius.Large}">
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="proxima-card-title" Text="Новая цель" />
+                    <TextBox Watermark="Название" Text="{Binding Shell.GoalTitle}" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <TextBox Watermark="Целевая сумма" Text="{Binding Shell.GoalTargetAmount}" />
+                        <TextBox Grid.Column="1" Watermark="Валюта" Text="{Binding Shell.GoalCurrency}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <TextBox Watermark="Взнос / месяц" Text="{Binding Shell.GoalMonthlyContribution}" />
+                        <TextBox Grid.Column="1" Watermark="Ожид. доходность %/год" Text="{Binding Shell.GoalExpectedAnnualReturn}" />
+                    </Grid>
+                    <TextBlock Classes="proxima-caption" Foreground="{StaticResource ProximaBrush.Danger}" Text="{Binding Shell.GoalValidation}" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                        <Button Classes="proxima-secondary" Content="Отмена" Click="CancelCreateGoalClicked" />
+                        <Button Classes="proxima-primary" Content="Сохранить" Click="SaveCreateGoalClicked" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <Border
+            Background="#88001629"
+            IsVisible="{Binding Shell.IsEditGoalDialogOpen, FallbackValue=False}">
+            <Border Width="520" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{StaticResource ProximaBrush.Surface}" BorderBrush="{StaticResource ProximaBrush.BorderSubtle}" BorderThickness="1" CornerRadius="{StaticResource ProximaRadius.Large}">
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="proxima-card-title" Text="Редактирование цели" />
+                    <TextBox Watermark="Название" Text="{Binding Shell.GoalTitle}" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <TextBox Watermark="Целевая сумма" Text="{Binding Shell.GoalTargetAmount}" />
+                        <TextBox Grid.Column="1" Watermark="Валюта" Text="{Binding Shell.GoalCurrency}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <TextBox Watermark="Взнос / месяц" Text="{Binding Shell.GoalMonthlyContribution}" />
+                        <TextBox Grid.Column="1" Watermark="Ожид. доходность %/год" Text="{Binding Shell.GoalExpectedAnnualReturn}" />
+                    </Grid>
+                    <TextBlock Classes="proxima-caption" Foreground="{StaticResource ProximaBrush.Danger}" Text="{Binding Shell.GoalValidation}" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                        <Button Classes="proxima-secondary" Content="Отмена" Click="CancelEditGoalClicked" />
+                        <Button Classes="proxima-secondary" Content="Архивировать" Click="ArchiveGoalClicked" />
+                        <Button Classes="proxima-primary" Content="Сохранить" Click="SaveEditGoalClicked" />
                     </StackPanel>
                 </StackPanel>
             </Border>

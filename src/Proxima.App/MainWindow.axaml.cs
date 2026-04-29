@@ -3,6 +3,7 @@ using Avalonia.Input;
 using Proxima.App.ViewModels;
 using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
+using Proxima.Infrastructure.Goals;
 using Proxima.Infrastructure.Portfolios;
 using Proxima.Infrastructure.Quotes;
 using Proxima.Infrastructure.Transactions;
@@ -33,13 +34,15 @@ public partial class MainWindow : Window
         string assetStorePath = ProximaAssetComposition.GetDefaultAssetStorePath();
         string transactionStorePath = ProximaTransactionComposition.GetDefaultTransactionStorePath();
         string quoteCachePath = ProximaQuoteComposition.GetDefaultQuoteCacheStorePath();
+        string goalsStorePath = ProximaGoalComposition.GetDefaultGoalsStorePath();
         ShellViewModel shell = new(
             new ShellNavigationService(),
             ProximaPortfolioComposition.CreatePortfolioService(portfolioStorePath),
             ProximaAssetComposition.CreateAssetService(assetStorePath),
             ProximaTransactionComposition.CreateTransactionService(transactionStorePath, assetStorePath),
             ProximaImportComposition.CreateImportService(),
-            ProximaQuoteComposition.CreateQuoteRefreshService(assetStorePath, quoteCachePath));
+            ProximaQuoteComposition.CreateQuoteRefreshService(assetStorePath, quoteCachePath),
+            ProximaGoalComposition.CreateGoalService(goalsStorePath));
         return new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell);
     }
 
@@ -259,5 +262,43 @@ public partial class MainWindow : Window
     private async void RefreshQuotesClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
     {
         await ViewModel.Shell.RefreshQuotesAsync().ConfigureAwait(true);
+    }
+
+    private void OpenCreateGoalClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.OpenCreateGoalDialog();
+    }
+
+    private void CancelCreateGoalClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.CancelCreateGoalDialog();
+    }
+
+    private async void SaveCreateGoalClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.CreateGoalAsync().ConfigureAwait(true);
+    }
+
+    private void OpenEditGoalClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: GoalRowViewModel goal })
+        {
+            ViewModel.Shell.OpenEditGoalDialog(goal);
+        }
+    }
+
+    private void CancelEditGoalClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.CancelEditGoalDialog();
+    }
+
+    private async void SaveEditGoalClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.SaveGoalChangesAsync().ConfigureAwait(true);
+    }
+
+    private async void ArchiveGoalClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.ArchiveSelectedGoalAsync().ConfigureAwait(true);
     }
 }

@@ -1,11 +1,13 @@
 using Proxima.Application;
 using Proxima.Application.Assets;
 using Proxima.Application.Auth;
+using Proxima.Application.Goals;
 using Proxima.Application.Portfolios;
 using Proxima.Application.Quotes;
 using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
 using Proxima.Domain.Auth;
+using Proxima.Domain.Goals;
 using Proxima.Domain.Portfolios;
 using Proxima.Domain.Transactions;
 
@@ -26,7 +28,24 @@ internal static class Program
         AssetService_NormalizesTickerAndArchives().GetAwaiter().GetResult();
         TransactionService_ValidatesCrossPortfolioAsset().GetAwaiter().GetResult();
         QuoteRefreshService_UsesCacheOnProviderFailure().GetAwaiter().GetResult();
+        GoalService_ForecastAndValidation().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.Application.Tests passed.");
+    }
+
+    private static async Task GoalService_ForecastAndValidation()
+    {
+        MemoryGoalRepository repository = new();
+        GoalService service = new(repository);
+        Guid portfolioId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+        GoalOperationResult invalid = await service.CreateAsync(new CreateGoalRequest(portfolioId, "", 1000m, "USD", 100m, 8m, null)).ConfigureAwait(false);
+        Assert(!invalid.Succeeded, "Goal title is required.");
+
+        GoalOperationResult created = await service.CreateAsync(new CreateGoalRequest(portfolioId, "Retire", 10000m, "USD", 300m, 8m, null)).ConfigureAwait(false);
+        Assert(created.Succeeded, "Valid goal should be created.");
+
+        GoalForecast forecast = service.Forecast(created.Goal!, currentPortfolioValue: 2000m);
+        Assert(forecast.Reachable, "Goal should be reachable under positive contribution.");
     }
 
     private static async Task QuoteRefreshService_UsesCacheOnProviderFailure()
@@ -382,6 +401,44 @@ internal static class Program
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(QuoteProviderResult.Failure(QuoteProviderErrorKind.Network, "offline"));
+        }
+    }
+
+    private sealed class MemoryGoalRepository : IGoalRepository
+    {
+        private readonly List<Goal> _items = [];
+
+        public Task<IReadOnlyList<Goal>> ListByPortfolioAsync(Guid portfolioId, bool includeArchived, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            IEnumerable<Goal> query = _items.Where(item => item.PortfolioId == portfolioId);
+            if (!includeArchived)
+            {
+                query = query.Where(item => !item.IsArchived);
+            }
+
+            return Task.FromResult<IReadOnlyList<Goal>>(query.ToArray());
+        }
+
+        public Task<Goal?> FindByIdAsync(Guid portfolioId, Guid goalId, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(_items.FirstOrDefault(item => item.PortfolioId == portfolioId && item.Id == goalId));
+        }
+
+        public Task AddAsync(Goal goal, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _items.Add(goal);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(Goal goal, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            int idx = _items.FindIndex(item => item.PortfolioId == goal.PortfolioId && item.Id == goal.Id);
+            _items[idx] = goal;
+            return Task.CompletedTask;
         }
     }
 }

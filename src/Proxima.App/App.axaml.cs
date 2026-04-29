@@ -4,6 +4,7 @@ using Avalonia.Markup.Xaml;
 using Proxima.App.ViewModels;
 using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
+using Proxima.Infrastructure.Goals;
 using Proxima.Infrastructure.Portfolios;
 using Proxima.Infrastructure.Quotes;
 using Proxima.Infrastructure.Transactions;
@@ -27,13 +28,15 @@ public partial class App : global::Avalonia.Application
             string assetStorePath = ProximaAssetComposition.GetDefaultAssetStorePath();
             string transactionStorePath = ProximaTransactionComposition.GetDefaultTransactionStorePath();
             string quoteCachePath = ProximaQuoteComposition.GetDefaultQuoteCacheStorePath();
+            string goalsStorePath = ProximaGoalComposition.GetDefaultGoalsStorePath();
             ShellViewModel shell = new(
                 new ShellNavigationService(),
                 ProximaPortfolioComposition.CreatePortfolioService(portfolioStorePath),
                 ProximaAssetComposition.CreateAssetService(assetStorePath),
                 ProximaTransactionComposition.CreateTransactionService(transactionStorePath, assetStorePath),
                 ProximaImportComposition.CreateImportService(),
-                ProximaQuoteComposition.CreateQuoteRefreshService(assetStorePath, quoteCachePath));
+                ProximaQuoteComposition.CreateQuoteRefreshService(assetStorePath, quoteCachePath),
+                ProximaGoalComposition.CreateGoalService(goalsStorePath));
             desktop.MainWindow = new MainWindow(new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell));
         }
 

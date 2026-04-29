@@ -1,15 +1,18 @@
 using Proxima.Infrastructure;
 using Proxima.Application.Assets;
 using Proxima.Application.Auth;
+using Proxima.Application.Goals;
 using Proxima.Application.Portfolios;
 using Proxima.Application.Quotes;
 using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
 using Proxima.Domain.Auth;
+using Proxima.Domain.Goals;
 using Proxima.Domain.Portfolios;
 using Proxima.Domain.Transactions;
 using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
+using Proxima.Infrastructure.Goals;
 using Proxima.Infrastructure.Portfolios;
 using Proxima.Infrastructure.Quotes;
 using Proxima.Infrastructure.Transactions;
@@ -28,7 +31,27 @@ internal static class Program
         await JsonAssetRepository_StoresAndArchives().ConfigureAwait(false);
         await JsonTransactionRepository_StoresAndArchives().ConfigureAwait(false);
         await JsonQuoteCacheRepository_UpsertsByAsset().ConfigureAwait(false);
+        await JsonGoalRepository_StoresAndArchives().ConfigureAwait(false);
         Console.WriteLine("Proxima.Infrastructure.Tests passed.");
+    }
+
+    private static async Task JsonGoalRepository_StoresAndArchives()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "proxima-goal-tests", Guid.NewGuid().ToString("N"));
+        string path = Path.Combine(directory, "goals.json");
+        GoalService service = new(new JsonGoalRepository(path));
+        Guid portfolioId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
+        GoalOperationResult created = await service.CreateAsync(new CreateGoalRequest(portfolioId, "House", 50000m, "USD", 500m, 8m, null)).ConfigureAwait(false);
+        Assert(created.Succeeded, "Goal create should persist.");
+
+        IReadOnlyList<Goal> active = await service.ListActiveAsync(portfolioId).ConfigureAwait(false);
+        Assert(active.Count == 1, "Goal should be listed.");
+
+        GoalOperationResult archived = await service.ArchiveAsync(portfolioId, created.Goal!.Id).ConfigureAwait(false);
+        Assert(archived.Succeeded, "Goal archive should persist.");
+        active = await service.ListActiveAsync(portfolioId).ConfigureAwait(false);
+        Assert(active.Count == 0, "Archived goal should be hidden.");
     }
 
     private static async Task JsonQuoteCacheRepository_UpsertsByAsset()

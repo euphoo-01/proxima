@@ -19,3 +19,5 @@
 - Several advanced metrics (beta/correlation/implied volatility/spread-depth) display deterministic placeholders or unavailable states when benchmark/orderbook inputs are absent.
 - Module 11 introduces a dedicated analytics engine with typed metric results and documented formulas, but currency conversion abstraction is still a stub (no live FX provider integration yet).
 - Some portfolio-level realized P&L flows remain simplified until full lot-matching and tax-aware accounting modules are implemented.
+- Module 12 adds goals CRUD and compound monthly forecast, but visualization is currently table-summary based (no dedicated projection curve chart yet).
+- Forecast uses deterministic monthly compounding assumptions and does not yet infer return from historical portfolio performance automatically.
