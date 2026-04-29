@@ -2,12 +2,15 @@ using Proxima.Infrastructure;
 using Proxima.Application.Assets;
 using Proxima.Application.Auth;
 using Proxima.Application.Portfolios;
+using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
 using Proxima.Domain.Auth;
 using Proxima.Domain.Portfolios;
+using Proxima.Domain.Transactions;
 using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Portfolios;
+using Proxima.Infrastructure.Transactions;
 
 namespace Proxima.Infrastructure.Tests;
 
@@ -21,7 +24,34 @@ internal static class Program
         await JsonRepository_PersistsProfileWithoutPlaintextPassword().ConfigureAwait(false);
         await JsonPortfolioRepository_StoresAndFiltersByOwner().ConfigureAwait(false);
         await JsonAssetRepository_StoresAndArchives().ConfigureAwait(false);
+        await JsonTransactionRepository_StoresAndArchives().ConfigureAwait(false);
         Console.WriteLine("Proxima.Infrastructure.Tests passed.");
+    }
+
+    private static async Task JsonTransactionRepository_StoresAndArchives()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "proxima-transaction-tests", Guid.NewGuid().ToString("N"));
+        string assetPath = Path.Combine(directory, "assets.json");
+        string transactionPath = Path.Combine(directory, "transactions.json");
+
+        JsonAssetRepository assetRepository = new(assetPath);
+        AssetService assetService = new(assetRepository);
+        Guid portfolioId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        AssetOperationResult asset = await assetService.CreateAsync(new CreateAssetRequest(
+            portfolioId, "aapl", "Apple", AssetType.Stock, "USD", null, null, ["tech"], null, 1m, 100m, 110m)).ConfigureAwait(false);
+
+        TransactionService service = new(new JsonTransactionRepository(transactionPath), assetRepository);
+        TransactionOperationResult created = await service.CreateAsync(new CreateTransactionRequest(
+            portfolioId, asset.Asset!.Id, TransactionType.Buy, DateTimeOffset.UtcNow, 1m, 110m, 110m, 0m, 0m, "USD", "Broker", null, null)).ConfigureAwait(false);
+        Assert(created.Succeeded, "Transaction create should persist.");
+
+        IReadOnlyList<PortfolioTransaction> list = await service.ListActiveAsync(portfolioId).ConfigureAwait(false);
+        Assert(list.Count == 1 && list[0].Type == TransactionType.Buy, "Transaction should load from JSON storage.");
+
+        TransactionOperationResult archived = await service.ArchiveAsync(portfolioId, created.Transaction!.Id).ConfigureAwait(false);
+        Assert(archived.Succeeded, "Transaction archive should persist.");
+        IReadOnlyList<PortfolioTransaction> active = await service.ListActiveAsync(portfolioId).ConfigureAwait(false);
+        Assert(active.Count == 0, "Archived transaction should be hidden from active list.");
     }
 
     private static async Task JsonAssetRepository_StoresAndArchives()

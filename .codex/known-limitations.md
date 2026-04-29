@@ -7,3 +7,5 @@
 - Module 04 introduces a portfolio domain/application/infrastructure flow and shell CRUD behavior, but persistence is still JSON-backed. PostgreSQL/EF Core storage, archive filters in DB queries and cross-module data scoping with real assets/transactions remain deferred.
 - Module 05 adds asset CRUD/search/sort/tag filtering and asset-details navigation from the assets table, but storage is still JSON-backed and notes are only obfuscated (base64 placeholder), not encrypted with a dedicated key-management flow yet.
 - Hard-delete flow with transaction dependency checks is deferred until Module 06 transaction persistence is available; current module supports archive-only safe removal.
+- Module 06 adds local transaction CRUD/search/sort and portfolio/asset scoping checks, but transactional DB semantics are still deferred because persistence remains JSON-backed.
+- Manual transaction form currently prioritizes type-level validation and asset scoping, while field-by-field inline error UX and full portfolio analytics recalculation are deferred to analytics/persistence modules.

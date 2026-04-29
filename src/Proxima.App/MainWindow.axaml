@@ -255,7 +255,7 @@
                             <controls:MetricCard Grid.Column="2" CardBackground="{StaticResource ProximaBrush.SuccessSurface}" Label="Статус" Value="Активно" Footer="Shell готов" />
                         </Grid>
 
-                        <Grid IsVisible="{Binding Shell.IsAssetsPage}" RowDefinitions="Auto,*" RowSpacing="24">
+                        <Grid IsVisible="{Binding Shell.IsAssetsPage}" RowDefinitions="Auto,Auto,*" RowSpacing="24">
                             <controls:BentoCard Title="Реестр активов" Subtitle="Поиск, сортировка и быстрые действия">
                                 <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
                                     <TextBox Watermark="Поиск по имени, тикеру, тегу" Text="{Binding Shell.AssetSearchQuery}" />
@@ -296,7 +296,10 @@
                                                         <TextBlock Grid.Column="5" Classes="proxima-body" Text="{Binding Value, StringFormat={}{0:0.##}}" />
                                                         <TextBlock Grid.Column="6" Classes="proxima-body" Text="{Binding ProfitLoss, StringFormat={}{0:0.##}}" />
                                                         <TextBlock Grid.Column="7" Classes="proxima-caption" Text="{Binding TagsText}" TextWrapping="Wrap" />
-                                                        <Button Grid.Column="8" Classes="proxima-secondary" Content="⋯" Click="OpenEditAssetClicked" />
+                                                        <StackPanel Grid.Column="8" Orientation="Horizontal" Spacing="6">
+                                                            <Button Classes="proxima-secondary" Content="+" Click="OpenCreateTransactionForAssetClicked" />
+                                                            <Button Classes="proxima-secondary" Content="⋯" Click="OpenEditAssetClicked" />
+                                                        </StackPanel>
                                                     </Grid>
                                                 </Border>
                                             </DataTemplate>
@@ -306,11 +309,51 @@
                                     <controls:EmptyState IsVisible="{Binding Shell.IsAssetTableEmpty}" Title="Нет активов" Message="Добавьте актив вручную или через импорт в следующем модуле." />
                                 </StackPanel>
                             </controls:BentoCard>
+
+                            <controls:BentoCard Grid.Row="2" Title="Транзакции портфеля" Subtitle="{Binding Shell.SelectedTransactionTitle}">
+                                <StackPanel Spacing="12">
+                                    <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+                                        <TextBox Watermark="Поиск по активу, тикеру, брокеру, типу" Text="{Binding Shell.TransactionSearchQuery}" />
+                                        <ComboBox Grid.Column="1" SelectedItem="{Binding Shell.TransactionSort}" ItemsSource="{Binding Shell.TransactionSortOptions}" MinWidth="170" />
+                                        <TextBlock Grid.Column="2" Classes="proxima-caption" VerticalAlignment="Center" Text="{Binding Shell.TransactionStatusText}" />
+                                        <Button Grid.Column="3" Classes="proxima-primary" Click="OpenCreateTransactionClicked" Content="Добавить транзакцию" />
+                                    </Grid>
+                                    <Grid ColumnDefinitions="1.2*,1*,1.1*,0.8*,0.9*,1.1*,Auto" IsVisible="{Binding Shell.HasTransactions}">
+                                        <TextBlock Classes="proxima-caption" Text="Дата" />
+                                        <TextBlock Grid.Column="1" Classes="proxima-caption" Text="Актив" />
+                                        <TextBlock Grid.Column="2" Classes="proxima-caption" Text="Тип" />
+                                        <TextBlock Grid.Column="3" Classes="proxima-caption" Text="Кол-во" />
+                                        <TextBlock Grid.Column="4" Classes="proxima-caption" Text="Цена" />
+                                        <TextBlock Grid.Column="5" Classes="proxima-caption" Text="Сумма" />
+                                        <TextBlock Grid.Column="6" Classes="proxima-caption" Text="Действия" />
+                                    </Grid>
+                                    <ItemsControl ItemsSource="{Binding Shell.FilteredTransactions}" IsVisible="{Binding Shell.HasTransactions}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Padding="10" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Card}">
+                                                    <Grid ColumnDefinitions="1.2*,1*,1.1*,0.8*,0.9*,1.1*,Auto" ColumnSpacing="8">
+                                                        <TextBlock Classes="proxima-body" Text="{Binding TradeDate, StringFormat={}{0:yyyy-MM-dd}}" />
+                                                        <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding AssetName}" />
+                                                        <TextBlock Grid.Column="2" Classes="proxima-body" Text="{Binding TypeLabel}" />
+                                                        <TextBlock Grid.Column="3" Classes="proxima-body" Text="{Binding Quantity, StringFormat={}{0:0.####}}" />
+                                                        <TextBlock Grid.Column="4" Classes="proxima-body" Text="{Binding Price, StringFormat={}{0:0.##}}" />
+                                                        <TextBlock Grid.Column="5" Classes="proxima-body" Text="{Binding GrossAmount, StringFormat={}{0:0.##}}" />
+                                                        <Button Grid.Column="6" Classes="proxima-secondary" Content="⋯" Click="OpenEditTransactionClicked" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <controls:EmptyState IsVisible="{Binding Shell.IsTransactionTableEmpty}" Title="Нет транзакций" Message="Добавьте первую операцию для расчёта метрик." />
+                                </StackPanel>
+                            </controls:BentoCard>
                         </Grid>
 
                         <controls:BentoCard IsVisible="{Binding Shell.IsAssetDetailsPage}" Title="Детали актива" Subtitle="Карточка детализации для сценария back-navigation">
                             <StackPanel Spacing="12">
                                 <TextBlock Classes="proxima-body" Text="Детали привязаны к текущему портфелю. При переключении портфеля отображается безопасный возврат в список активов." TextWrapping="Wrap" />
+                                <TextBlock Classes="proxima-caption" Text="{Binding Shell.SelectedAssetTitle}" />
+                                <TextBlock Classes="proxima-caption" Text="{Binding Shell.TransactionStatusText}" />
                                 <Button Classes="proxima-secondary" Click="GoBackClicked" Content="Вернуться назад" HorizontalAlignment="Left" />
                             </StackPanel>
                         </controls:BentoCard>
@@ -460,6 +503,87 @@
                         <Button Classes="proxima-secondary" Click="CancelEditAssetClicked" Content="Отмена" />
                         <Button Classes="proxima-secondary" Click="ArchiveAssetClicked" Content="Архивировать" />
                         <Button Classes="proxima-primary" Click="SaveEditAssetClicked" Content="Сохранить" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <Border
+            Background="#88001629"
+            IsVisible="{Binding Shell.IsCreateTransactionDialogOpen, FallbackValue=False}">
+            <Border
+                Width="560"
+                Padding="28"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource ProximaBrush.Surface}"
+                BorderBrush="{StaticResource ProximaBrush.BorderSubtle}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource ProximaRadius.Large}">
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="proxima-card-title" Text="Добавить транзакцию" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <ComboBox SelectedItem="{Binding Shell.TransactionType}" ItemsSource="{Binding Shell.TransactionTypes}" />
+                        <TextBox Grid.Column="1" Watermark="Дата/время" Text="{Binding Shell.TransactionDate}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <TextBox Watermark="Количество" Text="{Binding Shell.TransactionQuantity}" />
+                        <TextBox Grid.Column="1" Watermark="Цена" Text="{Binding Shell.TransactionPrice}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <TextBox Watermark="Сумма" Text="{Binding Shell.TransactionGrossAmount}" />
+                        <TextBox Grid.Column="1" Watermark="Валюта" Text="{Binding Shell.TransactionCurrency}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <TextBox Watermark="Комиссия" Text="{Binding Shell.TransactionFeeAmount}" />
+                        <TextBox Grid.Column="1" Watermark="Налог" Text="{Binding Shell.TransactionTaxAmount}" />
+                    </Grid>
+                    <TextBox Watermark="Брокер (опционально)" Text="{Binding Shell.TransactionBroker}" />
+                    <TextBlock Classes="proxima-caption" Foreground="{StaticResource ProximaBrush.Danger}" Text="{Binding Shell.TransactionValidation}" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                        <Button Classes="proxima-secondary" Click="CancelCreateTransactionClicked" Content="Отмена" />
+                        <Button Classes="proxima-primary" Click="SaveCreateTransactionClicked" Content="Сохранить" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <Border
+            Background="#88001629"
+            IsVisible="{Binding Shell.IsEditTransactionDialogOpen, FallbackValue=False}">
+            <Border
+                Width="560"
+                Padding="28"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource ProximaBrush.Surface}"
+                BorderBrush="{StaticResource ProximaBrush.BorderSubtle}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource ProximaRadius.Large}">
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="proxima-card-title" Text="Изменить транзакцию" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <ComboBox SelectedItem="{Binding Shell.TransactionType}" ItemsSource="{Binding Shell.TransactionTypes}" />
+                        <TextBox Grid.Column="1" Watermark="Дата/время" Text="{Binding Shell.TransactionDate}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <TextBox Watermark="Количество" Text="{Binding Shell.TransactionQuantity}" />
+                        <TextBox Grid.Column="1" Watermark="Цена" Text="{Binding Shell.TransactionPrice}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <TextBox Watermark="Сумма" Text="{Binding Shell.TransactionGrossAmount}" />
+                        <TextBox Grid.Column="1" Watermark="Валюта" Text="{Binding Shell.TransactionCurrency}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <TextBox Watermark="Комиссия" Text="{Binding Shell.TransactionFeeAmount}" />
+                        <TextBox Grid.Column="1" Watermark="Налог" Text="{Binding Shell.TransactionTaxAmount}" />
+                    </Grid>
+                    <TextBox Watermark="Брокер (опционально)" Text="{Binding Shell.TransactionBroker}" />
+                    <TextBlock Classes="proxima-caption" Foreground="{StaticResource ProximaBrush.Danger}" Text="{Binding Shell.TransactionValidation}" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                        <Button Classes="proxima-secondary" Click="CancelEditTransactionClicked" Content="Отмена" />
+                        <Button Classes="proxima-secondary" Click="ArchiveTransactionClicked" Content="Архивировать" />
+                        <Button Classes="proxima-primary" Click="SaveEditTransactionClicked" Content="Сохранить" />
                     </StackPanel>
                 </StackPanel>
             </Border>

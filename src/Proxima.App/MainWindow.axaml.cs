@@ -4,6 +4,7 @@ using Proxima.App.ViewModels;
 using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Portfolios;
+using Proxima.Infrastructure.Transactions;
 
 namespace Proxima.App;
 
@@ -28,10 +29,12 @@ public partial class MainWindow : Window
         string profileStorePath = ProximaAuthComposition.GetDefaultProfileStorePath();
         string portfolioStorePath = ProximaPortfolioComposition.GetDefaultPortfolioStorePath();
         string assetStorePath = ProximaAssetComposition.GetDefaultAssetStorePath();
+        string transactionStorePath = ProximaTransactionComposition.GetDefaultTransactionStorePath();
         ShellViewModel shell = new(
             new ShellNavigationService(),
             ProximaPortfolioComposition.CreatePortfolioService(portfolioStorePath),
-            ProximaAssetComposition.CreateAssetService(assetStorePath));
+            ProximaAssetComposition.CreateAssetService(assetStorePath),
+            ProximaTransactionComposition.CreateTransactionService(transactionStorePath, assetStorePath));
         return new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell);
     }
 
@@ -180,5 +183,51 @@ public partial class MainWindow : Window
             ViewModel.Shell.SelectedAsset = asset;
             ViewModel.Shell.OpenAssetDetails();
         }
+    }
+
+    private void OpenCreateTransactionClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.OpenCreateTransactionDialog();
+    }
+
+    private void OpenCreateTransactionForAssetClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: AssetRowViewModel asset })
+        {
+            ViewModel.Shell.StartCreateTransactionForAsset(asset);
+        }
+    }
+
+    private void CancelCreateTransactionClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.CancelCreateTransactionDialog();
+    }
+
+    private async void SaveCreateTransactionClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.CreateTransactionAsync().ConfigureAwait(true);
+    }
+
+    private void OpenEditTransactionClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: TransactionRowViewModel row })
+        {
+            ViewModel.Shell.OpenEditTransactionDialog(row);
+        }
+    }
+
+    private void CancelEditTransactionClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.CancelEditTransactionDialog();
+    }
+
+    private async void SaveEditTransactionClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.SaveTransactionChangesAsync().ConfigureAwait(true);
+    }
+
+    private async void ArchiveTransactionClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.ArchiveSelectedTransactionAsync().ConfigureAwait(true);
     }
 }

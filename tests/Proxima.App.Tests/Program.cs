@@ -5,10 +5,12 @@ using Proxima.Application;
 using Proxima.Application.Assets;
 using Proxima.Application.Auth;
 using Proxima.Application.Portfolios;
+using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
 using Proxima.Domain;
 using Proxima.Domain.Auth;
 using Proxima.Domain.Portfolios;
+using Proxima.Domain.Transactions;
 using Proxima.Importing;
 using Proxima.Infrastructure;
 using Proxima.Reporting;
@@ -31,6 +33,7 @@ internal static class Program
         ShellViewModel_UpdatesActivePageAndBreadcrumb();
         ShellViewModel_PreservesSelectedPortfolioAcrossNavigation().GetAwaiter().GetResult();
         ShellViewModel_FiltersAndSortsAssets().GetAwaiter().GetResult();
+        ShellViewModel_LoadsAndFiltersTransactions().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.App.Tests baseline checks passed.");
     }
 
@@ -225,7 +228,7 @@ internal static class Program
 
     private static ShellViewModel CreateShellViewModel()
     {
-        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService());
+        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService());
     }
 
     private static async Task ShellViewModel_FiltersAndSortsAssets()
@@ -240,6 +243,20 @@ internal static class Program
         shell.AssetSort = "name_asc";
         Assert(shell.FilteredAssets.Count >= 2, "Asset list should load for selected portfolio.");
         Assert(string.Compare(shell.FilteredAssets[0].Name, shell.FilteredAssets[1].Name, StringComparison.OrdinalIgnoreCase) <= 0, "Sort by name must be ascending.");
+    }
+
+    private static async Task ShellViewModel_LoadsAndFiltersTransactions()
+    {
+        ShellViewModel shell = CreateShellViewModel();
+        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111")).ConfigureAwait(false);
+
+        shell.TransactionSearchQuery = "Broker A";
+        Assert(shell.FilteredTransactions.Count == 1, "Transaction search should filter by broker.");
+
+        shell.TransactionSearchQuery = string.Empty;
+        shell.TransactionSort = "amount_desc";
+        Assert(shell.FilteredTransactions.Count >= 2, "Transaction list should load for selected portfolio.");
+        Assert(shell.FilteredTransactions[0].GrossAmount >= shell.FilteredTransactions[1].GrossAmount, "Amount sort must be descending.");
     }
 
     private static string FindRepositoryRoot()
@@ -392,6 +409,47 @@ internal static class Program
             Asset archived = existing with { IsArchived = true, UpdatedAt = DateTimeOffset.UtcNow };
             _items[_items.FindIndex(item => item.Id == assetId)] = archived;
             return Task.FromResult(AssetOperationResult.Success(archived));
+        }
+    }
+
+    private sealed class TestTransactionService : ITransactionService
+    {
+        private readonly List<PortfolioTransaction> _items =
+        [
+            new(Guid.Parse("aaaaaaaa-2222-2222-2222-222222222222"), Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), Guid.Parse("aaaaaaaa-1111-1111-1111-111111111111"), TransactionType.Buy, DateTimeOffset.UtcNow.AddDays(-2), 2m, 120m, 240m, 1m, 0m, "USD", "Broker A", null, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
+            new(Guid.Parse("bbbbbbbb-2222-2222-2222-222222222222"), Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), Guid.Parse("bbbbbbbb-1111-1111-1111-111111111111"), TransactionType.Dividend, DateTimeOffset.UtcNow.AddDays(-1), 0m, 0m, 50m, 0m, 5m, "USD", "Broker B", null, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
+        ];
+
+        public Task<IReadOnlyList<PortfolioTransaction>> ListActiveAsync(Guid portfolioId, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult<IReadOnlyList<PortfolioTransaction>>(_items.Where(item => item.PortfolioId == portfolioId && !item.IsArchived).ToArray());
+        }
+
+        public Task<TransactionOperationResult> CreateAsync(CreateTransactionRequest request, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            PortfolioTransaction created = new(Guid.NewGuid(), request.PortfolioId, request.AssetId, request.Type, request.TradeDate, request.Quantity, request.Price, request.GrossAmount, request.FeeAmount, request.TaxAmount, request.Currency, request.Broker, request.ExternalId, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+            _items.Add(created);
+            return Task.FromResult(TransactionOperationResult.Success(created));
+        }
+
+        public Task<TransactionOperationResult> UpdateAsync(UpdateTransactionRequest request, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            PortfolioTransaction existing = _items.First(item => item.Id == request.TransactionId);
+            PortfolioTransaction updated = existing with { GrossAmount = request.GrossAmount, UpdatedAt = DateTimeOffset.UtcNow };
+            _items[_items.FindIndex(item => item.Id == request.TransactionId)] = updated;
+            return Task.FromResult(TransactionOperationResult.Success(updated));
+        }
+
+        public Task<TransactionOperationResult> ArchiveAsync(Guid portfolioId, Guid transactionId, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            PortfolioTransaction existing = _items.First(item => item.PortfolioId == portfolioId && item.Id == transactionId);
+            PortfolioTransaction archived = existing with { IsArchived = true, UpdatedAt = DateTimeOffset.UtcNow };
+            _items[_items.FindIndex(item => item.Id == transactionId)] = archived;
+            return Task.FromResult(TransactionOperationResult.Success(archived));
         }
     }
 }

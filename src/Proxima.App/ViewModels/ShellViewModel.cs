@@ -1,8 +1,10 @@
 using System.Collections.ObjectModel;
 using Proxima.Application.Assets;
 using Proxima.Application.Portfolios;
+using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
 using Proxima.Domain.Portfolios;
+using Proxima.Domain.Transactions;
 
 namespace Proxima.App.ViewModels;
 
@@ -11,6 +13,7 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly ShellNavigationService _navigation;
     private readonly IPortfolioService _portfolios;
     private readonly IAssetService _assets;
+    private readonly ITransactionService _transactions;
     private Guid _ownerUserId;
 
     private string _activeRoute = "dashboard";
@@ -51,12 +54,32 @@ public sealed class ShellViewModel : ViewModelBase
     private decimal _assetAverageBuyPrice;
     private decimal _assetCurrentPrice;
     private AssetType _assetType = AssetType.Stock;
+    private string _transactionSearchQuery = string.Empty;
+    private string _transactionSort = "date_desc";
+    private string _transactionStatusText = "Транзакции не загружены.";
+    private bool _isCreateTransactionDialogOpen;
+    private bool _isEditTransactionDialogOpen;
+    private string _transactionValidation = string.Empty;
+    private TransactionRowViewModel? _selectedTransaction;
+    private Guid? _transactionAssetId;
+    private TransactionType _transactionType = TransactionType.Buy;
+    private DateTimeOffset _transactionDate = DateTimeOffset.UtcNow;
+    private decimal _transactionQuantity;
+    private decimal _transactionPrice;
+    private decimal _transactionGrossAmount;
+    private decimal _transactionFeeAmount;
+    private decimal _transactionTaxAmount;
+    private string _transactionCurrency = "USD";
+    private string _transactionBroker = string.Empty;
+    private string _transactionExternalId = string.Empty;
+    private string _transactionNotes = string.Empty;
 
-    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets)
+    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions)
     {
         _navigation = navigation;
         _portfolios = portfolios;
         _assets = assets;
+        _transactions = transactions;
         RegisterRoutes();
         ApplyRoute(_navigation.Navigate("dashboard", pushHistory: false));
     }
@@ -64,9 +87,12 @@ public sealed class ShellViewModel : ViewModelBase
     public ObservableCollection<PortfolioOption> PortfolioOptions { get; } = [];
     public ObservableCollection<AssetRowViewModel> Assets { get; } = [];
     public ObservableCollection<AssetRowViewModel> FilteredAssets { get; } = [];
+    public ObservableCollection<TransactionRowViewModel> Transactions { get; } = [];
+    public ObservableCollection<TransactionRowViewModel> FilteredTransactions { get; } = [];
 
     public IEnumerable<string> Currencies => new[] { "USD", "EUR", "BYN", "RUB" };
     public IEnumerable<AssetType> AssetTypes => Enum.GetValues<AssetType>();
+    public IEnumerable<TransactionType> TransactionTypes => Enum.GetValues<TransactionType>();
 
     public string ActiveRoute
     {
@@ -346,6 +372,143 @@ public sealed class ShellViewModel : ViewModelBase
         set => SetProperty(ref _assetType, value);
     }
 
+    public string TransactionSearchQuery
+    {
+        get => _transactionSearchQuery;
+        set
+        {
+            if (SetProperty(ref _transactionSearchQuery, value))
+            {
+                RefreshTransactionTable();
+            }
+        }
+    }
+
+    public string TransactionSort
+    {
+        get => _transactionSort;
+        set
+        {
+            if (SetProperty(ref _transactionSort, value))
+            {
+                RefreshTransactionTable();
+            }
+        }
+    }
+
+    public IEnumerable<string> TransactionSortOptions => new[]
+    {
+        "date_desc",
+        "amount_desc",
+        "type_asc",
+        "asset_asc",
+    };
+
+    public string TransactionStatusText
+    {
+        get => _transactionStatusText;
+        private set => SetProperty(ref _transactionStatusText, value);
+    }
+
+    public bool HasTransactions => FilteredTransactions.Count > 0;
+    public bool IsTransactionTableEmpty => !HasTransactions;
+
+    public bool IsCreateTransactionDialogOpen
+    {
+        get => _isCreateTransactionDialogOpen;
+        private set => SetProperty(ref _isCreateTransactionDialogOpen, value);
+    }
+
+    public bool IsEditTransactionDialogOpen
+    {
+        get => _isEditTransactionDialogOpen;
+        private set => SetProperty(ref _isEditTransactionDialogOpen, value);
+    }
+
+    public string TransactionValidation
+    {
+        get => _transactionValidation;
+        private set => SetProperty(ref _transactionValidation, value);
+    }
+
+    public TransactionRowViewModel? SelectedTransaction
+    {
+        get => _selectedTransaction;
+        set => SetProperty(ref _selectedTransaction, value);
+    }
+
+    public Guid? TransactionAssetId
+    {
+        get => _transactionAssetId;
+        set => SetProperty(ref _transactionAssetId, value);
+    }
+
+    public TransactionType TransactionType
+    {
+        get => _transactionType;
+        set => SetProperty(ref _transactionType, value);
+    }
+
+    public DateTimeOffset TransactionDate
+    {
+        get => _transactionDate;
+        set => SetProperty(ref _transactionDate, value);
+    }
+
+    public decimal TransactionQuantity
+    {
+        get => _transactionQuantity;
+        set => SetProperty(ref _transactionQuantity, value);
+    }
+
+    public decimal TransactionPrice
+    {
+        get => _transactionPrice;
+        set => SetProperty(ref _transactionPrice, value);
+    }
+
+    public decimal TransactionGrossAmount
+    {
+        get => _transactionGrossAmount;
+        set => SetProperty(ref _transactionGrossAmount, value);
+    }
+
+    public decimal TransactionFeeAmount
+    {
+        get => _transactionFeeAmount;
+        set => SetProperty(ref _transactionFeeAmount, value);
+    }
+
+    public decimal TransactionTaxAmount
+    {
+        get => _transactionTaxAmount;
+        set => SetProperty(ref _transactionTaxAmount, value);
+    }
+
+    public string TransactionCurrency
+    {
+        get => _transactionCurrency;
+        set => SetProperty(ref _transactionCurrency, value);
+    }
+
+    public string TransactionBroker
+    {
+        get => _transactionBroker;
+        set => SetProperty(ref _transactionBroker, value);
+    }
+
+    public string TransactionExternalId
+    {
+        get => _transactionExternalId;
+        set => SetProperty(ref _transactionExternalId, value);
+    }
+
+    public string TransactionNotes
+    {
+        get => _transactionNotes;
+        set => SetProperty(ref _transactionNotes, value);
+    }
+
     public bool IsDashboardPage => ActiveRoute.Equals("dashboard", StringComparison.Ordinal);
     public bool IsAssetsPage => ActiveRoute.Equals("assets", StringComparison.Ordinal);
     public bool IsTaxesPage => ActiveRoute.Equals("taxes", StringComparison.Ordinal);
@@ -543,6 +706,7 @@ public sealed class ShellViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsAssetDetailsPage));
         OnPropertyChanged(nameof(IsManualImportPage));
         OnPropertyChanged(nameof(CanGoBack));
+        RefreshTransactionTable();
     }
 
     private void ValidateNewPortfolio()
@@ -599,6 +763,7 @@ public sealed class ShellViewModel : ViewModelBase
 
         StatusText = $"Текущий портфель: {SelectedPortfolio.Name} ({SelectedPortfolio.Currency})";
         _ = ReloadAssetsAsync(CancellationToken.None);
+        _ = ReloadTransactionsAsync(CancellationToken.None);
     }
 
     private async Task ReloadPortfoliosAsync(CancellationToken cancellationToken, Guid? preferPortfolioId = null)
@@ -628,6 +793,7 @@ public sealed class ShellViewModel : ViewModelBase
         SelectedPortfolio = selected;
         OnPropertyChanged(nameof(PortfolioOptions));
         await ReloadAssetsAsync(cancellationToken).ConfigureAwait(false);
+        await ReloadTransactionsAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public void OpenCreateAssetDialog()
@@ -750,6 +916,10 @@ public sealed class ShellViewModel : ViewModelBase
 
     public string SelectedAssetTitle => SelectedAsset is null ? "Актив не выбран" : $"{SelectedAsset.Name} ({SelectedAsset.Ticker})";
 
+    public string SelectedTransactionTitle => SelectedTransaction is null
+        ? "Транзакция не выбрана"
+        : $"{SelectedTransaction.TypeLabel} · {SelectedTransaction.GrossAmount:0.##} {SelectedTransaction.Currency}";
+
     private async Task ReloadAssetsAsync(CancellationToken cancellationToken)
     {
         Assets.Clear();
@@ -779,6 +949,137 @@ public sealed class ShellViewModel : ViewModelBase
         }
 
         RefreshAssetTable();
+    }
+
+    public void OpenCreateTransactionDialog()
+    {
+        ResetTransactionForm();
+        IsCreateTransactionDialogOpen = true;
+    }
+
+    public void CancelCreateTransactionDialog()
+    {
+        IsCreateTransactionDialogOpen = false;
+    }
+
+    public async Task CreateTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        if (SelectedPortfolio is null)
+        {
+            TransactionValidation = "Сначала выберите портфель.";
+            return;
+        }
+
+        TransactionOperationResult result = await _transactions.CreateAsync(new CreateTransactionRequest(
+            SelectedPortfolio.Id,
+            TransactionAssetId,
+            TransactionType,
+            TransactionDate,
+            TransactionQuantity,
+            TransactionPrice,
+            TransactionGrossAmount,
+            TransactionFeeAmount,
+            TransactionTaxAmount,
+            TransactionCurrency,
+            TransactionBroker,
+            TransactionExternalId,
+            TransactionNotes), cancellationToken).ConfigureAwait(false);
+
+        if (!result.Succeeded)
+        {
+            TransactionValidation = result.Message;
+            return;
+        }
+
+        IsCreateTransactionDialogOpen = false;
+        await ReloadTransactionsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public void OpenEditTransactionDialog(TransactionRowViewModel row)
+    {
+        SelectedTransaction = row;
+        TransactionAssetId = row.AssetId;
+        TransactionType = row.Type;
+        TransactionDate = row.TradeDate;
+        TransactionQuantity = row.Quantity;
+        TransactionPrice = row.Price;
+        TransactionGrossAmount = row.GrossAmount;
+        TransactionFeeAmount = row.FeeAmount;
+        TransactionTaxAmount = row.TaxAmount;
+        TransactionCurrency = row.Currency;
+        TransactionBroker = row.Broker ?? string.Empty;
+        TransactionExternalId = string.Empty;
+        TransactionNotes = string.Empty;
+        TransactionValidation = string.Empty;
+        IsEditTransactionDialogOpen = true;
+    }
+
+    public void CancelEditTransactionDialog()
+    {
+        IsEditTransactionDialogOpen = false;
+    }
+
+    public async Task SaveTransactionChangesAsync(CancellationToken cancellationToken = default)
+    {
+        if (SelectedPortfolio is null || SelectedTransaction is null)
+        {
+            TransactionValidation = "Транзакция не выбрана.";
+            return;
+        }
+
+        TransactionOperationResult result = await _transactions.UpdateAsync(new UpdateTransactionRequest(
+            SelectedPortfolio.Id,
+            SelectedTransaction.Id,
+            TransactionAssetId,
+            TransactionType,
+            TransactionDate,
+            TransactionQuantity,
+            TransactionPrice,
+            TransactionGrossAmount,
+            TransactionFeeAmount,
+            TransactionTaxAmount,
+            TransactionCurrency,
+            TransactionBroker,
+            TransactionExternalId,
+            TransactionNotes), cancellationToken).ConfigureAwait(false);
+        if (!result.Succeeded)
+        {
+            TransactionValidation = result.Message;
+            return;
+        }
+
+        IsEditTransactionDialogOpen = false;
+        await ReloadTransactionsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task ArchiveSelectedTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        if (SelectedPortfolio is null || SelectedTransaction is null)
+        {
+            TransactionStatusText = "Транзакция не выбрана.";
+            return;
+        }
+
+        TransactionOperationResult result = await _transactions.ArchiveAsync(SelectedPortfolio.Id, SelectedTransaction.Id, cancellationToken).ConfigureAwait(false);
+        if (!result.Succeeded)
+        {
+            TransactionStatusText = result.Message;
+            return;
+        }
+
+        IsEditTransactionDialogOpen = false;
+        await ReloadTransactionsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public void StartCreateTransactionForAsset(AssetRowViewModel asset)
+    {
+        SelectedAsset = asset;
+        OpenCreateTransactionDialog();
+        TransactionAssetId = asset.Id;
+        if (TransactionType is not TransactionType.Buy and not TransactionType.Sell)
+        {
+            TransactionType = TransactionType.Buy;
+        }
     }
 
     private void RefreshAssetTable()
@@ -817,6 +1118,86 @@ public sealed class ShellViewModel : ViewModelBase
         OnPropertyChanged(nameof(SelectedAssetTitle));
     }
 
+    private async Task ReloadTransactionsAsync(CancellationToken cancellationToken)
+    {
+        Transactions.Clear();
+        if (SelectedPortfolio is null)
+        {
+            RefreshTransactionTable();
+            return;
+        }
+
+        IReadOnlyList<PortfolioTransaction> items = await _transactions.ListActiveAsync(SelectedPortfolio.Id, cancellationToken).ConfigureAwait(false);
+        Dictionary<Guid, AssetRowViewModel> assetsById = Assets.ToDictionary(item => item.Id, item => item);
+        foreach (PortfolioTransaction item in items)
+        {
+            AssetRowViewModel? asset = item.AssetId is not null && assetsById.TryGetValue(item.AssetId.Value, out AssetRowViewModel? value) ? value : null;
+            Transactions.Add(new TransactionRowViewModel(
+                item.Id,
+                item.AssetId,
+                asset?.Name ?? "Портфель",
+                asset?.Ticker ?? "—",
+                item.Type,
+                item.TradeDate,
+                item.Quantity,
+                item.Price,
+                item.GrossAmount,
+                item.FeeAmount,
+                item.TaxAmount,
+                item.Currency,
+                item.Broker));
+        }
+
+        RefreshTransactionTable();
+    }
+
+    private void RefreshTransactionTable()
+    {
+        IEnumerable<TransactionRowViewModel> query = Transactions;
+
+        if (IsAssetDetailsPage && SelectedAsset is not null)
+        {
+            query = query.Where(item => item.AssetId == SelectedAsset.Id);
+        }
+
+        if (!string.IsNullOrWhiteSpace(TransactionSearchQuery))
+        {
+            string term = TransactionSearchQuery.Trim();
+            query = query.Where(item =>
+                item.AssetName.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || item.Ticker.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || item.TypeLabel.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || (item.Broker?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        query = TransactionSort switch
+        {
+            "amount_desc" => query.OrderByDescending(static item => item.GrossAmount),
+            "type_asc" => query.OrderBy(static item => item.TypeLabel, StringComparer.OrdinalIgnoreCase),
+            "asset_asc" => query.OrderBy(static item => item.AssetName, StringComparer.OrdinalIgnoreCase),
+            _ => query.OrderByDescending(static item => item.TradeDate),
+        };
+
+        FilteredTransactions.Clear();
+        foreach (TransactionRowViewModel item in query)
+        {
+            FilteredTransactions.Add(item);
+        }
+
+        if (SelectedTransaction is not null && FilteredTransactions.All(item => item.Id != SelectedTransaction.Id))
+        {
+            SelectedTransaction = null;
+        }
+
+        TransactionStatusText = FilteredTransactions.Count == 0
+            ? "Нет транзакций для отображения."
+            : $"Транзакций: {FilteredTransactions.Count}";
+
+        OnPropertyChanged(nameof(HasTransactions));
+        OnPropertyChanged(nameof(IsTransactionTableEmpty));
+        OnPropertyChanged(nameof(SelectedTransactionTitle));
+    }
+
     private static IReadOnlyList<string> ParseTags(string raw)
     {
         return raw.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
@@ -836,5 +1217,22 @@ public sealed class ShellViewModel : ViewModelBase
         AssetAverageBuyPrice = 0;
         AssetCurrentPrice = 0;
         AssetValidation = string.Empty;
+    }
+
+    private void ResetTransactionForm()
+    {
+        TransactionAssetId = SelectedAsset?.Id;
+        TransactionType = TransactionType.Buy;
+        TransactionDate = DateTimeOffset.UtcNow;
+        TransactionQuantity = 0;
+        TransactionPrice = 0;
+        TransactionGrossAmount = 0;
+        TransactionFeeAmount = 0;
+        TransactionTaxAmount = 0;
+        TransactionCurrency = SelectedPortfolio?.Currency ?? "USD";
+        TransactionBroker = string.Empty;
+        TransactionExternalId = string.Empty;
+        TransactionNotes = string.Empty;
+        TransactionValidation = string.Empty;
     }
 }

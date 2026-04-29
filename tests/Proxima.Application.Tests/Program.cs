@@ -2,9 +2,11 @@ using Proxima.Application;
 using Proxima.Application.Assets;
 using Proxima.Application.Auth;
 using Proxima.Application.Portfolios;
+using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
 using Proxima.Domain.Auth;
 using Proxima.Domain.Portfolios;
+using Proxima.Domain.Transactions;
 
 namespace Proxima.Application.Tests;
 
@@ -21,7 +23,30 @@ internal static class Program
         PortfolioService_CreateUpdateArchiveFlow().GetAwaiter().GetResult();
         PortfolioService_IsolatesByOwner().GetAwaiter().GetResult();
         AssetService_NormalizesTickerAndArchives().GetAwaiter().GetResult();
+        TransactionService_ValidatesCrossPortfolioAsset().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.Application.Tests passed.");
+    }
+
+    private static async Task TransactionService_ValidatesCrossPortfolioAsset()
+    {
+        MemoryAssetRepository assets = new();
+        MemoryTransactionRepository transactions = new();
+        TransactionService service = new(transactions, assets);
+        Guid portfolioA = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        Guid portfolioB = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+
+        Asset assetB = new(Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"), portfolioB, "MSFT", "Microsoft", AssetType.Stock, "USD", null, null, [], null, 1m, 100m, 110m, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+        await assets.AddAsync(assetB, CancellationToken.None).ConfigureAwait(false);
+
+        TransactionOperationResult rejected = await service.CreateAsync(new CreateTransactionRequest(
+            portfolioA, assetB.Id, TransactionType.Buy, DateTimeOffset.UtcNow, 1m, 100m, 100m, 0m, 0m, "USD", null, null, null)).ConfigureAwait(false);
+        Assert(!rejected.Succeeded, "Cross-portfolio asset reference must be rejected.");
+
+        Asset assetA = new(Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"), portfolioA, "AAPL", "Apple", AssetType.Stock, "USD", null, null, [], null, 1m, 100m, 110m, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+        await assets.AddAsync(assetA, CancellationToken.None).ConfigureAwait(false);
+        TransactionOperationResult accepted = await service.CreateAsync(new CreateTransactionRequest(
+            portfolioA, assetA.Id, TransactionType.Buy, DateTimeOffset.UtcNow, 2m, 123.45m, 246.90m, 1m, 0m, "USD", "BRK", null, null)).ConfigureAwait(false);
+        Assert(accepted.Succeeded, "Same-portfolio transaction should persist.");
     }
 
     private static async Task AssetService_NormalizesTickerAndArchives()
@@ -271,6 +296,44 @@ internal static class Program
             cancellationToken.ThrowIfCancellationRequested();
             int index = _items.FindIndex(item => item.PortfolioId == asset.PortfolioId && item.Id == asset.Id);
             _items[index] = asset;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class MemoryTransactionRepository : ITransactionRepository
+    {
+        private readonly List<PortfolioTransaction> _items = [];
+
+        public Task<IReadOnlyList<PortfolioTransaction>> ListByPortfolioAsync(Guid portfolioId, bool includeArchived, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            IEnumerable<PortfolioTransaction> query = _items.Where(item => item.PortfolioId == portfolioId);
+            if (!includeArchived)
+            {
+                query = query.Where(item => !item.IsArchived);
+            }
+
+            return Task.FromResult<IReadOnlyList<PortfolioTransaction>>(query.ToArray());
+        }
+
+        public Task<PortfolioTransaction?> FindByIdAsync(Guid portfolioId, Guid transactionId, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(_items.FirstOrDefault(item => item.PortfolioId == portfolioId && item.Id == transactionId));
+        }
+
+        public Task AddAsync(PortfolioTransaction transaction, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _items.Add(transaction);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(PortfolioTransaction transaction, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            int index = _items.FindIndex(item => item.PortfolioId == transaction.PortfolioId && item.Id == transaction.Id);
+            _items[index] = transaction;
             return Task.CompletedTask;
         }
     }

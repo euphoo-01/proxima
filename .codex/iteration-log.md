@@ -306,3 +306,54 @@ JSON-backed storage is still used instead of PostgreSQL/EF Core. Hard-delete wor
 ### Commit
 
 7c92baf feat(assets): add asset service and bento assets table workflows
+
+## Iteration 06 — Transaction Management
+
+### Scope
+
+Implement transaction domain/application/infrastructure, connect manual transaction entry to shell UI, add searchable/sortable transaction table scoped by portfolio and filtered by selected asset on asset-details route.
+
+### User Stories Checked
+
+- [x] US-06.1 — User can manually enter transactions.
+- [x] US-06.2 — User can audit transaction history.
+- [ ] US-06.3 — User gets recalculated portfolio metrics.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-06.1 | Partial | `PortfolioTransaction` model and service/repository persist required transaction fields, including optional asset/broker/external id/notes and timestamps; notes still obfuscated placeholder, not final encryption service. |
+| AC-06.2 | Done | `TransactionType` enum includes all required types and is used in service validation and UI type picker. |
+| AC-06.3 | Partial | Manual create/update/archive flow is implemented with type-aware validation (Buy/Sell/Dividend/Fee/Tax checks), decimal fields, and persisted save via service/repository. Field-specific inline validation granularity is limited. |
+| AC-06.4 | Partial | Transaction table supports search (asset/ticker/broker/type) and sort (date/amount/type/asset). Asset details route applies selected-asset scoped transaction filtering. Dashboard integration for latest transactions is deferred. |
+| AC-06.5 | Partial | Service rejects cross-portfolio asset references and scopes reads/writes by portfolio. JSON persistence cannot provide full DB transactional guarantees yet; no partial write path in current flow. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit | `tests/Proxima.Application.Tests` (`TransactionService_ValidatesCrossPortfolioAsset`) | Passed |
+| Integration | `tests/Proxima.Infrastructure.Tests` (`JsonTransactionRepository_StoresAndArchives`) | Passed |
+| UI/Smoke | `tests/Proxima.App.Tests` (`ShellViewModel_LoadsAndFiltersTransactions`) | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Persistence remains JSON-backed, so AC requirements for strict transactional updates/rollbacks at DB level are deferred until PostgreSQL + EF Core module. Metrics recalculation propagation to dashboard analytics is deferred to analytics module.
+
+### Commit
+
+Pending
