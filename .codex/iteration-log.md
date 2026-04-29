@@ -356,4 +356,4 @@ Persistence remains JSON-backed, so AC requirements for strict transactional upd
 
 ### Commit
 
-Pending
+e130761 feat(transactions): add typed transaction flows and scoped tables
