@@ -5,6 +5,7 @@ using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Portfolios;
 using Proxima.Infrastructure.Transactions;
+using Proxima.Importing;
 
 namespace Proxima.App;
 
@@ -34,7 +35,8 @@ public partial class MainWindow : Window
             new ShellNavigationService(),
             ProximaPortfolioComposition.CreatePortfolioService(portfolioStorePath),
             ProximaAssetComposition.CreateAssetService(assetStorePath),
-            ProximaTransactionComposition.CreateTransactionService(transactionStorePath, assetStorePath));
+            ProximaTransactionComposition.CreateTransactionService(transactionStorePath, assetStorePath),
+            ProximaImportComposition.CreateImportService());
         return new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell);
     }
 
@@ -229,5 +231,25 @@ public partial class MainWindow : Window
     private async void ArchiveTransactionClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
     {
         await ViewModel.Shell.ArchiveSelectedTransactionAsync().ConfigureAwait(true);
+    }
+
+    private void OpenImportAssetsClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.OpenImportDialog();
+    }
+
+    private void CancelImportDialogClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.CancelImportDialog();
+    }
+
+    private async void PreviewImportClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.PreviewImportAsync().ConfigureAwait(true);
+    }
+
+    private async void CommitImportClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.CommitImportAsync().ConfigureAwait(true);
     }
 }

@@ -6,6 +6,7 @@ using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Portfolios;
 using Proxima.Infrastructure.Transactions;
+using Proxima.Importing;
 
 namespace Proxima.App;
 
@@ -28,7 +29,8 @@ public partial class App : global::Avalonia.Application
                 new ShellNavigationService(),
                 ProximaPortfolioComposition.CreatePortfolioService(portfolioStorePath),
                 ProximaAssetComposition.CreateAssetService(assetStorePath),
-                ProximaTransactionComposition.CreateTransactionService(transactionStorePath, assetStorePath));
+                ProximaTransactionComposition.CreateTransactionService(transactionStorePath, assetStorePath),
+                ProximaImportComposition.CreateImportService());
             desktop.MainWindow = new MainWindow(new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell));
         }
 

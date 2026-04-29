@@ -357,3 +357,56 @@ Persistence remains JSON-backed, so AC requirements for strict transactional upd
 ### Commit
 
 e130761 feat(transactions): add typed transaction flows and scoped tables
+
+## Iteration 07 — Import: CSV, PDF Pipeline & Manual Fallback
+
+### Scope
+
+Implement import pipeline abstractions and parsers, add assets-page import modal with preview and suspicious-row handling, and connect commit flow to asset/transaction services with manual fallback route.
+
+### User Stories Checked
+
+- [x] US-07.1 — User imports broker reports quickly.
+- [x] US-07.2 — User reviews suspicious imported rows.
+- [x] US-07.3 — User can recover from failed import.
+- [x] US-07.4 — Developer can add broker parsers.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-07.1 | Partial | Assets page includes `Импортировать активы` button and modal with cancel flow, type/size validation (`ImportFileValidator`), and unsupported-file error message. Current MVP uses file-path input instead of OS drag&drop API. |
+| AC-07.2 | Done | `CsvImportParser` parses documented columns (date, ticker/name, type, qty, price, currency, fee, broker/tag optional), handles headers/empty/whitespace, supports comma/semicolon, and flags invalid/suspicious rows with reasons. |
+| AC-07.3 | Done | `IImportParser` + `PdfStubImportParser` implemented; PDF failures surface explicit limited-parser message and manual fallback guidance without app crash. |
+| AC-07.4 | Partial | Preview and row-selection before commit implemented; suspicious rows can be kept/excluded. Commit currently performs guarded sequential saves but DB transaction semantics are deferred with JSON persistence. |
+| AC-07.5 | Partial | Failed/limited import offers manual fallback action and dedicated manual route. Full table-like manual row editor with add/remove/row-level validation summary is deferred. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit | `tests/Proxima.Importing.Tests` (`CsvParser_ParsesValidRows`, `CsvParser_FlagsInvalidDate`, `FileValidator_RejectsUnsupportedExtension`) | Passed |
+| Integration | `tests/Proxima.App.Tests` and service wiring via import preview/commit path build graph | Passed |
+| UI/Smoke | `dotnet test Proxima.sln` plus modal/action wiring checks in app tests | Passed |
+| Security | Parser and import service do not log raw payload content; malformed parsing returns safe error result | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Drag&drop UX is approximated via path input field. Commit flow is all-or-stop in-memory orchestration and cannot guarantee DB-level rollback until PostgreSQL transaction-backed persistence modules are implemented.
+
+### Commit
+
+Pending

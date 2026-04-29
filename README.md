@@ -51,7 +51,20 @@ dotnet test
 dotnet run --project src/Proxima.App/Proxima.App.csproj
 ```
 
-The app currently supports local first-run setup and shell-level portfolio management. Local profile and portfolio data are stored in user local application data JSON stores. Passwords are saved only as PBKDF2-SHA256 metadata, salt and hash. PostgreSQL migrations and EF Core/Npgsql persistence are still implemented in later persistence modules.
+The app currently supports local first-run setup, portfolio/asset/transaction management, and a CSV/PDF import preview flow with manual fallback routing. Local profile, portfolio, asset, and transaction data are stored in user local application data JSON stores. Passwords are saved only as PBKDF2-SHA256 metadata, salt and hash. PostgreSQL migrations and EF Core/Npgsql persistence are still implemented in later persistence modules.
+
+### CSV Demo Import Format
+
+Supported header columns (comma or semicolon separators):
+
+```csv
+date,ticker,name,type,quantity,price,currency,fee,broker,tag
+2026-01-01,AAPL,Apple,Buy,2,100,USD,1,Broker A,tech
+2026-01-05,BND,US Bond ETF,Dividend,0,0,USD,0,Broker B,bonds
+```
+
+- `type` supports values from transaction enum: `Buy`, `Sell`, `Dividend`, `Deposit`, `Withdrawal`, `Fee`, `Tax`, `Transfer`, `Split`, `Airdrop`, `StakingReward`.
+- Invalid or suspicious rows are flagged in preview before commit.
 
 ## Figma
 

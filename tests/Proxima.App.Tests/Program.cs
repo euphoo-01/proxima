@@ -228,7 +228,7 @@ internal static class Program
 
     private static ShellViewModel CreateShellViewModel()
     {
-        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService());
+        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService(), new TestImportService());
     }
 
     private static async Task ShellViewModel_FiltersAndSortsAssets()
@@ -450,6 +450,15 @@ internal static class Program
             PortfolioTransaction archived = existing with { IsArchived = true, UpdatedAt = DateTimeOffset.UtcNow };
             _items[_items.FindIndex(item => item.Id == transactionId)] = archived;
             return Task.FromResult(TransactionOperationResult.Success(archived));
+        }
+    }
+
+    private sealed class TestImportService : IImportService
+    {
+        public Task<ImportPreview> PreviewAsync(string filePath, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new ImportPreview(true, string.Empty, [], false));
         }
     }
 }

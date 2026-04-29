@@ -9,3 +9,5 @@
 - Hard-delete flow with transaction dependency checks is deferred until Module 06 transaction persistence is available; current module supports archive-only safe removal.
 - Module 06 adds local transaction CRUD/search/sort and portfolio/asset scoping checks, but transactional DB semantics are still deferred because persistence remains JSON-backed.
 - Manual transaction form currently prioritizes type-level validation and asset scoping, while field-by-field inline error UX and full portfolio analytics recalculation are deferred to analytics/persistence modules.
+- Module 07 adds CSV import preview, PDF parser stub, and commit-to-transactions flow, but drag&drop/file-picker UX is simplified to manual file-path input in the modal.
+- Import commit currently stops on first failed row and does not provide true DB transaction rollback guarantees until PostgreSQL/EF Core persistence module is implemented.

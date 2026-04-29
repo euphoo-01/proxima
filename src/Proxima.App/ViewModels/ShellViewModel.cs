@@ -5,6 +5,7 @@ using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
 using Proxima.Domain.Portfolios;
 using Proxima.Domain.Transactions;
+using Proxima.Importing;
 
 namespace Proxima.App.ViewModels;
 
@@ -14,6 +15,7 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly IPortfolioService _portfolios;
     private readonly IAssetService _assets;
     private readonly ITransactionService _transactions;
+    private readonly IImportService _importService;
     private Guid _ownerUserId;
 
     private string _activeRoute = "dashboard";
@@ -73,13 +75,19 @@ public sealed class ShellViewModel : ViewModelBase
     private string _transactionBroker = string.Empty;
     private string _transactionExternalId = string.Empty;
     private string _transactionNotes = string.Empty;
+    private bool _isImportDialogOpen;
+    private string _importFilePath = string.Empty;
+    private string _importMessage = string.Empty;
+    private bool _importHasPdfLimitWarning;
+    private bool _isImportPreviewVisible;
 
-    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions)
+    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService)
     {
         _navigation = navigation;
         _portfolios = portfolios;
         _assets = assets;
         _transactions = transactions;
+        _importService = importService;
         RegisterRoutes();
         ApplyRoute(_navigation.Navigate("dashboard", pushHistory: false));
     }
@@ -89,6 +97,7 @@ public sealed class ShellViewModel : ViewModelBase
     public ObservableCollection<AssetRowViewModel> FilteredAssets { get; } = [];
     public ObservableCollection<TransactionRowViewModel> Transactions { get; } = [];
     public ObservableCollection<TransactionRowViewModel> FilteredTransactions { get; } = [];
+    public ObservableCollection<ImportPreviewRowViewModel> ImportPreviewRows { get; } = [];
 
     public IEnumerable<string> Currencies => new[] { "USD", "EUR", "BYN", "RUB" };
     public IEnumerable<AssetType> AssetTypes => Enum.GetValues<AssetType>();
@@ -509,6 +518,36 @@ public sealed class ShellViewModel : ViewModelBase
         set => SetProperty(ref _transactionNotes, value);
     }
 
+    public bool IsImportDialogOpen
+    {
+        get => _isImportDialogOpen;
+        private set => SetProperty(ref _isImportDialogOpen, value);
+    }
+
+    public string ImportFilePath
+    {
+        get => _importFilePath;
+        set => SetProperty(ref _importFilePath, value);
+    }
+
+    public string ImportMessage
+    {
+        get => _importMessage;
+        private set => SetProperty(ref _importMessage, value);
+    }
+
+    public bool ImportHasPdfLimitWarning
+    {
+        get => _importHasPdfLimitWarning;
+        private set => SetProperty(ref _importHasPdfLimitWarning, value);
+    }
+
+    public bool IsImportPreviewVisible
+    {
+        get => _isImportPreviewVisible;
+        private set => SetProperty(ref _isImportPreviewVisible, value);
+    }
+
     public bool IsDashboardPage => ActiveRoute.Equals("dashboard", StringComparison.Ordinal);
     public bool IsAssetsPage => ActiveRoute.Equals("assets", StringComparison.Ordinal);
     public bool IsTaxesPage => ActiveRoute.Equals("taxes", StringComparison.Ordinal);
@@ -554,6 +593,127 @@ public sealed class ShellViewModel : ViewModelBase
     public void OpenManualImport()
     {
         Navigate("assets/import");
+    }
+
+    public void OpenImportDialog()
+    {
+        ImportFilePath = string.Empty;
+        ImportMessage = string.Empty;
+        ImportHasPdfLimitWarning = false;
+        IsImportPreviewVisible = false;
+        ImportPreviewRows.Clear();
+        IsImportDialogOpen = true;
+    }
+
+    public void CancelImportDialog()
+    {
+        IsImportDialogOpen = false;
+    }
+
+    public async Task PreviewImportAsync(CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(ImportFilePath))
+        {
+            ImportMessage = "Укажите путь к файлу .csv или .pdf.";
+            return;
+        }
+
+        ImportPreview preview = await _importService.PreviewAsync(ImportFilePath, cancellationToken).ConfigureAwait(false);
+        ImportMessage = preview.Message;
+        ImportHasPdfLimitWarning = preview.IsPdfLimited;
+        ImportPreviewRows.Clear();
+        foreach (ImportedTransactionRow row in preview.Rows)
+        {
+            ImportPreviewRows.Add(new ImportPreviewRowViewModel(row));
+        }
+
+        IsImportPreviewVisible = preview.Rows.Count > 0;
+    }
+
+    public async Task CommitImportAsync(CancellationToken cancellationToken = default)
+    {
+        if (SelectedPortfolio is null)
+        {
+            ImportMessage = "Выберите портфель перед импортом.";
+            return;
+        }
+
+        List<ImportPreviewRowViewModel> selectedRows = ImportPreviewRows.Where(static row => row.IsSelectedForCommit).ToList();
+        if (selectedRows.Count == 0)
+        {
+            ImportMessage = "Нет выбранных строк для сохранения.";
+            return;
+        }
+
+        Dictionary<string, AssetRowViewModel> byTicker = Assets.ToDictionary(static item => item.Ticker, StringComparer.OrdinalIgnoreCase);
+        foreach (ImportPreviewRowViewModel row in selectedRows)
+        {
+            if (row.Source.Status == ImportRowStatus.Invalid)
+            {
+                ImportMessage = $"Строка {row.Source.RowNumber} содержит ошибки и не может быть сохранена.";
+                return;
+            }
+
+            Guid? assetId = null;
+            if (!string.IsNullOrWhiteSpace(row.Source.AssetTicker))
+            {
+                if (!byTicker.TryGetValue(row.Source.AssetTicker.Trim().ToUpperInvariant(), out AssetRowViewModel? asset))
+                {
+                    AssetOperationResult createdAsset = await _assets.CreateAsync(new CreateAssetRequest(
+                        SelectedPortfolio.Id,
+                        row.Source.AssetTicker,
+                        string.IsNullOrWhiteSpace(row.Source.AssetName) ? row.Source.AssetTicker : row.Source.AssetName,
+                        AssetType.Stock,
+                        row.Source.Currency,
+                        null,
+                        null,
+                        row.Source.Tag is null ? [] : [row.Source.Tag],
+                        null,
+                        0m,
+                        0m,
+                        0m), cancellationToken).ConfigureAwait(false);
+
+                    if (!createdAsset.Succeeded || createdAsset.Asset is null)
+                    {
+                        ImportMessage = $"Не удалось создать актив для строки {row.Source.RowNumber}: {createdAsset.Message}";
+                        return;
+                    }
+
+                    await ReloadAssetsAsync(cancellationToken).ConfigureAwait(false);
+                    byTicker = Assets.ToDictionary(static item => item.Ticker, StringComparer.OrdinalIgnoreCase);
+                    assetId = createdAsset.Asset.Id;
+                }
+                else
+                {
+                    assetId = asset.Id;
+                }
+            }
+
+            TransactionOperationResult transaction = await _transactions.CreateAsync(new CreateTransactionRequest(
+                SelectedPortfolio.Id,
+                assetId,
+                row.Source.TransactionType,
+                row.Source.TradeDate,
+                row.Source.Quantity,
+                row.Source.Price,
+                row.Source.GrossAmount,
+                row.Source.FeeAmount,
+                0m,
+                row.Source.Currency,
+                row.Source.Broker,
+                null,
+                $"import-row:{row.Source.RowNumber}"), cancellationToken).ConfigureAwait(false);
+
+            if (!transaction.Succeeded)
+            {
+                ImportMessage = $"Сохранение прервано на строке {row.Source.RowNumber}: {transaction.Message}";
+                return;
+            }
+        }
+
+        await ReloadTransactionsAsync(cancellationToken).ConfigureAwait(false);
+        ImportMessage = $"Импортировано строк: {selectedRows.Count}.";
+        IsImportDialogOpen = false;
     }
 
     public void OpenCreatePortfolioDialog()
