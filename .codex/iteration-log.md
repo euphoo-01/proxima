@@ -569,4 +569,4 @@ Asset details currently use deterministic OHLC fallback series and no real candl
 
 ### Commit
 
-Pending
+660d0f8 feat(asset-details): add risk metrics and scoped asset analytics view
