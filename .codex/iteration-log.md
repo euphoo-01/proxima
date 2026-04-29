@@ -620,4 +620,4 @@ Currency conversion abstraction is not yet backed by a live FX provider. Some ad
 
 ### Commit
 
-Pending
+2b741ba feat(analytics): add typed portfolio analytics engine and formulas
