@@ -48,6 +48,23 @@ dotnet build
 dotnet test
 ```
 
+## PostgreSQL Dev Setup
+
+```bash
+docker compose up -d
+```
+
+Default connection (override via `PROXIMA_DB_CONNECTION`):
+
+`Host=localhost;Port=5432;Database=proxima;Username=proxima;Password=proxima`
+
+Apply schema and demo seed manually:
+
+```bash
+psql "postgresql://proxima:proxima@localhost:5432/proxima" -f scripts/sql/0001_initial_schema.sql
+psql "postgresql://proxima:proxima@localhost:5432/proxima" -f scripts/sql/0002_seed_demo.sql
+```
+
 `Proxima.sln` uses `Proxima.App.Tests` as the solution entrypoint so `dotnet build` and `dotnet test` build the full project graph consistently in restricted local environments. Individual projects can still be opened and run directly from `src/` and `tests/`.
 
 ## Run

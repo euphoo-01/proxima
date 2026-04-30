@@ -15,6 +15,7 @@ using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Goals;
 using Proxima.Infrastructure.Portfolios;
+using Proxima.Infrastructure.Persistence;
 using Proxima.Infrastructure.Quotes;
 using Proxima.Infrastructure.Settings;
 using Proxima.Infrastructure.Transactions;
@@ -35,7 +36,45 @@ internal static class Program
         await JsonQuoteCacheRepository_UpsertsByAsset().ConfigureAwait(false);
         await JsonGoalRepository_StoresAndArchives().ConfigureAwait(false);
         await JsonSettingsRepository_StoresByOwner().ConfigureAwait(false);
+        await DatabaseBootstrap_ReturnsGracefulMessage_WhenUnavailable().ConfigureAwait(false);
+        InitialSchemaScript_ContainsRequiredTables();
         Console.WriteLine("Proxima.Infrastructure.Tests passed.");
+    }
+
+    private static async Task DatabaseBootstrap_ReturnsGracefulMessage_WhenUnavailable()
+    {
+        DatabaseBootstrapService service = new(new DatabaseOptions("Host=localhost;Port=59999;Database=none;Username=none;Password=none", EnableSeed: false));
+        string result = await service.EnsureReadyAsync().ConfigureAwait(false);
+        Assert(result.StartsWith("Database unavailable:", StringComparison.Ordinal), "Unavailable DB should return safe guidance message.");
+    }
+
+    private static void InitialSchemaScript_ContainsRequiredTables()
+    {
+        string root = FindRepositoryRoot();
+        string sql = File.ReadAllText(Path.Combine(root, "scripts", "sql", "0001_initial_schema.sql"));
+        string[] required =
+        [
+            "create table if not exists users",
+            "create table if not exists portfolios",
+            "create table if not exists assets",
+            "create table if not exists tags",
+            "create table if not exists asset_tags",
+            "create table if not exists transactions",
+            "create table if not exists asset_prices",
+            "create table if not exists goals",
+            "create table if not exists tax_profiles",
+            "create table if not exists tax_reports",
+            "create table if not exists import_sessions",
+            "create table if not exists import_rows",
+            "create table if not exists quote_cache",
+            "create table if not exists sync_snapshots",
+            "create table if not exists audit_log",
+        ];
+
+        foreach (string table in required)
+        {
+            Assert(sql.Contains(table, StringComparison.OrdinalIgnoreCase), $"Schema must contain table declaration: {table}");
+        }
     }
 
     private static async Task JsonSettingsRepository_StoresByOwner()
@@ -222,5 +261,22 @@ internal static class Program
         {
             throw new InvalidOperationException(message);
         }
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        DirectoryInfo? directory = new(AppContext.BaseDirectory);
+
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "Proxima.sln")))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate repository root from test runner output directory.");
     }
 }

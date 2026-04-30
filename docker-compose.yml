@@ -1,0 +1,22 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16
+    container_name: proxima-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: proxima
+      POSTGRES_USER: proxima
+      POSTGRES_PASSWORD: proxima
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U proxima -d proxima"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - proxima_pgdata:/var/lib/postgresql/data
+
+volumes:
+  proxima_pgdata:
