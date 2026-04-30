@@ -28,3 +28,5 @@
 - Module 15 adds encrypted snapshot export/import with AES-GCM and conflict checks, but Google Drive sync remains a stub adapter without OAuth flow.
 - Snapshot import currently writes JSON stores transactionally at file level in local-first mode; full PostgreSQL transactional restore semantics are deferred to DB module integration.
 - Module 16 adds PDF export for portfolio and tax draft reports, but interactive on-screen preview and destination picker/overwrite confirmation are still pending UI enhancements.
+- Module 17 adds PostgreSQL schema/bootstrap foundation and committed SQL migration scripts, but runtime repositories still use JSON stores by default until full DB repository switch is completed.
+- EF `dotnet ef` migration artifacts are not yet generated; current migration baseline is maintained as committed SQL scripts.

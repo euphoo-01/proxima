@@ -876,3 +876,54 @@ Preview is currently service-level (sections) rather than a full in-app report p
 ### Commit
 
 4a72acb feat(reporting): add portfolio and tax pdf export service
+
+## Iteration 17 — Persistence, Data Integrity & Migrations
+
+### Scope
+
+Introduce PostgreSQL persistence baseline: docker-compose, EF Core/Npgsql schema mapping, SQL migration/seed scripts, and DB bootstrap error handling.
+
+### User Stories Checked
+
+- [x] US-17.1 — User data persists locally.
+- [x] US-17.2 — User data survives failures.
+- [x] US-17.3 — Developer can evolve schema.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-17.1 | Partial | `docker-compose.yml` added, connection resolved from safe env path, bootstrap service returns graceful unavailable DB message, SQL schema/seed can be applied manually. |
+| AC-17.2 | Partial | Required table set defined in committed schema; FK/index/precision/timestamptz constraints present; repository runtime still JSON-first pending full switch. |
+| AC-17.3 | Partial | Cross-portfolio transaction integrity remains enforced in application service; DB transactional import path pending repo switch. |
+| AC-17.4 | Partial | Initial committed migration baseline provided as SQL scripts with documented apply commands; `dotnet ef` migration artifacts deferred. |
+| AC-17.5 | Partial | Demo seed script includes user/portfolio/assets/transactions/prices/goals/tax profile; runtime auto-seed wiring to DB pending full persistence switch. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit/Integration-lite | `tests/Proxima.Infrastructure.Tests` (`DatabaseBootstrap_ReturnsGracefulMessage_WhenUnavailable`, `InitialSchemaScript_ContainsRequiredTables`) | Passed |
+| Regression | `dotnet build Proxima.sln`, `dotnet test Proxima.sln` | Passed |
+| Review | `docs/persistence-module-notes.md` | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Application runtime still uses JSON repositories by default. Full Postgres repository activation and `dotnet ef` migration artifacts are planned in follow-up iteration work.
+
+### Commit
+
+703a2fb feat(db): add postgres schema bootstrap and seed scripts
