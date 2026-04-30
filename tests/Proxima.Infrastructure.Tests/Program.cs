@@ -6,6 +6,7 @@ using Proxima.Application.Portfolios;
 using Proxima.Application.Quotes;
 using Proxima.Application.Settings;
 using Proxima.Application.Transactions;
+using Proxima.Application.Observability;
 using Proxima.Domain.Assets;
 using Proxima.Domain.Auth;
 using Proxima.Domain.Goals;
@@ -37,8 +38,34 @@ internal static class Program
         await JsonGoalRepository_StoresAndArchives().ConfigureAwait(false);
         await JsonSettingsRepository_StoresByOwner().ConfigureAwait(false);
         await DatabaseBootstrap_ReturnsGracefulMessage_WhenUnavailable().ConfigureAwait(false);
+        await JsonAuditLogRepository_AppendsEvents().ConfigureAwait(false);
+        RedactionHelper_RemovesSensitiveKeys();
         InitialSchemaScript_ContainsRequiredTables();
         Console.WriteLine("Proxima.Infrastructure.Tests passed.");
+    }
+
+    private static void RedactionHelper_RemovesSensitiveKeys()
+    {
+        string redacted = RedactionHelper.Redact("apiKey=abc token=def password=ghi");
+        Assert(!redacted.Contains("apikey", StringComparison.OrdinalIgnoreCase), "Sensitive key name must be redacted.");
+        Assert(!redacted.Contains("token", StringComparison.OrdinalIgnoreCase), "Sensitive token key name must be redacted.");
+        Assert(!redacted.Contains("password", StringComparison.OrdinalIgnoreCase), "Sensitive password key name must be redacted.");
+    }
+
+    private static async Task JsonAuditLogRepository_AppendsEvents()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "proxima-audit-tests", Guid.NewGuid().ToString("N"));
+        string path = Path.Combine(directory, "audit.json");
+        JsonAuditLogRepository repository = new(path);
+        AuditService service = new(repository);
+        Guid owner = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+        await service.RecordAsync(owner, "portfolio.create", "success", "apiKey=hidden").ConfigureAwait(false);
+        Assert(File.Exists(path), "Audit log must be persisted.");
+
+        string json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
+        Assert(json.Contains("portfolio.create", StringComparison.Ordinal), "Audit log should contain event type.");
+        Assert(!json.Contains("apiKey", StringComparison.OrdinalIgnoreCase), "Audit log should store redacted metadata.");
     }
 
     private static async Task DatabaseBootstrap_ReturnsGracefulMessage_WhenUnavailable()

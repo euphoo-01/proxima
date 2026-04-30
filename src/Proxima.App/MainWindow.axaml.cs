@@ -11,6 +11,7 @@ using Proxima.Infrastructure.Quotes;
 using Proxima.Infrastructure.Settings;
 using Proxima.Infrastructure.Taxes;
 using Proxima.Infrastructure.Transactions;
+using Proxima.Infrastructure.Persistence;
 using Proxima.Importing;
 using Proxima.Reporting.Reports;
 using Proxima.Sync.Snapshots;
@@ -44,6 +45,8 @@ public partial class MainWindow : Window
         string quoteCachePath = ProximaQuoteComposition.GetDefaultQuoteCacheStorePath();
         string goalsStorePath = ProximaGoalComposition.GetDefaultGoalsStorePath();
         string settingsStorePath = ProximaSettingsComposition.GetDefaultSettingsStorePath();
+        string auditLogPath = ProximaAuditComposition.GetDefaultAuditLogPath();
+        var auditService = ProximaAuditComposition.CreateAuditService(auditLogPath);
         ShellViewModel shell = new(
             new ShellNavigationService(),
             ProximaPortfolioComposition.CreatePortfolioService(portfolioStorePath),
@@ -55,8 +58,9 @@ public partial class MainWindow : Window
             ProximaTaxComposition.CreateTaxCalculator(),
             ProximaSettingsComposition.CreateSettingsService(settingsStorePath),
             ProximaSyncComposition.CreateSnapshotService(),
-            ProximaReportingComposition.CreateReportService());
-        return new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell);
+            ProximaReportingComposition.CreateReportService(),
+            auditService);
+        return new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell, auditService);
     }
 
     private void ShellPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

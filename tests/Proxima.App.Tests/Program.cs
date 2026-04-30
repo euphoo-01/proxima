@@ -10,6 +10,7 @@ using Proxima.Application.Quotes;
 using Proxima.Application.Settings;
 using Proxima.Application.Taxes;
 using Proxima.Application.Transactions;
+using Proxima.Application.Observability;
 using Proxima.Domain.Assets;
 using Proxima.Domain;
 using Proxima.Domain.Auth;
@@ -47,7 +48,24 @@ internal static class Program
         SnapshotService_EncryptDecryptAndTamperFail().GetAwaiter().GetResult();
         ReportingService_ExportsNonEmptyPdf().GetAwaiter().GetResult();
         Localization_FallbackAndLanguageSwitch_Works().GetAwaiter().GetResult();
+        NotificationHost_IsBoundInShellLayout();
+        RedactionHelper_RedactsSensitiveFragments();
         Console.WriteLine("Proxima.App.Tests baseline checks passed.");
+    }
+
+    private static void RedactionHelper_RedactsSensitiveFragments()
+    {
+        string redacted = RedactionHelper.Redact("token=abc password=hello apiKey=xyz");
+        Assert(!redacted.Contains("password", StringComparison.OrdinalIgnoreCase), "Redaction should remove password key fragments.");
+        Assert(!redacted.Contains("token", StringComparison.OrdinalIgnoreCase), "Redaction should remove token key fragments.");
+    }
+
+    private static void NotificationHost_IsBoundInShellLayout()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        string xamlPath = Path.Combine(repositoryRoot, "src", "Proxima.App", "MainWindow.axaml");
+        string xaml = File.ReadAllText(xamlPath);
+        Assert(xaml.Contains("ItemsSource=\"{Binding Shell.Notifications}\"", StringComparison.Ordinal), "Shell must render notification items.");
     }
 
     private static async Task Localization_FallbackAndLanguageSwitch_Works()

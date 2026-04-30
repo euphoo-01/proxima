@@ -1,11 +1,13 @@
 using Proxima.Application.Auth;
+using Proxima.Application.Observability;
 using Proxima.Domain.Auth;
 
 namespace Proxima.App.ViewModels;
 
-public sealed class AuthViewModel(ILocalAuthService authService, ShellViewModel shell) : ViewModelBase
+public sealed class AuthViewModel(ILocalAuthService authService, ShellViewModel shell, IAuditService? audit = null) : ViewModelBase
 {
     private readonly PasswordPolicyValidator _passwordPolicy = new();
+    private readonly IAuditService _audit = audit ?? new NoOpAuditService();
     private string _displayName = string.Empty;
     private string _login = string.Empty;
     private string _unlockLogin = string.Empty;
@@ -181,6 +183,7 @@ public sealed class AuthViewModel(ILocalAuthService authService, ShellViewModel 
                 Shell.Navigate("dashboard");
                 StatusMessage = "Профиль создан. Proxima разблокирована.";
                 ValidationMessage = string.Empty;
+                await _audit.RecordAsync(result.Profile.Id, "profile.create", "success", $"login:{result.Profile.Login}", cancellationToken).ConfigureAwait(true);
                 return;
             }
 

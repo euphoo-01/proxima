@@ -6,6 +6,7 @@ using Proxima.Application.Quotes;
 using Proxima.Application.Settings;
 using Proxima.Application.Taxes;
 using Proxima.Application.Transactions;
+using Proxima.Application.Observability;
 using Proxima.Analytics.Dashboard;
 using Proxima.Domain.Assets;
 using Proxima.Domain.Portfolios;
@@ -31,6 +32,7 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly ISettingsService _settings;
     private readonly ISnapshotService _snapshots;
     private readonly IReportService _reports;
+    private readonly IAuditService _audit;
     private Guid _ownerUserId;
 
     private string _activeRoute = "dashboard";
@@ -155,7 +157,7 @@ public sealed class ShellViewModel : ViewModelBase
     private string _settingsSnapshotPassword = string.Empty;
     private bool _settingsAllowConflictOverride;
 
-    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService, IQuoteRefreshService quotes, IGoalService goals, ITaxCalculator taxes, ISettingsService settings, ISnapshotService snapshots, IReportService reports)
+    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService, IQuoteRefreshService quotes, IGoalService goals, ITaxCalculator taxes, ISettingsService settings, ISnapshotService snapshots, IReportService reports, IAuditService? audit = null)
     {
         _navigation = navigation;
         _portfolios = portfolios;
@@ -168,6 +170,7 @@ public sealed class ShellViewModel : ViewModelBase
         _settings = settings;
         _snapshots = snapshots;
         _reports = reports;
+        _audit = audit ?? new NoOpAuditService();
         RegisterRoutes();
         ApplyRoute(_navigation.Navigate("dashboard", pushHistory: false));
     }
@@ -184,6 +187,7 @@ public sealed class ShellViewModel : ViewModelBase
     public ObservableCollection<AssetMetric> AssetDetailsAdvancedMetrics { get; } = [];
     public ObservableCollection<TransactionRowViewModel> AssetDetailsTransactions { get; } = [];
     public ObservableCollection<GoalRowViewModel> Goals { get; } = [];
+    public ObservableCollection<AppNotificationViewModel> Notifications { get; } = [];
     public bool IsGoalsEmpty => Goals.Count == 0;
 
     public IEnumerable<string> Currencies => new[] { "USD", "EUR", "BYN", "RUB" };
@@ -1103,12 +1107,16 @@ public sealed class ShellViewModel : ViewModelBase
         if (!result.Succeeded)
         {
             SettingsSyncStatus = result.Message;
+            PushNotification(AppNotificationLevel.Error, result.Message);
+            await RecordAuditAsync("snapshot.export", "failed", result.Message, cancellationToken).ConfigureAwait(false);
             return;
         }
 
         _settingsLastSnapshotAt = result.CreatedAtUtc;
         SettingsSnapshotPath = result.FilePath ?? string.Empty;
         SettingsSyncStatus = $"Snapshot exported: {result.FilePath}";
+        PushNotification(AppNotificationLevel.Success, "Encrypted snapshot exported.");
+        await RecordAuditAsync("snapshot.export", "success", $"path:{result.FilePath}", cancellationToken).ConfigureAwait(false);
     }
 
     public async Task ImportEncryptedSnapshotAsync(CancellationToken cancellationToken = default)
@@ -1117,17 +1125,22 @@ public sealed class ShellViewModel : ViewModelBase
         if (!preview.Succeeded)
         {
             SettingsSyncStatus = preview.Message;
+            PushNotification(AppNotificationLevel.Error, preview.Message);
+            await RecordAuditAsync("snapshot.import.preview", "failed", preview.Message, cancellationToken).ConfigureAwait(false);
             return;
         }
 
         if (preview.ConflictKind != SnapshotConflictKind.None && !SettingsAllowConflictOverride)
         {
             SettingsSyncStatus = $"Conflict: {preview.ConflictKind}. Enable override to continue.";
+            PushNotification(AppNotificationLevel.Warning, SettingsSyncStatus);
             return;
         }
 
         SnapshotImportResult result = await _snapshots.ImportAsync(SettingsSnapshotPath, SettingsSnapshotPassword, SettingsAllowConflictOverride, cancellationToken).ConfigureAwait(false);
         SettingsSyncStatus = result.Message;
+        PushNotification(result.Succeeded ? AppNotificationLevel.Success : AppNotificationLevel.Error, result.Message);
+        await RecordAuditAsync("snapshot.import", result.Succeeded ? "success" : "failed", result.Message, cancellationToken).ConfigureAwait(false);
     }
 
     public void Navigate(string route)
@@ -1182,6 +1195,7 @@ public sealed class ShellViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(ImportFilePath))
         {
             ImportMessage = "Укажите путь к файлу .csv или .pdf.";
+            PushNotification(AppNotificationLevel.Warning, ImportMessage);
             return;
         }
 
@@ -1202,6 +1216,7 @@ public sealed class ShellViewModel : ViewModelBase
         if (SelectedPortfolio is null)
         {
             ImportMessage = "Выберите портфель перед импортом.";
+            PushNotification(AppNotificationLevel.Warning, ImportMessage);
             return;
         }
 
@@ -1209,6 +1224,7 @@ public sealed class ShellViewModel : ViewModelBase
         if (selectedRows.Count == 0)
         {
             ImportMessage = "Нет выбранных строк для сохранения.";
+            PushNotification(AppNotificationLevel.Warning, ImportMessage);
             return;
         }
 
@@ -1218,6 +1234,8 @@ public sealed class ShellViewModel : ViewModelBase
             if (row.Source.Status == ImportRowStatus.Invalid)
             {
                 ImportMessage = $"Строка {row.Source.RowNumber} содержит ошибки и не может быть сохранена.";
+                PushNotification(AppNotificationLevel.Error, ImportMessage);
+                await RecordAuditAsync("import.commit", "failed", ImportMessage, cancellationToken).ConfigureAwait(false);
                 return;
             }
 
@@ -1243,6 +1261,8 @@ public sealed class ShellViewModel : ViewModelBase
                     if (!createdAsset.Succeeded || createdAsset.Asset is null)
                     {
                         ImportMessage = $"Не удалось создать актив для строки {row.Source.RowNumber}: {createdAsset.Message}";
+                        PushNotification(AppNotificationLevel.Error, ImportMessage);
+                        await RecordAuditAsync("import.commit", "failed", ImportMessage, cancellationToken).ConfigureAwait(false);
                         return;
                     }
 
@@ -1274,12 +1294,16 @@ public sealed class ShellViewModel : ViewModelBase
             if (!transaction.Succeeded)
             {
                 ImportMessage = $"Сохранение прервано на строке {row.Source.RowNumber}: {transaction.Message}";
+                PushNotification(AppNotificationLevel.Error, ImportMessage);
+                await RecordAuditAsync("import.commit", "failed", ImportMessage, cancellationToken).ConfigureAwait(false);
                 return;
             }
         }
 
         await ReloadTransactionsAsync(cancellationToken).ConfigureAwait(false);
         ImportMessage = $"Импортировано строк: {selectedRows.Count}.";
+        PushNotification(AppNotificationLevel.Success, ImportMessage);
+        await RecordAuditAsync("import.commit", "success", $"rows:{selectedRows.Count}", cancellationToken).ConfigureAwait(false);
         IsImportDialogOpen = false;
     }
 
@@ -1296,6 +1320,7 @@ public sealed class ShellViewModel : ViewModelBase
             QuoteRefreshSummary summary = await _quotes.RefreshPortfolioAsync(SelectedPortfolio.Id, cancellationToken).ConfigureAwait(false);
             await ReloadAssetsAsync(cancellationToken).ConfigureAwait(false);
             QuotesStatusText = summary.Message;
+            PushNotification(summary.FailedCount == 0 ? AppNotificationLevel.Success : AppNotificationLevel.Warning, summary.Message);
         }
         finally
         {
@@ -1469,6 +1494,8 @@ public sealed class ShellViewModel : ViewModelBase
         TaxMessage = export.Succeeded
             ? $"Tax report exported: {export.OutputPath}"
             : export.Message;
+        PushNotification(export.Succeeded ? AppNotificationLevel.Success : AppNotificationLevel.Error, TaxMessage);
+        await RecordAuditAsync("tax.report.export", export.Succeeded ? "success" : "failed", TaxMessage, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task ExportPortfolioReportAsync(CancellationToken cancellationToken = default)
@@ -1476,6 +1503,7 @@ public sealed class ShellViewModel : ViewModelBase
         if (SelectedPortfolio is null)
         {
             StatusText = "Выберите портфель для экспорта отчета.";
+            PushNotification(AppNotificationLevel.Warning, StatusText);
             return;
         }
 
@@ -1511,6 +1539,7 @@ public sealed class ShellViewModel : ViewModelBase
         if (!preview.Succeeded)
         {
             StatusText = preview.Message;
+            PushNotification(AppNotificationLevel.Error, StatusText);
             return;
         }
 
@@ -1518,6 +1547,7 @@ public sealed class ShellViewModel : ViewModelBase
         StatusText = export.Succeeded
             ? $"Portfolio report exported: {export.OutputPath}"
             : export.Message;
+        PushNotification(export.Succeeded ? AppNotificationLevel.Success : AppNotificationLevel.Error, StatusText);
     }
 
     public void OpenCreatePortfolioDialog()
@@ -1553,11 +1583,14 @@ public sealed class ShellViewModel : ViewModelBase
         if (!result.Succeeded)
         {
             CreatePortfolioValidation = result.Message;
+            PushNotification(AppNotificationLevel.Error, result.Message);
             return;
         }
 
         await ReloadPortfoliosAsync(cancellationToken, preferPortfolioId: result.Portfolio!.Id).ConfigureAwait(false);
         StatusText = $"Текущий портфель: {SelectedPortfolio!.Name} ({SelectedPortfolio.Currency})";
+        PushNotification(AppNotificationLevel.Success, "Портфель создан.");
+        await RecordAuditAsync("portfolio.create", "success", $"portfolio:{SelectedPortfolio.Name}", cancellationToken).ConfigureAwait(false);
         IsCreatePortfolioDialogOpen = false;
     }
 
@@ -1600,11 +1633,14 @@ public sealed class ShellViewModel : ViewModelBase
         if (!result.Succeeded)
         {
             ManagePortfolioValidation = result.Message;
+            PushNotification(AppNotificationLevel.Error, result.Message);
             return;
         }
 
         await ReloadPortfoliosAsync(cancellationToken, preferPortfolioId: result.Portfolio!.Id).ConfigureAwait(false);
         StatusText = $"Портфель обновлён: {SelectedPortfolio!.Name} ({SelectedPortfolio.Currency})";
+        PushNotification(AppNotificationLevel.Success, "Портфель обновлён.");
+        await RecordAuditAsync("portfolio.update", "success", $"portfolio:{SelectedPortfolio.Name}", cancellationToken).ConfigureAwait(false);
         IsManagePortfolioDialogOpen = false;
     }
 
@@ -1619,6 +1655,7 @@ public sealed class ShellViewModel : ViewModelBase
         if (!result.Succeeded)
         {
             ManagePortfolioValidation = result.Message;
+            PushNotification(AppNotificationLevel.Error, result.Message);
             return;
         }
 
@@ -1628,10 +1665,14 @@ public sealed class ShellViewModel : ViewModelBase
         if (SelectedPortfolio is null)
         {
             StatusText = "Нет активного портфеля. Создайте новый портфель.";
+            PushNotification(AppNotificationLevel.Warning, StatusText);
+            await RecordAuditAsync("portfolio.archive", "success", "active-portfolio:none", cancellationToken).ConfigureAwait(false);
             return;
         }
 
         StatusText = $"Текущий портфель: {SelectedPortfolio.Name} ({SelectedPortfolio.Currency})";
+        PushNotification(AppNotificationLevel.Success, "Портфель архивирован.");
+        await RecordAuditAsync("portfolio.archive", "success", $"active-portfolio:{SelectedPortfolio.Name}", cancellationToken).ConfigureAwait(false);
     }
 
     private void RegisterRoutes()
@@ -2424,5 +2465,24 @@ public sealed class ShellViewModel : ViewModelBase
         OnPropertyChanged(nameof(ManagePortfolioText));
         OnPropertyChanged(nameof(ImportAssetsText));
         OnPropertyChanged(nameof(ManualInputText));
+    }
+
+    private void PushNotification(AppNotificationLevel level, string message)
+    {
+        Notifications.Insert(0, new AppNotificationViewModel(Guid.NewGuid(), level, message, DateTimeOffset.UtcNow));
+        while (Notifications.Count > 6)
+        {
+            Notifications.RemoveAt(Notifications.Count - 1);
+        }
+    }
+
+    private Task RecordAuditAsync(string eventType, string outcome, string metadata, CancellationToken cancellationToken = default)
+    {
+        if (_ownerUserId == Guid.Empty)
+        {
+            return Task.CompletedTask;
+        }
+
+        return _audit.RecordAsync(_ownerUserId, eventType, outcome, metadata, cancellationToken);
     }
 }
