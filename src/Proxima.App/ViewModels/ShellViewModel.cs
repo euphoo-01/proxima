@@ -3,6 +3,7 @@ using Proxima.Application.Assets;
 using Proxima.Application.Goals;
 using Proxima.Application.Portfolios;
 using Proxima.Application.Quotes;
+using Proxima.Application.Settings;
 using Proxima.Application.Taxes;
 using Proxima.Application.Transactions;
 using Proxima.Analytics.Dashboard;
@@ -25,6 +26,7 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly IImportService _importService;
     private readonly IGoalService _goals;
     private readonly ITaxCalculator _taxes;
+    private readonly ISettingsService _settings;
     private Guid _ownerUserId;
 
     private string _activeRoute = "dashboard";
@@ -128,8 +130,25 @@ public sealed class ShellViewModel : ViewModelBase
     private string _taxExchangeRateStatus = "Источник курса: mock";
     private string _taxDeadlines = "До 31 марта следующего года";
     private string _taxDisclaimer = "Draft / informational";
+    private string _profileDisplayName = "Пользователь";
+    private string _profileLogin = "local";
+    private string _profileRoleLabel = "Частный инвестор";
+    private string _settingsDisplayName = string.Empty;
+    private int _settingsRoleIndex;
+    private string _settingsPreferredCurrency = "USD";
+    private AppLanguage _settingsLanguage = AppLanguage.RU;
+    private decimal _settingsUiScale = 1m;
+    private QuoteProviderKind _settingsQuoteProvider = QuoteProviderKind.Mock;
+    private int _settingsQuoteRefreshMinutes = 15;
+    private string _settingsFinnhubApiKeyInput = string.Empty;
+    private string _settingsApiKeyMask = "Не задан";
+    private CurrencyProviderKind _settingsCurrencyProvider = CurrencyProviderKind.Mock;
+    private bool _settingsSyncEnabled;
+    private string _settingsValidation = string.Empty;
+    private string _settingsSyncStatus = "Снапшоты не экспортировались.";
+    private DateTimeOffset? _settingsLastSnapshotAt;
 
-    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService, IQuoteRefreshService quotes, IGoalService goals, ITaxCalculator taxes)
+    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService, IQuoteRefreshService quotes, IGoalService goals, ITaxCalculator taxes, ISettingsService settings)
     {
         _navigation = navigation;
         _portfolios = portfolios;
@@ -139,6 +158,7 @@ public sealed class ShellViewModel : ViewModelBase
         _quotes = quotes;
         _goals = goals;
         _taxes = taxes;
+        _settings = settings;
         RegisterRoutes();
         ApplyRoute(_navigation.Navigate("dashboard", pushHistory: false));
     }
@@ -160,6 +180,10 @@ public sealed class ShellViewModel : ViewModelBase
     public IEnumerable<string> Currencies => new[] { "USD", "EUR", "BYN", "RUB" };
     public IEnumerable<AssetType> AssetTypes => Enum.GetValues<AssetType>();
     public IEnumerable<TransactionType> TransactionTypes => Enum.GetValues<TransactionType>();
+    public IEnumerable<string> SettingsCurrencies => ["USD", "BYN", "EUR", "RUB"];
+    public IEnumerable<AppLanguage> SettingsLanguages => Enum.GetValues<AppLanguage>();
+    public IEnumerable<QuoteProviderKind> SettingsQuoteProviders => Enum.GetValues<QuoteProviderKind>();
+    public IEnumerable<CurrencyProviderKind> SettingsCurrencyProviders => Enum.GetValues<CurrencyProviderKind>();
 
     public string ActiveRoute
     {
@@ -883,6 +907,102 @@ public sealed class ShellViewModel : ViewModelBase
         private set => SetProperty(ref _taxDisclaimer, value);
     }
 
+    public string ProfileDisplayName
+    {
+        get => _profileDisplayName;
+        private set => SetProperty(ref _profileDisplayName, value);
+    }
+
+    public string ProfileLogin
+    {
+        get => _profileLogin;
+        private set => SetProperty(ref _profileLogin, value);
+    }
+
+    public string ProfileRoleLabel
+    {
+        get => _profileRoleLabel;
+        private set => SetProperty(ref _profileRoleLabel, value);
+    }
+
+    public string SettingsDisplayName
+    {
+        get => _settingsDisplayName;
+        set => SetProperty(ref _settingsDisplayName, value);
+    }
+
+    public int SettingsRoleIndex
+    {
+        get => _settingsRoleIndex;
+        set => SetProperty(ref _settingsRoleIndex, value);
+    }
+
+    public string SettingsPreferredCurrency
+    {
+        get => _settingsPreferredCurrency;
+        set => SetProperty(ref _settingsPreferredCurrency, value);
+    }
+
+    public AppLanguage SettingsLanguage
+    {
+        get => _settingsLanguage;
+        set => SetProperty(ref _settingsLanguage, value);
+    }
+
+    public decimal SettingsUiScale
+    {
+        get => _settingsUiScale;
+        set => SetProperty(ref _settingsUiScale, value);
+    }
+
+    public QuoteProviderKind SettingsQuoteProvider
+    {
+        get => _settingsQuoteProvider;
+        set => SetProperty(ref _settingsQuoteProvider, value);
+    }
+
+    public int SettingsQuoteRefreshMinutes
+    {
+        get => _settingsQuoteRefreshMinutes;
+        set => SetProperty(ref _settingsQuoteRefreshMinutes, value);
+    }
+
+    public string SettingsFinnhubApiKeyInput
+    {
+        get => _settingsFinnhubApiKeyInput;
+        set => SetProperty(ref _settingsFinnhubApiKeyInput, value);
+    }
+
+    public string SettingsApiKeyMask
+    {
+        get => _settingsApiKeyMask;
+        private set => SetProperty(ref _settingsApiKeyMask, value);
+    }
+
+    public CurrencyProviderKind SettingsCurrencyProvider
+    {
+        get => _settingsCurrencyProvider;
+        set => SetProperty(ref _settingsCurrencyProvider, value);
+    }
+
+    public bool SettingsSyncEnabled
+    {
+        get => _settingsSyncEnabled;
+        set => SetProperty(ref _settingsSyncEnabled, value);
+    }
+
+    public string SettingsValidation
+    {
+        get => _settingsValidation;
+        private set => SetProperty(ref _settingsValidation, value);
+    }
+
+    public string SettingsSyncStatus
+    {
+        get => _settingsSyncStatus;
+        private set => SetProperty(ref _settingsSyncStatus, value);
+    }
+
     public bool IsDashboardPage => ActiveRoute.Equals("dashboard", StringComparison.Ordinal);
     public bool IsAssetsPage => ActiveRoute.Equals("assets", StringComparison.Ordinal);
     public bool IsTaxesPage => ActiveRoute.Equals("taxes", StringComparison.Ordinal);
@@ -893,11 +1013,55 @@ public sealed class ShellViewModel : ViewModelBase
 
     public bool CanGoBack => _navigation.CanGoBack;
 
-    public async Task InitializeAsync(Guid ownerUserId, CancellationToken cancellationToken = default)
+    public async Task InitializeAsync(Guid ownerUserId, string displayName, string login, Proxima.Domain.Auth.UserRole role, CancellationToken cancellationToken = default)
     {
         _ownerUserId = ownerUserId;
+        await EnsureSettingsAsync(displayName, login, role, cancellationToken).ConfigureAwait(false);
         await ReloadPortfoliosAsync(cancellationToken).ConfigureAwait(false);
         await ReloadGoalsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task SaveSettingsAsync(CancellationToken cancellationToken = default)
+    {
+        UpdateSettingsRequest request = new(
+            _ownerUserId,
+            SettingsDisplayName,
+            SettingsRoleIndex == 1 ? Proxima.Domain.Auth.UserRole.FinancialAnalyst : Proxima.Domain.Auth.UserRole.PrivateInvestor,
+            SettingsPreferredCurrency,
+            SettingsLanguage,
+            SettingsUiScale,
+            SettingsQuoteProvider,
+            SettingsQuoteRefreshMinutes,
+            string.IsNullOrWhiteSpace(SettingsFinnhubApiKeyInput) ? null : SettingsFinnhubApiKeyInput,
+            SettingsCurrencyProvider,
+            SettingsSyncEnabled);
+
+        SettingsOperationResult result = await _settings.UpdateAsync(request, cancellationToken).ConfigureAwait(false);
+        if (!result.Succeeded || result.Settings is null)
+        {
+            SettingsValidation = result.Message;
+            return;
+        }
+
+        SettingsValidation = "Настройки сохранены.";
+        ApplySettings(result.Settings);
+        SettingsFinnhubApiKeyInput = string.Empty;
+    }
+
+    public void LockApp()
+    {
+        SettingsValidation = "Ручная блокировка будет подключена в модуле безопасности.";
+    }
+
+    public void ExportEncryptedSnapshot()
+    {
+        _settingsLastSnapshotAt = DateTimeOffset.UtcNow;
+        SettingsSyncStatus = $"Экспортирован зашифрованный snapshot: {_settingsLastSnapshotAt:yyyy-MM-dd HH:mm}";
+    }
+
+    public void ImportEncryptedSnapshot()
+    {
+        SettingsSyncStatus = "Импорт snapshot: проверка конфликта версий будет подключена в модуле Sync.";
     }
 
     public void Navigate(string route)
@@ -2061,5 +2225,39 @@ public sealed class ShellViewModel : ViewModelBase
         TransactionExternalId = string.Empty;
         TransactionNotes = string.Empty;
         TransactionValidation = string.Empty;
+    }
+
+    private async Task EnsureSettingsAsync(string displayName, string login, Proxima.Domain.Auth.UserRole role, CancellationToken cancellationToken)
+    {
+        UserSettings settings = await _settings.EnsureAsync(new CreateDefaultSettingsRequest(
+            _ownerUserId,
+            displayName,
+            role,
+            login,
+            SelectedPortfolio?.Currency ?? "USD"), cancellationToken).ConfigureAwait(false);
+        ApplySettings(settings);
+    }
+
+    private void ApplySettings(UserSettings settings)
+    {
+        ProfileDisplayName = settings.DisplayName;
+        ProfileLogin = settings.Login;
+        ProfileRoleLabel = settings.Role == Proxima.Domain.Auth.UserRole.FinancialAnalyst ? "Финансовый аналитик" : "Частный инвестор";
+
+        SettingsDisplayName = settings.DisplayName;
+        SettingsRoleIndex = settings.Role == Proxima.Domain.Auth.UserRole.FinancialAnalyst ? 1 : 0;
+        SettingsPreferredCurrency = settings.PreferredCurrency;
+        SettingsLanguage = settings.Language;
+        SettingsUiScale = settings.UiScale;
+        SettingsQuoteProvider = settings.QuoteProvider;
+        SettingsQuoteRefreshMinutes = settings.QuoteRefreshMinutes;
+        SettingsCurrencyProvider = settings.CurrencyProvider;
+        SettingsSyncEnabled = settings.SyncEnabled;
+        SettingsApiKeyMask = string.IsNullOrWhiteSpace(settings.FinnhubApiKeyProtected) ? "Не задан" : "********";
+        _settingsLastSnapshotAt = settings.LastSnapshotAt;
+        if (_settingsLastSnapshotAt is not null)
+        {
+            SettingsSyncStatus = $"Последний snapshot: {_settingsLastSnapshotAt:yyyy-MM-dd HH:mm}";
+        }
     }
 }

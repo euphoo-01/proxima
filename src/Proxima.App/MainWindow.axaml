@@ -195,8 +195,8 @@
 
                     <Border Grid.Row="2" BorderBrush="{StaticResource ProximaBrush.Border}" BorderThickness="0,1,0,0" Padding="0,20,0,0">
                         <StackPanel Spacing="4">
-                            <TextBlock Classes="proxima-body" FontWeight="Bold" Text="Частный инвестор" />
-                            <TextBlock Classes="proxima-caption" Text="Local profile" />
+                            <TextBlock Classes="proxima-body" FontWeight="Bold" Text="{Binding Shell.ProfileDisplayName}" />
+                            <TextBlock Classes="proxima-caption" Text="{Binding Shell.ProfileRoleLabel}" />
                         </StackPanel>
                     </Border>
                 </Grid>
@@ -564,8 +564,55 @@
                             </StackPanel>
                         </controls:BentoCard>
 
-                        <controls:BentoCard IsVisible="{Binding Shell.IsSettingsPage}" Title="Настройки" Subtitle="Параметры приложения и приватности">
-                            <TextBlock Classes="proxima-body" Text="Локальный режим активен. Данные не отправляются на сторонние сервисы без явного действия пользователя." TextWrapping="Wrap" />
+                        <controls:BentoCard IsVisible="{Binding Shell.IsSettingsPage}" Title="Настройки" Subtitle="Профиль, провайдеры и безопасность">
+                            <StackPanel Spacing="12">
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                                    <controls:BentoCard Title="Профиль">
+                                        <StackPanel Spacing="8">
+                                            <TextBox Watermark="Display name" Text="{Binding Shell.SettingsDisplayName}" />
+                                            <ComboBox SelectedIndex="{Binding Shell.SettingsRoleIndex}">
+                                                <ComboBoxItem Content="Частный инвестор" />
+                                                <ComboBoxItem Content="Финансовый аналитик" />
+                                            </ComboBox>
+                                            <TextBlock Classes="proxima-caption" Text="{Binding Shell.ProfileLogin}" />
+                                        </StackPanel>
+                                    </controls:BentoCard>
+                                    <controls:BentoCard Grid.Column="1" Title="Preferences">
+                                        <StackPanel Spacing="8">
+                                            <ComboBox SelectedItem="{Binding Shell.SettingsPreferredCurrency}" ItemsSource="{Binding Shell.SettingsCurrencies}" />
+                                            <ComboBox SelectedItem="{Binding Shell.SettingsLanguage}" ItemsSource="{Binding Shell.SettingsLanguages}" />
+                                            <TextBox Watermark="UI scale (0.8 - 1.5)" Text="{Binding Shell.SettingsUiScale}" />
+                                        </StackPanel>
+                                    </controls:BentoCard>
+                                </Grid>
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                                    <controls:BentoCard Title="Providers">
+                                        <StackPanel Spacing="8">
+                                            <ComboBox SelectedItem="{Binding Shell.SettingsQuoteProvider}" ItemsSource="{Binding Shell.SettingsQuoteProviders}" />
+                                            <TextBox Watermark="Refresh interval (minutes)" Text="{Binding Shell.SettingsQuoteRefreshMinutes}" />
+                                            <TextBox Watermark="Finnhub API key" PasswordChar="•" Text="{Binding Shell.SettingsFinnhubApiKeyInput}" />
+                                            <TextBlock Classes="proxima-caption" Text="{Binding Shell.SettingsApiKeyMask}" />
+                                            <ComboBox SelectedItem="{Binding Shell.SettingsCurrencyProvider}" ItemsSource="{Binding Shell.SettingsCurrencyProviders}" />
+                                            <TextBlock Classes="proxima-caption" Text="Belarusbank FX API: belarusbank.by/o-banke/for-developers/..." TextWrapping="Wrap" />
+                                            <TextBlock Classes="proxima-caption" Text="Quote API: Finnhub (finnhub.io)." TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </controls:BentoCard>
+                                    <controls:BentoCard Grid.Column="1" Title="Security &amp; Sync">
+                                        <StackPanel Spacing="8">
+                                            <CheckBox Content="Enable encrypted snapshot sync" IsChecked="{Binding Shell.SettingsSyncEnabled}" />
+                                            <TextBlock Classes="proxima-caption" Text="{Binding Shell.SettingsSyncStatus}" TextWrapping="Wrap" />
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Button Classes="proxima-secondary" Content="Export snapshot" Click="ExportSnapshotClicked" />
+                                                <Button Classes="proxima-secondary" Content="Import snapshot" Click="ImportSnapshotClicked" />
+                                            </StackPanel>
+                                            <Button Classes="proxima-secondary" Content="Lock app" Click="LockAppClicked" />
+                                        </StackPanel>
+                                    </controls:BentoCard>
+                                </Grid>
+                                <TextBlock Classes="proxima-caption" Foreground="{StaticResource ProximaBrush.Danger}" Text="{Binding Shell.SettingsValidation}" TextWrapping="Wrap" />
+                                <Button Classes="proxima-primary" Content="Сохранить настройки" Click="SaveSettingsClicked" HorizontalAlignment="Left" />
+                                <TextBlock Classes="proxima-caption" Text="Raw DB sync не поддерживается. Доступны только encrypted snapshots." TextWrapping="Wrap" />
+                            </StackPanel>
                         </controls:BentoCard>
                     </StackPanel>
                 </ScrollViewer>

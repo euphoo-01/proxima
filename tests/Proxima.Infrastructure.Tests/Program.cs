@@ -4,6 +4,7 @@ using Proxima.Application.Auth;
 using Proxima.Application.Goals;
 using Proxima.Application.Portfolios;
 using Proxima.Application.Quotes;
+using Proxima.Application.Settings;
 using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
 using Proxima.Domain.Auth;
@@ -15,6 +16,7 @@ using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Goals;
 using Proxima.Infrastructure.Portfolios;
 using Proxima.Infrastructure.Quotes;
+using Proxima.Infrastructure.Settings;
 using Proxima.Infrastructure.Transactions;
 
 namespace Proxima.Infrastructure.Tests;
@@ -32,7 +34,35 @@ internal static class Program
         await JsonTransactionRepository_StoresAndArchives().ConfigureAwait(false);
         await JsonQuoteCacheRepository_UpsertsByAsset().ConfigureAwait(false);
         await JsonGoalRepository_StoresAndArchives().ConfigureAwait(false);
+        await JsonSettingsRepository_StoresByOwner().ConfigureAwait(false);
         Console.WriteLine("Proxima.Infrastructure.Tests passed.");
+    }
+
+    private static async Task JsonSettingsRepository_StoresByOwner()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "proxima-settings-tests", Guid.NewGuid().ToString("N"));
+        string path = Path.Combine(directory, "settings.json");
+        JsonUserSettingsRepository repository = new(path);
+        SettingsService service = new(repository);
+        Guid owner = Guid.Parse("99999999-1111-1111-1111-111111111111");
+
+        await service.EnsureAsync(new CreateDefaultSettingsRequest(owner, "Demo", UserRole.PrivateInvestor, "demo", "USD")).ConfigureAwait(false);
+        SettingsOperationResult updated = await service.UpdateAsync(new UpdateSettingsRequest(
+            owner,
+            "Demo Updated",
+            UserRole.PrivateInvestor,
+            "BYN",
+            AppLanguage.EN,
+            1.1m,
+            QuoteProviderKind.Mock,
+            30,
+            null,
+            CurrencyProviderKind.Mock,
+            true)).ConfigureAwait(false);
+
+        Assert(updated.Succeeded, "Settings update should persist.");
+        UserSettings? loaded = await repository.FindByOwnerAsync(owner).ConfigureAwait(false);
+        Assert(loaded is not null && loaded.PreferredCurrency == "BYN", "Settings should reload from JSON by owner.");
     }
 
     private static async Task JsonGoalRepository_StoresAndArchives()

@@ -4,6 +4,7 @@ using Proxima.Application.Auth;
 using Proxima.Application.Goals;
 using Proxima.Application.Portfolios;
 using Proxima.Application.Quotes;
+using Proxima.Application.Settings;
 using Proxima.Application.Taxes;
 using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
@@ -32,7 +33,24 @@ internal static class Program
         GoalService_ForecastAndValidation().GetAwaiter().GetResult();
         TaxCalculator_IsDeterministicAndIncludesDraftMetadata().GetAwaiter().GetResult();
         TaxCalculator_ReturnsRecoverableError_WhenRateUnavailable().GetAwaiter().GetResult();
+        SettingsService_ValidatesUiScaleAndRefreshInterval().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.Application.Tests passed.");
+    }
+
+    private static async Task SettingsService_ValidatesUiScaleAndRefreshInterval()
+    {
+        MemorySettingsRepository repo = new();
+        SettingsService service = new(repo);
+        Guid owner = Guid.Parse("99999999-1111-1111-1111-111111111111");
+        await service.EnsureAsync(new CreateDefaultSettingsRequest(owner, "Demo", UserRole.PrivateInvestor, "demo", "USD")).ConfigureAwait(false);
+
+        SettingsOperationResult invalidScale = await service.UpdateAsync(new UpdateSettingsRequest(
+            owner, "Demo", UserRole.PrivateInvestor, "USD", AppLanguage.RU, 2m, QuoteProviderKind.Mock, 15, null, CurrencyProviderKind.Mock, false)).ConfigureAwait(false);
+        Assert(!invalidScale.Succeeded, "Out-of-range UI scale must be rejected.");
+
+        SettingsOperationResult invalidInterval = await service.UpdateAsync(new UpdateSettingsRequest(
+            owner, "Demo", UserRole.PrivateInvestor, "USD", AppLanguage.RU, 1m, QuoteProviderKind.Mock, 500, null, CurrencyProviderKind.Mock, false)).ConfigureAwait(false);
+        Assert(!invalidInterval.Succeeded, "Out-of-range refresh interval must be rejected.");
     }
 
     private static async Task TaxCalculator_IsDeterministicAndIncludesDraftMetadata()
@@ -311,6 +329,25 @@ internal static class Program
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(ExchangeRateResult.Failure("Курс недоступен, попробуйте позже."));
+        }
+    }
+
+    private sealed class MemorySettingsRepository : IUserSettingsRepository
+    {
+        private readonly Dictionary<Guid, UserSettings> _data = [];
+
+        public Task<UserSettings?> FindByOwnerAsync(Guid ownerUserId, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _data.TryGetValue(ownerUserId, out UserSettings? value);
+            return Task.FromResult(value);
+        }
+
+        public Task UpsertAsync(UserSettings settings, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _data[settings.OwnerUserId] = settings;
+            return Task.CompletedTask;
         }
     }
 

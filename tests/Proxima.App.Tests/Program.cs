@@ -7,6 +7,7 @@ using Proxima.Application.Auth;
 using Proxima.Application.Goals;
 using Proxima.Application.Portfolios;
 using Proxima.Application.Quotes;
+using Proxima.Application.Settings;
 using Proxima.Application.Taxes;
 using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
@@ -40,7 +41,17 @@ internal static class Program
         ShellViewModel_LoadsAndFiltersTransactions().GetAwaiter().GetResult();
         ShellViewModel_ComputesDashboardCards().GetAwaiter().GetResult();
         ShellViewModel_BuildsAssetDetailsMetrics().GetAwaiter().GetResult();
+        SettingsPage_ContainsMaskedApiKeyInput();
         Console.WriteLine("Proxima.App.Tests baseline checks passed.");
+    }
+
+    private static void SettingsPage_ContainsMaskedApiKeyInput()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        string xamlPath = Path.Combine(repositoryRoot, "src", "Proxima.App", "MainWindow.axaml");
+        string xaml = File.ReadAllText(xamlPath);
+        Assert(xaml.Contains("Finnhub API key", StringComparison.Ordinal), "Settings page must include Finnhub API key input.");
+        Assert(xaml.Contains("PasswordChar=\"•\"", StringComparison.Ordinal), "API key field must be masked.");
     }
 
     private static void AssemblyNames_AreStable()
@@ -215,7 +226,7 @@ internal static class Program
     private static async Task ShellViewModel_PreservesSelectedPortfolioAcrossNavigation()
     {
         ShellViewModel shell = CreateShellViewModel();
-        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111")).ConfigureAwait(false);
+        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111"), "Test User", "test", UserRole.PrivateInvestor).ConfigureAwait(false);
         PortfolioOption second = shell.PortfolioOptions.Skip(1).First();
         shell.SelectedPortfolio = second;
 
@@ -234,13 +245,13 @@ internal static class Program
 
     private static ShellViewModel CreateShellViewModel()
     {
-        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService(), new TestImportService(), new TestQuoteRefreshService(), new TestGoalService(), new TestTaxCalculator());
+        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService(), new TestImportService(), new TestQuoteRefreshService(), new TestGoalService(), new TestTaxCalculator(), new TestSettingsService());
     }
 
     private static async Task ShellViewModel_FiltersAndSortsAssets()
     {
         ShellViewModel shell = CreateShellViewModel();
-        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111")).ConfigureAwait(false);
+        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111"), "Test User", "test", UserRole.PrivateInvestor).ConfigureAwait(false);
 
         shell.AssetSearchQuery = "tech";
         Assert(shell.FilteredAssets.Count == 1, "Search should filter by tags.");
@@ -254,7 +265,7 @@ internal static class Program
     private static async Task ShellViewModel_LoadsAndFiltersTransactions()
     {
         ShellViewModel shell = CreateShellViewModel();
-        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111")).ConfigureAwait(false);
+        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111"), "Test User", "test", UserRole.PrivateInvestor).ConfigureAwait(false);
 
         shell.TransactionSearchQuery = "Broker A";
         Assert(shell.FilteredTransactions.Count == 1, "Transaction search should filter by broker.");
@@ -268,7 +279,7 @@ internal static class Program
     private static async Task ShellViewModel_ComputesDashboardCards()
     {
         ShellViewModel shell = CreateShellViewModel();
-        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111")).ConfigureAwait(false);
+        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111"), "Test User", "test", UserRole.PrivateInvestor).ConfigureAwait(false);
 
         Assert(!string.IsNullOrWhiteSpace(shell.DashboardTotalValue), "Dashboard total value should be calculated.");
         Assert(shell.DashboardAllocations.Count > 0, "Dashboard allocation should be populated.");
@@ -278,7 +289,7 @@ internal static class Program
     private static async Task ShellViewModel_BuildsAssetDetailsMetrics()
     {
         ShellViewModel shell = CreateShellViewModel();
-        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111")).ConfigureAwait(false);
+        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111"), "Test User", "test", UserRole.PrivateInvestor).ConfigureAwait(false);
         shell.SelectedAsset = shell.FilteredAssets.First();
         shell.OpenAssetDetails();
 
@@ -557,6 +568,57 @@ internal static class Program
                 "mock-nbrb",
                 DateOnly.FromDateTime(DateTime.UtcNow),
                 new TaxRuleSet("BY-DRAFT-TEST", DateOnly.FromDateTime(DateTime.UtcNow), 13m, 13m, 200m, "Draft / informational")));
+        }
+    }
+
+    private sealed class TestSettingsService : ISettingsService
+    {
+        private UserSettings? _settings;
+
+        public Task<UserSettings> EnsureAsync(CreateDefaultSettingsRequest request, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _settings ??= new UserSettings(
+                request.OwnerUserId,
+                request.DisplayName,
+                request.Role,
+                request.Login,
+                request.PreferredCurrency,
+                AppLanguage.RU,
+                1m,
+                QuoteProviderKind.Mock,
+                15,
+                string.Empty,
+                CurrencyProviderKind.Mock,
+                false,
+                null);
+            return Task.FromResult(_settings);
+        }
+
+        public Task<UserSettings?> GetAsync(Guid ownerUserId, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(_settings);
+        }
+
+        public Task<SettingsOperationResult> UpdateAsync(UpdateSettingsRequest request, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _settings = new UserSettings(
+                request.OwnerUserId,
+                request.DisplayName,
+                request.Role,
+                "test",
+                request.PreferredCurrency,
+                request.Language,
+                request.UiScale,
+                request.QuoteProvider,
+                request.QuoteRefreshMinutes,
+                string.IsNullOrWhiteSpace(request.FinnhubApiKeyRaw) ? string.Empty : "protected",
+                request.CurrencyProvider,
+                request.SyncEnabled,
+                DateTimeOffset.UtcNow);
+            return Task.FromResult(SettingsOperationResult.Success(_settings));
         }
     }
 }

@@ -177,7 +177,7 @@ public sealed class AuthViewModel(ILocalAuthService authService, ShellViewModel 
                 UnlockLogin = result.Profile!.Login;
                 IsSetupMode = false;
                 IsUnlocked = true;
-                await Shell.InitializeAsync(result.Profile.Id, cancellationToken).ConfigureAwait(true);
+                await Shell.InitializeAsync(result.Profile.Id, result.Profile.DisplayName, result.Profile.Login, result.Profile.Role, cancellationToken).ConfigureAwait(true);
                 Shell.Navigate("dashboard");
                 StatusMessage = "Профиль создан. Proxima разблокирована.";
                 ValidationMessage = string.Empty;
@@ -212,7 +212,7 @@ public sealed class AuthViewModel(ILocalAuthService authService, ShellViewModel 
             {
                 _failedAttempts = 0;
                 IsUnlocked = true;
-                await Shell.InitializeAsync(result.Profile!.Id, cancellationToken).ConfigureAwait(true);
+                await Shell.InitializeAsync(result.Profile!.Id, result.Profile.DisplayName, result.Profile.Login, result.Profile.Role, cancellationToken).ConfigureAwait(true);
                 Shell.Navigate("dashboard");
                 StatusMessage = "Proxima разблокирована.";
                 OnPropertyChanged(nameof(FailedAttemptsMessage));

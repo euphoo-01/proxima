@@ -6,6 +6,7 @@ using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Goals;
 using Proxima.Infrastructure.Portfolios;
 using Proxima.Infrastructure.Quotes;
+using Proxima.Infrastructure.Settings;
 using Proxima.Infrastructure.Taxes;
 using Proxima.Infrastructure.Transactions;
 using Proxima.Importing;
@@ -36,6 +37,7 @@ public partial class MainWindow : Window
         string transactionStorePath = ProximaTransactionComposition.GetDefaultTransactionStorePath();
         string quoteCachePath = ProximaQuoteComposition.GetDefaultQuoteCacheStorePath();
         string goalsStorePath = ProximaGoalComposition.GetDefaultGoalsStorePath();
+        string settingsStorePath = ProximaSettingsComposition.GetDefaultSettingsStorePath();
         ShellViewModel shell = new(
             new ShellNavigationService(),
             ProximaPortfolioComposition.CreatePortfolioService(portfolioStorePath),
@@ -44,7 +46,8 @@ public partial class MainWindow : Window
             ProximaImportComposition.CreateImportService(),
             ProximaQuoteComposition.CreateQuoteRefreshService(assetStorePath, quoteCachePath),
             ProximaGoalComposition.CreateGoalService(goalsStorePath),
-            ProximaTaxComposition.CreateTaxCalculator());
+            ProximaTaxComposition.CreateTaxCalculator(),
+            ProximaSettingsComposition.CreateSettingsService(settingsStorePath));
         return new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell);
     }
 
@@ -312,5 +315,25 @@ public partial class MainWindow : Window
     private void ExportTaxDraftClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
     {
         ViewModel.Shell.ExportTaxDraft();
+    }
+
+    private async void SaveSettingsClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.SaveSettingsAsync().ConfigureAwait(true);
+    }
+
+    private void LockAppClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.LockApp();
+    }
+
+    private void ExportSnapshotClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.ExportEncryptedSnapshot();
+    }
+
+    private void ImportSnapshotClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.ImportEncryptedSnapshot();
     }
 }
