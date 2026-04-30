@@ -976,3 +976,53 @@ Localization coverage is currently shell-first; some feature-level error/validat
 ### Commit
 
 abffe0f feat(i18n): add ru-en shell localization and ui scaling
+
+## Iteration 19 — Error Handling, Notifications & Audit Logging
+
+### Scope
+
+Add non-blocking user notifications for key background operations, implement basic audit trail service/repository, and introduce sensitive-key redaction helper used by audit metadata.
+
+### User Stories Checked
+
+- [x] US-19.1 — User sees recoverable errors clearly.
+- [x] US-19.2 — Developer can diagnose issues safely.
+- [x] US-19.3 — User sees background operation status.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-19.1 | Partial | `ShellViewModel.Notifications` + `AppNotificationViewModel` added; success/warning/error/info notifications are pushed from import/quotes/report/snapshot/portfolio flows; long-running quote refresh and import states remain non-blocking. |
+| AC-19.2 | Partial | Explicit user-facing failure handling added for import/quote/snapshot/report paths; navigation remains available on recoverable failures. Full generic exception boundary mapper is still pending. |
+| AC-19.3 | Partial | `RedactionHelper` introduced and used by `AuditService`; tests verify sensitive key names are redacted from stored metadata. Full structured app-wide sink with operation/session IDs remains pending. |
+| AC-19.4 | Partial | Audit events are recorded for profile create, portfolio create/update/archive, import commit, snapshot export/import, and tax report export. Password-change audit is deferred because password-change flow is not implemented yet. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit/UI runner | `tests/Proxima.App.Tests` (`NotificationHost_IsBoundInShellLayout`, `RedactionHelper_RedactsSensitiveFragments`) | Passed |
+| Integration-lite | `tests/Proxima.Infrastructure.Tests` (`JsonAuditLogRepository_AppendsEvents`, `RedactionHelper_RemovesSensitiveKeys`) | Passed |
+| Regression | `dotnet build Proxima.sln`, `dotnet test Proxima.sln` | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Structured logging with correlation IDs and complete catch-all exception mapping are not fully implemented yet.
+
+### Commit
+
+8e44654 feat(observability): add notifications and audit trail foundation

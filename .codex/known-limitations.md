@@ -31,3 +31,4 @@
 - Module 17 adds PostgreSQL schema/bootstrap foundation and committed SQL migration scripts, but runtime repositories still use JSON stores by default until full DB repository switch is completed.
 - EF `dotnet ef` migration artifacts are not yet generated; current migration baseline is maintained as committed SQL scripts.
 - Module 18 adds RU/EN shell localization and persisted UI scaling, but localization coverage is currently focused on shell/topbar/core page headers; several feature-specific validation/error strings remain Russian-first and will be expanded in Module 19.
+- Module 19 adds in-app notification feed, audit events for key flows, and redaction helper for sensitive keys, but full structured log sink with per-operation correlation IDs and complete exception-boundary mapping is still in progress.
