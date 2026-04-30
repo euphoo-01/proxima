@@ -218,6 +218,12 @@ Acceptance criteria:
 - No god classes.
 - Clear module boundaries.
 
+### NFR-006 Cross-Platform Desktop Support
+
+- The app must run on Windows and Linux (macOS support is desirable where environment allows).
+- Storage paths must be resolved via platform APIs (`Environment.SpecialFolder`, `Path.Combine`) and must not be hardcoded to Linux-only or Windows-only absolute paths.
+- Path separators and case-sensitivity assumptions must remain platform-safe.
+
 ### NFR-006 Portability
 
 - Desktop-first: Windows/Linux/macOS where Avalonia and PostgreSQL setup allow.

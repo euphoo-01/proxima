@@ -10,6 +10,11 @@ Proxima is a local-first desktop financial analytics application for private inv
 - Clean Architecture + MVVM
 - PostgreSQL with EF Core/Npgsql planned for the persistence module
 
+## Cross-Platform Requirement
+
+Proxima is a desktop app that must run on both Linux and Windows.  
+All runtime file locations should use platform-safe APIs (for example, `Environment.SpecialFolder` + `Path.Combine`) instead of hardcoded OS-specific absolute paths.
+
 ## Repository Layout
 
 ```text

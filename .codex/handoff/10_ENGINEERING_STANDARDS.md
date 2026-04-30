@@ -71,6 +71,7 @@ Preferred stack:
 - Indexes for dashboard queries.
 - Decimal precision configured explicitly.
 - No cascade delete surprises for critical user data.
+- Cross-platform filesystem handling only (`Path.Combine`, `Environment.SpecialFolder`, no OS-specific absolute path hardcoding).
 
 ## API Engineering
 
