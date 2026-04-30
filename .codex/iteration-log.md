@@ -776,3 +776,53 @@ API key storage currently uses lightweight local protection placeholder and must
 ### Commit
 
 d1c160f feat(settings): add persisted profile/preferences/provider configuration
+
+## Iteration 15 — Encrypted Snapshot Sync
+
+### Scope
+
+Implement encrypted snapshot export/import in `Proxima.Sync`, wire settings sync actions to real service, add conflict detection and Google Drive adapter abstraction.
+
+### User Stories Checked
+
+- [x] US-15.1 — User backs up data privately.
+- [x] US-15.2 — User restores data on another device.
+- [x] US-15.3 — User syncs through Google Drive safely.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-15.1 | Done | Snapshot export creates one `.pxsnap` encrypted file with schema/app-version/timestamp/source-device/checksum metadata and compressed encrypted payload. |
+| AC-15.2 | Done | AES-256-GCM with unique nonce and PBKDF2-SHA256 key derivation; wrong password/tampered payload fail safely. |
+| AC-15.3 | Partial | Import preview verifies format/checksum/schema and conflict; apply path imports local JSON stores with conflict override support. Full DB transactional restore deferred. |
+| AC-15.4 | Partial | `IGoogleDriveSnapshotAdapter` abstraction and stub implementation added; OAuth upload/download remains deferred. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit/UI runner | `tests/Proxima.App.Tests` (`SnapshotService_EncryptDecryptAndTamperFail`) | Passed |
+| Regression | `dotnet build Proxima.sln`, `dotnet test Proxima.sln` | Passed |
+| Review | `docs/sync-module-notes.md` | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Google Drive OAuth sync remains stubbed. Snapshot import currently targets local JSON store restoration; full PostgreSQL transactional restore comes with DB module.
+
+### Commit
+
+66a8402 feat(sync): add encrypted snapshot export import service
