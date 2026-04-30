@@ -30,3 +30,4 @@
 - Module 16 adds PDF export for portfolio and tax draft reports, but interactive on-screen preview and destination picker/overwrite confirmation are still pending UI enhancements.
 - Module 17 adds PostgreSQL schema/bootstrap foundation and committed SQL migration scripts, but runtime repositories still use JSON stores by default until full DB repository switch is completed.
 - EF `dotnet ef` migration artifacts are not yet generated; current migration baseline is maintained as committed SQL scripts.
+- Module 18 adds RU/EN shell localization and persisted UI scaling, but localization coverage is currently focused on shell/topbar/core page headers; several feature-specific validation/error strings remain Russian-first and will be expanded in Module 19.

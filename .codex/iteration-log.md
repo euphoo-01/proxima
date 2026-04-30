@@ -927,3 +927,52 @@ Application runtime still uses JSON repositories by default. Full Postgres repos
 ### Commit
 
 703a2fb feat(db): add postgres schema bootstrap and seed scripts
+
+## Iteration 18 — Localization, Accessibility & UI Scaling
+
+### Scope
+
+Add RU/EN localization resources for core shell navigation and page headers, wire runtime language switching, and apply persisted global UI scaling in Avalonia shell.
+
+### User Stories Checked
+
+- [x] US-18.1 — User can use Russian or English UI.
+- [x] US-18.2 — User can scale the interface.
+- [x] US-18.3 — Keyboard user can navigate core flows.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-18.1 | Partial | `UiLocalizer` added with RU/EN resource maps; sidebar/topbar labels and core page title/description text are localized; language switch persists through settings store and applies at runtime without reinstall. |
+| AC-18.2 | Done | UI scale setting already persisted in settings; shell now applies safe-clamped `0.8..1.5` `ScaleTransform` on open and on runtime changes. |
+| AC-18.3 | Partial | Existing focus visuals/labels remain active and no color-only semantic indicators were introduced by this change; full keyboard traversal and modal-focus audit across every screen is still pending dedicated accessibility pass. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit/UI runner | `tests/Proxima.App.Tests` (`Localization_FallbackAndLanguageSwitch_Works`) | Passed |
+| Regression | `dotnet build Proxima.sln`, `dotnet test Proxima.sln` | Passed |
+| Review | Shell/sidebar/topbar localized bindings in `MainWindow.axaml` and runtime scale behavior in `MainWindow.axaml.cs` | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Localization coverage is currently shell-first; some feature-level error/validation texts remain to be fully localized in follow-up module work.
+
+### Commit
+
+abffe0f feat(i18n): add ru-en shell localization and ui scaling
