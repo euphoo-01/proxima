@@ -11,6 +11,7 @@ using Proxima.Domain.Assets;
 using Proxima.Domain.Portfolios;
 using Proxima.Domain.Transactions;
 using Proxima.Importing;
+using Proxima.Reporting.Reports;
 using Proxima.Sync.Snapshots;
 using Proxima.Analytics.AssetDetails;
 using Proxima.Analytics.Engine;
@@ -29,6 +30,7 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly ITaxCalculator _taxes;
     private readonly ISettingsService _settings;
     private readonly ISnapshotService _snapshots;
+    private readonly IReportService _reports;
     private Guid _ownerUserId;
 
     private string _activeRoute = "dashboard";
@@ -153,7 +155,7 @@ public sealed class ShellViewModel : ViewModelBase
     private string _settingsSnapshotPassword = string.Empty;
     private bool _settingsAllowConflictOverride;
 
-    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService, IQuoteRefreshService quotes, IGoalService goals, ITaxCalculator taxes, ISettingsService settings, ISnapshotService snapshots)
+    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService, IQuoteRefreshService quotes, IGoalService goals, ITaxCalculator taxes, ISettingsService settings, ISnapshotService snapshots, IReportService reports)
     {
         _navigation = navigation;
         _portfolios = portfolios;
@@ -165,6 +167,7 @@ public sealed class ShellViewModel : ViewModelBase
         _taxes = taxes;
         _settings = settings;
         _snapshots = snapshots;
+        _reports = reports;
         RegisterRoutes();
         ApplyRoute(_navigation.Navigate("dashboard", pushHistory: false));
     }
@@ -1423,9 +1426,81 @@ public sealed class ShellViewModel : ViewModelBase
         TaxDisclaimer = result.RuleSet.Disclaimer;
     }
 
-    public void ExportTaxDraft()
+    public async Task ExportTaxDraftAsync(CancellationToken cancellationToken = default)
     {
-        TaxMessage = "PDF export будет подключен в модуле Reporting.";
+        TaxReportRequest request = new(
+            ProfileDisplayName,
+            TaxProfile.ToString(),
+            TaxReportYear,
+            decimal.TryParse(TaxBase.Split(' ')[0], out decimal taxBase) ? taxBase : 0m,
+            decimal.TryParse(TaxTotalDue.Split(' ')[0], out decimal taxDue) ? taxDue : 0m,
+            $"{TaxRateNote}; {TaxExchangeRateStatus}",
+            decimal.TryParse(TaxDividends, out decimal dividends) ? dividends : 0m,
+            FilteredTransactions.Count,
+            TaxVersion,
+            TaxDisclaimer,
+            ProximaReportingComposition.GetDefaultReportDirectory());
+
+        ReportPreviewResult preview = _reports.PreviewTax(request);
+        if (!preview.Succeeded)
+        {
+            TaxMessage = preview.Message;
+            return;
+        }
+
+        ReportExportResult export = await _reports.ExportTaxPdfAsync(request, cancellationToken).ConfigureAwait(false);
+        TaxMessage = export.Succeeded
+            ? $"Tax report exported: {export.OutputPath}"
+            : export.Message;
+    }
+
+    public async Task ExportPortfolioReportAsync(CancellationToken cancellationToken = default)
+    {
+        if (SelectedPortfolio is null)
+        {
+            StatusText = "Выберите портфель для экспорта отчета.";
+            return;
+        }
+
+        List<(string Category, decimal Value)> allocation = DashboardAllocations
+            .Select(item => (item.Tag, item.Value))
+            .ToList();
+        List<(string Asset, decimal Value)> topAssets = FilteredAssets
+            .OrderByDescending(item => item.Value)
+            .Take(5)
+            .Select(item => (item.Name, item.Value))
+            .ToList();
+        List<(string Metric, string Value)> risk =
+        [
+            ("Assets Count", FilteredAssets.Count.ToString()),
+            ("Transactions", FilteredTransactions.Count.ToString()),
+            ("Delta 24h", DashboardDeltaValue),
+        ];
+
+        PortfolioReportRequest request = new(
+            SelectedPortfolio.Name,
+            DashboardTimeframe,
+            FilteredAssets.Sum(item => item.Value),
+            FilteredAssets.Sum(item => item.ProfitLoss),
+            allocation,
+            topAssets,
+            risk,
+            FilteredTransactions.Count,
+            SelectedPortfolio.Currency,
+            "Draft / informational",
+            ProximaReportingComposition.GetDefaultReportDirectory());
+
+        ReportPreviewResult preview = _reports.PreviewPortfolio(request);
+        if (!preview.Succeeded)
+        {
+            StatusText = preview.Message;
+            return;
+        }
+
+        ReportExportResult export = await _reports.ExportPortfolioPdfAsync(request, cancellationToken).ConfigureAwait(false);
+        StatusText = export.Succeeded
+            ? $"Portfolio report exported: {export.OutputPath}"
+            : export.Message;
     }
 
     public void OpenCreatePortfolioDialog()

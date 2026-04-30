@@ -11,6 +11,7 @@ using Proxima.Infrastructure.Settings;
 using Proxima.Infrastructure.Taxes;
 using Proxima.Infrastructure.Transactions;
 using Proxima.Importing;
+using Proxima.Reporting.Reports;
 using Proxima.Sync.Snapshots;
 
 namespace Proxima.App;
@@ -43,7 +44,8 @@ public partial class App : global::Avalonia.Application
                 ProximaGoalComposition.CreateGoalService(goalsStorePath),
                 ProximaTaxComposition.CreateTaxCalculator(),
                 ProximaSettingsComposition.CreateSettingsService(settingsStorePath),
-                ProximaSyncComposition.CreateSnapshotService());
+                ProximaSyncComposition.CreateSnapshotService(),
+                ProximaReportingComposition.CreateReportService());
             desktop.MainWindow = new MainWindow(new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell));
         }
 

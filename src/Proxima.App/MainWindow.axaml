@@ -247,6 +247,7 @@
                     <StackPanel Margin="32" Spacing="24">
                         <controls:PageHeader Title="{Binding Shell.PageTitle}" Subtitle="{Binding Shell.PageDescription}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Classes="proxima-secondary" Click="ExportPortfolioReportClicked" Content="Экспорт портфеля PDF" IsVisible="{Binding Shell.IsDashboardPage}" />
                                 <Button Classes="proxima-secondary" Click="OpenImportAssetsClicked" Content="Импортировать активы" IsVisible="{Binding Shell.IsAssetsPage}" />
                                 <Button Classes="proxima-secondary" Click="OpenManualImportClicked" Content="Ввести вручную" IsVisible="{Binding Shell.IsAssetsPage}" />
                             </StackPanel>

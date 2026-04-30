@@ -90,3 +90,4 @@ Module 01 used the custom `mcp__figma__` server for final inspection and capture
 
 Current settings module includes provider selection and masked Finnhub API key input for local configuration.
 Current sync module supports encrypted local snapshot export/import (`.pxsnap`) with AES-GCM and conflict preview. Google Drive adapter is present as a stub.
+Current reporting module supports portfolio and tax draft PDF export to the local reports directory.

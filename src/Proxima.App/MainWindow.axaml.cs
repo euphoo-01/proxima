@@ -10,6 +10,7 @@ using Proxima.Infrastructure.Settings;
 using Proxima.Infrastructure.Taxes;
 using Proxima.Infrastructure.Transactions;
 using Proxima.Importing;
+using Proxima.Reporting.Reports;
 using Proxima.Sync.Snapshots;
 
 namespace Proxima.App;
@@ -49,7 +50,8 @@ public partial class MainWindow : Window
             ProximaGoalComposition.CreateGoalService(goalsStorePath),
             ProximaTaxComposition.CreateTaxCalculator(),
             ProximaSettingsComposition.CreateSettingsService(settingsStorePath),
-            ProximaSyncComposition.CreateSnapshotService());
+            ProximaSyncComposition.CreateSnapshotService(),
+            ProximaReportingComposition.CreateReportService());
         return new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell);
     }
 
@@ -316,7 +318,12 @@ public partial class MainWindow : Window
 
     private void ExportTaxDraftClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
     {
-        ViewModel.Shell.ExportTaxDraft();
+        _ = ViewModel.Shell.ExportTaxDraftAsync();
+    }
+
+    private async void ExportPortfolioReportClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.ExportPortfolioReportAsync().ConfigureAwait(true);
     }
 
     private async void SaveSettingsClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)

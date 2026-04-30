@@ -20,6 +20,7 @@ using Proxima.Importing;
 using Proxima.Sync.Snapshots;
 using Proxima.Infrastructure;
 using Proxima.Reporting;
+using Proxima.Reporting.Reports;
 using Proxima.Sync;
 
 namespace Proxima.App.Tests;
@@ -44,6 +45,7 @@ internal static class Program
         ShellViewModel_BuildsAssetDetailsMetrics().GetAwaiter().GetResult();
         SettingsPage_ContainsMaskedApiKeyInput();
         SnapshotService_EncryptDecryptAndTamperFail().GetAwaiter().GetResult();
+        ReportingService_ExportsNonEmptyPdf().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.App.Tests baseline checks passed.");
     }
 
@@ -66,6 +68,29 @@ internal static class Program
         await File.WriteAllTextAsync(tamperedPath, tampered).ConfigureAwait(false);
         SnapshotPreviewResult bad = await service.PreviewImportAsync(tamperedPath, "Password123!").ConfigureAwait(false);
         Assert(!bad.Succeeded, "Tampered snapshot should fail safely.");
+    }
+
+    private static async Task ReportingService_ExportsNonEmptyPdf()
+    {
+        string outDir = Path.Combine(Path.GetTempPath(), "proxima-report-tests", Guid.NewGuid().ToString("N"));
+        SimplePdfReportService service = new();
+        PortfolioReportRequest request = new(
+            "Main",
+            "1M",
+            1000m,
+            55m,
+            [("Tech", 600m)],
+            [("AAPL", 500m)],
+            [("Sharpe", "1.2")],
+            5,
+            "USD",
+            "Draft",
+            outDir);
+
+        ReportExportResult result = await service.ExportPortfolioPdfAsync(request).ConfigureAwait(false);
+        Assert(result.Succeeded && result.OutputPath is not null, "Portfolio PDF export should succeed.");
+        FileInfo file = new(result.OutputPath!);
+        Assert(file.Exists && file.Length > 100, "Generated PDF should exist and be non-empty.");
     }
 
     private static void SettingsPage_ContainsMaskedApiKeyInput()
@@ -268,7 +293,7 @@ internal static class Program
 
     private static ShellViewModel CreateShellViewModel()
     {
-        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService(), new TestImportService(), new TestQuoteRefreshService(), new TestGoalService(), new TestTaxCalculator(), new TestSettingsService(), new TestSnapshotService());
+        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService(), new TestImportService(), new TestQuoteRefreshService(), new TestGoalService(), new TestTaxCalculator(), new TestSettingsService(), new TestSnapshotService(), new TestReportService());
     }
 
     private static async Task ShellViewModel_FiltersAndSortsAssets()
@@ -663,6 +688,22 @@ internal static class Program
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(new SnapshotImportResult(true, "ok", SnapshotConflictKind.None));
+        }
+    }
+
+    private sealed class TestReportService : IReportService
+    {
+        public ReportPreviewResult PreviewPortfolio(PortfolioReportRequest request) => new(true, "ok", ["summary"]);
+        public ReportPreviewResult PreviewTax(TaxReportRequest request) => new(true, "ok", ["summary"]);
+        public Task<ReportExportResult> ExportPortfolioPdfAsync(PortfolioReportRequest request, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new ReportExportResult(true, "ok", "/tmp/p.pdf"));
+        }
+        public Task<ReportExportResult> ExportTaxPdfAsync(TaxReportRequest request, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new ReportExportResult(true, "ok", "/tmp/t.pdf"));
         }
     }
 }
