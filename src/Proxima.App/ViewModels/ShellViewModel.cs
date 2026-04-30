@@ -193,6 +193,16 @@ public sealed class ShellViewModel : ViewModelBase
     public IEnumerable<AppLanguage> SettingsLanguages => Enum.GetValues<AppLanguage>();
     public IEnumerable<QuoteProviderKind> SettingsQuoteProviders => Enum.GetValues<QuoteProviderKind>();
     public IEnumerable<CurrencyProviderKind> SettingsCurrencyProviders => Enum.GetValues<CurrencyProviderKind>();
+    public string NavDashboardText => UiLocalizer.Get("nav.dashboard", SettingsLanguage);
+    public string NavAssetsText => UiLocalizer.Get("nav.assets", SettingsLanguage);
+    public string NavTaxesText => UiLocalizer.Get("nav.taxes", SettingsLanguage);
+    public string NavGoalsText => UiLocalizer.Get("nav.goals", SettingsLanguage);
+    public string NavSettingsText => UiLocalizer.Get("nav.settings", SettingsLanguage);
+    public string BackButtonText => UiLocalizer.Get("action.back", SettingsLanguage);
+    public string CreatePortfolioText => UiLocalizer.Get("action.createPortfolio", SettingsLanguage);
+    public string ManagePortfolioText => UiLocalizer.Get("action.manage", SettingsLanguage);
+    public string ImportAssetsText => UiLocalizer.Get("action.importAssets", SettingsLanguage);
+    public string ManualInputText => UiLocalizer.Get("action.manualInput", SettingsLanguage);
 
     public string ActiveRoute
     {
@@ -955,7 +965,14 @@ public sealed class ShellViewModel : ViewModelBase
     public AppLanguage SettingsLanguage
     {
         get => _settingsLanguage;
-        set => SetProperty(ref _settingsLanguage, value);
+        set
+        {
+            if (SetProperty(ref _settingsLanguage, value))
+            {
+                RefreshLocalizedLabels();
+                ApplyRoute(_navigation.Navigate(ActiveRoute, pushHistory: false));
+            }
+        }
     }
 
     public decimal SettingsUiScale
@@ -1632,16 +1649,27 @@ public sealed class ShellViewModel : ViewModelBase
     {
         ActiveRoute = route.Route;
         Breadcrumb = route.Breadcrumb;
-        PageTitle = route.Title;
+        PageTitle = route.Page switch
+        {
+            ShellPage.Dashboard => UiLocalizer.Get("page.dashboard.title", SettingsLanguage),
+            ShellPage.Assets => UiLocalizer.Get("page.assets.title", SettingsLanguage),
+            ShellPage.ManualImport => UiLocalizer.Get("page.assets.title", SettingsLanguage),
+            ShellPage.AssetDetails => "Asset Details",
+            ShellPage.Taxes => UiLocalizer.Get("page.taxes.title", SettingsLanguage),
+            ShellPage.Goals => UiLocalizer.Get("page.goals.title", SettingsLanguage),
+            ShellPage.Settings => UiLocalizer.Get("page.settings.title", SettingsLanguage),
+            _ => route.Title,
+        };
+
         PageDescription = route.Page switch
         {
-            ShellPage.Dashboard => "Ключевые показатели портфеля и последние транзакции.",
-            ShellPage.Assets => "Список активов, фильтры и быстрые действия.",
+            ShellPage.Dashboard => UiLocalizer.Get("page.dashboard.desc", SettingsLanguage),
+            ShellPage.Assets => UiLocalizer.Get("page.assets.desc", SettingsLanguage),
             ShellPage.AssetDetails => "Детальная аналитика выбранного актива.",
             ShellPage.ManualImport => "Ручной импорт операций и сверка строк.",
-            ShellPage.Taxes => "Черновик налогового расчёта для РБ.",
-            ShellPage.Goals => "Финансовые цели и прогноз накоплений.",
-            ShellPage.Settings => "Параметры приложения и профиля.",
+            ShellPage.Taxes => UiLocalizer.Get("page.taxes.desc", SettingsLanguage),
+            ShellPage.Goals => UiLocalizer.Get("page.goals.desc", SettingsLanguage),
+            ShellPage.Settings => UiLocalizer.Get("page.settings.desc", SettingsLanguage),
             _ => "Раздел Proxima.",
         };
 
@@ -2380,5 +2408,21 @@ public sealed class ShellViewModel : ViewModelBase
         {
             SettingsSyncStatus = $"Последний snapshot: {_settingsLastSnapshotAt:yyyy-MM-dd HH:mm}";
         }
+
+        RefreshLocalizedLabels();
+    }
+
+    private void RefreshLocalizedLabels()
+    {
+        OnPropertyChanged(nameof(NavDashboardText));
+        OnPropertyChanged(nameof(NavAssetsText));
+        OnPropertyChanged(nameof(NavTaxesText));
+        OnPropertyChanged(nameof(NavGoalsText));
+        OnPropertyChanged(nameof(NavSettingsText));
+        OnPropertyChanged(nameof(BackButtonText));
+        OnPropertyChanged(nameof(CreatePortfolioText));
+        OnPropertyChanged(nameof(ManagePortfolioText));
+        OnPropertyChanged(nameof(ImportAssetsText));
+        OnPropertyChanged(nameof(ManualInputText));
     }
 }

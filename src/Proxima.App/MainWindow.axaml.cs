@@ -1,5 +1,7 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Media;
 using Proxima.App.ViewModels;
 using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
@@ -27,9 +29,11 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = viewModel;
         Opened += async (_, _) => await viewModel.InitializeAsync().ConfigureAwait(true);
+        viewModel.Shell.PropertyChanged += ShellPropertyChanged;
     }
 
     private AuthViewModel ViewModel => (AuthViewModel)DataContext!;
+    private Grid RootScaleHostGrid => this.FindControl<Grid>("RootScaleHost")!;
 
     private static AuthViewModel CreateDefaultViewModel()
     {
@@ -53,6 +57,27 @@ public partial class MainWindow : Window
             ProximaSyncComposition.CreateSnapshotService(),
             ProximaReportingComposition.CreateReportService());
         return new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell);
+    }
+
+    private void ShellPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ShellViewModel.SettingsUiScale))
+        {
+            ApplyUiScale(ViewModel.Shell.SettingsUiScale);
+        }
+    }
+
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+        ApplyUiScale(ViewModel.Shell.SettingsUiScale);
+    }
+
+    private void ApplyUiScale(decimal scale)
+    {
+        double safe = Math.Clamp((double)scale, 0.8d, 1.5d);
+        RootScaleHostGrid.RenderTransform = new ScaleTransform(safe, safe);
+        RootScaleHostGrid.RenderTransformOrigin = RelativePoint.TopLeft;
     }
 
     private TextBox SetupPassword => this.FindControl<TextBox>("SetupPasswordBox")!;

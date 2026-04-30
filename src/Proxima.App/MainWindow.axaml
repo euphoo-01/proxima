@@ -9,7 +9,7 @@
     MinWidth="960"
     MinHeight="640"
     Background="{StaticResource ProximaBrush.Page}">
-    <Grid>
+    <Grid x:Name="RootScaleHost">
         <Grid IsVisible="{Binding IsSetupMode}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1.05*" />
@@ -166,31 +166,31 @@
                             Click="NavigateSidebarClicked"
                             Tag="dashboard"
                             HorizontalContentAlignment="Left"
-                            Content="Дешборд" />
+                            Content="{Binding Shell.NavDashboardText}" />
                         <Button
                             Classes="proxima-secondary"
                             Click="NavigateSidebarClicked"
                             Tag="assets"
                             HorizontalContentAlignment="Left"
-                            Content="Все активы" />
+                            Content="{Binding Shell.NavAssetsText}" />
                         <Button
                             Classes="proxima-secondary"
                             Click="NavigateSidebarClicked"
                             Tag="taxes"
                             HorizontalContentAlignment="Left"
-                            Content="Налоги" />
+                            Content="{Binding Shell.NavTaxesText}" />
                         <Button
                             Classes="proxima-secondary"
                             Click="NavigateSidebarClicked"
                             Tag="goals"
                             HorizontalContentAlignment="Left"
-                            Content="Цели" />
+                            Content="{Binding Shell.NavGoalsText}" />
                         <Button
                             Classes="proxima-secondary"
                             Click="NavigateSidebarClicked"
                             Tag="settings"
                             HorizontalContentAlignment="Left"
-                            Content="Настройки" />
+                            Content="{Binding Shell.NavSettingsText}" />
                     </StackPanel>
 
                     <Border Grid.Row="2" BorderBrush="{StaticResource ProximaBrush.Border}" BorderThickness="0,1,0,0" Padding="0,20,0,0">
@@ -208,7 +208,7 @@
                         <Button
                             Classes="proxima-secondary"
                             Click="GoBackClicked"
-                            Content="Назад"
+                            Content="{Binding Shell.BackButtonText}"
                             IsEnabled="{Binding Shell.CanGoBack}" />
                         <StackPanel Grid.Column="1" Orientation="Vertical" Spacing="2">
                             <TextBlock Classes="proxima-caption" Text="{Binding Shell.Breadcrumb}" />
@@ -229,7 +229,7 @@
                             Grid.Column="3"
                             Classes="proxima-secondary"
                             Click="OpenManagePortfolioClicked"
-                            Content="Управлять" />
+                            Content="{Binding Shell.ManagePortfolioText}" />
                         <TextBlock
                             Grid.Column="4"
                             Classes="proxima-caption"
@@ -239,7 +239,7 @@
                             Grid.Column="5"
                             Classes="proxima-primary"
                             Click="OpenCreatePortfolioClicked"
-                            Content="Создать портфель" />
+                            Content="{Binding Shell.CreatePortfolioText}" />
                     </Grid>
                 </Border>
 
@@ -248,8 +248,8 @@
                         <controls:PageHeader Title="{Binding Shell.PageTitle}" Subtitle="{Binding Shell.PageDescription}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Button Classes="proxima-secondary" Click="ExportPortfolioReportClicked" Content="Экспорт портфеля PDF" IsVisible="{Binding Shell.IsDashboardPage}" />
-                                <Button Classes="proxima-secondary" Click="OpenImportAssetsClicked" Content="Импортировать активы" IsVisible="{Binding Shell.IsAssetsPage}" />
-                                <Button Classes="proxima-secondary" Click="OpenManualImportClicked" Content="Ввести вручную" IsVisible="{Binding Shell.IsAssetsPage}" />
+                                <Button Classes="proxima-secondary" Click="OpenImportAssetsClicked" Content="{Binding Shell.ImportAssetsText}" IsVisible="{Binding Shell.IsAssetsPage}" />
+                                <Button Classes="proxima-secondary" Click="OpenManualImportClicked" Content="{Binding Shell.ManualInputText}" IsVisible="{Binding Shell.IsAssetsPage}" />
                             </StackPanel>
                         </controls:PageHeader>
 

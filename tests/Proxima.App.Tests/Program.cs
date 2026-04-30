@@ -46,7 +46,17 @@ internal static class Program
         SettingsPage_ContainsMaskedApiKeyInput();
         SnapshotService_EncryptDecryptAndTamperFail().GetAwaiter().GetResult();
         ReportingService_ExportsNonEmptyPdf().GetAwaiter().GetResult();
+        Localization_FallbackAndLanguageSwitch_Works().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.App.Tests baseline checks passed.");
+    }
+
+    private static async Task Localization_FallbackAndLanguageSwitch_Works()
+    {
+        ShellViewModel shell = CreateShellViewModel();
+        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111"), "Test User", "test", UserRole.PrivateInvestor).ConfigureAwait(false);
+        shell.SettingsLanguage = AppLanguage.EN;
+        Assert(shell.NavDashboardText == "Dashboard", "Navigation label should switch to EN.");
+        Assert(shell.PageTitle is "Dashboard" or "Assets" or "Taxes" or "Goals" or "Settings", "Page title should use localized labels.");
     }
 
     private static async Task SnapshotService_EncryptDecryptAndTamperFail()
