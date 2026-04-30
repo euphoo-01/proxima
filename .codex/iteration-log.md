@@ -723,3 +723,56 @@ Tax rules are draft-level and not a legal guarantee. Exchange rates currently us
 ### Commit
 
 542e011 feat(taxes): add belarus draft tax module and bento tax page
+
+## Iteration 14 — Settings, Profile, Preferences & Configuration
+
+### Scope
+
+Implement settings page state and persistence for profile/preference/provider/security controls, including documented API targets for Belarusbank FX and Finnhub quotes.
+
+### User Stories Checked
+
+- [x] US-14.1 — User edits profile.
+- [x] US-14.2 — User configures display preferences.
+- [x] US-14.3 — User configures quote providers.
+- [x] US-14.4 — User configures security and sync.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-14.1 | Partial | Settings page shows profile fields (display name/role/login), currency/language/UI scale; sidebar identity binds to settings-backed profile data. |
+| AC-14.2 | Done | Language RU/EN, base currency options (incl. USD/BYN), UI scale bounds validation, persisted per owner in `JsonUserSettingsRepository`. |
+| AC-14.3 | Partial | Provider status/config controls added; refresh interval validated; Finnhub API key input masked and persisted through protected path placeholder; full secure secret storage pending. |
+| AC-14.4 | Partial | Security notes and manual lock action presented; password-change flow with current-password check deferred. |
+| AC-14.5 | Partial | Encrypted snapshot sync wording, export/import actions and status added; full sync backend and conflict handling deferred. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit | `tests/Proxima.Application.Tests` (`SettingsService_ValidatesUiScaleAndRefreshInterval`) | Passed |
+| Integration | `tests/Proxima.Infrastructure.Tests` (`JsonSettingsRepository_StoresByOwner`) | Passed |
+| UI | `tests/Proxima.App.Tests` (`SettingsPage_ContainsMaskedApiKeyInput`) | Passed |
+| Review | `docs/api-providers.md` | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+API key storage currently uses lightweight local protection placeholder and must be upgraded to strong encryption in security module. Password-change and full sync engine are deferred.
+
+### Commit
+
+d1c160f feat(settings): add persisted profile/preferences/provider configuration

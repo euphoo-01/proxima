@@ -24,3 +24,5 @@
 - Module 13 adds Belarus draft tax cards and deterministic draft calculation, but legal rule coverage is intentionally incomplete and must not be treated as legal advice.
 - Tax exchange rates currently use a clearly labeled mock NBRB adapter; cached/real provider behavior is still pending full provider integration.
 - Tax PDF export button is present, but final PDF generation is deferred to the Reporting module.
+- Module 14 adds settings persistence and provider configuration UI, including Finnhub API key input, but key protection is currently base64-obfuscation and not strong encryption yet.
+- Settings expose encrypted snapshot actions as stubs for Sync module integration; Google Drive OAuth flow and conflict-resolution engine remain deferred.
