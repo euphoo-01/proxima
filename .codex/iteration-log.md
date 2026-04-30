@@ -826,3 +826,53 @@ Google Drive OAuth sync remains stubbed. Snapshot import currently targets local
 ### Commit
 
 66a8402 feat(sync): add encrypted snapshot export import service
+
+## Iteration 16 — Reporting & PDF Export
+
+### Scope
+
+Implement reporting abstraction and generate portfolio/tax draft PDF exports from domain/application data, then wire export actions into dashboard and taxes pages.
+
+### User Stories Checked
+
+- [x] US-16.1 — Consultant exports client portfolio report.
+- [x] US-16.2 — Investor exports tax report.
+- [x] US-16.3 — User previews report before saving.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-16.1 | Done | `IReportService` + `SimplePdfReportService` in `Proxima.Reporting`; PDF generation independent of Avalonia views and uses safe output path composition. |
+| AC-16.2 | Done | Portfolio report includes required sections (portfolio, period, total, P&L, allocation, top assets, risk metrics, tx summary, timestamp, disclaimer). |
+| AC-16.3 | Done | Tax report includes required sections (profile/year/base/due/rate notes/dividends/tx summary/version/disclaimer). |
+| AC-16.4 | Partial | Export buttons are wired and show success/failure status; long-running progress indicator, manual destination picker and overwrite confirmation are deferred. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit/UI runner | `tests/Proxima.App.Tests` (`ReportingService_ExportsNonEmptyPdf`) | Passed |
+| Regression | `dotnet build Proxima.sln`, `dotnet test Proxima.sln` | Passed |
+| Review | `docs/reporting-module-notes.md` | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Preview is currently service-level (sections) rather than a full in-app report preview panel. Destination chooser/overwrite confirmation is still pending UI completion.
+
+### Commit
+
+4a72acb feat(reporting): add portfolio and tax pdf export service
