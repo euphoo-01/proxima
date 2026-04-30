@@ -21,3 +21,6 @@
 - Some portfolio-level realized P&L flows remain simplified until full lot-matching and tax-aware accounting modules are implemented.
 - Module 12 adds goals CRUD and compound monthly forecast, but visualization is currently table-summary based (no dedicated projection curve chart yet).
 - Forecast uses deterministic monthly compounding assumptions and does not yet infer return from historical portfolio performance automatically.
+- Module 13 adds Belarus draft tax cards and deterministic draft calculation, but legal rule coverage is intentionally incomplete and must not be treated as legal advice.
+- Tax exchange rates currently use a clearly labeled mock NBRB adapter; cached/real provider behavior is still pending full provider integration.
+- Tax PDF export button is present, but final PDF generation is deferred to the Reporting module.

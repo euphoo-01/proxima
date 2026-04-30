@@ -671,3 +671,55 @@ Projection chart visualization (curve/target line/reach point) is currently summ
 ### Commit
 
 671a874 feat(goals): add goal forecasting and portfolio-scoped goal CRUD
+
+## Iteration 13 — Taxes for Belarus Draft Module
+
+### Scope
+
+Implement draft Belarus tax page cards and deterministic tax calculation with profile/year inputs, exchange-rate abstraction, and explicit draft disclaimer flow.
+
+### User Stories Checked
+
+- [x] US-13.1 — User sees tax obligation overview.
+- [x] US-13.2 — User sees currency and dividend effects.
+- [x] US-13.3 — User can export a draft tax report.
+- [x] US-13.4 — Developer can update tax rules.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-13.1 | Partial | Tax page renders bento cards for total/base/saved, limits, calendar, dividends-double-tax section, loss carryforward, version and disclaimer. |
+| AC-13.2 | Done | Portfolio/year/profile inputs exist; profile `Other` treated as missing and returns recoverable prompt; empty transaction history returns explicit empty-state message. |
+| AC-13.3 | Partial | Exchange-rate abstraction + mock NBRB provider implemented; source/date rendered in UI; provider failure is recoverable. Cached rates not implemented yet. |
+| AC-13.4 | Done | Deterministic draft calculator with version/date metadata and separated components (realized/dividends/fees/currency/losses/exemption). |
+| AC-13.5 | Partial | Export button exists and is wired; final PDF generation deferred to reporting module with explicit user-visible message. |
+
+### Tests
+
+| Test Type | Command/File | Result |
+| --- | --- | --- |
+| Unit | `tests/Proxima.Application.Tests` (`TaxCalculator_IsDeterministicAndIncludesDraftMetadata`, `TaxCalculator_ReturnsRecoverableError_WhenRateUnavailable`) | Passed |
+| UI/Smoke | `tests/Proxima.App.Tests` DI/runtime checks include tax calculator integration | Passed |
+| Review | `docs/tax-module-notes.md` assumptions and legal limitations | Passed |
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln
+dotnet test Proxima.sln
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Tax rules are draft-level and not a legal guarantee. Exchange rates currently use a mock provider. Tax PDF export is not yet implemented.
+
+### Commit
+
+542e011 feat(taxes): add belarus draft tax module and bento tax page
