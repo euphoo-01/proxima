@@ -3,6 +3,7 @@ using Proxima.Application.Assets;
 using Proxima.Application.Goals;
 using Proxima.Application.Portfolios;
 using Proxima.Application.Quotes;
+using Proxima.Application.Taxes;
 using Proxima.Application.Transactions;
 using Proxima.Analytics.Dashboard;
 using Proxima.Domain.Assets;
@@ -23,6 +24,7 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly IQuoteRefreshService _quotes;
     private readonly IImportService _importService;
     private readonly IGoalService _goals;
+    private readonly ITaxCalculator _taxes;
     private Guid _ownerUserId;
 
     private string _activeRoute = "dashboard";
@@ -109,8 +111,25 @@ public sealed class ShellViewModel : ViewModelBase
     private string _goalCurrency = "USD";
     private decimal _goalMonthlyContribution;
     private decimal? _goalExpectedAnnualReturn = 8m;
+    private int _taxReportYear = DateTime.UtcNow.Year;
+    private LegalProfileType _taxProfile = LegalProfileType.Other;
+    private string _taxMessage = "Выберите год и профиль для расчёта.";
+    private string _taxVersion = "—";
+    private string _taxTotalDue = "—";
+    private string _taxBase = "—";
+    private string _taxSaved = "—";
+    private string _taxDividends = "—";
+    private string _taxCurrencyEffect = "—";
+    private string _taxLossCarryforward = "—";
+    private string _taxDeductions = "—";
+    private string _taxCryptoStatus = "Не применено";
+    private string _taxSurtaxGauge = "0%";
+    private string _taxRateNote = "Курс: —";
+    private string _taxExchangeRateStatus = "Источник курса: mock";
+    private string _taxDeadlines = "До 31 марта следующего года";
+    private string _taxDisclaimer = "Draft / informational";
 
-    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService, IQuoteRefreshService quotes, IGoalService goals)
+    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService, IQuoteRefreshService quotes, IGoalService goals, ITaxCalculator taxes)
     {
         _navigation = navigation;
         _portfolios = portfolios;
@@ -119,6 +138,7 @@ public sealed class ShellViewModel : ViewModelBase
         _importService = importService;
         _quotes = quotes;
         _goals = goals;
+        _taxes = taxes;
         RegisterRoutes();
         ApplyRoute(_navigation.Navigate("dashboard", pushHistory: false));
     }
@@ -758,6 +778,111 @@ public sealed class ShellViewModel : ViewModelBase
         set => SetProperty(ref _goalExpectedAnnualReturn, value);
     }
 
+    public int TaxReportYear
+    {
+        get => _taxReportYear;
+        set => SetProperty(ref _taxReportYear, value);
+    }
+
+    public LegalProfileType TaxProfile
+    {
+        get => _taxProfile;
+        set => SetProperty(ref _taxProfile, value);
+    }
+
+    public IEnumerable<LegalProfileType> TaxProfiles => Enum.GetValues<LegalProfileType>();
+    public IEnumerable<int> TaxYears => [DateTime.UtcNow.Year, DateTime.UtcNow.Year - 1, DateTime.UtcNow.Year - 2];
+
+    public string TaxMessage
+    {
+        get => _taxMessage;
+        private set => SetProperty(ref _taxMessage, value);
+    }
+
+    public string TaxVersion
+    {
+        get => _taxVersion;
+        private set => SetProperty(ref _taxVersion, value);
+    }
+
+    public string TaxTotalDue
+    {
+        get => _taxTotalDue;
+        private set => SetProperty(ref _taxTotalDue, value);
+    }
+
+    public string TaxBase
+    {
+        get => _taxBase;
+        private set => SetProperty(ref _taxBase, value);
+    }
+
+    public string TaxSaved
+    {
+        get => _taxSaved;
+        private set => SetProperty(ref _taxSaved, value);
+    }
+
+    public string TaxDividends
+    {
+        get => _taxDividends;
+        private set => SetProperty(ref _taxDividends, value);
+    }
+
+    public string TaxCurrencyEffect
+    {
+        get => _taxCurrencyEffect;
+        private set => SetProperty(ref _taxCurrencyEffect, value);
+    }
+
+    public string TaxLossCarryforward
+    {
+        get => _taxLossCarryforward;
+        private set => SetProperty(ref _taxLossCarryforward, value);
+    }
+
+    public string TaxDeductions
+    {
+        get => _taxDeductions;
+        private set => SetProperty(ref _taxDeductions, value);
+    }
+
+    public string TaxCryptoStatus
+    {
+        get => _taxCryptoStatus;
+        private set => SetProperty(ref _taxCryptoStatus, value);
+    }
+
+    public string TaxSurtaxGauge
+    {
+        get => _taxSurtaxGauge;
+        private set => SetProperty(ref _taxSurtaxGauge, value);
+    }
+
+    public string TaxRateNote
+    {
+        get => _taxRateNote;
+        private set => SetProperty(ref _taxRateNote, value);
+    }
+
+    public string TaxExchangeRateStatus
+    {
+        get => _taxExchangeRateStatus;
+        private set => SetProperty(ref _taxExchangeRateStatus, value);
+    }
+
+    public string TaxDeadlines
+    {
+        get => _taxDeadlines;
+        private set => SetProperty(ref _taxDeadlines, value);
+    }
+
+    public string TaxDisclaimer
+    {
+        get => _taxDisclaimer;
+        private set => SetProperty(ref _taxDisclaimer, value);
+    }
+
     public bool IsDashboardPage => ActiveRoute.Equals("dashboard", StringComparison.Ordinal);
     public bool IsAssetsPage => ActiveRoute.Equals("assets", StringComparison.Ordinal);
     public bool IsTaxesPage => ActiveRoute.Equals("taxes", StringComparison.Ordinal);
@@ -1051,6 +1176,46 @@ public sealed class ShellViewModel : ViewModelBase
 
         IsEditGoalDialogOpen = false;
         await ReloadGoalsAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task RecalculateTaxesAsync(CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<TaxTransactionSnapshot> input = Transactions
+            .Select(item => new TaxTransactionSnapshot(
+                item.TradeDate,
+                item.Type,
+                item.GrossAmount,
+                item.FeeAmount,
+                item.TaxAmount,
+                item.Currency))
+            .ToList();
+
+        TaxCalculationResult result = await _taxes.CalculateAsync(
+            input,
+            TaxReportYear,
+            TaxProfile,
+            SelectedPortfolio?.Currency ?? "USD",
+            cancellationToken).ConfigureAwait(false);
+
+        TaxMessage = result.Message;
+        TaxVersion = result.RuleSet.Version;
+        TaxTotalDue = $"{result.TaxDue:0.##} {SelectedPortfolio?.Currency ?? "USD"}";
+        TaxBase = $"{result.TaxableBase:0.##}";
+        TaxSaved = $"{result.TaxSaved:0.##}";
+        TaxDividends = $"{result.Dividends:0.##}";
+        TaxCurrencyEffect = $"{result.CurrencyEffect:0.##}";
+        TaxLossCarryforward = $"{Math.Abs(result.Losses):0.##}";
+        TaxDeductions = $"{result.TaxSaved:0.##}";
+        TaxCryptoStatus = "Нет крипто-операций в текущем черновике";
+        TaxSurtaxGauge = result.TaxDue > 0m ? "13%" : "0%";
+        TaxRateNote = result.RateDate is null ? "Курс: недоступен" : $"Курс на {result.RateDate:yyyy-MM-dd}";
+        TaxExchangeRateStatus = $"Источник курса: {result.RateSource}";
+        TaxDisclaimer = result.RuleSet.Disclaimer;
+    }
+
+    public void ExportTaxDraft()
+    {
+        TaxMessage = "PDF export будет подключен в модуле Reporting.";
     }
 
     public void OpenCreatePortfolioDialog()

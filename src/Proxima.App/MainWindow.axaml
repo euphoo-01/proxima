@@ -460,8 +460,86 @@
                             <controls:EmptyState Title="Импорт пока не выполнен" Message="Следующий модуль подключит pipeline импорта и обработку ошибок." />
                         </controls:BentoCard>
 
-                        <controls:BentoCard IsVisible="{Binding Shell.IsTaxesPage}" Title="Налоги" Subtitle="Черновой раздел налогов">
-                            <controls:StatusPill Text="ИНФОРМАЦИОННЫЙ РАСЧЕТ" />
+                        <controls:BentoCard IsVisible="{Binding Shell.IsTaxesPage}" Title="Налоги" Subtitle="Черновой расчет для декларации (РБ)">
+                            <StackPanel Spacing="12">
+                                <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+                                    <TextBlock Classes="proxima-caption" VerticalAlignment="Center" Text="{Binding Shell.SelectedPortfolio.Name}" />
+                                    <ComboBox Grid.Column="1" MinWidth="110" SelectedItem="{Binding Shell.TaxReportYear}" ItemsSource="{Binding Shell.TaxYears}" />
+                                    <ComboBox Grid.Column="2" MinWidth="220" SelectedItem="{Binding Shell.TaxProfile}" ItemsSource="{Binding Shell.TaxProfiles}" />
+                                    <Button Grid.Column="3" Classes="proxima-secondary" Content="Пересчитать" Click="RecalculateTaxesClicked" />
+                                    <Button Grid.Column="4" Classes="proxima-primary" Content="Экспорт PDF" Click="ExportTaxDraftClicked" />
+                                </Grid>
+                                <TextBlock Classes="proxima-caption" Foreground="{StaticResource ProximaBrush.Danger}" Text="{Binding Shell.TaxMessage}" TextWrapping="Wrap" />
+                                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                                    <controls:MetricCard Label="Total Tax Due" Value="{Binding Shell.TaxTotalDue}" Footer="Оценка к уплате" />
+                                    <controls:MetricCard Grid.Column="1" Label="Taxable Base" Value="{Binding Shell.TaxBase}" Footer="Налоговая база" />
+                                    <controls:MetricCard Grid.Column="2" Label="Tax Saved" Value="{Binding Shell.TaxSaved}" Footer="Льготы/вычеты" />
+                                </Grid>
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                                    <controls:BentoCard Title="Double tax / Dividends">
+                                        <StackPanel Spacing="8">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Classes="proxima-caption" Text="Дивиденды" />
+                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxDividends}" />
+                                            </Grid>
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Classes="proxima-caption" Text="Дедукции" />
+                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxDeductions}" />
+                                            </Grid>
+                                            <controls:StatusPill Text="DRAFT" />
+                                        </StackPanel>
+                                    </controls:BentoCard>
+                                    <controls:BentoCard Grid.Column="1" Title="Tax Calendar">
+                                        <StackPanel Spacing="8">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Classes="proxima-caption" Text="Deadline" />
+                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxDeadlines}" />
+                                            </Grid>
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Classes="proxima-caption" Text="Loss carryforward" />
+                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxLossCarryforward}" />
+                                            </Grid>
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Classes="proxima-caption" Text="Version" />
+                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxVersion}" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </controls:BentoCard>
+                                </Grid>
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                                    <controls:BentoCard Title="Limits">
+                                        <StackPanel Spacing="8">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Classes="proxima-caption" Text="Currency effect" />
+                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxCurrencyEffect}" />
+                                            </Grid>
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Classes="proxima-caption" Text="Crypto status" />
+                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxCryptoStatus}" />
+                                            </Grid>
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Classes="proxima-caption" Text="Surtax gauge" />
+                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxSurtaxGauge}" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </controls:BentoCard>
+                                    <controls:BentoCard Grid.Column="1" Title="Draft / Legal Disclaimer">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Classes="proxima-caption" Text="{Binding Shell.TaxRateNote}" />
+                                            <TextBlock Classes="proxima-caption" Text="{Binding Shell.TaxExchangeRateStatus}" />
+                                            <TextBlock Classes="proxima-caption" Text="{Binding Shell.TaxDisclaimer}" TextWrapping="Wrap" />
+                                            <controls:StatusPill Text="ИНФОРМАЦИОННЫЙ РАСЧЕТ" />
+                                        </StackPanel>
+                                    </controls:BentoCard>
+                                </Grid>
+                                <controls:EmptyState IsVisible="{Binding Shell.IsTransactionTableEmpty}" Title="Нет транзакций за период" Message="Добавьте транзакции или смените год отчета." />
+                                <Border Padding="10" Background="{StaticResource ProximaBrush.WarningSurface}" CornerRadius="{StaticResource ProximaRadius.Card}">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="proxima-caption" Foreground="{StaticResource ProximaBrush.Warning}" Text="Провайдер курсов: mock NBRB adapter" />
+                                        <TextBlock Classes="proxima-caption" Foreground="{StaticResource ProximaBrush.Warning}" Text="Замените на реальную интеграцию в production." />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
                         </controls:BentoCard>
 
                         <controls:BentoCard IsVisible="{Binding Shell.IsGoalsPage}" Title="Цели" Subtitle="Финансовые цели и прогноз достижения">

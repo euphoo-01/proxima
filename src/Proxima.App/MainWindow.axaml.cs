@@ -6,6 +6,7 @@ using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Goals;
 using Proxima.Infrastructure.Portfolios;
 using Proxima.Infrastructure.Quotes;
+using Proxima.Infrastructure.Taxes;
 using Proxima.Infrastructure.Transactions;
 using Proxima.Importing;
 
@@ -42,7 +43,8 @@ public partial class MainWindow : Window
             ProximaTransactionComposition.CreateTransactionService(transactionStorePath, assetStorePath),
             ProximaImportComposition.CreateImportService(),
             ProximaQuoteComposition.CreateQuoteRefreshService(assetStorePath, quoteCachePath),
-            ProximaGoalComposition.CreateGoalService(goalsStorePath));
+            ProximaGoalComposition.CreateGoalService(goalsStorePath),
+            ProximaTaxComposition.CreateTaxCalculator());
         return new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell);
     }
 
@@ -300,5 +302,15 @@ public partial class MainWindow : Window
     private async void ArchiveGoalClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
     {
         await ViewModel.Shell.ArchiveSelectedGoalAsync().ConfigureAwait(true);
+    }
+
+    private async void RecalculateTaxesClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ViewModel.Shell.RecalculateTaxesAsync().ConfigureAwait(true);
+    }
+
+    private void ExportTaxDraftClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        ViewModel.Shell.ExportTaxDraft();
     }
 }

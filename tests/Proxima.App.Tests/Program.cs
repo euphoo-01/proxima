@@ -7,6 +7,7 @@ using Proxima.Application.Auth;
 using Proxima.Application.Goals;
 using Proxima.Application.Portfolios;
 using Proxima.Application.Quotes;
+using Proxima.Application.Taxes;
 using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
 using Proxima.Domain;
@@ -233,7 +234,7 @@ internal static class Program
 
     private static ShellViewModel CreateShellViewModel()
     {
-        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService(), new TestImportService(), new TestQuoteRefreshService(), new TestGoalService());
+        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService(), new TestImportService(), new TestQuoteRefreshService(), new TestGoalService(), new TestTaxCalculator());
     }
 
     private static async Task ShellViewModel_FiltersAndSortsAssets()
@@ -534,6 +535,28 @@ internal static class Program
         public GoalForecast Forecast(Goal goal, decimal currentPortfolioValue)
         {
             return new GoalForecast(true, 24, DateTimeOffset.UtcNow.AddMonths(24), goal.TargetAmount, "ok");
+        }
+    }
+
+    private sealed class TestTaxCalculator : ITaxCalculator
+    {
+        public Task<TaxCalculationResult> CalculateAsync(IReadOnlyList<TaxTransactionSnapshot> transactions, int reportYear, LegalProfileType profile, string baseCurrency, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new TaxCalculationResult(
+                true,
+                "Черновой/информационный расчёт.",
+                123m,
+                1000m,
+                200m,
+                400m,
+                50m,
+                10m,
+                7m,
+                -20m,
+                "mock-nbrb",
+                DateOnly.FromDateTime(DateTime.UtcNow),
+                new TaxRuleSet("BY-DRAFT-TEST", DateOnly.FromDateTime(DateTime.UtcNow), 13m, 13m, 200m, "Draft / informational")));
         }
     }
 }

@@ -4,6 +4,7 @@ using Proxima.Application.Auth;
 using Proxima.Application.Goals;
 using Proxima.Application.Portfolios;
 using Proxima.Application.Quotes;
+using Proxima.Application.Taxes;
 using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
 using Proxima.Domain.Auth;
@@ -29,7 +30,40 @@ internal static class Program
         TransactionService_ValidatesCrossPortfolioAsset().GetAwaiter().GetResult();
         QuoteRefreshService_UsesCacheOnProviderFailure().GetAwaiter().GetResult();
         GoalService_ForecastAndValidation().GetAwaiter().GetResult();
+        TaxCalculator_IsDeterministicAndIncludesDraftMetadata().GetAwaiter().GetResult();
+        TaxCalculator_ReturnsRecoverableError_WhenRateUnavailable().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.Application.Tests passed.");
+    }
+
+    private static async Task TaxCalculator_IsDeterministicAndIncludesDraftMetadata()
+    {
+        DraftTaxCalculator calculator = new(new FixedRateProvider(3.2m));
+        IReadOnlyList<TaxTransactionSnapshot> tx =
+        [
+            new TaxTransactionSnapshot(new DateTimeOffset(2026, 2, 1, 0, 0, 0, TimeSpan.Zero), TransactionType.Sell, 1000m, 0m, 0m, "USD"),
+            new TaxTransactionSnapshot(new DateTimeOffset(2026, 2, 2, 0, 0, 0, TimeSpan.Zero), TransactionType.Dividend, 150m, 0m, 0m, "USD"),
+        ];
+
+        TaxCalculationResult first = await calculator.CalculateAsync(tx, 2026, LegalProfileType.PhysicalPerson, "USD").ConfigureAwait(false);
+        TaxCalculationResult second = await calculator.CalculateAsync(tx, 2026, LegalProfileType.PhysicalPerson, "USD").ConfigureAwait(false);
+
+        Assert(first.Succeeded, "Tax calculation should succeed for valid input.");
+        Assert(first.TaxDue == second.TaxDue, "Tax calculation should be deterministic for equal input.");
+        Assert(first.RuleSet.Version.StartsWith("BY-DRAFT-", StringComparison.Ordinal), "Tax rule set must carry version metadata.");
+        Assert(first.Message.Contains("Черновой", StringComparison.OrdinalIgnoreCase), "Draft disclaimer must be included.");
+    }
+
+    private static async Task TaxCalculator_ReturnsRecoverableError_WhenRateUnavailable()
+    {
+        DraftTaxCalculator calculator = new(new FailingRateProvider());
+        IReadOnlyList<TaxTransactionSnapshot> tx =
+        [
+            new TaxTransactionSnapshot(new DateTimeOffset(2026, 3, 1, 0, 0, 0, TimeSpan.Zero), TransactionType.Sell, 500m, 0m, 0m, "USD"),
+        ];
+
+        TaxCalculationResult result = await calculator.CalculateAsync(tx, 2026, LegalProfileType.PhysicalPerson, "BYN").ConfigureAwait(false);
+        Assert(!result.Succeeded, "Tax calculation should fail recoverably when exchange rate provider fails.");
+        Assert(result.Message.Contains("Курс", StringComparison.OrdinalIgnoreCase), "User-visible rate failure message expected.");
     }
 
     private static async Task GoalService_ForecastAndValidation()
@@ -259,6 +293,24 @@ internal static class Program
         public bool Verify(string password, PasswordCredential credential)
         {
             return credential.Hash.SequenceEqual(System.Text.Encoding.UTF8.GetBytes("hashed:" + password));
+        }
+    }
+
+    private sealed class FixedRateProvider(decimal rate) : IExchangeRateProvider
+    {
+        public Task<ExchangeRateResult> GetRateAsync(string fromCurrency, string toCurrency, DateOnly date, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(ExchangeRateResult.Success(rate, "test", date));
+        }
+    }
+
+    private sealed class FailingRateProvider : IExchangeRateProvider
+    {
+        public Task<ExchangeRateResult> GetRateAsync(string fromCurrency, string toCurrency, DateOnly date, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(ExchangeRateResult.Failure("Курс недоступен, попробуйте позже."));
         }
     }
 

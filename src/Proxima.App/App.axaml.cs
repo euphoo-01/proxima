@@ -7,6 +7,7 @@ using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Goals;
 using Proxima.Infrastructure.Portfolios;
 using Proxima.Infrastructure.Quotes;
+using Proxima.Infrastructure.Taxes;
 using Proxima.Infrastructure.Transactions;
 using Proxima.Importing;
 
@@ -36,7 +37,8 @@ public partial class App : global::Avalonia.Application
                 ProximaTransactionComposition.CreateTransactionService(transactionStorePath, assetStorePath),
                 ProximaImportComposition.CreateImportService(),
                 ProximaQuoteComposition.CreateQuoteRefreshService(assetStorePath, quoteCachePath),
-                ProximaGoalComposition.CreateGoalService(goalsStorePath));
+                ProximaGoalComposition.CreateGoalService(goalsStorePath),
+                ProximaTaxComposition.CreateTaxCalculator());
             desktop.MainWindow = new MainWindow(new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell));
         }
 
