@@ -10,6 +10,7 @@ using Proxima.Infrastructure.Settings;
 using Proxima.Infrastructure.Taxes;
 using Proxima.Infrastructure.Transactions;
 using Proxima.Importing;
+using Proxima.Sync.Snapshots;
 
 namespace Proxima.App;
 
@@ -47,7 +48,8 @@ public partial class MainWindow : Window
             ProximaQuoteComposition.CreateQuoteRefreshService(assetStorePath, quoteCachePath),
             ProximaGoalComposition.CreateGoalService(goalsStorePath),
             ProximaTaxComposition.CreateTaxCalculator(),
-            ProximaSettingsComposition.CreateSettingsService(settingsStorePath));
+            ProximaSettingsComposition.CreateSettingsService(settingsStorePath),
+            ProximaSyncComposition.CreateSnapshotService());
         return new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell);
     }
 
@@ -327,13 +329,13 @@ public partial class MainWindow : Window
         ViewModel.Shell.LockApp();
     }
 
-    private void ExportSnapshotClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    private async void ExportSnapshotClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
     {
-        ViewModel.Shell.ExportEncryptedSnapshot();
+        await ViewModel.Shell.ExportEncryptedSnapshotAsync().ConfigureAwait(true);
     }
 
-    private void ImportSnapshotClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    private async void ImportSnapshotClicked(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
     {
-        ViewModel.Shell.ImportEncryptedSnapshot();
+        await ViewModel.Shell.ImportEncryptedSnapshotAsync().ConfigureAwait(true);
     }
 }

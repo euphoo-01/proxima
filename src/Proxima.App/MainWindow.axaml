@@ -600,6 +600,9 @@
                                     <controls:BentoCard Grid.Column="1" Title="Security &amp; Sync">
                                         <StackPanel Spacing="8">
                                             <CheckBox Content="Enable encrypted snapshot sync" IsChecked="{Binding Shell.SettingsSyncEnabled}" />
+                                            <TextBox Watermark="Snapshot file path (.pxsnap)" Text="{Binding Shell.SettingsSnapshotPath}" />
+                                            <TextBox Watermark="Snapshot password" PasswordChar="•" Text="{Binding Shell.SettingsSnapshotPassword}" />
+                                            <CheckBox Content="Allow conflict override on import" IsChecked="{Binding Shell.SettingsAllowConflictOverride}" />
                                             <TextBlock Classes="proxima-caption" Text="{Binding Shell.SettingsSyncStatus}" TextWrapping="Wrap" />
                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                 <Button Classes="proxima-secondary" Content="Export snapshot" Click="ExportSnapshotClicked" />

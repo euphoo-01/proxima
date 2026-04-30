@@ -11,6 +11,7 @@ using Proxima.Domain.Assets;
 using Proxima.Domain.Portfolios;
 using Proxima.Domain.Transactions;
 using Proxima.Importing;
+using Proxima.Sync.Snapshots;
 using Proxima.Analytics.AssetDetails;
 using Proxima.Analytics.Engine;
 
@@ -27,6 +28,7 @@ public sealed class ShellViewModel : ViewModelBase
     private readonly IGoalService _goals;
     private readonly ITaxCalculator _taxes;
     private readonly ISettingsService _settings;
+    private readonly ISnapshotService _snapshots;
     private Guid _ownerUserId;
 
     private string _activeRoute = "dashboard";
@@ -147,8 +149,11 @@ public sealed class ShellViewModel : ViewModelBase
     private string _settingsValidation = string.Empty;
     private string _settingsSyncStatus = "Снапшоты не экспортировались.";
     private DateTimeOffset? _settingsLastSnapshotAt;
+    private string _settingsSnapshotPath = string.Empty;
+    private string _settingsSnapshotPassword = string.Empty;
+    private bool _settingsAllowConflictOverride;
 
-    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService, IQuoteRefreshService quotes, IGoalService goals, ITaxCalculator taxes, ISettingsService settings)
+    public ShellViewModel(ShellNavigationService navigation, IPortfolioService portfolios, IAssetService assets, ITransactionService transactions, IImportService importService, IQuoteRefreshService quotes, IGoalService goals, ITaxCalculator taxes, ISettingsService settings, ISnapshotService snapshots)
     {
         _navigation = navigation;
         _portfolios = portfolios;
@@ -159,6 +164,7 @@ public sealed class ShellViewModel : ViewModelBase
         _goals = goals;
         _taxes = taxes;
         _settings = settings;
+        _snapshots = snapshots;
         RegisterRoutes();
         ApplyRoute(_navigation.Navigate("dashboard", pushHistory: false));
     }
@@ -1003,6 +1009,24 @@ public sealed class ShellViewModel : ViewModelBase
         private set => SetProperty(ref _settingsSyncStatus, value);
     }
 
+    public string SettingsSnapshotPath
+    {
+        get => _settingsSnapshotPath;
+        set => SetProperty(ref _settingsSnapshotPath, value);
+    }
+
+    public string SettingsSnapshotPassword
+    {
+        get => _settingsSnapshotPassword;
+        set => SetProperty(ref _settingsSnapshotPassword, value);
+    }
+
+    public bool SettingsAllowConflictOverride
+    {
+        get => _settingsAllowConflictOverride;
+        set => SetProperty(ref _settingsAllowConflictOverride, value);
+    }
+
     public bool IsDashboardPage => ActiveRoute.Equals("dashboard", StringComparison.Ordinal);
     public bool IsAssetsPage => ActiveRoute.Equals("assets", StringComparison.Ordinal);
     public bool IsTaxesPage => ActiveRoute.Equals("taxes", StringComparison.Ordinal);
@@ -1053,15 +1077,37 @@ public sealed class ShellViewModel : ViewModelBase
         SettingsValidation = "Ручная блокировка будет подключена в модуле безопасности.";
     }
 
-    public void ExportEncryptedSnapshot()
+    public async Task ExportEncryptedSnapshotAsync(CancellationToken cancellationToken = default)
     {
-        _settingsLastSnapshotAt = DateTimeOffset.UtcNow;
-        SettingsSyncStatus = $"Экспортирован зашифрованный snapshot: {_settingsLastSnapshotAt:yyyy-MM-dd HH:mm}";
+        SnapshotExportResult result = await _snapshots.ExportAsync(SettingsSnapshotPassword, cancellationToken).ConfigureAwait(false);
+        if (!result.Succeeded)
+        {
+            SettingsSyncStatus = result.Message;
+            return;
+        }
+
+        _settingsLastSnapshotAt = result.CreatedAtUtc;
+        SettingsSnapshotPath = result.FilePath ?? string.Empty;
+        SettingsSyncStatus = $"Snapshot exported: {result.FilePath}";
     }
 
-    public void ImportEncryptedSnapshot()
+    public async Task ImportEncryptedSnapshotAsync(CancellationToken cancellationToken = default)
     {
-        SettingsSyncStatus = "Импорт snapshot: проверка конфликта версий будет подключена в модуле Sync.";
+        SnapshotPreviewResult preview = await _snapshots.PreviewImportAsync(SettingsSnapshotPath, SettingsSnapshotPassword, cancellationToken).ConfigureAwait(false);
+        if (!preview.Succeeded)
+        {
+            SettingsSyncStatus = preview.Message;
+            return;
+        }
+
+        if (preview.ConflictKind != SnapshotConflictKind.None && !SettingsAllowConflictOverride)
+        {
+            SettingsSyncStatus = $"Conflict: {preview.ConflictKind}. Enable override to continue.";
+            return;
+        }
+
+        SnapshotImportResult result = await _snapshots.ImportAsync(SettingsSnapshotPath, SettingsSnapshotPassword, SettingsAllowConflictOverride, cancellationToken).ConfigureAwait(false);
+        SettingsSyncStatus = result.Message;
     }
 
     public void Navigate(string route)

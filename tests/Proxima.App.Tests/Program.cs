@@ -17,6 +17,7 @@ using Proxima.Domain.Goals;
 using Proxima.Domain.Portfolios;
 using Proxima.Domain.Transactions;
 using Proxima.Importing;
+using Proxima.Sync.Snapshots;
 using Proxima.Infrastructure;
 using Proxima.Reporting;
 using Proxima.Sync;
@@ -42,7 +43,29 @@ internal static class Program
         ShellViewModel_ComputesDashboardCards().GetAwaiter().GetResult();
         ShellViewModel_BuildsAssetDetailsMetrics().GetAwaiter().GetResult();
         SettingsPage_ContainsMaskedApiKeyInput();
+        SnapshotService_EncryptDecryptAndTamperFail().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.App.Tests baseline checks passed.");
+    }
+
+    private static async Task SnapshotService_EncryptDecryptAndTamperFail()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "proxima-sync-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        await File.WriteAllTextAsync(Path.Combine(root, "portfolios.json"), "[{\"id\":\"demo\"}]").ConfigureAwait(false);
+        LocalEncryptedSnapshotService service = new(root, "1.0.0", "device-a");
+
+        SnapshotExportResult exported = await service.ExportAsync("Password123!").ConfigureAwait(false);
+        Assert(exported.Succeeded && !string.IsNullOrWhiteSpace(exported.FilePath), "Snapshot export should succeed.");
+
+        SnapshotPreviewResult preview = await service.PreviewImportAsync(exported.FilePath!, "Password123!").ConfigureAwait(false);
+        Assert(preview.Succeeded, "Snapshot preview should decrypt with valid password.");
+
+        string json = await File.ReadAllTextAsync(exported.FilePath!).ConfigureAwait(false);
+        string tampered = json.Replace("A", "B", StringComparison.Ordinal);
+        string tamperedPath = Path.Combine(root, "tampered.pxsnap");
+        await File.WriteAllTextAsync(tamperedPath, tampered).ConfigureAwait(false);
+        SnapshotPreviewResult bad = await service.PreviewImportAsync(tamperedPath, "Password123!").ConfigureAwait(false);
+        Assert(!bad.Succeeded, "Tampered snapshot should fail safely.");
     }
 
     private static void SettingsPage_ContainsMaskedApiKeyInput()
@@ -245,7 +268,7 @@ internal static class Program
 
     private static ShellViewModel CreateShellViewModel()
     {
-        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService(), new TestImportService(), new TestQuoteRefreshService(), new TestGoalService(), new TestTaxCalculator(), new TestSettingsService());
+        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService(), new TestImportService(), new TestQuoteRefreshService(), new TestGoalService(), new TestTaxCalculator(), new TestSettingsService(), new TestSnapshotService());
     }
 
     private static async Task ShellViewModel_FiltersAndSortsAssets()
@@ -619,6 +642,27 @@ internal static class Program
                 request.SyncEnabled,
                 DateTimeOffset.UtcNow);
             return Task.FromResult(SettingsOperationResult.Success(_settings));
+        }
+    }
+
+    private sealed class TestSnapshotService : ISnapshotService
+    {
+        public Task<SnapshotExportResult> ExportAsync(string password, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new SnapshotExportResult(true, "ok", "/tmp/mock.pxsnap", DateTimeOffset.UtcNow));
+        }
+
+        public Task<SnapshotPreviewResult> PreviewImportAsync(string snapshotPath, string password, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new SnapshotPreviewResult(true, "ok", "1.0.0", 1, DateTimeOffset.UtcNow, "dev", SnapshotConflictKind.None));
+        }
+
+        public Task<SnapshotImportResult> ImportAsync(string snapshotPath, string password, bool allowConflictOverride, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new SnapshotImportResult(true, "ok", SnapshotConflictKind.None));
         }
     }
 }

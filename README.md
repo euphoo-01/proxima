@@ -84,3 +84,4 @@ Module 01 used the custom `mcp__figma__` server for final inspection and capture
 - Market quotes: Finnhub API (`docs/api-providers.md`).
 
 Current settings module includes provider selection and masked Finnhub API key input for local configuration.
+Current sync module supports encrypted local snapshot export/import (`.pxsnap`) with AES-GCM and conflict preview. Google Drive adapter is present as a stub.
