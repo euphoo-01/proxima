@@ -68,6 +68,24 @@ Build all Linux package formats:
 ./scripts/package-linux-all.sh 0.1.0
 ```
 
+## Release Validation And Manifest
+
+Run release preflight:
+
+```bash
+./scripts/release-preflight.sh
+```
+
+Generate release manifest with checksums:
+
+```bash
+./scripts/generate-release-manifest.sh
+```
+
+Output:
+
+- `artifacts/release/manifest.txt`
+
 Windows MSIX package (run on Windows with Windows SDK installed):
 
 ```powershell

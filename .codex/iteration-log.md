@@ -1124,3 +1124,9 @@ Partial
 - Added RPM baseline script `scripts/package-linux-rpm.sh` (rpmbuild-based, from pre-published self-contained binaries).
 - Added Linux packaging orchestrator `scripts/package-linux-all.sh` to build tar.gz + deb + rpm in one run.
 - Updated deployment/readme docs with RPM commands and outputs.
+
+### Follow-up Implementation Note (2026-05-01, release gate pass)
+
+- Added `scripts/release-preflight.sh` to validate build/test and required packaging tools before release cut.
+- Added `scripts/generate-release-manifest.sh` to generate `artifacts/release/manifest.txt` with SHA256 + size + path for produced packages.
+- Updated deployment/readme docs with release validation and manifest steps.
