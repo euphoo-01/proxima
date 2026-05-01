@@ -50,7 +50,17 @@ internal static class Program
         Localization_FallbackAndLanguageSwitch_Works().GetAwaiter().GetResult();
         NotificationHost_IsBoundInShellLayout();
         RedactionHelper_RedactsSensitiveFragments();
+        Charts_ArePresentInShellLayout();
         Console.WriteLine("Proxima.App.Tests baseline checks passed.");
+    }
+
+    private static void Charts_ArePresentInShellLayout()
+    {
+        string repositoryRoot = FindRepositoryRoot();
+        string xamlPath = Path.Combine(repositoryRoot, "src", "Proxima.App", "MainWindow.axaml");
+        string xaml = File.ReadAllText(xamlPath);
+        Assert(xaml.Contains("controls:LineChart", StringComparison.Ordinal), "Shell should include line chart controls.");
+        Assert(xaml.Contains("controls:CandlestickChart", StringComparison.Ordinal), "Asset Details should include candlestick chart control.");
     }
 
     private static void RedactionHelper_RedactsSensitiveFragments()

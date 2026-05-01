@@ -1,12 +1,12 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Styles.Resources>
-        <Color x:Key="ProximaColor.Page">#F8FAFB</Color>
-        <Color x:Key="ProximaColor.Sidebar">#F8FAFC</Color>
+        <Color x:Key="ProximaColor.Page">#F3F7FB</Color>
+        <Color x:Key="ProximaColor.Sidebar">#EEF3F9</Color>
         <Color x:Key="ProximaColor.Surface">#FFFFFF</Color>
         <Color x:Key="ProximaColor.SurfaceSubtle">#F2F4F5</Color>
         <Color x:Key="ProximaColor.TextPrimary">#001629</Color>
-        <Color x:Key="ProximaColor.Brand">#002B49</Color>
+        <Color x:Key="ProximaColor.Brand">#0F4C81</Color>
         <Color x:Key="ProximaColor.TextSecondary">#42474D</Color>
         <Color x:Key="ProximaColor.TextMuted">#64748B</Color>
         <Color x:Key="ProximaColor.TextFaint">#94A3B8</Color>
@@ -18,7 +18,7 @@
         <Color x:Key="ProximaColor.WarningSurface">#FEF3C7</Color>
         <Color x:Key="ProximaColor.Danger">#93000A</Color>
         <Color x:Key="ProximaColor.DangerSurface">#FFFFEFEE</Color>
-        <Color x:Key="ProximaColor.Focus">#002B49</Color>
+        <Color x:Key="ProximaColor.Focus">#1D6FD6</Color>
 
         <SolidColorBrush x:Key="ProximaBrush.Page" Color="{StaticResource ProximaColor.Page}" />
         <SolidColorBrush x:Key="ProximaBrush.Sidebar" Color="{StaticResource ProximaColor.Sidebar}" />
@@ -53,7 +53,7 @@
         <Thickness x:Key="ProximaSpace.28">28</Thickness>
         <Thickness x:Key="ProximaSpace.32">32</Thickness>
 
-        <BoxShadows x:Key="ProximaShadow.Card">0 1 2 0 #0D000000</BoxShadows>
-        <BoxShadows x:Key="ProximaShadow.Nav">0 1 1 0 #0D000000</BoxShadows>
+        <BoxShadows x:Key="ProximaShadow.Card">0 8 24 0 #140C2038</BoxShadows>
+        <BoxShadows x:Key="ProximaShadow.Nav">0 4 12 0 #0E0C2038</BoxShadows>
     </Styles.Resources>
 </Styles>

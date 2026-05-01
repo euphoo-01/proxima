@@ -51,7 +51,9 @@ internal static class Program
 
     private static void AssetDetailsCalculator_CoreMetrics()
     {
-        List<decimal> closes = Enumerable.Range(1, 260).Select(i => 100m + i).ToList();
+        List<decimal> closes = Enumerable.Range(1, 260)
+            .Select(i => 100m + i + (i % 9 < 3 ? -4m : 0m))
+            .ToList();
         List<decimal> highs = closes.Select(v => v + 2m).ToList();
         List<decimal> lows = closes.Select(v => v - 2m).ToList();
 

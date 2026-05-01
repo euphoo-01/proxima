@@ -14,7 +14,7 @@
 
     <Style Selector="TextBlock.proxima-card-title">
         <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontSize" Value="17" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="LineHeight" Value="24" />
         <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextPrimary}" />
@@ -22,16 +22,16 @@
 
     <Style Selector="TextBlock.proxima-body">
         <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="15" />
         <Setter Property="FontWeight" Value="Medium" />
-        <Setter Property="LineHeight" Value="20" />
+        <Setter Property="LineHeight" Value="22" />
         <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextSecondary}" />
     </Style>
 
     <Style Selector="TextBlock.proxima-caption">
         <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-        <Setter Property="FontSize" Value="12" />
-        <Setter Property="LineHeight" Value="16" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="LineHeight" Value="18" />
         <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextMuted}" />
     </Style>
 </Styles>

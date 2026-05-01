@@ -165,32 +165,52 @@
                             Classes="proxima-secondary"
                             Click="NavigateSidebarClicked"
                             Tag="dashboard"
-                            HorizontalContentAlignment="Left"
-                            Content="{Binding Shell.NavDashboardText}" />
+                            HorizontalContentAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="◉" />
+                                <TextBlock Text="{Binding Shell.NavDashboardText}" />
+                            </StackPanel>
+                        </Button>
                         <Button
                             Classes="proxima-secondary"
                             Click="NavigateSidebarClicked"
                             Tag="assets"
-                            HorizontalContentAlignment="Left"
-                            Content="{Binding Shell.NavAssetsText}" />
+                            HorizontalContentAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="◧" />
+                                <TextBlock Text="{Binding Shell.NavAssetsText}" />
+                            </StackPanel>
+                        </Button>
                         <Button
                             Classes="proxima-secondary"
                             Click="NavigateSidebarClicked"
                             Tag="taxes"
-                            HorizontalContentAlignment="Left"
-                            Content="{Binding Shell.NavTaxesText}" />
+                            HorizontalContentAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="◍" />
+                                <TextBlock Text="{Binding Shell.NavTaxesText}" />
+                            </StackPanel>
+                        </Button>
                         <Button
                             Classes="proxima-secondary"
                             Click="NavigateSidebarClicked"
                             Tag="goals"
-                            HorizontalContentAlignment="Left"
-                            Content="{Binding Shell.NavGoalsText}" />
+                            HorizontalContentAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="◎" />
+                                <TextBlock Text="{Binding Shell.NavGoalsText}" />
+                            </StackPanel>
+                        </Button>
                         <Button
                             Classes="proxima-secondary"
                             Click="NavigateSidebarClicked"
                             Tag="settings"
-                            HorizontalContentAlignment="Left"
-                            Content="{Binding Shell.NavSettingsText}" />
+                            HorizontalContentAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="◌" />
+                                <TextBlock Text="{Binding Shell.NavSettingsText}" />
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
 
                     <Border Grid.Row="2" BorderBrush="{StaticResource ProximaBrush.Border}" BorderThickness="0,1,0,0" Padding="0,20,0,0">
@@ -270,7 +290,7 @@
                         </ItemsControl>
                     </Border>
 
-                    <ScrollViewer>
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="32" Spacing="24">
                         <controls:PageHeader Title="{Binding Shell.PageTitle}" Subtitle="{Binding Shell.PageDescription}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
