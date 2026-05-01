@@ -1026,3 +1026,19 @@ Structured logging with correlation IDs and complete catch-all exception mapping
 ### Commit
 
 8e44654 feat(observability): add notifications and audit trail foundation
+
+### Post-Iteration QA Note (2026-04-30)
+
+- Manual review in Rider run reported major UI quality gaps: text overflow/clipping, undersized/non-adaptive window feel, missing strong color/icon language, and overall mismatch against Mockup-grade bento layout.
+- Asset Details candlestick chart is still missing (fallback text state observed).
+- Dashboard/Goals real chart rendering is still missing (summary/placeholder-only behavior).
+- These findings are recorded as release blockers in `.codex/known-limitations.md` and Module 20 acceptance criteria were tightened accordingly.
+
+### Follow-up Implementation Note (2026-05-01)
+
+- Implemented initial real chart widgets in app shell:
+  - Dashboard history line chart;
+  - Asset Details candlestick chart;
+  - Goals projection line chart.
+- Increased desktop window defaults/minimum size to improve readability on 1080p layouts.
+- Remaining gap: visual parity (typography rhythm/icons/final spacing polish) is still pending strict Mockup-level pass.

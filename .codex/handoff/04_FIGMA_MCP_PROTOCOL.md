@@ -3,6 +3,7 @@
 ## Objective
 
 The Avalonia UI must be visually close to the provided Figma design. The agent must use Figma MCP before implementing UI.
+For Proxima, the authoritative visual baseline for production screens is the **Mockup** page in the custom `figma_mcp_server`.
 
 Figma URL:
 
@@ -38,6 +39,12 @@ Inspect:
 - screen nodes;
 - navigation structure;
 - design tokens/variables if available.
+
+Mandatory page priority:
+
+1. Mockup (desktop first).
+2. Mockup (mobile/tablet references for spacing/fallback behavior).
+3. Wireframe (only if Mockup is missing a required state).
 
 ### Step 3 — Extract visual tokens
 
@@ -92,6 +99,11 @@ For each screen:
 4. Compare screenshot visually.
 5. Adjust spacing/typography.
 6. Commit.
+
+Release-gate note:
+
+- If text clipping, overflow, broken layout rhythm, missing accents/colors, or missing iconography are observed relative to Mockup, the screen is **not accepted**.
+- If interactive chart placeholders are shown where Mockup expects charts, the screen is **not accepted**.
 
 ### Step 6 — Do not overfit pixels at the cost of maintainability
 
@@ -169,3 +181,5 @@ If Figma MCP provides no data:
 - implement fallback design from `03_DESIGN_SYSTEM_BENTO_AVALONIA.md`;
 - do not claim pixel-perfect match;
 - create issue in `docs/known-limitations.md`.
+
+If custom `figma_mcp_server` is available, fallback mode must not be used.

@@ -2123,6 +2123,9 @@ README includes:
 - App manually launched.
 - Major screens manually checked.
 - Git working tree clean or explained.
+- UI on Mockup-critical screens is compared against custom `figma_mcp_server` Mockup nodes and has no critical visual regressions (text overflow, clipped controls, broken hierarchy, missing core iconography/colors).
+- Asset Details contains a visible candlestick chart (not text-only placeholder).
+- Dashboard/Goals contain real chart widgets (not summary-only text placeholders).
 
 ### AC-20.3 Documentation
 
@@ -2172,7 +2175,9 @@ dotnet list package --vulnerable
 - Add transaction.
 - Import CSV.
 - Open Asset Details.
+- Verify candlestick chart renders in Asset Details.
 - Create Goal.
+- Verify at least one chart is rendered in Dashboard and Goals screens.
 - Open Taxes.
 - Open Settings.
 - Export snapshot if implemented.
@@ -2181,6 +2186,7 @@ dotnet list package --vulnerable
 ### Review
 
 - Compare UI to Figma.
+- Compare specifically against Mockup page through custom `figma_mcp_server`.
 - Inspect logs for sensitive data.
 - Inspect git history.
 - Inspect README.
