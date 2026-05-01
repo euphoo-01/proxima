@@ -1054,3 +1054,45 @@ Structured logging with correlation IDs and complete catch-all exception mapping
 - Refined Tax and Settings screen hierarchy/texts in `MainWindow.axaml` for clearer card semantics and more consistent RU labels.
 - Updated known limitations: chart gaps are now marked as closed by implementation; remaining release blocker is strict visual parity validation against Mockup via custom Figma MCP.
 - In this sandbox, `dotnet build` succeeds with `-m:1 -nr:false`; `dotnet test` still fails on infrastructure socket access (`Permission denied`) due environment networking restrictions.
+
+## Iteration 20 — Final Release Readiness (in progress)
+
+### Scope
+
+Prepare cross-platform publish path for local installation/use without Docker runtime dependency and document deployment constraints clearly.
+
+### User Stories Checked
+
+- [x] US-20.2 — Build and run instructions are deterministic.
+- [x] US-20.4 — Known limitations are explicit and visible.
+
+### Acceptance Criteria Checked
+
+- [x] Added reproducible self-contained publish scripts for Linux/Windows.
+- [x] README includes non-Docker runtime usage guidance.
+- [x] Deployment notes clarify PostgreSQL dependency vs Docker optionality.
+
+### Tests Added/Updated
+
+- Unit: N/A
+- Integration: N/A
+- UI: N/A
+- Manual: `dotnet build Proxima.sln -m:1 -nr:false` passed.
+
+### Commands Run
+
+```bash
+dotnet format Proxima.sln --no-restore
+dotnet build Proxima.sln -m:1 -nr:false
+dotnet test Proxima.sln -m:1 -nr:false
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+- `dotnet format` and infrastructure DB tests fail in this sandbox because named pipe/socket operations are restricted (`Permission denied`), while build itself is green.
+- Installer packaging (MSIX/DEB/RPM) is not finalized yet; current deliverable is self-contained publish output.

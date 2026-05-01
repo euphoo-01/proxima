@@ -73,6 +73,16 @@ psql "postgresql://proxima:proxima@localhost:55432/proxima" -f scripts/sql/0002_
 dotnet run --project src/Proxima.App/Proxima.App.csproj
 ```
 
+## Publish (Without Docker Runtime)
+
+Self-contained publish scripts:
+
+- Linux: `./scripts/publish-linux-x64.sh`
+- Windows (PowerShell): `./scripts/publish-win-x64.ps1`
+
+Both produce standalone outputs in `artifacts/publish/*`.
+Docker is optional and is used only as a convenient way to host PostgreSQL locally.
+
 The app currently supports local first-run setup, portfolio/asset/transaction management, and a CSV/PDF import preview flow with manual fallback routing. Local profile, portfolio, asset, and transaction data are stored in user local application data JSON stores. Passwords are saved only as PBKDF2-SHA256 metadata, salt and hash. PostgreSQL migrations and EF Core/Npgsql persistence are still implemented in later persistence modules.
 
 ### CSV Demo Import Format
