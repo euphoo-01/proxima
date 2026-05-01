@@ -186,6 +186,9 @@ public sealed class ShellViewModel : ViewModelBase
     public ObservableCollection<AssetMetric> AssetDetailsBaseMetrics { get; } = [];
     public ObservableCollection<AssetMetric> AssetDetailsAdvancedMetrics { get; } = [];
     public ObservableCollection<TransactionRowViewModel> AssetDetailsTransactions { get; } = [];
+    public ObservableCollection<decimal> DashboardHistorySeries { get; } = [];
+    public ObservableCollection<decimal> GoalProjectionSeries { get; } = [];
+    public ObservableCollection<CandlestickPointViewModel> AssetCandles { get; } = [];
     public ObservableCollection<GoalRowViewModel> Goals { get; } = [];
     public ObservableCollection<AppNotificationViewModel> Notifications { get; } = [];
     public bool IsGoalsEmpty => Goals.Count == 0;
@@ -2269,6 +2272,11 @@ public sealed class ShellViewModel : ViewModelBase
 
         IReadOnlyList<(DateTimeOffset Time, decimal Value)> history = PortfolioDashboardCalculator.BuildHistorySeries(transactions, DashboardTimeframe);
         DashboardHistorySummary = history.Count == 0 ? "Недостаточно данных" : $"Точек в графике: {history.Count}";
+        DashboardHistorySeries.Clear();
+        foreach ((DateTimeOffset _, decimal value) in history)
+        {
+            DashboardHistorySeries.Add(value);
+        }
     }
 
     private void RebuildAssetDetails()
@@ -2276,6 +2284,7 @@ public sealed class ShellViewModel : ViewModelBase
         AssetDetailsBaseMetrics.Clear();
         AssetDetailsAdvancedMetrics.Clear();
         AssetDetailsTransactions.Clear();
+        AssetCandles.Clear();
 
         if (SelectedAsset is null)
         {
@@ -2288,6 +2297,7 @@ public sealed class ShellViewModel : ViewModelBase
         List<decimal> closes = BuildSyntheticCloseSeries(SelectedAsset.CurrentPrice);
         List<decimal> highs = closes.Select(static value => value * 1.01m).ToList();
         List<decimal> lows = closes.Select(static value => value * 0.99m).ToList();
+        List<decimal> opens = closes.Select(static value => value * 0.995m).ToList();
 
         AssetDetailsSnapshot snapshot = new(
             SelectedAsset.Name,
@@ -2324,6 +2334,12 @@ public sealed class ShellViewModel : ViewModelBase
             AssetDetailsTransactions.Add(tx);
         }
 
+        int candlesCount = Math.Min(36, closes.Count);
+        for (int i = closes.Count - candlesCount; i < closes.Count; i++)
+        {
+            AssetCandles.Add(new CandlestickPointViewModel(opens[i], highs[i], lows[i], closes[i]));
+        }
+
         AssetDetailsChartState = closes.Count == 0
             ? "Нет данных OHLC"
             : $"OHLC fallback · {AssetDetailsTimeframe}";
@@ -2354,6 +2370,19 @@ public sealed class ShellViewModel : ViewModelBase
                 goal.MonthlyContribution,
                 goal.ExpectedAnnualReturnPercent,
                 summary));
+        }
+
+        GoalProjectionSeries.Clear();
+        if (items.Count > 0)
+        {
+            Proxima.Domain.Goals.Goal first = items[0];
+            decimal monthlyRate = (first.ExpectedAnnualReturnPercent ?? 8m) / 100m / 12m;
+            decimal current = currentPortfolioValue;
+            for (int month = 0; month < 24; month++)
+            {
+                current = current * (1m + monthlyRate) + first.MonthlyContribution;
+                GoalProjectionSeries.Add(current);
+            }
         }
 
         OnPropertyChanged(nameof(IsGoalsEmpty));

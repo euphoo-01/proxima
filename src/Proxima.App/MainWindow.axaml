@@ -4,10 +4,10 @@
     xmlns:controls="using:Proxima.App.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="Proxima"
-    Width="1180"
-    Height="760"
-    MinWidth="960"
-    MinHeight="640"
+    Width="1460"
+    Height="920"
+    MinWidth="1240"
+    MinHeight="760"
     Background="{StaticResource ProximaBrush.Page}">
     <Grid x:Name="RootScaleHost">
         <Grid IsVisible="{Binding IsSetupMode}">
@@ -287,10 +287,15 @@
                             </Grid>
 
                             <controls:BentoCard Grid.Row="1" Title="История капитала" Subtitle="{Binding Shell.DashboardHistorySummary}">
+                                <Grid RowDefinitions="Auto,Auto" RowSpacing="12">
                                 <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="8">
                                     <ComboBox MinWidth="120" SelectedItem="{Binding Shell.DashboardTimeframe}" ItemsSource="{Binding Shell.DashboardTimeframes}" />
                                     <TextBlock Grid.Column="1" Classes="proxima-caption" VerticalAlignment="Center" Text="График для выбранного периода" />
                                     <controls:StatusPill Grid.Column="2" Text="1D/7D/1M" />
+                                </Grid>
+                                <Border Grid.Row="1" Height="180" Padding="8" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Card}">
+                                    <controls:LineChart Values="{Binding Shell.DashboardHistorySeries}" />
+                                </Border>
                                 </Grid>
                             </controls:BentoCard>
 
@@ -435,6 +440,9 @@
                                         <TextBlock Grid.Column="2" Classes="proxima-caption" VerticalAlignment="Center" Text="{Binding Shell.AssetDetailsChartState}" />
                                     </Grid>
                                     <TextBlock Classes="proxima-caption" IsVisible="{Binding Shell.AssetDetailsNotFound}" Text="Актив не найден или удалён." />
+                                    <Border Height="220" Padding="8" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Card}">
+                                        <controls:CandlestickChart Candles="{Binding Shell.AssetCandles}" />
+                                    </Border>
                                     <Button Classes="proxima-secondary" Click="GoBackClicked" Content="Вернуться назад" HorizontalAlignment="Left" />
                                 </StackPanel>
                             </controls:BentoCard>
@@ -573,6 +581,9 @@
                         <controls:BentoCard IsVisible="{Binding Shell.IsGoalsPage}" Title="Цели" Subtitle="Финансовые цели и прогноз достижения">
                             <StackPanel Spacing="12">
                                 <Button Classes="proxima-primary" Content="Добавить цель" HorizontalAlignment="Left" Click="OpenCreateGoalClicked" />
+                                <Border Height="180" Padding="8" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Card}">
+                                    <controls:LineChart Values="{Binding Shell.GoalProjectionSeries}" />
+                                </Border>
                                 <ItemsControl ItemsSource="{Binding Shell.Goals}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
