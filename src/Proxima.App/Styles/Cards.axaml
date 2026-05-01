@@ -29,10 +29,11 @@
 
     <Style Selector="controls|MetricCard">
         <Setter Property="CardBackground" Value="{StaticResource ProximaBrush.Surface}" />
-        <Setter Property="CardBorderThickness" Value="0" />
+        <Setter Property="CardBorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="CardBorderThickness" Value="1" />
         <Setter Property="CardCornerRadius" Value="{StaticResource ProximaRadius.Card}" />
-        <Setter Property="CardPadding" Value="28" />
-        <Setter Property="MinHeight" Value="180" />
+        <Setter Property="CardPadding" Value="24" />
+        <Setter Property="MinHeight" Value="168" />
         <Setter Property="Template">
             <ControlTemplate>
                 <Border
@@ -46,7 +47,7 @@
                     <Grid RowDefinitions="Auto,*,Auto">
                         <TextBlock Classes="proxima-body" Text="{TemplateBinding Label}" />
                         <StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="4">
-                            <TextBlock FontFamily="{StaticResource ProximaFont.Family}" FontSize="36" FontWeight="ExtraBold" Foreground="{StaticResource ProximaBrush.TextPrimary}" LineHeight="40" Text="{TemplateBinding Value}" />
+                            <TextBlock FontFamily="{StaticResource ProximaFont.Family}" FontSize="34" FontWeight="ExtraBold" Foreground="{StaticResource ProximaBrush.TextPrimary}" LineHeight="38" Text="{TemplateBinding Value}" />
                             <TextBlock Classes="proxima-caption" Text="{TemplateBinding Footer}" />
                         </StackPanel>
                         <TextBlock Grid.Row="2" Classes="proxima-caption" Text="{TemplateBinding Delta}" />

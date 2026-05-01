@@ -316,7 +316,7 @@
                     </Border>
 
                     <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                        <StackPanel Margin="32" Spacing="24">
+                        <StackPanel Margin="28,24,28,28" Spacing="20">
                         <controls:PageHeader Title="{Binding Shell.PageTitle}" Subtitle="{Binding Shell.PageDescription}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Button Classes="proxima-secondary proxima-toolbar" Click="ExportPortfolioReportClicked" IsVisible="{Binding Shell.IsDashboardPage}">
@@ -346,8 +346,8 @@
                             </StackPanel>
                         </controls:PageHeader>
 
-                        <Grid IsVisible="{Binding Shell.IsDashboardPage}" RowDefinitions="Auto,Auto,Auto" RowSpacing="24">
-                            <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+                        <Grid IsVisible="{Binding Shell.IsDashboardPage}" RowDefinitions="Auto,Auto,Auto" RowSpacing="20">
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="20">
                                 <controls:MetricCard Label="Общая стоимость" Value="{Binding Shell.DashboardTotalValue}" Footer="Текущая оценка портфеля" />
                                 <controls:MetricCard Grid.Column="1" Label="Изменение" Value="{Binding Shell.DashboardDeltaValue}" DeltaKind="{Binding Shell.DashboardDeltaKind}" Footer="{Binding Shell.DashboardDeltaFooter}" />
                             </Grid>
@@ -359,13 +359,13 @@
                                     <TextBlock Grid.Column="1" Classes="proxima-caption" VerticalAlignment="Center" Text="График для выбранного периода" />
                                     <controls:StatusPill Grid.Column="2" Text="1D/7D/1M" />
                                 </Grid>
-                                <Border Grid.Row="1" Height="180" Padding="8" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Card}">
+                                <Border Grid.Row="1" Height="196" Padding="10" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Card}">
                                     <controls:LineChart Values="{Binding Shell.DashboardHistorySeries}" />
                                 </Border>
                                 </Grid>
                             </controls:BentoCard>
 
-                            <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="24">
+                            <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="20">
                                 <controls:BentoCard Title="Аллокация по категориям">
                                     <ItemsControl ItemsSource="{Binding Shell.DashboardAllocations}">
                                         <ItemsControl.ItemTemplate>
@@ -505,7 +505,7 @@
                             </controls:BentoCard>
                         </Grid>
 
-                        <Grid IsVisible="{Binding Shell.IsAssetDetailsPage}" RowDefinitions="Auto,Auto,Auto" RowSpacing="24">
+                        <Grid IsVisible="{Binding Shell.IsAssetDetailsPage}" RowDefinitions="Auto,Auto,Auto" RowSpacing="20">
                             <controls:BentoCard Title="Детали актива" Subtitle="{Binding Shell.SelectedAssetTitle}">
                                 <StackPanel Spacing="12">
                                     <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
@@ -514,14 +514,14 @@
                                         <TextBlock Grid.Column="2" Classes="proxima-caption" VerticalAlignment="Center" Text="{Binding Shell.AssetDetailsChartState}" />
                                     </Grid>
                                     <TextBlock Classes="proxima-caption" IsVisible="{Binding Shell.AssetDetailsNotFound}" Text="Актив не найден или удалён." />
-                                    <Border Height="220" Padding="8" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Card}">
+                                    <Border Height="236" Padding="10" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Card}">
                                         <controls:CandlestickChart Candles="{Binding Shell.AssetCandles}" />
                                     </Border>
                                     <Button Classes="proxima-secondary" Click="GoBackClicked" Content="Вернуться назад" HorizontalAlignment="Left" />
                                 </StackPanel>
                             </controls:BentoCard>
 
-                            <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="24">
+                            <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="20">
                                 <controls:BentoCard Title="Базовые метрики">
                                     <ItemsControl ItemsSource="{Binding Shell.AssetDetailsBaseMetrics}">
                                         <ItemsControl.ItemTemplate>
