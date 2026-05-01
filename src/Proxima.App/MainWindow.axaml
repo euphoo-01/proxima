@@ -4,10 +4,10 @@
     xmlns:controls="using:Proxima.App.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="Proxima"
-    Width="1460"
-    Height="920"
-    MinWidth="1240"
-    MinHeight="760"
+    Width="1280"
+    Height="900"
+    MinWidth="1120"
+    MinHeight="720"
     Background="{StaticResource ProximaBrush.Page}">
     <Grid x:Name="RootScaleHost">
         <Grid IsVisible="{Binding IsSetupMode}">
@@ -369,44 +369,48 @@
 
                             <controls:BentoCard Grid.Row="1" Title="Список активов" Subtitle="{Binding Shell.SelectedAssetTitle}">
                                 <StackPanel Spacing="12">
-                                    <Grid ColumnDefinitions="2*,1.1*,1*,1*,1*,1.1*,1.1*,1.4*,Auto" IsVisible="{Binding Shell.HasAssets}">
-                                        <TextBlock Classes="proxima-caption" Text="Актив" />
-                                        <TextBlock Grid.Column="1" Classes="proxima-caption" Text="Тип" />
-                                        <TextBlock Grid.Column="2" Classes="proxima-caption" Text="Кол-во" />
-                                        <TextBlock Grid.Column="3" Classes="proxima-caption" Text="Avg" />
-                                        <TextBlock Grid.Column="4" Classes="proxima-caption" Text="Current" />
-                                        <TextBlock Grid.Column="5" Classes="proxima-caption" Text="Value" />
-                                        <TextBlock Grid.Column="6" Classes="proxima-caption" Text="P&amp;L" />
-                                        <TextBlock Grid.Column="7" Classes="proxima-caption" Text="Теги" />
-                                        <TextBlock Grid.Column="8" Classes="proxima-caption" Text="Действия" />
-                                    </Grid>
+                                    <ScrollViewer HorizontalScrollBarVisibility="Auto" IsVisible="{Binding Shell.HasAssets}">
+                                        <StackPanel Spacing="8">
+                                            <Grid MinWidth="980" ColumnDefinitions="2*,1.1*,1*,1*,1*,1.1*,1.1*,1.4*,Auto">
+                                                <TextBlock Classes="proxima-caption" Text="Актив" />
+                                                <TextBlock Grid.Column="1" Classes="proxima-caption" Text="Тип" />
+                                                <TextBlock Grid.Column="2" Classes="proxima-caption" Text="Кол-во" />
+                                                <TextBlock Grid.Column="3" Classes="proxima-caption" Text="Avg" />
+                                                <TextBlock Grid.Column="4" Classes="proxima-caption" Text="Current" />
+                                                <TextBlock Grid.Column="5" Classes="proxima-caption" Text="Value" />
+                                                <TextBlock Grid.Column="6" Classes="proxima-caption" Text="P&amp;L" />
+                                                <TextBlock Grid.Column="7" Classes="proxima-caption" Text="Теги" />
+                                                <TextBlock Grid.Column="8" Classes="proxima-caption" Text="Действия" />
+                                            </Grid>
 
-                                    <ItemsControl ItemsSource="{Binding Shell.FilteredAssets}" IsVisible="{Binding Shell.HasAssets}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Border Padding="10" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Card}">
-                                                    <Grid ColumnDefinitions="2*,1.1*,1*,1*,1*,1.1*,1.1*,1.4*,Auto" ColumnSpacing="8">
-                                                        <Button
-                                                            Classes="proxima-secondary"
-                                                            HorizontalAlignment="Left"
-                                                            Click="SelectAssetClicked"
-                                                            Content="{Binding Name}" />
-                                                        <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding TypeLabel}" />
-                                                        <TextBlock Grid.Column="2" Classes="proxima-body" Text="{Binding Quantity, StringFormat={}{0:0.####}}" />
-                                                        <TextBlock Grid.Column="3" Classes="proxima-body" Text="{Binding AverageBuyPrice, StringFormat={}{0:0.##}}" />
-                                                        <TextBlock Grid.Column="4" Classes="proxima-body" Text="{Binding CurrentPrice, StringFormat={}{0:0.##}}" />
-                                                        <TextBlock Grid.Column="5" Classes="proxima-body" Text="{Binding Value, StringFormat={}{0:0.##}}" />
-                                                        <TextBlock Grid.Column="6" Classes="proxima-body" Text="{Binding ProfitLoss, StringFormat={}{0:0.##}}" />
-                                                        <TextBlock Grid.Column="7" Classes="proxima-caption" Text="{Binding TagsText}" TextWrapping="Wrap" />
-                                                        <StackPanel Grid.Column="8" Orientation="Horizontal" Spacing="6">
-                                                            <Button Classes="proxima-secondary" Content="+" Click="OpenCreateTransactionForAssetClicked" />
-                                                            <Button Classes="proxima-secondary" Content="⋯" Click="OpenEditAssetClicked" />
-                                                        </StackPanel>
-                                                    </Grid>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                            <ItemsControl ItemsSource="{Binding Shell.FilteredAssets}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Padding="10" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Card}">
+                                                            <Grid MinWidth="980" ColumnDefinitions="2*,1.1*,1*,1*,1*,1.1*,1.1*,1.4*,Auto" ColumnSpacing="8">
+                                                                <Button
+                                                                    Classes="proxima-secondary"
+                                                                    HorizontalAlignment="Left"
+                                                                    Click="SelectAssetClicked"
+                                                                    Content="{Binding Name}" />
+                                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding TypeLabel}" />
+                                                                <TextBlock Grid.Column="2" Classes="proxima-body" Text="{Binding Quantity, StringFormat={}{0:0.####}}" />
+                                                                <TextBlock Grid.Column="3" Classes="proxima-body" Text="{Binding AverageBuyPrice, StringFormat={}{0:0.##}}" />
+                                                                <TextBlock Grid.Column="4" Classes="proxima-body" Text="{Binding CurrentPrice, StringFormat={}{0:0.##}}" />
+                                                                <TextBlock Grid.Column="5" Classes="proxima-body" Text="{Binding Value, StringFormat={}{0:0.##}}" />
+                                                                <TextBlock Grid.Column="6" Classes="proxima-body" Text="{Binding ProfitLoss, StringFormat={}{0:0.##}}" />
+                                                                <TextBlock Grid.Column="7" Classes="proxima-caption" Text="{Binding TagsText}" TextWrapping="Wrap" />
+                                                                <StackPanel Grid.Column="8" Orientation="Horizontal" Spacing="6">
+                                                                    <Button Classes="proxima-secondary" Content="+" Click="OpenCreateTransactionForAssetClicked" />
+                                                                    <Button Classes="proxima-secondary" Content="⋯" Click="OpenEditAssetClicked" />
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </ScrollViewer>
 
                                     <controls:EmptyState IsVisible="{Binding Shell.IsAssetTableEmpty}" Title="Нет активов" Message="Добавьте актив вручную или через импорт в следующем модуле." />
                                 </StackPanel>
@@ -420,32 +424,36 @@
                                         <TextBlock Grid.Column="2" Classes="proxima-caption" VerticalAlignment="Center" Text="{Binding Shell.TransactionStatusText}" />
                                         <Button Grid.Column="3" Classes="proxima-primary" Click="OpenCreateTransactionClicked" Content="Добавить транзакцию" />
                                     </Grid>
-                                    <Grid ColumnDefinitions="1.2*,1*,1.1*,0.8*,0.9*,1.1*,Auto" IsVisible="{Binding Shell.HasTransactions}">
-                                        <TextBlock Classes="proxima-caption" Text="Дата" />
-                                        <TextBlock Grid.Column="1" Classes="proxima-caption" Text="Актив" />
-                                        <TextBlock Grid.Column="2" Classes="proxima-caption" Text="Тип" />
-                                        <TextBlock Grid.Column="3" Classes="proxima-caption" Text="Кол-во" />
-                                        <TextBlock Grid.Column="4" Classes="proxima-caption" Text="Цена" />
-                                        <TextBlock Grid.Column="5" Classes="proxima-caption" Text="Сумма" />
-                                        <TextBlock Grid.Column="6" Classes="proxima-caption" Text="Действия" />
-                                    </Grid>
-                                    <ItemsControl ItemsSource="{Binding Shell.FilteredTransactions}" IsVisible="{Binding Shell.HasTransactions}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Border Padding="10" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Card}">
-                                                    <Grid ColumnDefinitions="1.2*,1*,1.1*,0.8*,0.9*,1.1*,Auto" ColumnSpacing="8">
-                                                        <TextBlock Classes="proxima-body" Text="{Binding TradeDate, StringFormat={}{0:yyyy-MM-dd}}" />
-                                                        <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding AssetName}" />
-                                                        <TextBlock Grid.Column="2" Classes="proxima-body" Text="{Binding TypeLabel}" />
-                                                        <TextBlock Grid.Column="3" Classes="proxima-body" Text="{Binding Quantity, StringFormat={}{0:0.####}}" />
-                                                        <TextBlock Grid.Column="4" Classes="proxima-body" Text="{Binding Price, StringFormat={}{0:0.##}}" />
-                                                        <TextBlock Grid.Column="5" Classes="proxima-body" Text="{Binding GrossAmount, StringFormat={}{0:0.##}}" />
-                                                        <Button Grid.Column="6" Classes="proxima-secondary" Content="⋯" Click="OpenEditTransactionClicked" />
-                                                    </Grid>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                    <ScrollViewer HorizontalScrollBarVisibility="Auto" IsVisible="{Binding Shell.HasTransactions}">
+                                        <StackPanel Spacing="8">
+                                            <Grid MinWidth="860" ColumnDefinitions="1.2*,1*,1.1*,0.8*,0.9*,1.1*,Auto">
+                                                <TextBlock Classes="proxima-caption" Text="Дата" />
+                                                <TextBlock Grid.Column="1" Classes="proxima-caption" Text="Актив" />
+                                                <TextBlock Grid.Column="2" Classes="proxima-caption" Text="Тип" />
+                                                <TextBlock Grid.Column="3" Classes="proxima-caption" Text="Кол-во" />
+                                                <TextBlock Grid.Column="4" Classes="proxima-caption" Text="Цена" />
+                                                <TextBlock Grid.Column="5" Classes="proxima-caption" Text="Сумма" />
+                                                <TextBlock Grid.Column="6" Classes="proxima-caption" Text="Действия" />
+                                            </Grid>
+                                            <ItemsControl ItemsSource="{Binding Shell.FilteredTransactions}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Padding="10" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Card}">
+                                                            <Grid MinWidth="860" ColumnDefinitions="1.2*,1*,1.1*,0.8*,0.9*,1.1*,Auto" ColumnSpacing="8">
+                                                                <TextBlock Classes="proxima-body" Text="{Binding TradeDate, StringFormat={}{0:yyyy-MM-dd}}" />
+                                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding AssetName}" />
+                                                                <TextBlock Grid.Column="2" Classes="proxima-body" Text="{Binding TypeLabel}" />
+                                                                <TextBlock Grid.Column="3" Classes="proxima-body" Text="{Binding Quantity, StringFormat={}{0:0.####}}" />
+                                                                <TextBlock Grid.Column="4" Classes="proxima-body" Text="{Binding Price, StringFormat={}{0:0.##}}" />
+                                                                <TextBlock Grid.Column="5" Classes="proxima-body" Text="{Binding GrossAmount, StringFormat={}{0:0.##}}" />
+                                                                <Button Grid.Column="6" Classes="proxima-secondary" Content="⋯" Click="OpenEditTransactionClicked" />
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </ScrollViewer>
                                     <controls:EmptyState IsVisible="{Binding Shell.IsTransactionTableEmpty}" Title="Нет транзакций" Message="Добавьте первую операцию для расчёта метрик." />
                                 </StackPanel>
                             </controls:BentoCard>
