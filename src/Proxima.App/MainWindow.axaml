@@ -526,76 +526,82 @@
 
                         <controls:BentoCard IsVisible="{Binding Shell.IsTaxesPage}" Title="Налоги" Subtitle="Черновой расчет для декларации (РБ)">
                             <StackPanel Spacing="12">
-                                <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto">
+                                <Grid MinWidth="900" ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
                                     <TextBlock Classes="proxima-caption" VerticalAlignment="Center" Text="{Binding Shell.SelectedPortfolio.Name}" />
                                     <ComboBox Grid.Column="1" MinWidth="110" SelectedItem="{Binding Shell.TaxReportYear}" ItemsSource="{Binding Shell.TaxYears}" />
                                     <ComboBox Grid.Column="2" MinWidth="220" SelectedItem="{Binding Shell.TaxProfile}" ItemsSource="{Binding Shell.TaxProfiles}" />
                                     <Button Grid.Column="3" Classes="proxima-secondary" Content="Пересчитать" Click="RecalculateTaxesClicked" />
                                     <Button Grid.Column="4" Classes="proxima-primary" Content="Экспорт PDF" Click="ExportTaxDraftClicked" />
                                 </Grid>
+                                </ScrollViewer>
                                 <TextBlock Classes="proxima-caption" Foreground="{StaticResource ProximaBrush.Danger}" Text="{Binding Shell.TaxMessage}" TextWrapping="Wrap" />
-                                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
-                                    <controls:MetricCard Label="Total Tax Due" Value="{Binding Shell.TaxTotalDue}" Footer="Оценка к уплате" />
-                                    <controls:MetricCard Grid.Column="1" Label="Taxable Base" Value="{Binding Shell.TaxBase}" Footer="Налоговая база" />
-                                    <controls:MetricCard Grid.Column="2" Label="Tax Saved" Value="{Binding Shell.TaxSaved}" Footer="Льготы/вычеты" />
-                                </Grid>
-                                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                                    <controls:BentoCard Title="Double tax / Dividends">
-                                        <StackPanel Spacing="8">
-                                            <Grid ColumnDefinitions="*,Auto">
-                                                <TextBlock Classes="proxima-caption" Text="Дивиденды" />
-                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxDividends}" />
-                                            </Grid>
-                                            <Grid ColumnDefinitions="*,Auto">
-                                                <TextBlock Classes="proxima-caption" Text="Дедукции" />
-                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxDeductions}" />
-                                            </Grid>
-                                            <controls:StatusPill Text="DRAFT" />
-                                        </StackPanel>
-                                    </controls:BentoCard>
-                                    <controls:BentoCard Grid.Column="1" Title="Tax Calendar">
-                                        <StackPanel Spacing="8">
-                                            <Grid ColumnDefinitions="*,Auto">
-                                                <TextBlock Classes="proxima-caption" Text="Deadline" />
-                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxDeadlines}" />
-                                            </Grid>
-                                            <Grid ColumnDefinitions="*,Auto">
-                                                <TextBlock Classes="proxima-caption" Text="Loss carryforward" />
-                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxLossCarryforward}" />
-                                            </Grid>
-                                            <Grid ColumnDefinitions="*,Auto">
-                                                <TextBlock Classes="proxima-caption" Text="Version" />
-                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxVersion}" />
-                                            </Grid>
-                                        </StackPanel>
-                                    </controls:BentoCard>
-                                </Grid>
-                                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                                    <controls:BentoCard Title="Limits">
-                                        <StackPanel Spacing="8">
-                                            <Grid ColumnDefinitions="*,Auto">
-                                                <TextBlock Classes="proxima-caption" Text="Currency effect" />
-                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxCurrencyEffect}" />
-                                            </Grid>
-                                            <Grid ColumnDefinitions="*,Auto">
-                                                <TextBlock Classes="proxima-caption" Text="Crypto status" />
-                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxCryptoStatus}" />
-                                            </Grid>
-                                            <Grid ColumnDefinitions="*,Auto">
-                                                <TextBlock Classes="proxima-caption" Text="Surtax gauge" />
-                                                <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxSurtaxGauge}" />
-                                            </Grid>
-                                        </StackPanel>
-                                    </controls:BentoCard>
-                                    <controls:BentoCard Grid.Column="1" Title="Draft / Legal Disclaimer">
-                                        <StackPanel Spacing="6">
-                                            <TextBlock Classes="proxima-caption" Text="{Binding Shell.TaxRateNote}" />
-                                            <TextBlock Classes="proxima-caption" Text="{Binding Shell.TaxExchangeRateStatus}" />
-                                            <TextBlock Classes="proxima-caption" Text="{Binding Shell.TaxDisclaimer}" TextWrapping="Wrap" />
-                                            <controls:StatusPill Text="ИНФОРМАЦИОННЫЙ РАСЧЕТ" />
-                                        </StackPanel>
-                                    </controls:BentoCard>
-                                </Grid>
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto">
+                                    <StackPanel Spacing="12">
+                                        <Grid MinWidth="980" ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                                            <controls:MetricCard Label="Total Tax Due" Value="{Binding Shell.TaxTotalDue}" Footer="Оценка к уплате" />
+                                            <controls:MetricCard Grid.Column="1" Label="Taxable Base" Value="{Binding Shell.TaxBase}" Footer="Налоговая база" />
+                                            <controls:MetricCard Grid.Column="2" Label="Tax Saved" Value="{Binding Shell.TaxSaved}" Footer="Льготы/вычеты" />
+                                        </Grid>
+                                        <Grid MinWidth="980" ColumnDefinitions="*,*" ColumnSpacing="12">
+                                            <controls:BentoCard Title="Double tax / Dividends">
+                                                <StackPanel Spacing="8">
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <TextBlock Classes="proxima-caption" Text="Дивиденды" />
+                                                        <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxDividends}" />
+                                                    </Grid>
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <TextBlock Classes="proxima-caption" Text="Дедукции" />
+                                                        <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxDeductions}" />
+                                                    </Grid>
+                                                    <controls:StatusPill Text="DRAFT" Classes="warning" />
+                                                </StackPanel>
+                                            </controls:BentoCard>
+                                            <controls:BentoCard Grid.Column="1" Title="Tax Calendar">
+                                                <StackPanel Spacing="8">
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <TextBlock Classes="proxima-caption" Text="Deadline" />
+                                                        <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxDeadlines}" />
+                                                    </Grid>
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <TextBlock Classes="proxima-caption" Text="Loss carryforward" />
+                                                        <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxLossCarryforward}" />
+                                                    </Grid>
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <TextBlock Classes="proxima-caption" Text="Version" />
+                                                        <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxVersion}" />
+                                                    </Grid>
+                                                </StackPanel>
+                                            </controls:BentoCard>
+                                        </Grid>
+                                        <Grid MinWidth="980" ColumnDefinitions="*,*" ColumnSpacing="12">
+                                            <controls:BentoCard Title="Limits">
+                                                <StackPanel Spacing="8">
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <TextBlock Classes="proxima-caption" Text="Currency effect" />
+                                                        <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxCurrencyEffect}" />
+                                                    </Grid>
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <TextBlock Classes="proxima-caption" Text="Crypto status" />
+                                                        <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxCryptoStatus}" />
+                                                    </Grid>
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <TextBlock Classes="proxima-caption" Text="Surtax gauge" />
+                                                        <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Shell.TaxSurtaxGauge}" />
+                                                    </Grid>
+                                                </StackPanel>
+                                            </controls:BentoCard>
+                                            <controls:BentoCard Grid.Column="1" Title="Draft / Legal Disclaimer">
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Classes="proxima-caption" Text="{Binding Shell.TaxRateNote}" />
+                                                    <TextBlock Classes="proxima-caption" Text="{Binding Shell.TaxExchangeRateStatus}" />
+                                                    <TextBlock Classes="proxima-caption" Text="{Binding Shell.TaxDisclaimer}" TextWrapping="Wrap" />
+                                                    <controls:StatusPill Text="ИНФОРМАЦИОННЫЙ РАСЧЕТ" Classes="danger" />
+                                                </StackPanel>
+                                            </controls:BentoCard>
+                                        </Grid>
+                                    </StackPanel>
+                                </ScrollViewer>
                                 <controls:EmptyState IsVisible="{Binding Shell.IsTransactionTableEmpty}" Title="Нет транзакций за период" Message="Добавьте транзакции или смените год отчета." />
                                 <Border Padding="10" Background="{StaticResource ProximaBrush.WarningSurface}" CornerRadius="{StaticResource ProximaRadius.Card}">
                                     <StackPanel Spacing="4">
@@ -633,52 +639,56 @@
 
                         <controls:BentoCard IsVisible="{Binding Shell.IsSettingsPage}" Title="Настройки" Subtitle="Профиль, провайдеры и безопасность">
                             <StackPanel Spacing="12">
-                                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                                    <controls:BentoCard Title="Профиль">
-                                        <StackPanel Spacing="8">
-                                            <TextBox Watermark="Display name" Text="{Binding Shell.SettingsDisplayName}" />
-                                            <ComboBox SelectedIndex="{Binding Shell.SettingsRoleIndex}">
-                                                <ComboBoxItem Content="Частный инвестор" />
-                                                <ComboBoxItem Content="Финансовый аналитик" />
-                                            </ComboBox>
-                                            <TextBlock Classes="proxima-caption" Text="{Binding Shell.ProfileLogin}" />
-                                        </StackPanel>
-                                    </controls:BentoCard>
-                                    <controls:BentoCard Grid.Column="1" Title="Preferences">
-                                        <StackPanel Spacing="8">
-                                            <ComboBox SelectedItem="{Binding Shell.SettingsPreferredCurrency}" ItemsSource="{Binding Shell.SettingsCurrencies}" />
-                                            <ComboBox SelectedItem="{Binding Shell.SettingsLanguage}" ItemsSource="{Binding Shell.SettingsLanguages}" />
-                                            <TextBox Watermark="UI scale (0.8 - 1.5)" Text="{Binding Shell.SettingsUiScale}" />
-                                        </StackPanel>
-                                    </controls:BentoCard>
-                                </Grid>
-                                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                                    <controls:BentoCard Title="Providers">
-                                        <StackPanel Spacing="8">
-                                            <ComboBox SelectedItem="{Binding Shell.SettingsQuoteProvider}" ItemsSource="{Binding Shell.SettingsQuoteProviders}" />
-                                            <TextBox Watermark="Refresh interval (minutes)" Text="{Binding Shell.SettingsQuoteRefreshMinutes}" />
-                                            <TextBox Watermark="Finnhub API key" PasswordChar="•" Text="{Binding Shell.SettingsFinnhubApiKeyInput}" />
-                                            <TextBlock Classes="proxima-caption" Text="{Binding Shell.SettingsApiKeyMask}" />
-                                            <ComboBox SelectedItem="{Binding Shell.SettingsCurrencyProvider}" ItemsSource="{Binding Shell.SettingsCurrencyProviders}" />
-                                            <TextBlock Classes="proxima-caption" Text="Belarusbank FX API: belarusbank.by/o-banke/for-developers/..." TextWrapping="Wrap" />
-                                            <TextBlock Classes="proxima-caption" Text="Quote API: Finnhub (finnhub.io)." TextWrapping="Wrap" />
-                                        </StackPanel>
-                                    </controls:BentoCard>
-                                    <controls:BentoCard Grid.Column="1" Title="Security &amp; Sync">
-                                        <StackPanel Spacing="8">
-                                            <CheckBox Content="Enable encrypted snapshot sync" IsChecked="{Binding Shell.SettingsSyncEnabled}" />
-                                            <TextBox Watermark="Snapshot file path (.pxsnap)" Text="{Binding Shell.SettingsSnapshotPath}" />
-                                            <TextBox Watermark="Snapshot password" PasswordChar="•" Text="{Binding Shell.SettingsSnapshotPassword}" />
-                                            <CheckBox Content="Allow conflict override on import" IsChecked="{Binding Shell.SettingsAllowConflictOverride}" />
-                                            <TextBlock Classes="proxima-caption" Text="{Binding Shell.SettingsSyncStatus}" TextWrapping="Wrap" />
-                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <Button Classes="proxima-secondary" Content="Export snapshot" Click="ExportSnapshotClicked" />
-                                                <Button Classes="proxima-secondary" Content="Import snapshot" Click="ImportSnapshotClicked" />
-                                            </StackPanel>
-                                            <Button Classes="proxima-secondary" Content="Lock app" Click="LockAppClicked" />
-                                        </StackPanel>
-                                    </controls:BentoCard>
-                                </Grid>
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto">
+                                    <StackPanel Spacing="12">
+                                        <Grid MinWidth="980" ColumnDefinitions="*,*" ColumnSpacing="12">
+                                            <controls:BentoCard Title="Профиль">
+                                                <StackPanel Spacing="8">
+                                                    <TextBox Watermark="Display name" Text="{Binding Shell.SettingsDisplayName}" />
+                                                    <ComboBox SelectedIndex="{Binding Shell.SettingsRoleIndex}">
+                                                        <ComboBoxItem Content="Частный инвестор" />
+                                                        <ComboBoxItem Content="Финансовый аналитик" />
+                                                    </ComboBox>
+                                                    <TextBlock Classes="proxima-caption" Text="{Binding Shell.ProfileLogin}" />
+                                                </StackPanel>
+                                            </controls:BentoCard>
+                                            <controls:BentoCard Grid.Column="1" Title="Preferences">
+                                                <StackPanel Spacing="8">
+                                                    <ComboBox SelectedItem="{Binding Shell.SettingsPreferredCurrency}" ItemsSource="{Binding Shell.SettingsCurrencies}" />
+                                                    <ComboBox SelectedItem="{Binding Shell.SettingsLanguage}" ItemsSource="{Binding Shell.SettingsLanguages}" />
+                                                    <TextBox Watermark="UI scale (0.8 - 1.5)" Text="{Binding Shell.SettingsUiScale}" />
+                                                </StackPanel>
+                                            </controls:BentoCard>
+                                        </Grid>
+                                        <Grid MinWidth="980" ColumnDefinitions="*,*" ColumnSpacing="12">
+                                            <controls:BentoCard Title="Providers">
+                                                <StackPanel Spacing="8">
+                                                    <ComboBox SelectedItem="{Binding Shell.SettingsQuoteProvider}" ItemsSource="{Binding Shell.SettingsQuoteProviders}" />
+                                                    <TextBox Watermark="Refresh interval (minutes)" Text="{Binding Shell.SettingsQuoteRefreshMinutes}" />
+                                                    <TextBox Watermark="Finnhub API key" PasswordChar="•" Text="{Binding Shell.SettingsFinnhubApiKeyInput}" />
+                                                    <TextBlock Classes="proxima-caption" Text="{Binding Shell.SettingsApiKeyMask}" />
+                                                    <ComboBox SelectedItem="{Binding Shell.SettingsCurrencyProvider}" ItemsSource="{Binding Shell.SettingsCurrencyProviders}" />
+                                                    <TextBlock Classes="proxima-caption" Text="Belarusbank FX API: belarusbank.by/o-banke/for-developers/..." TextWrapping="Wrap" />
+                                                    <TextBlock Classes="proxima-caption" Text="Quote API: Finnhub (finnhub.io)." TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </controls:BentoCard>
+                                            <controls:BentoCard Grid.Column="1" Title="Security &amp; Sync">
+                                                <StackPanel Spacing="8">
+                                                    <CheckBox Content="Enable encrypted snapshot sync" IsChecked="{Binding Shell.SettingsSyncEnabled}" />
+                                                    <TextBox Watermark="Snapshot file path (.pxsnap)" Text="{Binding Shell.SettingsSnapshotPath}" />
+                                                    <TextBox Watermark="Snapshot password" PasswordChar="•" Text="{Binding Shell.SettingsSnapshotPassword}" />
+                                                    <CheckBox Content="Allow conflict override on import" IsChecked="{Binding Shell.SettingsAllowConflictOverride}" />
+                                                    <TextBlock Classes="proxima-caption" Text="{Binding Shell.SettingsSyncStatus}" TextWrapping="Wrap" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <Button Classes="proxima-secondary" Content="Export snapshot" Click="ExportSnapshotClicked" />
+                                                        <Button Classes="proxima-secondary" Content="Import snapshot" Click="ImportSnapshotClicked" />
+                                                    </StackPanel>
+                                                    <Button Classes="proxima-secondary" Content="Lock app" Click="LockAppClicked" />
+                                                </StackPanel>
+                                            </controls:BentoCard>
+                                        </Grid>
+                                    </StackPanel>
+                                </ScrollViewer>
                                 <TextBlock Classes="proxima-caption" Foreground="{StaticResource ProximaBrush.Danger}" Text="{Binding Shell.SettingsValidation}" TextWrapping="Wrap" />
                                 <Button Classes="proxima-primary" Content="Сохранить настройки" Click="SaveSettingsClicked" HorizontalAlignment="Left" />
                                 <TextBlock Classes="proxima-caption" Text="Raw DB sync не поддерживается. Доступны только encrypted snapshots." TextWrapping="Wrap" />
