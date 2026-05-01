@@ -1143,3 +1143,12 @@ Partial
 - Verification in current environment:
   - `dotnet build Proxima.sln -m:1 -nr:false` passed
   - `dotnet test Proxima.sln -m:1 -nr:false` passed
+
+### Follow-up Implementation Note (2026-05-01, runtime reliability pass 2)
+
+- Added app-level smoke tests for failure paths in `ShellViewModel`:
+  - quote refresh failure should not crash and must show user-visible error + notification;
+  - tax recalculation failure should not crash and must show user-visible error + fallback rate source.
+- Hardened `LocalSettingsReader` against malformed/unreadable settings JSON (safe `null` fallback instead of exception propagation).
+- Verification:
+  - `dotnet test Proxima.sln -m:1 -nr:false` passed with new tests included.

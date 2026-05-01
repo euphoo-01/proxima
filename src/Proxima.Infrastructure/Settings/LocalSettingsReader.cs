@@ -15,9 +15,16 @@ public sealed class LocalSettingsReader(string settingsFilePath)
             return null;
         }
 
-        await using FileStream stream = File.OpenRead(_settingsFilePath);
-        List<UserSettings>? all = await JsonSerializer.DeserializeAsync<List<UserSettings>>(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
-        return all?.FirstOrDefault();
+        try
+        {
+            await using FileStream stream = File.OpenRead(_settingsFilePath);
+            List<UserSettings>? all = await JsonSerializer.DeserializeAsync<List<UserSettings>>(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+            return all?.FirstOrDefault();
+        }
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     public static string UnprotectApiKey(string protectedValue)

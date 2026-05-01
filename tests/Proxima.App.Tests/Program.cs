@@ -44,6 +44,8 @@ internal static class Program
         ShellViewModel_LoadsAndFiltersTransactions().GetAwaiter().GetResult();
         ShellViewModel_ComputesDashboardCards().GetAwaiter().GetResult();
         ShellViewModel_BuildsAssetDetailsMetrics().GetAwaiter().GetResult();
+        ShellViewModel_HandlesQuoteRefreshFailureGracefully().GetAwaiter().GetResult();
+        ShellViewModel_HandlesTaxRecalcFailureGracefully().GetAwaiter().GetResult();
         SettingsPage_ContainsMaskedApiKeyInput();
         SnapshotService_EncryptDecryptAndTamperFail().GetAwaiter().GetResult();
         ReportingService_ExportsNonEmptyPdf().GetAwaiter().GetResult();
@@ -329,9 +331,20 @@ internal static class Program
         Assert(selected!.Name == "Новый портфель", "Created portfolio should be selected.");
     }
 
-    private static ShellViewModel CreateShellViewModel()
+    private static ShellViewModel CreateShellViewModel(IQuoteRefreshService? quoteService = null, ITaxCalculator? taxCalculator = null)
     {
-        return new ShellViewModel(new ShellNavigationService(), new TestPortfolioService(), new TestAssetService(), new TestTransactionService(), new TestImportService(), new TestQuoteRefreshService(), new TestGoalService(), new TestTaxCalculator(), new TestSettingsService(), new TestSnapshotService(), new TestReportService());
+        return new ShellViewModel(
+            new ShellNavigationService(),
+            new TestPortfolioService(),
+            new TestAssetService(),
+            new TestTransactionService(),
+            new TestImportService(),
+            quoteService ?? new TestQuoteRefreshService(),
+            new TestGoalService(),
+            taxCalculator ?? new TestTaxCalculator(),
+            new TestSettingsService(),
+            new TestSnapshotService(),
+            new TestReportService());
     }
 
     private static async Task ShellViewModel_FiltersAndSortsAssets()
@@ -382,6 +395,29 @@ internal static class Program
         Assert(shell.AssetDetailsBaseMetrics.Count > 0, "Asset details base metrics should be built.");
         Assert(shell.AssetDetailsAdvancedMetrics.Count > 0, "Asset details advanced metrics should be built.");
         Assert(shell.AssetDetailsTransactions.All(item => item.AssetId == shell.SelectedAsset!.Id), "Asset details transactions must be scoped to selected asset.");
+    }
+
+    private static async Task ShellViewModel_HandlesQuoteRefreshFailureGracefully()
+    {
+        ShellViewModel shell = CreateShellViewModel(quoteService: new FailingQuoteRefreshService());
+        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111"), "Test User", "test", UserRole.PrivateInvestor).ConfigureAwait(false);
+
+        await shell.RefreshQuotesAsync().ConfigureAwait(false);
+
+        Assert(shell.QuotesStatusText.Contains("Ошибка обновления котировок", StringComparison.Ordinal), "Quote failure should be shown as user-visible status.");
+        Assert(shell.Notifications.Count > 0, "Quote failure should create notification.");
+    }
+
+    private static async Task ShellViewModel_HandlesTaxRecalcFailureGracefully()
+    {
+        ShellViewModel shell = CreateShellViewModel(taxCalculator: new FailingTaxCalculator());
+        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111"), "Test User", "test", UserRole.PrivateInvestor).ConfigureAwait(false);
+
+        await shell.RecalculateTaxesAsync().ConfigureAwait(false);
+
+        Assert(shell.TaxMessage.Contains("Ошибка расчета налогов", StringComparison.Ordinal), "Tax recalculation failure should be user-visible.");
+        Assert(shell.TaxExchangeRateStatus == "Источник курса: unavailable", "Tax rate source should fallback to unavailable on failure.");
+        Assert(shell.Notifications.Count > 0, "Tax failure should create notification.");
     }
 
     private static string FindRepositoryRoot()
@@ -596,6 +632,15 @@ internal static class Program
         }
     }
 
+    private sealed class FailingQuoteRefreshService : IQuoteRefreshService
+    {
+        public Task<QuoteRefreshSummary> RefreshPortfolioAsync(Guid portfolioId, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new InvalidOperationException("quote provider offline");
+        }
+    }
+
     private sealed class TestGoalService : IGoalService
     {
         public Task<IReadOnlyList<Goal>> ListActiveAsync(Guid portfolioId, CancellationToken cancellationToken = default)
@@ -654,6 +699,15 @@ internal static class Program
                 "mock-nbrb",
                 DateOnly.FromDateTime(DateTime.UtcNow),
                 new TaxRuleSet("BY-DRAFT-TEST", DateOnly.FromDateTime(DateTime.UtcNow), 13m, 13m, 200m, "Draft / informational")));
+        }
+    }
+
+    private sealed class FailingTaxCalculator : ITaxCalculator
+    {
+        public Task<TaxCalculationResult> CalculateAsync(IReadOnlyList<TaxTransactionSnapshot> transactions, int reportYear, LegalProfileType profile, string baseCurrency, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new InvalidOperationException("tax provider offline");
         }
     }
 
