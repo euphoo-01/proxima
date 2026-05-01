@@ -46,6 +46,7 @@ internal static class Program
         ShellViewModel_BuildsAssetDetailsMetrics().GetAwaiter().GetResult();
         ShellViewModel_HandlesQuoteRefreshFailureGracefully().GetAwaiter().GetResult();
         ShellViewModel_HandlesTaxRecalcFailureGracefully().GetAwaiter().GetResult();
+        ShellViewModel_ImportCommit_RefreshesDependentState().GetAwaiter().GetResult();
         SettingsPage_ContainsMaskedApiKeyInput();
         SnapshotService_EncryptDecryptAndTamperFail().GetAwaiter().GetResult();
         ReportingService_ExportsNonEmptyPdf().GetAwaiter().GetResult();
@@ -331,14 +332,14 @@ internal static class Program
         Assert(selected!.Name == "Новый портфель", "Created portfolio should be selected.");
     }
 
-    private static ShellViewModel CreateShellViewModel(IQuoteRefreshService? quoteService = null, ITaxCalculator? taxCalculator = null)
+    private static ShellViewModel CreateShellViewModel(IQuoteRefreshService? quoteService = null, ITaxCalculator? taxCalculator = null, IImportService? importService = null)
     {
         return new ShellViewModel(
             new ShellNavigationService(),
             new TestPortfolioService(),
             new TestAssetService(),
             new TestTransactionService(),
-            new TestImportService(),
+            importService ?? new TestImportService(),
             quoteService ?? new TestQuoteRefreshService(),
             new TestGoalService(),
             taxCalculator ?? new TestTaxCalculator(),
@@ -418,6 +419,23 @@ internal static class Program
         Assert(shell.TaxMessage.Contains("Ошибка расчета налогов", StringComparison.Ordinal), "Tax recalculation failure should be user-visible.");
         Assert(shell.TaxExchangeRateStatus == "Источник курса: unavailable", "Tax rate source should fallback to unavailable on failure.");
         Assert(shell.Notifications.Count > 0, "Tax failure should create notification.");
+    }
+
+    private static async Task ShellViewModel_ImportCommit_RefreshesDependentState()
+    {
+        ShellViewModel shell = CreateShellViewModel(importService: new NonEmptyImportService());
+        await shell.InitializeAsync(Guid.Parse("11111111-1111-1111-1111-111111111111"), "Test User", "test", UserRole.PrivateInvestor).ConfigureAwait(false);
+        int before = shell.FilteredTransactions.Count;
+
+        shell.OpenImportDialog();
+        shell.ImportFilePath = "/tmp/demo.csv";
+        await shell.PreviewImportAsync().ConfigureAwait(false);
+        await shell.CommitImportAsync().ConfigureAwait(false);
+
+        Assert(shell.FilteredTransactions.Count == before + 1, "Import commit should append a new transaction.");
+        Assert(!shell.IsImportDialogOpen, "Import dialog should close after successful commit.");
+        Assert(shell.ImportMessage.Contains("Импортировано строк", StringComparison.Ordinal), "Import success message should be shown.");
+        Assert(shell.Notifications.Count > 0, "Import success should produce notification.");
     }
 
     private static string FindRepositoryRoot()
@@ -620,6 +638,30 @@ internal static class Program
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(new ImportPreview(true, string.Empty, [], false));
+        }
+    }
+
+    private sealed class NonEmptyImportService : IImportService
+    {
+        public Task<ImportPreview> PreviewAsync(string filePath, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ImportedTransactionRow row = new(
+                1,
+                DateTimeOffset.UtcNow.Date,
+                "AAPL",
+                "Apple",
+                TransactionType.Buy,
+                1m,
+                100m,
+                100m,
+                0m,
+                "USD",
+                "Broker A",
+                "tech",
+                ImportRowStatus.Valid,
+                "ok");
+            return Task.FromResult(new ImportPreview(true, "preview ok", [row], false));
         }
     }
 

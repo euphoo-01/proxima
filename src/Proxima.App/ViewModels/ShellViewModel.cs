@@ -1202,16 +1202,25 @@ public sealed class ShellViewModel : ViewModelBase
             return;
         }
 
-        ImportPreview preview = await _importService.PreviewAsync(ImportFilePath, cancellationToken).ConfigureAwait(false);
-        ImportMessage = preview.Message;
-        ImportHasPdfLimitWarning = preview.IsPdfLimited;
-        ImportPreviewRows.Clear();
-        foreach (ImportedTransactionRow row in preview.Rows)
+        try
         {
-            ImportPreviewRows.Add(new ImportPreviewRowViewModel(row));
-        }
+            ImportPreview preview = await _importService.PreviewAsync(ImportFilePath, cancellationToken).ConfigureAwait(false);
+            ImportMessage = preview.Message;
+            ImportHasPdfLimitWarning = preview.IsPdfLimited;
+            ImportPreviewRows.Clear();
+            foreach (ImportedTransactionRow row in preview.Rows)
+            {
+                ImportPreviewRows.Add(new ImportPreviewRowViewModel(row));
+            }
 
-        IsImportPreviewVisible = preview.Rows.Count > 0;
+            IsImportPreviewVisible = preview.Rows.Count > 0;
+        }
+        catch (Exception ex)
+        {
+            ImportMessage = $"Ошибка предпросмотра импорта: {ex.Message}";
+            PushNotification(AppNotificationLevel.Error, ImportMessage);
+            await RecordAuditAsync("import.preview", "failed", ex.Message, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     public async Task CommitImportAsync(CancellationToken cancellationToken = default)
@@ -1231,83 +1240,94 @@ public sealed class ShellViewModel : ViewModelBase
             return;
         }
 
-        Dictionary<string, AssetRowViewModel> byTicker = Assets.ToDictionary(static item => item.Ticker, StringComparer.OrdinalIgnoreCase);
-        foreach (ImportPreviewRowViewModel row in selectedRows)
+        try
         {
-            if (row.Source.Status == ImportRowStatus.Invalid)
+            Dictionary<string, AssetRowViewModel> byTicker = Assets.ToDictionary(static item => item.Ticker, StringComparer.OrdinalIgnoreCase);
+            foreach (ImportPreviewRowViewModel row in selectedRows)
             {
-                ImportMessage = $"Строка {row.Source.RowNumber} содержит ошибки и не может быть сохранена.";
-                PushNotification(AppNotificationLevel.Error, ImportMessage);
-                await RecordAuditAsync("import.commit", "failed", ImportMessage, cancellationToken).ConfigureAwait(false);
-                return;
-            }
-
-            Guid? assetId = null;
-            if (!string.IsNullOrWhiteSpace(row.Source.AssetTicker))
-            {
-                if (!byTicker.TryGetValue(row.Source.AssetTicker.Trim().ToUpperInvariant(), out AssetRowViewModel? asset))
+                if (row.Source.Status == ImportRowStatus.Invalid)
                 {
-                    AssetOperationResult createdAsset = await _assets.CreateAsync(new CreateAssetRequest(
-                        SelectedPortfolio.Id,
-                        row.Source.AssetTicker,
-                        string.IsNullOrWhiteSpace(row.Source.AssetName) ? row.Source.AssetTicker : row.Source.AssetName,
-                        AssetType.Stock,
-                        row.Source.Currency,
-                        null,
-                        null,
-                        row.Source.Tag is null ? [] : [row.Source.Tag],
-                        null,
-                        0m,
-                        0m,
-                        0m), cancellationToken).ConfigureAwait(false);
+                    ImportMessage = $"Строка {row.Source.RowNumber} содержит ошибки и не может быть сохранена.";
+                    PushNotification(AppNotificationLevel.Error, ImportMessage);
+                    await RecordAuditAsync("import.commit", "failed", ImportMessage, cancellationToken).ConfigureAwait(false);
+                    return;
+                }
 
-                    if (!createdAsset.Succeeded || createdAsset.Asset is null)
+                Guid? assetId = null;
+                if (!string.IsNullOrWhiteSpace(row.Source.AssetTicker))
+                {
+                    if (!byTicker.TryGetValue(row.Source.AssetTicker.Trim().ToUpperInvariant(), out AssetRowViewModel? asset))
                     {
-                        ImportMessage = $"Не удалось создать актив для строки {row.Source.RowNumber}: {createdAsset.Message}";
-                        PushNotification(AppNotificationLevel.Error, ImportMessage);
-                        await RecordAuditAsync("import.commit", "failed", ImportMessage, cancellationToken).ConfigureAwait(false);
-                        return;
+                        AssetOperationResult createdAsset = await _assets.CreateAsync(new CreateAssetRequest(
+                            SelectedPortfolio.Id,
+                            row.Source.AssetTicker,
+                            string.IsNullOrWhiteSpace(row.Source.AssetName) ? row.Source.AssetTicker : row.Source.AssetName,
+                            AssetType.Stock,
+                            row.Source.Currency,
+                            null,
+                            null,
+                            row.Source.Tag is null ? [] : [row.Source.Tag],
+                            null,
+                            0m,
+                            0m,
+                            0m), cancellationToken).ConfigureAwait(false);
+
+                        if (!createdAsset.Succeeded || createdAsset.Asset is null)
+                        {
+                            ImportMessage = $"Не удалось создать актив для строки {row.Source.RowNumber}: {createdAsset.Message}";
+                            PushNotification(AppNotificationLevel.Error, ImportMessage);
+                            await RecordAuditAsync("import.commit", "failed", ImportMessage, cancellationToken).ConfigureAwait(false);
+                            return;
+                        }
+
+                        await ReloadAssetsAsync(cancellationToken).ConfigureAwait(false);
+                        byTicker = Assets.ToDictionary(static item => item.Ticker, StringComparer.OrdinalIgnoreCase);
+                        assetId = createdAsset.Asset.Id;
                     }
-
-                    await ReloadAssetsAsync(cancellationToken).ConfigureAwait(false);
-                    byTicker = Assets.ToDictionary(static item => item.Ticker, StringComparer.OrdinalIgnoreCase);
-                    assetId = createdAsset.Asset.Id;
+                    else
+                    {
+                        assetId = asset.Id;
+                    }
                 }
-                else
+
+                TransactionOperationResult transaction = await _transactions.CreateAsync(new CreateTransactionRequest(
+                    SelectedPortfolio.Id,
+                    assetId,
+                    row.Source.TransactionType,
+                    row.Source.TradeDate,
+                    row.Source.Quantity,
+                    row.Source.Price,
+                    row.Source.GrossAmount,
+                    row.Source.FeeAmount,
+                    0m,
+                    row.Source.Currency,
+                    row.Source.Broker,
+                    null,
+                    $"import-row:{row.Source.RowNumber}"), cancellationToken).ConfigureAwait(false);
+
+                if (!transaction.Succeeded)
                 {
-                    assetId = asset.Id;
+                    ImportMessage = $"Сохранение прервано на строке {row.Source.RowNumber}: {transaction.Message}";
+                    PushNotification(AppNotificationLevel.Error, ImportMessage);
+                    await RecordAuditAsync("import.commit", "failed", ImportMessage, cancellationToken).ConfigureAwait(false);
+                    return;
                 }
             }
 
-            TransactionOperationResult transaction = await _transactions.CreateAsync(new CreateTransactionRequest(
-                SelectedPortfolio.Id,
-                assetId,
-                row.Source.TransactionType,
-                row.Source.TradeDate,
-                row.Source.Quantity,
-                row.Source.Price,
-                row.Source.GrossAmount,
-                row.Source.FeeAmount,
-                0m,
-                row.Source.Currency,
-                row.Source.Broker,
-                null,
-                $"import-row:{row.Source.RowNumber}"), cancellationToken).ConfigureAwait(false);
-
-            if (!transaction.Succeeded)
-            {
-                ImportMessage = $"Сохранение прервано на строке {row.Source.RowNumber}: {transaction.Message}";
-                PushNotification(AppNotificationLevel.Error, ImportMessage);
-                await RecordAuditAsync("import.commit", "failed", ImportMessage, cancellationToken).ConfigureAwait(false);
-                return;
-            }
+            await ReloadTransactionsAsync(cancellationToken).ConfigureAwait(false);
+            await ReloadGoalsAsync(cancellationToken).ConfigureAwait(false);
+            await RecalculateTaxesAsync(cancellationToken).ConfigureAwait(false);
+            ImportMessage = $"Импортировано строк: {selectedRows.Count}.";
+            PushNotification(AppNotificationLevel.Success, ImportMessage);
+            await RecordAuditAsync("import.commit", "success", $"rows:{selectedRows.Count}", cancellationToken).ConfigureAwait(false);
+            IsImportDialogOpen = false;
         }
-
-        await ReloadTransactionsAsync(cancellationToken).ConfigureAwait(false);
-        ImportMessage = $"Импортировано строк: {selectedRows.Count}.";
-        PushNotification(AppNotificationLevel.Success, ImportMessage);
-        await RecordAuditAsync("import.commit", "success", $"rows:{selectedRows.Count}", cancellationToken).ConfigureAwait(false);
-        IsImportDialogOpen = false;
+        catch (Exception ex)
+        {
+            ImportMessage = $"Ошибка сохранения импорта: {ex.Message}";
+            PushNotification(AppNotificationLevel.Error, ImportMessage);
+            await RecordAuditAsync("import.commit", "failed", ex.Message, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     public async Task RefreshQuotesAsync(CancellationToken cancellationToken = default)

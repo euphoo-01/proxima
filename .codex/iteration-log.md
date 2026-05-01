@@ -1152,3 +1152,17 @@ Partial
 - Hardened `LocalSettingsReader` against malformed/unreadable settings JSON (safe `null` fallback instead of exception propagation).
 - Verification:
   - `dotnet test Proxima.sln -m:1 -nr:false` passed with new tests included.
+
+### Follow-up Implementation Note (2026-05-01, import e2e pass)
+
+- Hardened import flow runtime behavior:
+  - `PreviewImportAsync` now catches provider/parser exceptions and surfaces user-visible/audited failures.
+  - `CommitImportAsync` now catches unexpected failures and surfaces user-visible/audited failures.
+- After successful import commit, dependent state now refreshes immediately:
+  - transactions reload;
+  - goals reload;
+  - tax draft recalculation.
+- Added `ShellViewModel_ImportCommit_RefreshesDependentState` smoke test to validate preview+commit path and resulting UI state consistency.
+- Verification:
+  - `dotnet build Proxima.sln -m:1 -nr:false` passed (transient file-lock warnings observed in parallel runs).
+  - `dotnet test Proxima.sln -m:1 -nr:false` passed.
