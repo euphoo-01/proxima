@@ -585,12 +585,12 @@
                                 <ScrollViewer HorizontalScrollBarVisibility="Auto">
                                     <StackPanel Spacing="12">
                                         <Grid MinWidth="980" ColumnDefinitions="*,*,*" ColumnSpacing="12">
-                                            <controls:MetricCard Label="Total Tax Due" Value="{Binding Shell.TaxTotalDue}" Footer="Оценка к уплате" />
-                                            <controls:MetricCard Grid.Column="1" Label="Taxable Base" Value="{Binding Shell.TaxBase}" Footer="Налоговая база" />
-                                            <controls:MetricCard Grid.Column="2" Label="Tax Saved" Value="{Binding Shell.TaxSaved}" Footer="Льготы/вычеты" />
+                                            <controls:MetricCard Label="Итого к уплате" Value="{Binding Shell.TaxTotalDue}" Footer="Оценка суммы налога" />
+                                            <controls:MetricCard Grid.Column="1" Label="Налоговая база" Value="{Binding Shell.TaxBase}" Footer="До применения льгот" />
+                                            <controls:MetricCard Grid.Column="2" Label="Экономия" Value="{Binding Shell.TaxSaved}" Footer="Льготы и вычеты" />
                                         </Grid>
                                         <Grid MinWidth="980" ColumnDefinitions="*,*" ColumnSpacing="12">
-                                            <controls:BentoCard Title="Double tax / Dividends">
+                                            <controls:BentoCard Title="Дивиденды и зачет">
                                                 <StackPanel Spacing="8">
                                                     <Grid ColumnDefinitions="*,Auto">
                                                         <TextBlock Classes="proxima-caption" Text="Дивиденды" />
@@ -603,7 +603,7 @@
                                                     <controls:StatusPill Text="DRAFT" Classes="warning" />
                                                 </StackPanel>
                                             </controls:BentoCard>
-                                            <controls:BentoCard Grid.Column="1" Title="Tax Calendar">
+                                            <controls:BentoCard Grid.Column="1" Title="Календарь и версия">
                                                 <StackPanel Spacing="8">
                                                     <Grid ColumnDefinitions="*,Auto">
                                                         <TextBlock Classes="proxima-caption" Text="Deadline" />
@@ -621,7 +621,7 @@
                                             </controls:BentoCard>
                                         </Grid>
                                         <Grid MinWidth="980" ColumnDefinitions="*,*" ColumnSpacing="12">
-                                            <controls:BentoCard Title="Limits">
+                                            <controls:BentoCard Title="Ограничения и источники">
                                                 <StackPanel Spacing="8">
                                                     <Grid ColumnDefinitions="*,Auto">
                                                         <TextBlock Classes="proxima-caption" Text="Currency effect" />
@@ -637,7 +637,7 @@
                                                     </Grid>
                                                 </StackPanel>
                                             </controls:BentoCard>
-                                            <controls:BentoCard Grid.Column="1" Title="Draft / Legal Disclaimer">
+                                            <controls:BentoCard Grid.Column="1" Title="Юридический дисклеймер">
                                                 <StackPanel Spacing="6">
                                                     <TextBlock Classes="proxima-caption" Text="{Binding Shell.TaxRateNote}" />
                                                     <TextBlock Classes="proxima-caption" Text="{Binding Shell.TaxExchangeRateStatus}" />
@@ -698,7 +698,7 @@
                                                     <TextBlock Classes="proxima-caption" Text="{Binding Shell.ProfileLogin}" />
                                                 </StackPanel>
                                             </controls:BentoCard>
-                                            <controls:BentoCard Grid.Column="1" Title="Preferences">
+                                            <controls:BentoCard Grid.Column="1" Title="Предпочтения">
                                                 <StackPanel Spacing="8">
                                                     <ComboBox SelectedItem="{Binding Shell.SettingsPreferredCurrency}" ItemsSource="{Binding Shell.SettingsCurrencies}" />
                                                     <ComboBox SelectedItem="{Binding Shell.SettingsLanguage}" ItemsSource="{Binding Shell.SettingsLanguages}" />
@@ -707,7 +707,7 @@
                                             </controls:BentoCard>
                                         </Grid>
                                         <Grid MinWidth="980" ColumnDefinitions="*,*" ColumnSpacing="12">
-                                            <controls:BentoCard Title="Providers">
+                                            <controls:BentoCard Title="Провайдеры данных">
                                                 <StackPanel Spacing="8">
                                                     <ComboBox SelectedItem="{Binding Shell.SettingsQuoteProvider}" ItemsSource="{Binding Shell.SettingsQuoteProviders}" />
                                                     <TextBox Watermark="Refresh interval (minutes)" Text="{Binding Shell.SettingsQuoteRefreshMinutes}" />
@@ -718,7 +718,7 @@
                                                     <TextBlock Classes="proxima-caption" Text="Quote API: Finnhub (finnhub.io)." TextWrapping="Wrap" />
                                                 </StackPanel>
                                             </controls:BentoCard>
-                                            <controls:BentoCard Grid.Column="1" Title="Security &amp; Sync">
+                                            <controls:BentoCard Grid.Column="1" Title="Безопасность и бэкапы">
                                                 <StackPanel Spacing="8">
                                                     <CheckBox Content="Enable encrypted snapshot sync" IsChecked="{Binding Shell.SettingsSyncEnabled}" />
                                                     <TextBox Watermark="Snapshot file path (.pxsnap)" Text="{Binding Shell.SettingsSnapshotPath}" />

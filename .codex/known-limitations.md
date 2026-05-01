@@ -33,6 +33,5 @@
 - Module 18 adds RU/EN shell localization and persisted UI scaling, but localization coverage is currently focused on shell/topbar/core page headers; several feature-specific validation/error strings remain Russian-first and will be expanded in Module 19.
 - Module 19 adds in-app notification feed, audit events for key flows, and redaction helper for sensitive keys, but full structured log sink with per-operation correlation IDs and complete exception-boundary mapping is still in progress.
 - Manual QA (2026-04-30) found major UI fidelity issues versus expected Mockup: cramped/non-expandable window behavior, text overflow/clipping, weak color/accent usage, missing iconography, and broken visual rhythm in several screens.
-- Asset Details currently has no true candlestick chart; chart state remains fallback/textual.
-- Dashboard and Goals currently lack real rendered chart widgets and rely on textual summaries/placeholders.
-- Until Mockup parity is verified through custom `figma_mcp_server`, release readiness must remain `Partial`.
+- Follow-up UI passes (2026-05-01) added real chart widgets (dashboard line, goals projection line, asset candlestick), improved shell sizing, overflow safety and icon consistency; however pixel-level parity with Mockup is still not fully verified.
+- Until strict Mockup parity is verified through custom `figma_mcp_server`, release readiness must remain `Partial`.

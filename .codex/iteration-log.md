@@ -1048,3 +1048,9 @@ Structured logging with correlation IDs and complete catch-all exception mapping
 - Improved baseline visual readability and contrast: updated tokens/shadows/typography and interactive button hover/focus styles.
 - Added sidebar icon markers and enabled horizontal/vertical scrollbars for content safety on smaller viewports.
 - Fixed analytics regression test stability by using a mixed up/down close-price series in `Proxima.Analytics.Tests` so Sortino has downside samples.
+
+### Follow-up Implementation Note (2026-05-01, pass 3)
+
+- Refined Tax and Settings screen hierarchy/texts in `MainWindow.axaml` for clearer card semantics and more consistent RU labels.
+- Updated known limitations: chart gaps are now marked as closed by implementation; remaining release blocker is strict visual parity validation against Mockup via custom Figma MCP.
+- In this sandbox, `dotnet build` succeeds with `-m:1 -nr:false`; `dotnet test` still fails on infrastructure socket access (`Permission denied`) due environment networking restrictions.
