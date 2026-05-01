@@ -1130,3 +1130,16 @@ Partial
 - Added `scripts/release-preflight.sh` to validate build/test and required packaging tools before release cut.
 - Added `scripts/generate-release-manifest.sh` to generate `artifacts/release/manifest.txt` with SHA256 + size + path for produced packages.
 - Updated deployment/readme docs with release validation and manifest steps.
+
+### Follow-up Implementation Note (2026-05-01, runtime stabilization pass)
+
+- Hardened UI runtime flows with exception-safe handling in:
+  - quotes refresh (`RefreshQuotesAsync`)
+  - taxes recalculation (`RecalculateTaxesAsync`)
+- Fixed `DatabaseBootstrapService` graceful degradation by handling `SocketException` together with DB/IO errors.
+- Added infrastructure tests for live-provider payload parsing:
+  - `FinnhubQuoteProvider_ParsesQuotePayload`
+  - `BelarusbankExchangeRateProvider_ParsesRatesPayload`
+- Verification in current environment:
+  - `dotnet build Proxima.sln -m:1 -nr:false` passed
+  - `dotnet test Proxima.sln -m:1 -nr:false` passed

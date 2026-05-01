@@ -1325,6 +1325,12 @@ public sealed class ShellViewModel : ViewModelBase
             QuotesStatusText = summary.Message;
             PushNotification(summary.FailedCount == 0 ? AppNotificationLevel.Success : AppNotificationLevel.Warning, summary.Message);
         }
+        catch (Exception ex)
+        {
+            QuotesStatusText = $"Ошибка обновления котировок: {ex.Message}";
+            PushNotification(AppNotificationLevel.Error, QuotesStatusText);
+            await RecordAuditAsync("quotes.refresh", "failed", ex.Message, cancellationToken).ConfigureAwait(false);
+        }
         finally
         {
             IsRefreshingQuotes = false;
@@ -1438,37 +1444,47 @@ public sealed class ShellViewModel : ViewModelBase
 
     public async Task RecalculateTaxesAsync(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<TaxTransactionSnapshot> input = Transactions
-            .Select(item => new TaxTransactionSnapshot(
-                item.TradeDate,
-                item.Type,
-                item.GrossAmount,
-                item.FeeAmount,
-                item.TaxAmount,
-                item.Currency))
-            .ToList();
+        try
+        {
+            IReadOnlyList<TaxTransactionSnapshot> input = Transactions
+                .Select(item => new TaxTransactionSnapshot(
+                    item.TradeDate,
+                    item.Type,
+                    item.GrossAmount,
+                    item.FeeAmount,
+                    item.TaxAmount,
+                    item.Currency))
+                .ToList();
 
-        TaxCalculationResult result = await _taxes.CalculateAsync(
-            input,
-            TaxReportYear,
-            TaxProfile,
-            SelectedPortfolio?.Currency ?? "USD",
-            cancellationToken).ConfigureAwait(false);
+            TaxCalculationResult result = await _taxes.CalculateAsync(
+                input,
+                TaxReportYear,
+                TaxProfile,
+                SelectedPortfolio?.Currency ?? "USD",
+                cancellationToken).ConfigureAwait(false);
 
-        TaxMessage = result.Message;
-        TaxVersion = result.RuleSet.Version;
-        TaxTotalDue = $"{result.TaxDue:0.##} {SelectedPortfolio?.Currency ?? "USD"}";
-        TaxBase = $"{result.TaxableBase:0.##}";
-        TaxSaved = $"{result.TaxSaved:0.##}";
-        TaxDividends = $"{result.Dividends:0.##}";
-        TaxCurrencyEffect = $"{result.CurrencyEffect:0.##}";
-        TaxLossCarryforward = $"{Math.Abs(result.Losses):0.##}";
-        TaxDeductions = $"{result.TaxSaved:0.##}";
-        TaxCryptoStatus = "Нет крипто-операций в текущем черновике";
-        TaxSurtaxGauge = result.TaxDue > 0m ? "13%" : "0%";
-        TaxRateNote = result.RateDate is null ? "Курс: недоступен" : $"Курс на {result.RateDate:yyyy-MM-dd}";
-        TaxExchangeRateStatus = $"Источник курса: {result.RateSource}";
-        TaxDisclaimer = result.RuleSet.Disclaimer;
+            TaxMessage = result.Message;
+            TaxVersion = result.RuleSet.Version;
+            TaxTotalDue = $"{result.TaxDue:0.##} {SelectedPortfolio?.Currency ?? "USD"}";
+            TaxBase = $"{result.TaxableBase:0.##}";
+            TaxSaved = $"{result.TaxSaved:0.##}";
+            TaxDividends = $"{result.Dividends:0.##}";
+            TaxCurrencyEffect = $"{result.CurrencyEffect:0.##}";
+            TaxLossCarryforward = $"{Math.Abs(result.Losses):0.##}";
+            TaxDeductions = $"{result.TaxSaved:0.##}";
+            TaxCryptoStatus = "Нет крипто-операций в текущем черновике";
+            TaxSurtaxGauge = result.TaxDue > 0m ? "13%" : "0%";
+            TaxRateNote = result.RateDate is null ? "Курс: недоступен" : $"Курс на {result.RateDate:yyyy-MM-dd}";
+            TaxExchangeRateStatus = $"Источник курса: {result.RateSource}";
+            TaxDisclaimer = result.RuleSet.Disclaimer;
+        }
+        catch (Exception ex)
+        {
+            TaxMessage = $"Ошибка расчета налогов: {ex.Message}";
+            TaxExchangeRateStatus = "Источник курса: unavailable";
+            PushNotification(AppNotificationLevel.Error, TaxMessage);
+            await RecordAuditAsync("tax.recalculate", "failed", ex.Message, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     public async Task ExportTaxDraftAsync(CancellationToken cancellationToken = default)

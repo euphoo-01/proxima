@@ -1,10 +1,14 @@
 using Proxima.Infrastructure;
+using System.Net;
+using System.Net.Http;
+using System.Text;
 using Proxima.Application.Assets;
 using Proxima.Application.Auth;
 using Proxima.Application.Goals;
 using Proxima.Application.Portfolios;
 using Proxima.Application.Quotes;
 using Proxima.Application.Settings;
+using Proxima.Application.Taxes;
 using Proxima.Application.Transactions;
 using Proxima.Application.Observability;
 using Proxima.Domain.Assets;
@@ -19,6 +23,7 @@ using Proxima.Infrastructure.Portfolios;
 using Proxima.Infrastructure.Persistence;
 using Proxima.Infrastructure.Quotes;
 using Proxima.Infrastructure.Settings;
+using Proxima.Infrastructure.Taxes;
 using Proxima.Infrastructure.Transactions;
 
 namespace Proxima.Infrastructure.Tests;
@@ -37,6 +42,8 @@ internal static class Program
         await JsonQuoteCacheRepository_UpsertsByAsset().ConfigureAwait(false);
         await JsonGoalRepository_StoresAndArchives().ConfigureAwait(false);
         await JsonSettingsRepository_StoresByOwner().ConfigureAwait(false);
+        await FinnhubQuoteProvider_ParsesQuotePayload().ConfigureAwait(false);
+        await BelarusbankExchangeRateProvider_ParsesRatesPayload().ConfigureAwait(false);
         await DatabaseBootstrap_ReturnsGracefulMessage_WhenUnavailable().ConfigureAwait(false);
         await JsonAuditLogRepository_AppendsEvents().ConfigureAwait(false);
         RedactionHelper_RemovesSensitiveKeys();
@@ -129,6 +136,40 @@ internal static class Program
         Assert(updated.Succeeded, "Settings update should persist.");
         UserSettings? loaded = await repository.FindByOwnerAsync(owner).ConfigureAwait(false);
         Assert(loaded is not null && loaded.PreferredCurrency == "BYN", "Settings should reload from JSON by owner.");
+    }
+
+    private static async Task FinnhubQuoteProvider_ParsesQuotePayload()
+    {
+        const string payload = """{"c":123.45,"h":126.0,"l":120.5,"o":121.0,"t":1714500000}""";
+        using HttpClient client = new(new StubHttpMessageHandler(payload))
+        {
+            BaseAddress = new Uri("https://finnhub.io"),
+        };
+
+        FinnhubQuoteProvider provider = new(client, "demo-key");
+        QuoteProviderResult result = await provider.GetLatestQuoteAsync("AAPL", "USD").ConfigureAwait(false);
+
+        Assert(result.Succeeded, "Finnhub provider should parse valid payload.");
+        Assert(result.Quote is not null, "Quote should be present.");
+        Assert(result.Quote!.Price == 123.45m, "Quote price should match response.");
+        Assert(result.Quote.Ohlc is not null && result.Quote.Ohlc.Close == 123.45m, "OHLC close should map from current price.");
+        Assert(result.Quote.Source == "finnhub", "Quote source should be finnhub.");
+    }
+
+    private static async Task BelarusbankExchangeRateProvider_ParsesRatesPayload()
+    {
+        const string payload = """[{"USD_out":"3.2","EUR_out":"3.5","RUB_out":"0.034"}]""";
+        using HttpClient client = new(new StubHttpMessageHandler(payload))
+        {
+            BaseAddress = new Uri("https://belarusbank.by"),
+        };
+
+        BelarusbankExchangeRateProvider provider = new(client);
+        ExchangeRateResult result = await provider.GetRateAsync("USD", "BYN", DateOnly.FromDateTime(DateTime.UtcNow)).ConfigureAwait(false);
+
+        Assert(result.Succeeded, "Belarusbank provider should parse valid payload.");
+        Assert(result.Rate == 3.2m, "USD->BYN rate should be parsed from payload.");
+        Assert(result.Source == "belarusbank", "Rate source should be belarusbank.");
     }
 
     private static async Task JsonGoalRepository_StoresAndArchives()
@@ -287,6 +328,21 @@ internal static class Program
         if (!condition)
         {
             throw new InvalidOperationException(message);
+        }
+    }
+
+    private sealed class StubHttpMessageHandler(string payload, HttpStatusCode statusCode = HttpStatusCode.OK) : HttpMessageHandler
+    {
+        private readonly string _payload = payload;
+        private readonly HttpStatusCode _statusCode = statusCode;
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            HttpResponseMessage response = new(_statusCode)
+            {
+                Content = new StringContent(_payload, Encoding.UTF8, "application/json"),
+            };
+            return Task.FromResult(response);
         }
     }
 

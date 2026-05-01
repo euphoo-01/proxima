@@ -22,7 +22,7 @@ public sealed class DatabaseBootstrapService(DatabaseOptions options)
 
             return "Database ready.";
         }
-        catch (Exception ex) when (ex is NpgsqlException or IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is NpgsqlException or IOException or UnauthorizedAccessException or System.Net.Sockets.SocketException)
         {
             return $"Database unavailable: {ex.Message}";
         }
