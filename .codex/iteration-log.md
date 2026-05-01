@@ -1103,3 +1103,11 @@ Partial
   - `scripts/package-linux-x64.sh` -> `tar.gz`
   - `scripts/package-win-x64.ps1` -> `zip`
 - Updated release docs with archive outputs and explicit installer status in `docs/deployment.md` and `README.md`.
+
+### Follow-up Implementation Note (2026-05-01, providers pass)
+
+- Replaced hardwired mock-only provider composition with settings-driven adapters:
+  - quotes: `ConfigurableQuoteProvider` + `FinnhubQuoteProvider`
+  - tax FX: `ConfigurableExchangeRateProvider` + `BelarusbankExchangeRateProvider`
+- Composition now wires quote/tax providers with access to persisted settings store path.
+- Updated `docs/api-providers.md` with concrete endpoints and fallback behavior.

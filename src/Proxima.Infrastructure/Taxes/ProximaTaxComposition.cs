@@ -1,11 +1,16 @@
 using Proxima.Application.Taxes;
+using Proxima.Infrastructure.Settings;
 
 namespace Proxima.Infrastructure.Taxes;
 
 public static class ProximaTaxComposition
 {
-    public static ITaxCalculator CreateTaxCalculator()
+    public static ITaxCalculator CreateTaxCalculator(string settingsStorePath)
     {
-        return new DraftTaxCalculator(new MockNbrbExchangeRateProvider());
+        HttpClient client = new()
+        {
+            Timeout = TimeSpan.FromSeconds(10),
+        };
+        return new DraftTaxCalculator(new ConfigurableExchangeRateProvider(new LocalSettingsReader(settingsStorePath), client));
     }
 }

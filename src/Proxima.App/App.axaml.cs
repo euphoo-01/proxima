@@ -40,9 +40,9 @@ public partial class App : global::Avalonia.Application
                 ProximaAssetComposition.CreateAssetService(assetStorePath),
                 ProximaTransactionComposition.CreateTransactionService(transactionStorePath, assetStorePath),
                 ProximaImportComposition.CreateImportService(),
-                ProximaQuoteComposition.CreateQuoteRefreshService(assetStorePath, quoteCachePath),
+                ProximaQuoteComposition.CreateQuoteRefreshService(assetStorePath, quoteCachePath, settingsStorePath),
                 ProximaGoalComposition.CreateGoalService(goalsStorePath),
-                ProximaTaxComposition.CreateTaxCalculator(),
+                ProximaTaxComposition.CreateTaxCalculator(settingsStorePath),
                 ProximaSettingsComposition.CreateSettingsService(settingsStorePath),
                 ProximaSyncComposition.CreateSnapshotService(),
                 ProximaReportingComposition.CreateReportService());
