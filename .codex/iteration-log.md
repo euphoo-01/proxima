@@ -1042,3 +1042,9 @@ Structured logging with correlation IDs and complete catch-all exception mapping
   - Goals projection line chart.
 - Increased desktop window defaults/minimum size to improve readability on 1080p layouts.
 - Remaining gap: visual parity (typography rhythm/icons/final spacing polish) is still pending strict Mockup-level pass.
+
+### Follow-up Implementation Note (2026-05-01, pass 2)
+
+- Improved baseline visual readability and contrast: updated tokens/shadows/typography and interactive button hover/focus styles.
+- Added sidebar icon markers and enabled horizontal/vertical scrollbars for content safety on smaller viewports.
+- Fixed analytics regression test stability by using a mixed up/down close-price series in `Proxima.Analytics.Tests` so Sortino has downside samples.
