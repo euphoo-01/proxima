@@ -1111,3 +1111,10 @@ Partial
   - tax FX: `ConfigurableExchangeRateProvider` + `BelarusbankExchangeRateProvider`
 - Composition now wires quote/tax providers with access to persisted settings store path.
 - Updated `docs/api-providers.md` with concrete endpoints and fallback behavior.
+
+### Follow-up Implementation Note (2026-05-01, installer pass)
+
+- Added native installer baseline scripts:
+  - `scripts/package-linux-deb.sh` for Debian packages.
+  - `scripts/package-win-msix.ps1` for MSIX package skeleton on Windows SDK hosts.
+- Updated deployment/readme docs with DEB/MSIX commands, outputs, and signing/tooling notes.
