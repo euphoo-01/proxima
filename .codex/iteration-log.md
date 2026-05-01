@@ -1118,3 +1118,9 @@ Partial
   - `scripts/package-linux-deb.sh` for Debian packages.
   - `scripts/package-win-msix.ps1` for MSIX package skeleton on Windows SDK hosts.
 - Updated deployment/readme docs with DEB/MSIX commands, outputs, and signing/tooling notes.
+
+### Follow-up Implementation Note (2026-05-01, rpm pass)
+
+- Added RPM baseline script `scripts/package-linux-rpm.sh` (rpmbuild-based, from pre-published self-contained binaries).
+- Added Linux packaging orchestrator `scripts/package-linux-all.sh` to build tar.gz + deb + rpm in one run.
+- Updated deployment/readme docs with RPM commands and outputs.

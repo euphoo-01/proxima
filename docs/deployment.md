@@ -52,6 +52,22 @@ Output:
 
 - `artifacts/packages/proxima_0.1.0_amd64.deb`
 
+RPM package:
+
+```bash
+./scripts/package-linux-rpm.sh 0.1.0 1 x86_64
+```
+
+Output:
+
+- `artifacts/packages/proxima-0.1.0-1.x86_64.rpm` (name may include distro suffix)
+
+Build all Linux package formats:
+
+```bash
+./scripts/package-linux-all.sh 0.1.0
+```
+
 Windows MSIX package (run on Windows with Windows SDK installed):
 
 ```powershell
@@ -85,4 +101,4 @@ Override via `PROXIMA_DB_CONNECTION`.
 ## Installer Status
 
 Current baseline provides self-contained binaries, archives, and installer skeletons for DEB/MSIX.
-RPM remains a follow-up step.
+RPM baseline is now included as an rpmbuild-driven packaging script.

@@ -93,6 +93,8 @@ See `docs/deployment.md` for packaging details and current installer status.
 Installer baseline:
 
 - Linux DEB: `./scripts/package-linux-deb.sh 0.1.0 amd64`
+- Linux RPM: `./scripts/package-linux-rpm.sh 0.1.0 1 x86_64`
+- Linux all formats: `./scripts/package-linux-all.sh 0.1.0`
 - Windows MSIX (on Windows SDK host): `./scripts/package-win-msix.ps1 -Version 0.1.0.0`
 
 The app currently supports local first-run setup, portfolio/asset/transaction management, and a CSV/PDF import preview flow with manual fallback routing. Local profile, portfolio, asset, and transaction data are stored in user local application data JSON stores. Passwords are saved only as PBKDF2-SHA256 metadata, salt and hash. PostgreSQL migrations and EF Core/Npgsql persistence are still implemented in later persistence modules.
