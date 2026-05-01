@@ -83,6 +83,13 @@ Self-contained publish scripts:
 Both produce standalone outputs in `artifacts/publish/*`.
 Docker is optional and is used only as a convenient way to host PostgreSQL locally.
 
+Distributable archives:
+
+- Linux tarball: `./scripts/package-linux-x64.sh 0.1.0`
+- Windows zip: `./scripts/package-win-x64.ps1 -Version 0.1.0`
+
+See `docs/deployment.md` for packaging details and current installer status.
+
 The app currently supports local first-run setup, portfolio/asset/transaction management, and a CSV/PDF import preview flow with manual fallback routing. Local profile, portfolio, asset, and transaction data are stored in user local application data JSON stores. Passwords are saved only as PBKDF2-SHA256 metadata, salt and hash. PostgreSQL migrations and EF Core/Npgsql persistence are still implemented in later persistence modules.
 
 ### CSV Demo Import Format

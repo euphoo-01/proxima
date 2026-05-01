@@ -1096,3 +1096,10 @@ Partial
 
 - `dotnet format` and infrastructure DB tests fail in this sandbox because named pipe/socket operations are restricted (`Permission denied`), while build itself is green.
 - Installer packaging (MSIX/DEB/RPM) is not finalized yet; current deliverable is self-contained publish output.
+
+### Follow-up Implementation Note (2026-05-01, packaging pass)
+
+- Added distributable packaging scripts on top of self-contained publish:
+  - `scripts/package-linux-x64.sh` -> `tar.gz`
+  - `scripts/package-win-x64.ps1` -> `zip`
+- Updated release docs with archive outputs and explicit installer status in `docs/deployment.md` and `README.md`.
