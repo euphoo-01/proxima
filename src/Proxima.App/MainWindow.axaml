@@ -167,7 +167,9 @@
                             Tag="dashboard"
                             HorizontalContentAlignment="Left">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="◉" />
+                                <Border Padding="6,2" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Pill}">
+                                    <TextBlock Classes="proxima-caption" FontWeight="Bold" Foreground="{StaticResource ProximaBrush.Brand}" Text="DB" />
+                                </Border>
                                 <TextBlock Text="{Binding Shell.NavDashboardText}" />
                             </StackPanel>
                         </Button>
@@ -177,7 +179,9 @@
                             Tag="assets"
                             HorizontalContentAlignment="Left">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="◧" />
+                                <Border Padding="6,2" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Pill}">
+                                    <TextBlock Classes="proxima-caption" FontWeight="Bold" Foreground="{StaticResource ProximaBrush.Brand}" Text="AS" />
+                                </Border>
                                 <TextBlock Text="{Binding Shell.NavAssetsText}" />
                             </StackPanel>
                         </Button>
@@ -187,7 +191,9 @@
                             Tag="taxes"
                             HorizontalContentAlignment="Left">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="◍" />
+                                <Border Padding="6,2" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Pill}">
+                                    <TextBlock Classes="proxima-caption" FontWeight="Bold" Foreground="{StaticResource ProximaBrush.Brand}" Text="TX" />
+                                </Border>
                                 <TextBlock Text="{Binding Shell.NavTaxesText}" />
                             </StackPanel>
                         </Button>
@@ -197,7 +203,9 @@
                             Tag="goals"
                             HorizontalContentAlignment="Left">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="◎" />
+                                <Border Padding="6,2" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Pill}">
+                                    <TextBlock Classes="proxima-caption" FontWeight="Bold" Foreground="{StaticResource ProximaBrush.Brand}" Text="GL" />
+                                </Border>
                                 <TextBlock Text="{Binding Shell.NavGoalsText}" />
                             </StackPanel>
                         </Button>
@@ -207,7 +215,9 @@
                             Tag="settings"
                             HorizontalContentAlignment="Left">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="◌" />
+                                <Border Padding="6,2" Background="{StaticResource ProximaBrush.SurfaceSubtle}" CornerRadius="{StaticResource ProximaRadius.Pill}">
+                                    <TextBlock Classes="proxima-caption" FontWeight="Bold" Foreground="{StaticResource ProximaBrush.Brand}" Text="ST" />
+                                </Border>
                                 <TextBlock Text="{Binding Shell.NavSettingsText}" />
                             </StackPanel>
                         </Button>
@@ -230,7 +240,7 @@
                             Click="GoBackClicked"
                             IsEnabled="{Binding Shell.CanGoBack}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                <TextBlock Text="←" />
+                                <TextBlock Text="BK" Classes="proxima-caption" FontWeight="Bold" />
                                 <TextBlock Text="{Binding Shell.BackButtonText}" />
                             </StackPanel>
                         </Button>
@@ -299,19 +309,19 @@
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Button Classes="proxima-secondary proxima-toolbar" Click="ExportPortfolioReportClicked" IsVisible="{Binding Shell.IsDashboardPage}">
                                     <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <TextBlock Text="⇩" />
+                                        <TextBlock Text="EX" Classes="proxima-caption" FontWeight="Bold" />
                                         <TextBlock Text="Экспорт портфеля PDF" />
                                     </StackPanel>
                                 </Button>
                                 <Button Classes="proxima-secondary proxima-toolbar" Click="OpenImportAssetsClicked" IsVisible="{Binding Shell.IsAssetsPage}">
                                     <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <TextBlock Text="⤴" />
+                                        <TextBlock Text="IM" Classes="proxima-caption" FontWeight="Bold" />
                                         <TextBlock Text="{Binding Shell.ImportAssetsText}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Classes="proxima-secondary proxima-toolbar" Click="OpenManualImportClicked" IsVisible="{Binding Shell.IsAssetsPage}">
                                     <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <TextBlock Text="✎" />
+                                        <TextBlock Text="MN" Classes="proxima-caption" FontWeight="Bold" />
                                         <TextBlock Text="{Binding Shell.ManualInputText}" />
                                     </StackPanel>
                                 </Button>
