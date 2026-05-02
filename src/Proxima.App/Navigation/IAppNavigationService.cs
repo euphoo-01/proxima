@@ -7,5 +7,9 @@ public interface IAppNavigationService
     event Action<AppRoute>? RouteChanged;
 
     void Register(AppRoute route);
-    void Navigate(string routeKey);
+    void Navigate(
+        string routeKey,
+        IReadOnlyDictionary<string, string>? parameters = null,
+        string? titleOverride = null,
+        string? breadcrumbOverride = null);
 }

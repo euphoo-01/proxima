@@ -17,15 +17,35 @@
 
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <Button Classes="proxima-primary proxima-toolbar" Command="{Binding OpenImportDialogCommand}" Content="Импортировать активы" />
-                            <Button Classes="proxima-secondary proxima-toolbar" Content="Открыть детали актива" IsEnabled="False" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
 
                 <Border Classes="proxima-card-surface">
-                    <StackPanel Spacing="12">
+                    <StackPanel Spacing="16">
                         <TextBlock Classes="proxima-card-title" Text="Список активов" />
-                        <TextBlock Classes="proxima-caption" Text="Экран управления активами восстанавливается. Импорт уже доступен через кнопку выше." />
+                        <ItemsControl ItemsSource="{Binding Assets}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="assets:AssetListItemViewModel">
+                                    <Border Classes="proxima-datagrid-cell">
+                                        <Grid ColumnDefinitions="2*,Auto,Auto,Auto,Auto" ColumnSpacing="12">
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Classes="proxima-datagrid-cell-text" Text="{Binding DisplayName}" />
+                                                <TextBlock Classes="proxima-caption" Text="{Binding TypeLabel}" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Classes="proxima-datagrid-cell-text" Text="{Binding QuantityText}" />
+                                            <TextBlock Grid.Column="2" Classes="proxima-datagrid-cell-text" Text="{Binding ValueText}" />
+                                            <TextBlock Grid.Column="3" Classes="proxima-caption" Text="Детали" VerticalAlignment="Center" />
+                                            <Button Grid.Column="4"
+                                                    Classes="proxima-secondary proxima-toolbar"
+                                                    Command="{Binding DataContext.OpenAssetDetailsCommand, RelativeSource={RelativeSource AncestorType=assets:AssetsView}}"
+                                                    CommandParameter="{Binding .}"
+                                                    Content="Открыть" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
                 </Border>
             </StackPanel>

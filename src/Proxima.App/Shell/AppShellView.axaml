@@ -5,6 +5,8 @@
     xmlns:shell="using:Proxima.App.Shell"
     xmlns:assets="using:Proxima.App.Views.Assets"
     xmlns:assetsViews="using:Proxima.App.Views.Assets"
+    xmlns:assetDetails="using:Proxima.App.Views.AssetDetails"
+    xmlns:assetDetailsViews="using:Proxima.App.Views.AssetDetails"
     xmlns:dashboard="using:Proxima.App.Views.Dashboard"
     xmlns:dashboardViews="using:Proxima.App.Views.Dashboard"
     xmlns:import="using:Proxima.App.Views.Import"
@@ -18,6 +20,9 @@
         </DataTemplate>
         <DataTemplate x:DataType="assets:AssetsViewModel">
             <assetsViews:AssetsView />
+        </DataTemplate>
+        <DataTemplate x:DataType="assetDetails:AssetDetailsViewModel">
+            <assetDetailsViews:AssetDetailsView />
         </DataTemplate>
         <DataTemplate x:DataType="import:ManualImportViewModel">
             <importViews:ManualImportView />

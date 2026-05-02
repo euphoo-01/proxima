@@ -1371,3 +1371,56 @@ Partial
 ### Commit
 
 Pending feat(ui): rebuild asset import flow from figma mockup
+
+## Iteration 25 — Asset Details UI Recovery (Figma Mapping)
+
+### Scope
+
+Rebuild `Asset Details` screen in runtime AppShell from Figma mapping and wire navigation from `Assets` list with route parameter `assetId`, breadcrumbs, grouped metrics, chart/timeframe, and asset-scoped transactions table states.
+
+### User Stories Checked
+
+- [x] US-10.1 — User analyzes selected asset.
+- [x] US-10.2 — User reads key metrics quickly.
+- [x] US-10.3 — Professional user sees advanced risk metrics.
+- [x] US-10.4 — User reviews transactions for one asset.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-10.1 | Done | `AssetsViewModel.OpenAssetDetailsCommand` navigates to `asset-details` with `Parameters[\"assetId\"]`; `AssetDetailsViewModel` resolves route parameters and shows not-found when id missing/invalid. |
+| AC-10.2 | Partial | Candlestick area and timeframe selector (`1ч`, `1д`, `7д`, `30д`) implemented with loading/empty/error states; current data source is mock provider. |
+| AC-10.3 | Done | Base metrics section includes Market Cap, FDV, P/E or P/S, 24h Volume, Supply, SMA50/200, RSI with readable grouped rows and fallback-friendly values. |
+| AC-10.4 | Partial | Advanced metrics section includes Sharpe, Sortino, Calmar, MDD, VaR, CVaR, Beta, HV/IV, ATR, Turnover, Spread/Depth, Hurst, Z-Score, Correlation; some values are placeholders when external feeds are absent. |
+| AC-10.6 | Done | Transactions table scoped to selected asset read model, includes search and sortable headers (date/type/price/quantity/amount) plus empty state. |
+| Shell Nav | Done | Sidebar keeps `Все активы` active for `asset-details`; topbar breadcrumb shows `Все активы / <asset>`. |
+
+### Tests Added/Updated
+
+- Unit: None in this UI recovery pass.
+- Integration: None.
+- UI: Asset Details style guard scan for `Views/AssetDetails`, `DesignSystem`, `Shell`.
+- Manual: Runtime smoke for route transition `Assets -> Asset Details`.
+
+### Commands Run
+
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/AssetDetails src/Proxima.App/DesignSystem src/Proxima.App/Shell
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+- Asset details screen currently uses `MockAssetDetailsReadModelProvider` in runtime AppShell.
+- Real analytics/OHLC query integration is deferred to wiring with existing application+analytics services.
+
+### Commit
+
+Pending feat(ui): rebuild asset details from figma mockup

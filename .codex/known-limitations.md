@@ -40,3 +40,4 @@
 - Temporary auth recovery action is informational only and does not implement real recovery/reset flow yet.
 - Recovered AppShell import flow now includes `ImportDialogView` and `ManualImportView`, but native OS drag-and-drop handling is not wired yet (drag-over is UI-driven state).
 - Recovered manual import screen currently saves validated rows in UI state only; direct transaction persistence wiring for migrated AppShell flow is pending.
+- Recovered `Asset Details` runtime screen currently binds to `MockAssetDetailsReadModelProvider`; OHLC candles and advanced metrics include deterministic placeholders until real Application/Analytics read-model wiring is connected.

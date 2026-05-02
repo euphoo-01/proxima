@@ -15,14 +15,24 @@ public sealed class AppNavigationService : IAppNavigationService
         _routes[route.Key] = route;
     }
 
-    public void Navigate(string routeKey)
+    public void Navigate(
+        string routeKey,
+        IReadOnlyDictionary<string, string>? parameters = null,
+        string? titleOverride = null,
+        string? breadcrumbOverride = null)
     {
         if (!_routes.TryGetValue(routeKey, out AppRoute? route))
         {
             throw new InvalidOperationException($"Unknown route '{routeKey}'.");
         }
 
-        Current = route;
-        RouteChanged?.Invoke(route);
+        Current = route with
+        {
+            Title = titleOverride ?? route.Title,
+            Breadcrumb = breadcrumbOverride ?? route.Breadcrumb,
+            Parameters = parameters
+        };
+
+        RouteChanged?.Invoke(Current);
     }
 }

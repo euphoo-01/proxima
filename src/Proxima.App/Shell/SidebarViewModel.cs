@@ -15,11 +15,10 @@ public sealed class SidebarViewModel : ViewModelBase
         Items = new ObservableCollection<SidebarItemViewModel>
         {
             new(AppRoutes.Dashboard, "Дешборд"),
-            new(AppRoutes.Assets, "Assets"),
-            new(AppRoutes.AssetDetails, "AssetDetails"),
-            new(AppRoutes.Goals, "Goals"),
-            new(AppRoutes.Taxes, "Taxes"),
-            new(AppRoutes.Settings, "Settings")
+            new(AppRoutes.Assets, "Все активы"),
+            new(AppRoutes.Goals, "Цели"),
+            new(AppRoutes.Taxes, "Налоги"),
+            new(AppRoutes.Settings, "Настройки")
         };
 
         NavigateCommand = new DelegateCommand(ExecuteNavigate);
@@ -42,7 +41,10 @@ public sealed class SidebarViewModel : ViewModelBase
     {
         foreach (SidebarItemViewModel item in Items)
         {
-            item.IsActive = string.Equals(item.RouteKey, route.Key, StringComparison.OrdinalIgnoreCase);
+            item.IsActive = string.Equals(item.RouteKey, route.Key, StringComparison.OrdinalIgnoreCase)
+                || (string.Equals(item.RouteKey, AppRoutes.Assets, StringComparison.OrdinalIgnoreCase)
+                    && (string.Equals(route.Key, AppRoutes.AssetDetails, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(route.Key, AppRoutes.ManualImport, StringComparison.OrdinalIgnoreCase)));
         }
     }
 
