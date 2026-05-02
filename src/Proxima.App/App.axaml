@@ -13,6 +13,7 @@
         <StyleInclude Source="avares://Proxima.App/Styles/Charts.axaml" />
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/Sidebar.axaml" />
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/Topbar.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/Modal.axaml" />
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/AuthCard.axaml" />
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/BentoCard.axaml" />
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/MetricCard.axaml" />
@@ -25,5 +26,9 @@
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/ManualTransactionGrid.axaml" />
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/ImportValidationSummary.axaml" />
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/FileTypeBadge.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/GoalCard.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/GoalProjectionChartCard.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/ContributionInputCard.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/CompoundInterestSummaryCard.axaml" />
     </Application.Styles>
 </Application>

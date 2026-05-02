@@ -1,0 +1,181 @@
+using System.Windows.Input;
+using Proxima.App.ViewModels;
+
+namespace Proxima.App.Views.Goals;
+
+public sealed class AddGoalDialogViewModel : ViewModelBase
+{
+    private readonly DelegateCommand _saveCommand;
+    private readonly DelegateCommand _cancelCommand;
+    private readonly DelegateCommand _archiveCommand;
+
+    private Guid? _goalId;
+    private bool _isOpen;
+    private bool _isEditMode;
+    private string _name = string.Empty;
+    private decimal _targetAmount;
+    private string _currency = "USD";
+    private decimal _monthlyContribution;
+    private decimal? _expectedAnnualReturnPercent = 8m;
+    private string _validationMessage = string.Empty;
+
+    public AddGoalDialogViewModel()
+    {
+        _saveCommand = new DelegateCommand(_ => Save());
+        _cancelCommand = new DelegateCommand(_ => Close());
+        _archiveCommand = new DelegateCommand(_ => Archive());
+    }
+
+    public event EventHandler<GoalDialogSaveRequest>? SaveRequested;
+
+    public event EventHandler<Guid>? ArchiveRequested;
+
+    public ICommand SaveCommand => _saveCommand;
+
+    public ICommand CancelCommand => _cancelCommand;
+
+    public ICommand ArchiveCommand => _archiveCommand;
+
+    public bool IsOpen
+    {
+        get => _isOpen;
+        private set => SetProperty(ref _isOpen, value);
+    }
+
+    public bool IsEditMode
+    {
+        get => _isEditMode;
+        private set => SetProperty(ref _isEditMode, value);
+    }
+
+    public string Title => IsEditMode ? "Редактировать цель" : "Добавить цель";
+
+    public string Name
+    {
+        get => _name;
+        set => SetProperty(ref _name, value);
+    }
+
+    public decimal TargetAmount
+    {
+        get => _targetAmount;
+        set => SetProperty(ref _targetAmount, value);
+    }
+
+    public string Currency
+    {
+        get => _currency;
+        set => SetProperty(ref _currency, value);
+    }
+
+    public decimal MonthlyContribution
+    {
+        get => _monthlyContribution;
+        set => SetProperty(ref _monthlyContribution, value);
+    }
+
+    public decimal? ExpectedAnnualReturnPercent
+    {
+        get => _expectedAnnualReturnPercent;
+        set => SetProperty(ref _expectedAnnualReturnPercent, value);
+    }
+
+    public string ValidationMessage
+    {
+        get => _validationMessage;
+        set => SetProperty(ref _validationMessage, value);
+    }
+
+    public void OpenForCreate()
+    {
+        _goalId = null;
+        IsEditMode = false;
+        Name = string.Empty;
+        TargetAmount = 0m;
+        Currency = "USD";
+        MonthlyContribution = 0m;
+        ExpectedAnnualReturnPercent = 8m;
+        ValidationMessage = string.Empty;
+        OnPropertyChanged(nameof(Title));
+        IsOpen = true;
+    }
+
+    public void OpenForEdit(GoalListItemViewModel goal)
+    {
+        _goalId = goal.Id;
+        IsEditMode = true;
+        Name = goal.Name;
+        TargetAmount = goal.TargetAmount;
+        Currency = goal.Currency;
+        MonthlyContribution = goal.MonthlyContribution;
+        ExpectedAnnualReturnPercent = goal.ExpectedAnnualReturnPercent;
+        ValidationMessage = string.Empty;
+        OnPropertyChanged(nameof(Title));
+        IsOpen = true;
+    }
+
+    public void Close()
+    {
+        IsOpen = false;
+        ValidationMessage = string.Empty;
+    }
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(Name))
+        {
+            ValidationMessage = "Введите название цели.";
+            return;
+        }
+
+        if (TargetAmount <= 0m)
+        {
+            ValidationMessage = "Целевая сумма должна быть больше нуля.";
+            return;
+        }
+
+        if (MonthlyContribution < 0m)
+        {
+            ValidationMessage = "Ежемесячный взнос не может быть отрицательным.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Currency))
+        {
+            ValidationMessage = "Укажите валюту.";
+            return;
+        }
+
+        ValidationMessage = string.Empty;
+        SaveRequested?.Invoke(this, new GoalDialogSaveRequest(_goalId, Name.Trim(), TargetAmount, Currency.Trim().ToUpperInvariant(), MonthlyContribution, ExpectedAnnualReturnPercent));
+    }
+
+    private void Archive()
+    {
+        if (_goalId is Guid goalId)
+        {
+            ArchiveRequested?.Invoke(this, goalId);
+        }
+    }
+
+    private sealed class DelegateCommand(Action<object?> execute) : ICommand
+    {
+        private readonly Action<object?> _execute = execute;
+
+        public event EventHandler? CanExecuteChanged;
+
+        public bool CanExecute(object? parameter) => true;
+
+        public void Execute(object? parameter) => _execute(parameter);
+
+        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    }
+}
+
+public sealed record GoalDialogSaveRequest(
+    Guid? GoalId,
+    string Name,
+    decimal TargetAmount,
+    string Currency,
+    decimal MonthlyContribution,
+    decimal? ExpectedAnnualReturnPercent);

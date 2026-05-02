@@ -41,3 +41,5 @@
 - Recovered AppShell import flow now includes `ImportDialogView` and `ManualImportView`, but native OS drag-and-drop handling is not wired yet (drag-over is UI-driven state).
 - Recovered manual import screen currently saves validated rows in UI state only; direct transaction persistence wiring for migrated AppShell flow is pending.
 - Recovered `Asset Details` runtime screen currently binds to `MockAssetDetailsReadModelProvider`; OHLC candles and advanced metrics include deterministic placeholders until real Application/Analytics read-model wiring is connected.
+- Recovered `Goals` runtime screen now uses real `IGoalService` CRUD/forecast boundary, but progress baseline currently comes from shell-level mock portfolio value (`IShellState.CurrentPortfolioValue`) rather than per-goal allocated balance.
+- Goals projection chart currently uses `IGoalProjectionService` with fixed 10-year horizon and no scenario presets; richer forecasting controls are deferred.

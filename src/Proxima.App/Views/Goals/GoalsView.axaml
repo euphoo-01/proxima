@@ -1,0 +1,137 @@
+<UserControl
+    x:Class="Proxima.App.Views.Goals.GoalsView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:Proxima.App.Controls"
+    xmlns:goals="using:Proxima.App.Views.Goals"
+    x:DataType="goals:GoalsViewModel"
+    mc:Ignorable="d"
+    d:DataContext="{x:Static goals:GoalsDesignData.Sample}">
+    <Grid RowDefinitions="*,Auto">
+        <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="24" Spacing="24">
+                <Border Classes="proxima-card-surface">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="proxima-page-title" Text="{Binding PageTitle}" />
+                            <TextBlock Classes="proxima-body" Text="{Binding PageDescription}" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Classes="proxima-primary proxima-toolbar" Command="{Binding OpenAddGoalCommand}" Content="Добавить цель" />
+                    </Grid>
+                </Border>
+
+                <Border Classes="proxima-card-surface" IsVisible="{Binding IsLoading}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="proxima-card-title" Text="Загрузка целей..." />
+                        <TextBlock Classes="proxima-caption" Text="Подготавливаем цели и прогноз по накоплениям." />
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="proxima-card-surface" IsVisible="{Binding HasError}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="proxima-card-title" Text="Ошибка загрузки" />
+                        <TextBlock Classes="proxima-caption" Text="{Binding ErrorText}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="proxima-card-surface" IsVisible="{Binding IsEmpty}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="proxima-card-title" Text="Нет целей" />
+                        <TextBlock Classes="proxima-caption" Text="Добавьте первую цель для расчета прогноза." />
+                    </StackPanel>
+                </Border>
+
+                <Grid ColumnDefinitions="2*,*" ColumnSpacing="16" IsVisible="{Binding HasContent}">
+                    <Border Classes="proxima-goal-list-card">
+                        <StackPanel Spacing="12">
+                            <TextBlock Classes="proxima-card-title" Text="Список целей" />
+                            <ItemsControl ItemsSource="{Binding Goals}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="goals:GoalListItemViewModel">
+                                        <Border Classes="proxima-goal-card">
+                                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+                                                <StackPanel Spacing="2">
+                                                    <TextBlock Classes="proxima-body" Text="{Binding Name}" />
+                                                    <TextBlock Classes="proxima-caption">
+                                                        <Run Text="Цель: " />
+                                                        <Run Text="{Binding TargetText}" />
+                                                    </TextBlock>
+                                                </StackPanel>
+
+                                                <Button Grid.Column="1"
+                                                        Classes="proxima-secondary proxima-toolbar"
+                                                        Command="{Binding DataContext.SelectGoalCommand, RelativeSource={RelativeSource AncestorType=goals:GoalsView}}"
+                                                        CommandParameter="{Binding .}"
+                                                        Content="⋯">
+                                                    <Button.ContextMenu>
+                                                        <ContextMenu>
+                                                            <MenuItem
+                                                                Command="{Binding DataContext.OpenEditGoalCommand, RelativeSource={RelativeSource AncestorType=goals:GoalsView}}"
+                                                                CommandParameter="{Binding .}"
+                                                                Header="Редактировать" />
+                                                            <MenuItem
+                                                                Command="{Binding DataContext.ArchiveGoalCommand, RelativeSource={RelativeSource AncestorType=goals:GoalsView}}"
+                                                                CommandParameter="{Binding .}"
+                                                                Header="Архивировать" />
+                                                        </ContextMenu>
+                                                    </Button.ContextMenu>
+                                                </Button>
+
+                                                <ProgressBar Grid.Row="1"
+                                                             Grid.ColumnSpan="2"
+                                                             Classes="proxima-goal-progress"
+                                                             Maximum="100"
+                                                             Minimum="0"
+                                                             Value="{Binding ProgressPercent}" />
+
+                                                <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnDefinitions="Auto,Auto,*" ColumnSpacing="12">
+                                                    <TextBlock Classes="proxima-caption" Text="{Binding CurrentText}" />
+                                                    <TextBlock Grid.Column="1" Classes="proxima-caption" Text="{Binding ProgressText}" />
+                                                    <TextBlock Grid.Column="2" Classes="proxima-caption" HorizontalAlignment="Right" Text="{Binding ForecastText}" />
+                                                </Grid>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" Spacing="16">
+                        <Border Classes="proxima-contribution-input-card">
+                            <StackPanel Spacing="12">
+                                <TextBlock Classes="proxima-card-title" Text="Параметры взноса" />
+                                <TextBox Classes="proxima-input" Text="{Binding MonthlyContribution}" Watermark="Ежемесячный взнос" />
+                                <TextBox Classes="proxima-input" Text="{Binding ExpectedAnnualReturnPercent}" Watermark="Ожидаемая доходность %/год" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="proxima-goal-projection-chart-card">
+                            <StackPanel Spacing="12">
+                                <TextBlock Classes="proxima-card-title" Text="Прогноз накоплений" />
+                                <Border Classes="proxima-chart-surface" Height="220">
+                                    <controls:LineChart Values="{Binding ProjectionSeries}" />
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="proxima-compound-interest-summary-card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="proxima-card-title" Text="Сводка по цели" />
+                                <TextBlock Classes="proxima-body" Text="{Binding SelectedGoalSummary}" />
+                                <TextBlock Classes="proxima-caption">
+                                    <Run Text="Прогнозная сумма через 10 лет: " />
+                                    <Run Text="{Binding ProjectedAmount, StringFormat={}{0:N2}}" />
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+
+        <goals:AddGoalDialogView Grid.Row="1" DataContext="{Binding AddGoalDialog}" IsVisible="{Binding AddGoalDialog.IsOpen}" />
+    </Grid>
+</UserControl>

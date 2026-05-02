@@ -1424,3 +1424,55 @@ Partial
 ### Commit
 
 1fd5a68 feat(ui): rebuild asset details from figma mockup
+
+## Iteration 26 — Goals UI Recovery (Figma Mapping)
+
+### Scope
+
+Rebuild `Goals` screen in runtime AppShell from Figma mapping and replace route placeholder with working goals view, add-goal modal, projection chart block, and summary card.
+
+### User Stories Checked
+
+- [x] US-12.1 — User creates and tracks financial goals.
+- [x] US-12.2 — User sees compound-interest projection for selected goal.
+- [x] US-12.3 — User can edit/archive goal safely.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-12.1 | Done | `GoalsView` includes title `Цели`, goals list, progress visualization, and three-dot CRUD menu. |
+| AC-12.2 | Done | `AddGoalDialogView` + `AddGoalDialogViewModel` implement name/target validation, save/cancel, and edit/archive mode. |
+| AC-12.3 | Done | `GoalsViewModel` uses existing `IGoalService` (`ListActive/Create/Update/Archive/Forecast`) for goal operations and point forecast. |
+| AC-12.4 | Partial | Projection line chart and summary are implemented through `IGoalProjectionService` boundary in App layer; scenario breadth is still simplified. |
+| AC-12.5 | Done | Loading, empty, and error states are explicitly present in view. |
+| Shell Nav | Done | `AppShellViewModel` route `goals` now resolves to `GoalsViewModel`; topbar title/breadcrumb set to `Цели`; placeholder removed for goals route. |
+
+### Tests Added/Updated
+
+- Unit: None in this UI recovery pass.
+- Integration: None.
+- UI: Style guard scan for `Views/Goals`.
+- Manual: Runtime navigation smoke `Sidebar -> Цели`, add/edit/archive modal flow.
+
+### Commands Run
+
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/Goals src/Proxima.App/DesignSystem src/Proxima.App/Shell
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+- Goal progress baseline still uses shell-level portfolio value mock (`IShellState.CurrentPortfolioValue`) instead of per-goal allocated balance.
+- Projection chart currently uses a fixed 10-year horizon and does not yet support scenario presets.
+
+### Commit
+
+Pending feat(ui): rebuild goals from figma mockup

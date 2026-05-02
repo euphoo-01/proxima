@@ -1,4 +1,9 @@
 <Styles xmlns="https://github.com/avaloniaui">
+    <Style Selector="Border.proxima-modal-overlay">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.SurfaceSubtle}" />
+        <Setter Property="Opacity" Value="0.96" />
+    </Style>
+
     <Style Selector="Border.proxima-modal-surface">
         <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
         <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />

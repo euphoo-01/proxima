@@ -9,6 +9,8 @@
     xmlns:assetDetailsViews="using:Proxima.App.Views.AssetDetails"
     xmlns:dashboard="using:Proxima.App.Views.Dashboard"
     xmlns:dashboardViews="using:Proxima.App.Views.Dashboard"
+    xmlns:goals="using:Proxima.App.Views.Goals"
+    xmlns:goalsViews="using:Proxima.App.Views.Goals"
     xmlns:import="using:Proxima.App.Views.Import"
     xmlns:importViews="using:Proxima.App.Views.Import"
     xmlns:placeholder="using:Proxima.App.ViewModels.Placeholder"
@@ -26,6 +28,9 @@
         </DataTemplate>
         <DataTemplate x:DataType="import:ManualImportViewModel">
             <importViews:ManualImportView />
+        </DataTemplate>
+        <DataTemplate x:DataType="goals:GoalsViewModel">
+            <goalsViews:GoalsView />
         </DataTemplate>
         <DataTemplate x:DataType="placeholder:PlaceholderViewModel">
             <placeholderViews:PlaceholderView />
