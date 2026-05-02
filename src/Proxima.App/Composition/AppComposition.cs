@@ -7,6 +7,9 @@ using Proxima.App.Views.AssetDetails;
 using Proxima.App.Views.Dashboard;
 using Proxima.App.Views.Goals;
 using Proxima.App.Views.Import;
+using Proxima.App.Views.Taxes;
+using Proxima.Application.Taxes;
+using Proxima.Application.Transactions;
 using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Goals;
@@ -56,6 +59,9 @@ public static class AppComposition
         services.AddSingleton<IImportPreviewGateway>(provider => new ImportPreviewGateway(ProximaImportComposition.CreateImportService()));
         services.AddSingleton<IDashboardDataProvider, MockDashboardDataProvider>();
         services.AddSingleton<IAssetDetailsReadModelProvider, MockAssetDetailsReadModelProvider>();
+        services.AddSingleton<ITransactionService>(_ => ProximaTransactionComposition.CreateTransactionService(transactionStorePath, assetStorePath));
+        services.AddSingleton<ITaxCalculator>(_ => ProximaTaxComposition.CreateTaxCalculator(settingsStorePath));
+        services.AddSingleton<IReportService>(_ => ProximaReportingComposition.CreateReportService());
         services.AddSingleton(_ => ProximaGoalComposition.CreateGoalService(goalsStorePath));
         services.AddSingleton<IGoalProjectionService, GoalProjectionService>();
         services.AddSingleton<DashboardViewModel>();
@@ -64,6 +70,13 @@ public static class AppComposition
         services.AddSingleton<AssetsViewModel>();
         services.AddSingleton<AssetDetailsViewModel>();
         services.AddSingleton<GoalsViewModel>();
+        services.AddSingleton<TaxesViewModel.ITaxesReadModelProvider>(provider =>
+            new TaxesViewModel.AppTaxesReadModelProvider(
+                provider.GetRequiredService<ITransactionService>(),
+                provider.GetRequiredService<ITaxCalculator>(),
+                provider.GetRequiredService<IReportService>(),
+                provider.GetRequiredService<IShellState>()));
+        services.AddSingleton<TaxesViewModel>();
         services.AddSingleton<SidebarViewModel>();
         services.AddSingleton<TopbarViewModel>();
         services.AddSingleton<AppShellViewModel>();

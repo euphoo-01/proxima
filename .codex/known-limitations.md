@@ -43,3 +43,5 @@
 - Recovered `Asset Details` runtime screen currently binds to `MockAssetDetailsReadModelProvider`; OHLC candles and advanced metrics include deterministic placeholders until real Application/Analytics read-model wiring is connected.
 - Recovered `Goals` runtime screen now uses real `IGoalService` CRUD/forecast boundary, but progress baseline currently comes from shell-level mock portfolio value (`IShellState.CurrentPortfolioValue`) rather than per-goal allocated balance.
 - Goals projection chart currently uses `IGoalProjectionService` with fixed 10-year horizon and no scenario presets; richer forecasting controls are deferred.
+- Recovered Taxes runtime screen now uses `TaxesView` + `TaxesViewModel` in AppShell and invokes `ITaxCalculator`/`IReportService` via provider boundary, but legal/tax rule coverage remains draft-only and must be validated against official sources before production legal use.
+- Taxes PDF export is wired to current reporting service; document content is a draft summary and not a legally verified declaration artifact.

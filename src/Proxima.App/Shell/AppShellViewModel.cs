@@ -6,6 +6,7 @@ using Proxima.App.Views.AssetDetails;
 using Proxima.App.Views.Dashboard;
 using Proxima.App.Views.Goals;
 using Proxima.App.Views.Import;
+using Proxima.App.Views.Taxes;
 
 namespace Proxima.App.Shell;
 
@@ -18,6 +19,7 @@ public sealed class AppShellViewModel : ViewModelBase
     private readonly AssetDetailsViewModel _assetDetailsViewModel;
     private readonly ManualImportViewModel _manualImportViewModel;
     private readonly GoalsViewModel _goalsViewModel;
+    private readonly TaxesViewModel _taxesViewModel;
 
     public AppShellViewModel(
         IAppNavigationService navigation,
@@ -28,7 +30,8 @@ public sealed class AppShellViewModel : ViewModelBase
         AssetsViewModel assetsViewModel,
         AssetDetailsViewModel assetDetailsViewModel,
         ManualImportViewModel manualImportViewModel,
-        GoalsViewModel goalsViewModel)
+        GoalsViewModel goalsViewModel,
+        TaxesViewModel taxesViewModel)
     {
         _navigation = navigation;
         _shellState = shellState;
@@ -37,6 +40,7 @@ public sealed class AppShellViewModel : ViewModelBase
         _assetDetailsViewModel = assetDetailsViewModel;
         _manualImportViewModel = manualImportViewModel;
         _goalsViewModel = goalsViewModel;
+        _taxesViewModel = taxesViewModel;
         Sidebar = sidebar;
         Topbar = topbar;
 
@@ -63,7 +67,7 @@ public sealed class AppShellViewModel : ViewModelBase
         _navigation.Register(new AppRoute(AppRoutes.ManualImport, "Ручной импорт", "Все активы / Ручной импорт"));
         _navigation.Register(new AppRoute(AppRoutes.AssetDetails, "Asset Details", "Все активы / Asset"));
         _navigation.Register(new AppRoute(AppRoutes.Goals, "Цели", "Цели"));
-        _navigation.Register(new AppRoute(AppRoutes.Taxes, "Taxes", "Taxes"));
+        _navigation.Register(new AppRoute(AppRoutes.Taxes, "Налоги", "Налоги"));
         _navigation.Register(new AppRoute(AppRoutes.Settings, "Settings", "Settings"));
     }
 
@@ -77,6 +81,7 @@ public sealed class AppShellViewModel : ViewModelBase
             AppRoutes.AssetDetails => _assetDetailsViewModel,
             AppRoutes.ManualImport => _manualImportViewModel,
             AppRoutes.Goals => _goalsViewModel,
+            AppRoutes.Taxes => _taxesViewModel,
             _ => new PlaceholderViewModel(route.Title, "Screen is not migrated yet. PlaceholderView is shown by runtime shell.")
         };
     }

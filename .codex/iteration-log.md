@@ -1476,3 +1476,50 @@ Partial
 ### Commit
 
 Pending feat(ui): rebuild goals from figma mockup
+
+## Iteration 21 — UI Recovery: Taxes Screen
+
+### Scope
+
+Rebuild `Taxes` runtime screen from Figma mapping (`62:498`) in new AppShell flow, add tax page components, wire route/navigation and implement draft tax read model boundary using existing application/reporting services.
+
+### User Stories Checked
+
+- [x] US-03.1 — User can move between core sections (Taxes route in shell).
+- [x] FR-011 — Taxes page draft overview for RB.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| FR-011.1 | Done | `TaxesView` contains period/profile selectors, calculate action, summary, breakdown, export, disclaimer, loading/empty/error/offline states. |
+| FR-011.2 | Done | Uses `ITaxCalculator` boundary through `TaxesViewModel.ITaxesReadModelProvider`; no tax formula logic in ViewModel. |
+| FR-011.3 | Partial | Rules/versioning remain draft from existing tax module; limitation recorded. |
+| FR-011.4 | Done | PDF export wired via `IReportService.ExportTaxPdfAsync`. |
+| Shell Taxes route | Done | `AppShellViewModel` route mapped to `TaxesViewModel`; `AppShellView` data template added; sidebar opens taxes screen. |
+
+### Tests Added/Updated
+- Unit: none (UI recovery iteration focused on existing service boundaries).
+- Integration: none.
+- UI: manual shell navigation + state rendering; style guard command.
+- Manual: taxes navigation, recalculate action, export action status message.
+
+### Commands Run
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/Taxes src/Proxima.App/DesignSystem src/Proxima.App/Shell
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Known limitations are available in: .codex/known-limitations.md
+
+### Commit
+
+Pending in this iteration step.

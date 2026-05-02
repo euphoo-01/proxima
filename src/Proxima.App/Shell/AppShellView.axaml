@@ -15,6 +15,8 @@
     xmlns:importViews="using:Proxima.App.Views.Import"
     xmlns:placeholder="using:Proxima.App.ViewModels.Placeholder"
     xmlns:placeholderViews="using:Proxima.App.Views.Placeholder"
+    xmlns:taxes="using:Proxima.App.Views.Taxes"
+    xmlns:taxesViews="using:Proxima.App.Views.Taxes"
     x:DataType="shell:AppShellViewModel">
     <UserControl.DataTemplates>
         <DataTemplate x:DataType="dashboard:DashboardViewModel">
@@ -31,6 +33,9 @@
         </DataTemplate>
         <DataTemplate x:DataType="goals:GoalsViewModel">
             <goalsViews:GoalsView />
+        </DataTemplate>
+        <DataTemplate x:DataType="taxes:TaxesViewModel">
+            <taxesViews:TaxesView />
         </DataTemplate>
         <DataTemplate x:DataType="placeholder:PlaceholderViewModel">
             <placeholderViews:PlaceholderView />

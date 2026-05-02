@@ -1,0 +1,9 @@
+<Styles xmlns="https://github.com/avaloniaui">
+    <Style Selector="Border.proxima-info-notice">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.WarningSurface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.Warning}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Card}" />
+        <Setter Property="Padding" Value="16" />
+    </Style>
+</Styles>

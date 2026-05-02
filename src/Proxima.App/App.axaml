@@ -30,5 +30,10 @@
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/GoalProjectionChartCard.axaml" />
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/ContributionInputCard.axaml" />
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/CompoundInterestSummaryCard.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/TaxPeriodSelector.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/TaxSummaryCard.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/TaxBreakdownTable.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/TaxExportCard.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/InfoNotice.axaml" />
     </Application.Styles>
 </Application>
