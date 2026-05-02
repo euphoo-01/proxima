@@ -120,25 +120,51 @@ Dependency rules:
 
 Apply SOLID, DRY, KISS and YAGNI pragmatically.
 
+Добавь ближе к разделу UI:
+
+## UI recovery rule
+
+`src/Proxima.App/MainWindow.axaml`, `src/Proxima.App/MainWindow.axaml.cs` and `src/Proxima.App/ViewModels/ShellViewModel.cs` are legacy recovery targets.
+
+Do not add new UI or new feature state to these files.
+
+New UI must be implemented under:
+
+- `src/Proxima.App/DesignSystem`
+- `src/Proxima.App/Shell`
+- `src/Proxima.App/Views`
+- `src/Proxima.App/ViewModels/<Area>`
+
+Every new screen must have a Figma mapping file in:
+
+- `.codex/figma-mapping/<screen>.md`
+
+Every UI task must run:
+
+```bash
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views
+```
+
+Codex must not:
+
+- add new UI into MainWindow.axaml;
+- add new feature state into ShellViewModel.cs;
+- implement a Figma screen before .codex/figma-mapping/<screen>.md exists;
+- use raw hex colors in production Views;
+- use default Avalonia Button/TextBox/ComboBox/DataGrid appearance;
+- create page-local reusable styles;
+- mix Fluent default visuals with Proxima design system;
+- mark a UI screen done without visual comparison notes.
+
 ## UI and Figma rules
 
 The UI must be a light, modern, trustworthy **bento UI**.
 
-Before implementing UI, use Figma MCP according to:
+Before implementing UI, use custom figma_mcp_server according to:
 
 * `.codex/handoff/04_FIGMA_MCP_PROTOCOL.md`
 * `.codex/handoff/03_DESIGN_SYSTEM_BENTO_AVALONIA.md`
 
-Figma source:
-
-```text
-https://www.figma.com/design/Drxcen3JN69XP0fnYxkgOi/Proxima-2?node-id=62-497&p=f&t=5bNwquv4cza52Z5Z-0
-```
-
-File key:
-
-```text
-Drxcen3JN69XP0fnYxkgOi
 ```
 
 Starting node:
@@ -146,12 +172,6 @@ Starting node:
 ```text
 62:497
 ```
-
-If Figma MCP is unavailable:
-
-* continue from `.codex/handoff/03_DESIGN_SYSTEM_BENTO_AVALONIA.md`;
-* document the limitation in `.codex/known-limitations.md`;
-* do not claim pixel-perfect Figma matching.
 
 All authenticated pages must use:
 
@@ -251,7 +271,7 @@ Done / Partial / Failed
 
 ### Known Limitations
 
-...
+Known limitations are available in: .codex/known-limitations.md
 
 ### Commit
 
@@ -392,18 +412,3 @@ git log --oneline --decorate --graph --all
 ```
 
 ````
-
-И рядом создай `.codex/known-limitations.md` и `.codex/iteration-log.md`, даже пустые:
-
-```bash
-mkdir -p .codex/handoff
-touch .codex/known-limitations.md
-touch .codex/iteration-log.md
-````
-
-Потом закоммить:
-
-```bash
-git add AGENTS.md .codex
-git commit -m "docs(codex): add project agent instructions"
-```
