@@ -1,0 +1,27 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Styles.Resources>
+        <Color x:Key="ProximaColor.Page">#F8FAFB</Color>
+        <Color x:Key="ProximaColor.Sidebar">#EEF3F9</Color>
+        <Color x:Key="ProximaColor.Surface">#FFFFFF</Color>
+        <Color x:Key="ProximaColor.SurfaceSubtle">#F2F4F5</Color>
+
+        <Color x:Key="ProximaColor.TextPrimary">#001629</Color>
+        <Color x:Key="ProximaColor.Brand">#0F4C81</Color>
+        <Color x:Key="ProximaColor.BrandHover">#0B3E6C</Color>
+        <Color x:Key="ProximaColor.TextSecondary">#42474D</Color>
+        <Color x:Key="ProximaColor.TextMuted">#64748B</Color>
+        <Color x:Key="ProximaColor.TextFaint">#94A3B8</Color>
+
+        <Color x:Key="ProximaColor.Border">#E2E8F0</Color>
+        <Color x:Key="ProximaColor.BorderSubtle">#EDEEF0</Color>
+        <Color x:Key="ProximaColor.Focus">#1D6FD6</Color>
+
+        <Color x:Key="ProximaColor.Success">#1B6D24</Color>
+        <Color x:Key="ProximaColor.SuccessSurface">#A3F69C</Color>
+        <Color x:Key="ProximaColor.Warning">#B7791F</Color>
+        <Color x:Key="ProximaColor.WarningSurface">#FEF3C7</Color>
+        <Color x:Key="ProximaColor.Danger">#93000A</Color>
+        <Color x:Key="ProximaColor.DangerSurface">#FFEFEE</Color>
+    </Styles.Resources>
+</Styles>

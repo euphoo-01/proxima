@@ -1,0 +1,10 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Styles.Resources>
+        <CornerRadius x:Key="ProximaRadius.Small">8</CornerRadius>
+        <CornerRadius x:Key="ProximaRadius.Card">12</CornerRadius>
+        <CornerRadius x:Key="ProximaRadius.Large">16</CornerRadius>
+        <CornerRadius x:Key="ProximaRadius.AuthCard">24</CornerRadius>
+        <CornerRadius x:Key="ProximaRadius.Pill">9999</CornerRadius>
+    </Styles.Resources>
+</Styles>

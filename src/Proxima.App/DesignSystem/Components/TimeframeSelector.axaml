@@ -1,0 +1,44 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:controls="using:Proxima.App.Controls">
+    <Style Selector="controls|TimeframeSelector">
+        <Setter Property="MinWidth" Value="92" />
+    </Style>
+
+    <Style Selector="controls|DataTableHeaderCell">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Padding="16,10" Background="{StaticResource ProximaBrush.SurfaceSubtle}">
+                    <TextBlock
+                        FontFamily="{StaticResource ProximaFont.Family}"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource ProximaBrush.TextMuted}"
+                        LetterSpacing="0.8"
+                        Text="{TemplateBinding Text}" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <Style Selector="ListBox.proxima-table">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Card}" />
+        <Setter Property="Padding" Value="8" />
+    </Style>
+
+    <Style Selector="ListBoxItem.proxima-table-row">
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+
+    <Style Selector="Border.proxima-chart-surface">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.SurfaceSubtle}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Card}" />
+        <Setter Property="Padding" Value="24" />
+    </Style>
+</Styles>

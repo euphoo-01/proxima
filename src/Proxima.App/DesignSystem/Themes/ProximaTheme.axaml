@@ -1,0 +1,3 @@
+<Styles xmlns="https://github.com/avaloniaui">
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Themes/ProximaLightTheme.axaml" />
+</Styles>

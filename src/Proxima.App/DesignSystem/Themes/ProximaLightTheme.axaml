@@ -1,0 +1,23 @@
+<Styles xmlns="https://github.com/avaloniaui">
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Tokens/Colors.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Tokens/Brushes.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Tokens/Typography.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Tokens/Spacing.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Tokens/Radius.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Tokens/Shadows.axaml" />
+
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/Button.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/TextBox.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/ComboBox.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/DataGrid.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/Card.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/Modal.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/Sidebar.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/Topbar.axaml" />
+
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/MetricCard.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/BentoCard.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/PageHeader.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/StatusPill.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/TimeframeSelector.axaml" />
+</Styles>

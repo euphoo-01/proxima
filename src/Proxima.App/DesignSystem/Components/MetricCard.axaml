@@ -1,0 +1,38 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:controls="using:Proxima.App.Controls">
+    <Style Selector="controls|MetricCard">
+        <Setter Property="CardBackground" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="CardBorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="CardBorderThickness" Value="1" />
+        <Setter Property="CardCornerRadius" Value="{StaticResource ProximaRadius.Card}" />
+        <Setter Property="CardPadding" Value="{StaticResource ProximaSpace.24}" />
+        <Setter Property="MinHeight" Value="168" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border
+                    MinHeight="{TemplateBinding MinHeight}"
+                    Padding="{TemplateBinding CardPadding}"
+                    Background="{TemplateBinding CardBackground}"
+                    BorderBrush="{TemplateBinding CardBorderBrush}"
+                    BorderThickness="{TemplateBinding CardBorderThickness}"
+                    BoxShadow="{StaticResource ProximaShadow.Card}"
+                    CornerRadius="{TemplateBinding CardCornerRadius}">
+                    <Grid RowDefinitions="Auto,*,Auto">
+                        <TextBlock Classes="proxima-body" Text="{TemplateBinding Label}" />
+                        <StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="4">
+                            <TextBlock
+                                FontFamily="{StaticResource ProximaFont.Family}"
+                                FontSize="{StaticResource ProximaFontSize.MetricValue}"
+                                FontWeight="ExtraBold"
+                                Foreground="{StaticResource ProximaBrush.TextPrimary}"
+                                LineHeight="38"
+                                Text="{TemplateBinding Value}" />
+                            <TextBlock Classes="proxima-caption" Text="{TemplateBinding Footer}" />
+                        </StackPanel>
+                        <TextBlock Grid.Row="2" Classes="proxima-caption" Text="{TemplateBinding Delta}" />
+                    </Grid>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+</Styles>

@@ -1,0 +1,43 @@
+<Styles xmlns="https://github.com/avaloniaui">
+    <Style Selector="Button">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Small}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="24,12" />
+    </Style>
+
+    <Style Selector="Button.proxima-toolbar">
+        <Setter Property="Padding" Value="14,10" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <Style Selector="Button.proxima-primary">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Brand}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.Brand}" />
+    </Style>
+
+    <Style Selector="Button.proxima-primary:pointerover">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.BrandHover}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BrandHover}" />
+    </Style>
+
+    <Style Selector="Button.proxima-secondary">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextPrimary}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.Border}" />
+    </Style>
+
+    <Style Selector="Button.proxima-secondary:pointerover">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.SurfaceSubtle}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.Border}" />
+    </Style>
+
+    <Style Selector="Button:focus-visible">
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.Focus}" />
+        <Setter Property="BorderThickness" Value="2" />
+    </Style>
+</Styles>
