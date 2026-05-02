@@ -22,7 +22,7 @@ For every module iteration, follow this exact sequence:
 
 ```text
 1. Inspect relevant docs and Figma nodes.
-2. Restate module scope in docs/iteration-log.md.
+2. Restate module scope in .codex/iteration-log.md.
 3. Implement domain/application/infrastructure/UI changes.
 4. Check every User Story.
 5. Check every Acceptance Criterion.

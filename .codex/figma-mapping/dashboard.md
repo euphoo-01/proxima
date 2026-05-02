@@ -1,0 +1,43 @@
+# Dashboard Figma Mapping
+
+## 1) Figma node id
+- Root: `62:1882`
+- Main content: `62:1935`
+
+## 2) Список экранных областей
+- Sidebar area
+- Topbar/header area
+- Bento KPI cards area
+- Charts area
+- Tables/lists area
+
+## 3) Figma layer → Avalonia component
+| Figma layer | Avalonia component |
+| --- | --- |
+| `62:1882 Dashboard` | `Dashboard/DashboardView` root shell content |
+| `62:2581 Sidebar` | `Shell/SidebarView` |
+| `62:1936 Header` | `Shell/TopbarView` + `PageHeader` |
+| `62:1957 Bento Content` | `UniformGrid/Grid` of `BentoCard` / `MetricCard` |
+
+## 4) Figma token/value → Proxima token
+| Figma token/value | Proxima token |
+| --- | --- |
+| Page bg `#F8FAFB` | `ProximaBrush.Page` |
+| Sidebar bg `#EEF3F9` | `ProximaBrush.Sidebar` |
+| Card bg `#FFFFFF` | `ProximaBrush.Surface` |
+| Card radius `16/12` | `ProximaRadius.Large` / `ProximaRadius.Card` |
+| Border subtle `#EDEEF0` | `ProximaBrush.BorderSubtle` |
+| Gap baseline `16/24/32` | `ProximaSpace.16` / `.24` / `.32` |
+| Card shadow (soft) | `ProximaShadow.Card` |
+
+## 5) Список недостающих токенов
+- Нет обязательных новых токенов (для Desktop Dashboard).
+
+## 6) Список недостающих компонентов
+- `SidebarNavItem` (stateful selected/hover variant)
+- `TopbarActionGroup`
+- `DashboardBentoGrid`
+
+## 7) Список допустимых визуальных отклонений
+- Допустимо вертикальное переполнение основной колонки со скроллом.
+- Для графиков допускается placeholder-рендер до подключения данных, но с соблюдением размеров/отступов Figma.

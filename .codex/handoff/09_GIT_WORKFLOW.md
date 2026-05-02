@@ -86,7 +86,7 @@ Before every commit that closes a module iteration:
 3. Check module Acceptance Criteria.
 4. Add/update tests for the module.
 5. Run tests.
-6. Update `docs/iteration-log.md`.
+6. Update `.codex/iteration-log.md`.
 7. Commit.
 
 A module commit without AC/test evidence is not acceptable.

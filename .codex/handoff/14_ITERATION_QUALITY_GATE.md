@@ -16,7 +16,7 @@ For every module:
 
 1. **Select module**
    - Pick one module from `13_MODULE_US_AC_TESTS.md`.
-   - Write module name and scope to `docs/iteration-log.md`.
+   - Write module name and scope to `.codex/iteration-log.md`.
 
 2. **Restate User Stories**
    - Copy or summarize relevant US IDs.
@@ -66,7 +66,7 @@ For every module:
 
 ## AC Status Format
 
-Use this format in `docs/iteration-log.md`:
+Use this format in `.codex/iteration-log.md`:
 
 ```md
 ### Acceptance Criteria Status

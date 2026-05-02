@@ -120,8 +120,6 @@ Dependency rules:
 
 Apply SOLID, DRY, KISS and YAGNI pragmatically.
 
-Добавь ближе к разделу UI:
-
 ## UI recovery rule
 
 `src/Proxima.App/MainWindow.axaml`, `src/Proxima.App/MainWindow.axaml.cs` and `src/Proxima.App/ViewModels/ShellViewModel.cs` are legacy recovery targets.
