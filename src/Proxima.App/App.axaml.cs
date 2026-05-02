@@ -7,7 +7,7 @@ using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Proxima.App.Composition;
 using Proxima.App.Shell;
-using Proxima.App.ViewModels;
+using Proxima.App.Views.Auth;
 
 namespace Proxima.App;
 
@@ -37,20 +37,28 @@ public partial class App : global::Avalonia.Application
             }
             else
             {
-                AuthViewModel authViewModel = services.GetRequiredService<AuthViewModel>();
-                MainWindow loginWindow = new(authViewModel);
-                authViewModel.PropertyChanged += (_, args) =>
+                LoginViewModel loginViewModel = new(new InMemoryAuthGateService());
+                LoginView loginView = new() { DataContext = loginViewModel };
+
+                Window loginWindow = new()
                 {
-                    if (args.PropertyName == nameof(AuthViewModel.IsUnlocked) && authViewModel.IsUnlocked)
+                    Title = "Proxima — Login",
+                    Width = 960,
+                    Height = 720,
+                    MinWidth = 860,
+                    MinHeight = 640,
+                    Content = loginView,
+                };
+
+                loginViewModel.Unlocked += (_, _) =>
+                {
+                    Dispatcher.UIThread.Post(() =>
                     {
-                        Dispatcher.UIThread.Post(() =>
-                        {
-                            Window appShellWindow = CreateAppShellWindow(services);
-                            desktop.MainWindow = appShellWindow;
-                            appShellWindow.Show();
-                            loginWindow.Close();
-                        });
-                    }
+                        Window appShellWindow = CreateAppShellWindow(services);
+                        desktop.MainWindow = appShellWindow;
+                        appShellWindow.Show();
+                        loginWindow.Close();
+                    });
                 };
 
                 desktop.MainWindow = loginWindow;

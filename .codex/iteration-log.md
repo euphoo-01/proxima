@@ -1218,3 +1218,50 @@ Partial
 ### Commit
 
 Pending `refactor(app): use new app shell as runtime host`
+
+## Iteration 22 — Login/Unlock Screen Recovery (Figma Mapping)
+
+### Scope
+
+Rebuild Login/Unlock screen as a dedicated `Views/Auth/LoginView` from Figma mapping, add temporary auth gate abstraction for runtime flow, and switch startup to `LoginView -> AppShellView` without expanding legacy `MainWindow` UI.
+
+### User Stories Checked
+
+- [x] US-02.2 — Returning user unlocks Proxima locally.
+- [x] US-03.4 — Runtime host is separated from legacy monolith shell.
+
+### Acceptance Criteria Checked
+
+- [x] Login screen implemented under `src/Proxima.App/Views/Auth` with Proxima DesignSystem styling.
+- [x] Runtime startup shows Login/Unlock before authenticated shell.
+- [x] Successful unlock opens `AppShellView`.
+- [x] Loading/error/disabled/recovery states are visible in login flow.
+- [x] Visual comparison notes recorded in `.codex/figma-mapping/login.md`.
+
+### Tests Added/Updated
+
+- Unit: None added in this pass.
+- Integration: None.
+- UI: Style guard scan for `Views/Auth` and `DesignSystem`.
+- Manual: Login runtime flow smoke check (unlock transitions to `AppShellView`).
+
+### Commands Run
+
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/Auth src/Proxima.App/DesignSystem
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Temporary in-memory auth gate is used for runtime unlock and still needs integration with real profile-backed auth service.
+
+### Commit
+
+Pending feat(ui): rebuild login from figma mockup

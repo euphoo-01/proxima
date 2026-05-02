@@ -42,3 +42,19 @@
 ## 7) Список допустимых визуальных отклонений
 - Вертикальное центрирование формы допускается с адаптивным `MinHeight`, без фиксирования абсолютного `Y` из Figma.
 - Текст кнопок/лейблов может иметь +/−1 px line-height из-за Avalonia text rendering.
+
+## 8) Visual comparison notes (2026-05-03)
+
+| Check | Pass/Fail | Notes |
+| --- | --- | --- |
+| Composition | Pass | Centered auth card on page background, one-column form as in mockup. |
+| Spacing rhythm | Pass | Uses `ProximaGap.*` and `ProximaSpace.48`/`ProximaSpace.24` token rhythm. |
+| Typography | Partial | Title/subtitle and captions aligned; exact glyph metrics may differ slightly from Figma rendering. |
+| Colors | Pass | Only `ProximaBrush.*` tokens used in view. |
+| Icons | Pass | Login mapping for this node has no mandatory icon block. |
+| No clipping | Pass | Card constrained with max width and responsive centering at runtime window minimums. |
+| No default Avalonia leakage | Pass | Inputs/buttons use Proxima style classes and theme resources. |
+
+## 9) Runtime mapping note
+- Startup flow now uses `LoginView` as runtime auth host.
+- On successful unlock, runtime switches to `AppShellView`.

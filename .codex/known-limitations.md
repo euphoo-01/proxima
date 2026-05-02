@@ -36,3 +36,5 @@
 - Follow-up UI passes (2026-05-01) added real chart widgets (dashboard line, goals projection line, asset candlestick), improved shell sizing, overflow safety and icon consistency; however pixel-level parity with Mockup is still not fully verified.
 - Until strict Mockup parity is verified through custom `figma_mcp_server`, release readiness must remain `Partial`.
 - Runtime AppShell host currently supports development-only auto-login in local Debug builds (`DevAutoLogin` on by default when `PROXIMA_DEV_AUTO_LOGIN != 0`); Release builds keep auto-login disabled and require normal login/unlock flow.
+- Login/Unlock runtime currently uses a temporary in-memory `IAuthGateService` with seeded local credentials (`local` / `Proxima123!`) hashed in-memory with PBKDF2; durable profile-backed auth integration is pending.
+- Temporary auth recovery action is informational only and does not implement real recovery/reset flow yet.
