@@ -1,0 +1,21 @@
+<UserControl
+    x:Class="Proxima.App.Shell.AppShellView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:shell="using:Proxima.App.Shell"
+    x:DataType="shell:AppShellViewModel">
+    <Grid ColumnDefinitions="272,*">
+        <shell:SidebarView DataContext="{Binding Sidebar}" />
+
+        <Grid Grid.Column="1" RowDefinitions="Auto,*">
+            <shell:TopbarView DataContext="{Binding Topbar}" />
+
+            <Border Grid.Row="1" Margin="24" Classes="proxima-card-surface">
+                <StackPanel Spacing="12">
+                    <TextBlock Classes="proxima-page-title" Text="{Binding CurrentRouteLabel}" />
+                    <TextBlock Classes="proxima-body" Text="Контент экрана будет подключен на следующем шаге." />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

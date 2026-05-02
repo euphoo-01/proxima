@@ -11,5 +11,7 @@
         <StyleInclude Source="avares://Proxima.App/Styles/Cards.axaml" />
         <StyleInclude Source="avares://Proxima.App/Styles/Tables.axaml" />
         <StyleInclude Source="avares://Proxima.App/Styles/Charts.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/Sidebar.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/Topbar.axaml" />
     </Application.Styles>
 </Application>
