@@ -14,5 +14,12 @@
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/Sidebar.axaml" />
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/Topbar.axaml" />
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/AuthCard.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/BentoCard.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/MetricCard.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/PortfolioValueCard.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/PortfolioChartCard.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/AllocationDonutCard.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/TransactionsTable.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/TimeframeSelector.axaml" />
     </Application.Styles>
 </Application>

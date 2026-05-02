@@ -3,10 +3,15 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:shell="using:Proxima.App.Shell"
+    xmlns:dashboard="using:Proxima.App.Views.Dashboard"
+    xmlns:dashboardViews="using:Proxima.App.Views.Dashboard"
     xmlns:placeholder="using:Proxima.App.ViewModels.Placeholder"
     xmlns:placeholderViews="using:Proxima.App.Views.Placeholder"
     x:DataType="shell:AppShellViewModel">
     <UserControl.DataTemplates>
+        <DataTemplate x:DataType="dashboard:DashboardViewModel">
+            <dashboardViews:DashboardView />
+        </DataTemplate>
         <DataTemplate x:DataType="placeholder:PlaceholderViewModel">
             <placeholderViews:PlaceholderView />
         </DataTemplate>

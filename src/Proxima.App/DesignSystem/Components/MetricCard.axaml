@@ -35,4 +35,12 @@
             </ControlTemplate>
         </Setter>
     </Style>
+
+    <Style Selector="controls|MetricCard[DeltaKind=Positive] /template/ TextBlock[(Grid.Row)=2]">
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Success}" />
+    </Style>
+
+    <Style Selector="controls|MetricCard[DeltaKind=Negative] /template/ TextBlock[(Grid.Row)=2]">
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Danger}" />
+    </Style>
 </Styles>

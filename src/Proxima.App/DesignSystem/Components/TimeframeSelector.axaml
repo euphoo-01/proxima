@@ -4,6 +4,11 @@
         <Setter Property="MinWidth" Value="92" />
     </Style>
 
+    <Style Selector="controls|TimeframeSelector.proxima-timeframe-selector">
+        <Setter Property="MinWidth" Value="132" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+
     <Style Selector="controls|DataTableHeaderCell">
         <Setter Property="Template">
             <ControlTemplate>

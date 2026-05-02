@@ -41,3 +41,17 @@
 ## 7) Список допустимых визуальных отклонений
 - Допустимо вертикальное переполнение основной колонки со скроллом.
 - Для графиков допускается placeholder-рендер до подключения данных, но с соблюдением размеров/отступов Figma.
+
+## 8) Visual comparison notes (2026-05-03)
+
+| Check | Pass/Fail | Notes |
+| --- | --- | --- |
+| Composition | Pass | В runtime shell отображается bento-компоновка: KPI сверху, chart+allocation в средней зоне, transactions card снизу. |
+| Spacing rhythm | Pass | Использованы Proxima spacing tokens (`16/24/32`) и карточные отступы из DesignSystem. |
+| Typography | Pass | Заголовки/подписи/табличный текст через Proxima text classes и токены шрифтов. |
+| Colors | Pass | Используются только токены (`ProximaBrush.*`), без raw hex в production view. |
+| Topbar breadcrumbs | Pass | При route `dashboard` topbar показывает `Dashboard` в breadcrumb/title. |
+| Sidebar active item | Pass | Клик по `Дешборд` открывает `DashboardView`, item получает active state через `RouteChanged`. |
+| Transactions states | Pass | Loading/Empty/Data состояния видимы в таблице; сортировка по header-кнопкам и фильтр по поиску реализованы. |
+| No default Avalonia leakage | Pass | Экран использует Proxima classes/components (`BentoCard`, `MetricCard`, `TimeframeSelector`, `proxima-datagrid`). |
+| Known deviation | Partial | Donut визуализирован как токенизированный статичный ring shell + legend, без точной сегментации дуг по процентам в текущей итерации. |

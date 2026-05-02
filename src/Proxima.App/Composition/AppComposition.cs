@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Proxima.App.Navigation;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
+using Proxima.App.Views.Dashboard;
 using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Goals;
@@ -48,6 +49,8 @@ public static class AppComposition
 
         services.AddSingleton<IAppNavigationService, AppNavigationService>();
         services.AddSingleton<IShellState, MockShellState>();
+        services.AddSingleton<IDashboardDataProvider, MockDashboardDataProvider>();
+        services.AddSingleton<DashboardViewModel>();
         services.AddSingleton<SidebarViewModel>();
         services.AddSingleton<TopbarViewModel>();
         services.AddSingleton<AppShellViewModel>();

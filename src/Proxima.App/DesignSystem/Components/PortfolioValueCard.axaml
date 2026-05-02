@@ -1,0 +1,11 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:controls="using:Proxima.App.Controls">
+    <Style Selector="controls|MetricCard.proxima-portfolio-value-card">
+        <Setter Property="MinHeight" Value="220" />
+        <Setter Property="CardPadding" Value="{StaticResource ProximaSpace.32}" />
+    </Style>
+
+    <Style Selector="controls|MetricCard.proxima-growth-metric-card">
+        <Setter Property="MinHeight" Value="220" />
+    </Style>
+</Styles>

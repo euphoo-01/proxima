@@ -1,6 +1,7 @@
 using Proxima.App.Navigation;
 using Proxima.App.ViewModels;
 using Proxima.App.ViewModels.Placeholder;
+using Proxima.App.Views.Dashboard;
 
 namespace Proxima.App.Shell;
 
@@ -8,11 +9,18 @@ public sealed class AppShellViewModel : ViewModelBase
 {
     private readonly IAppNavigationService _navigation;
     private readonly IShellState _shellState;
+    private readonly DashboardViewModel _dashboardViewModel;
 
-    public AppShellViewModel(IAppNavigationService navigation, SidebarViewModel sidebar, TopbarViewModel topbar, IShellState shellState)
+    public AppShellViewModel(
+        IAppNavigationService navigation,
+        SidebarViewModel sidebar,
+        TopbarViewModel topbar,
+        IShellState shellState,
+        DashboardViewModel dashboardViewModel)
     {
         _navigation = navigation;
         _shellState = shellState;
+        _dashboardViewModel = dashboardViewModel;
         Sidebar = sidebar;
         Topbar = topbar;
 
@@ -45,6 +53,8 @@ public sealed class AppShellViewModel : ViewModelBase
     private void HandleRouteChanged(AppRoute route)
     {
         Topbar.Update(route.Title, route.Breadcrumb, _shellState.CurrentPortfolioName);
-        CurrentContent = new PlaceholderViewModel(route.Title, "Screen is not migrated yet. PlaceholderView is shown by runtime shell.");
+        CurrentContent = route.Key == AppRoutes.Dashboard
+            ? _dashboardViewModel
+            : new PlaceholderViewModel(route.Title, "Screen is not migrated yet. PlaceholderView is shown by runtime shell.");
     }
 }

@@ -1,0 +1,7 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:controls="using:Proxima.App.Controls">
+    <Style Selector="controls|BentoCard.proxima-portfolio-chart-card">
+        <Setter Property="CardPadding" Value="{StaticResource ProximaSpace.24}" />
+        <Setter Property="MinHeight" Value="420" />
+    </Style>
+</Styles>

@@ -14,7 +14,7 @@ public sealed class SidebarViewModel : ViewModelBase
         _navigation = navigation;
         Items = new ObservableCollection<SidebarItemViewModel>
         {
-            new(AppRoutes.Dashboard, "Dashboard"),
+            new(AppRoutes.Dashboard, "Дешборд"),
             new(AppRoutes.Assets, "Assets"),
             new(AppRoutes.AssetDetails, "AssetDetails"),
             new(AppRoutes.Goals, "Goals"),

@@ -1265,3 +1265,56 @@ Temporary in-memory auth gate is used for runtime unlock and still needs integra
 ### Commit
 
 Pending feat(ui): rebuild login from figma mockup
+
+## Iteration 23 — Dashboard Screen Recovery (Figma Mapping)
+
+### Scope
+
+Rebuild `Dashboard` as a migrated screen under `Views/Dashboard`, add bento cards/chart/allocation/transactions states from mapping, and connect runtime AppShell navigation route `dashboard` to `DashboardView` instead of placeholder.
+
+### User Stories Checked
+
+- [x] US-03.1 — User can move between core sections.
+- [x] US-03.2 — User always knows current location.
+- [x] US-09.1 — User sees portfolio total value and 24h delta in dashboard.
+- [x] US-09.2 — User can inspect recent transactions with filtering/sorting.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-03.2 | Done | `AppShellViewModel` now resolves `dashboard` route to `DashboardViewModel`; `AppShellView` DataTemplate renders `DashboardView`. |
+| AC-09.1 | Done | `DashboardView` contains large total-value card and 24h growth/loss indicator via `MetricCard` variants. |
+| AC-09.2 | Done | `Portfolio value` card with timeframe selector (`1 день`, `7 дней`, `месяц`) and line chart series. |
+| AC-09.3 | Done | Transactions card has search input, sortable headers, loading and empty states. |
+| AC-09.4 | Partial | Allocation section includes donut-style visualization and legend, but arc segment geometry is currently static shell (not fully data-driven arc sweep). |
+| AC-03.3 | Done | Sidebar item `Дешборд` activates through route state; topbar breadcrumb/title shows `Dashboard`. |
+
+### Tests Added/Updated
+
+- Unit: None added in this UI recovery pass.
+- Integration: None.
+- UI: Dashboard style guard scan for `Views/Dashboard`, `DesignSystem`, `Shell`.
+- Manual: Runtime navigation smoke (`sidebar: Дешборд -> DashboardView`).
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/Dashboard src/Proxima.App/DesignSystem src/Proxima.App/Shell
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Allocation donut uses a tokenized static ring composition in this iteration; fully data-driven donut segment rendering is deferred.
+
+### Commit
+
+Pending feat(ui): rebuild dashboard from figma mockup
