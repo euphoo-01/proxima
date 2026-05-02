@@ -35,5 +35,10 @@
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/TaxBreakdownTable.axaml" />
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/TaxExportCard.axaml" />
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/InfoNotice.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/SettingsSection.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/SettingsRow.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/SecurityStatusCard.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/LanguageSelector.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/ThemeSelector.axaml" />
     </Application.Styles>
 </Application>

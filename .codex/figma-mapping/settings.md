@@ -39,3 +39,21 @@
 
 ## 7) Список допустимых визуальных отклонений
 - Допускается упрощение разделителей внутри карточек до стандартного `BorderBrush` DS.
+
+## 8) Visual comparison notes (2026-05-03)
+
+| Check | Pass/Fail | Notes |
+| --- | --- | --- |
+| Composition | Pass | Экран собран как bento-сетка 2 колонки: основные секции слева, security/appearance/data справа. |
+| Spacing rhythm | Pass | Использованы DS spacing tokens `ProximaSpace.*` и стандартные card paddings. |
+| Typography | Pass | Используются `proxima-page-title`, `proxima-card-title`, `proxima-body`, `proxima-caption`. |
+| Colors | Pass | Только `ProximaBrush.*`, без raw hex в production view. |
+| Icons | Partial | Иконки в строках настроек пока не добавлены (упрощенный вариант без декоративных иконок). |
+| No clipping | Pass | Screen in `ScrollViewer`, длинные статусы c `TextWrapping`. |
+| No default Avalonia leakage | Pass | `Button/TextBox/ComboBox` через Proxima classes/themes; page-local styles отсутствуют. |
+
+## 9) Runtime integration notes
+
+- Route `settings` в `AppShell` теперь ведет на `SettingsView` вместо placeholder.
+- Topbar title/breadcrumb для settings: `Настройки`.
+- `SettingsViewModel` использует `ISettingsService` boundary (без прямого файлового доступа/криптографии).

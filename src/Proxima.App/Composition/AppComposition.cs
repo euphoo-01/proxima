@@ -7,6 +7,7 @@ using Proxima.App.Views.AssetDetails;
 using Proxima.App.Views.Dashboard;
 using Proxima.App.Views.Goals;
 using Proxima.App.Views.Import;
+using Proxima.App.Views.Settings;
 using Proxima.App.Views.Taxes;
 using Proxima.Application.Taxes;
 using Proxima.Application.Transactions;
@@ -77,6 +78,7 @@ public static class AppComposition
                 provider.GetRequiredService<IReportService>(),
                 provider.GetRequiredService<IShellState>()));
         services.AddSingleton<TaxesViewModel>();
+        services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<SidebarViewModel>();
         services.AddSingleton<TopbarViewModel>();
         services.AddSingleton<AppShellViewModel>();

@@ -1,0 +1,5 @@
+<Styles xmlns="https://github.com/avaloniaui">
+    <Style Selector="ComboBox.proxima-language-selector">
+        <Setter Property="MinWidth" Value="180" />
+    </Style>
+</Styles>

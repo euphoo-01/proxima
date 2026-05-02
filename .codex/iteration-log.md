@@ -1523,3 +1523,53 @@ Known limitations are available in: .codex/known-limitations.md
 ### Commit
 
 Pending in this iteration step.
+
+## Iteration 27 — UI Recovery: Settings Screen
+
+### Scope
+
+Rebuild `Settings` runtime screen from Figma mapping (`62:763`), add DS settings components, wire `settings` route in AppShell to real `SettingsView`, and bind page state/actions through `ISettingsService` boundary.
+
+### User Stories Checked
+
+- [x] US-03.1 — User can move between core sections (Settings route in shell).
+- [x] Module 14 settings UI recovery scope for runtime AppShell.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| Settings.UI.1 | Done | `SettingsView` has title/breadcrumb block `Настройки`, profile/account, security, appearance, data and API/quotes sections. |
+| Settings.UI.2 | Done | Loading/saved/error states are present and bound from `SettingsViewModel`. |
+| Settings.ARCH.1 | Done | `SettingsViewModel` uses `ISettingsService` interface only; no direct file system or cryptography internals in ViewModel. |
+| Settings.ARCH.2 | Partial | Security/snapshot actions are command placeholders pending Auth/Sync runtime wiring. |
+| Shell.Nav.Settings | Done | `AppShellViewModel` route `settings` maps to `SettingsViewModel`; `AppShellView` DataTemplate added; placeholder removed for settings route; topbar title/breadcrumb set to `Настройки`. |
+
+### Tests Added/Updated
+
+- Unit: None (UI recovery iteration).
+- Integration: None.
+- UI: Style guard scan for `Views/Settings`.
+- Manual: Sidebar navigation to Settings and save/reload status flow.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/Settings src/Proxima.App/DesignSystem src/Proxima.App/Shell
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Known limitations are available in: .codex/known-limitations.md
+
+### Commit
+
+Pending feat(ui): rebuild settings from figma mockup

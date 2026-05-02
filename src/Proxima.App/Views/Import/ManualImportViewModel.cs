@@ -80,7 +80,7 @@ public sealed class ManualImportViewModel : ViewModelBase
 
         RecalculateWarnings();
         StatusMessage = preview.Succeeded
-            ? $"Загружено строк: {Rows.Count}. Проверьте и сохраните." 
+            ? $"Загружено строк: {Rows.Count}. Проверьте и сохраните."
             : "Автоматический импорт не удался. Заполните данные вручную.";
     }
 

@@ -45,3 +45,5 @@
 - Goals projection chart currently uses `IGoalProjectionService` with fixed 10-year horizon and no scenario presets; richer forecasting controls are deferred.
 - Recovered Taxes runtime screen now uses `TaxesView` + `TaxesViewModel` in AppShell and invokes `ITaxCalculator`/`IReportService` via provider boundary, but legal/tax rule coverage remains draft-only and must be validated against official sources before production legal use.
 - Taxes PDF export is wired to current reporting service; document content is a draft summary and not a legally verified declaration artifact.
+- Recovered `Settings` runtime screen now uses `SettingsView` + `SettingsViewModel` via `ISettingsService`, but current AppShell owner identity is temporary (`RuntimeOwnerUserId`) and not yet bound to authenticated profile context.
+- Settings security/data actions (`change password`, snapshot export/import) are wired as UI placeholders and status messages; full Auth/Sync runtime command integration is pending.

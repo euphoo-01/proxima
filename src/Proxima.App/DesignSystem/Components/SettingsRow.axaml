@@ -1,0 +1,12 @@
+<Styles xmlns="https://github.com/avaloniaui">
+    <Style Selector="Border.proxima-settings-row">
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
+        <Setter Property="Padding" Value="0,12,0,12" />
+    </Style>
+
+    <Style Selector="Border.proxima-settings-row:last-child">
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0,12,0,0" />
+    </Style>
+</Styles>
