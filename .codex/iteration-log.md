@@ -1573,3 +1573,53 @@ Known limitations are available in: .codex/known-limitations.md
 ### Commit
 
 Pending feat(ui): rebuild settings from figma mockup
+
+## Iteration 28 — Legacy Shell Isolation After AppShell Migration
+
+### Scope
+
+Remove legacy runtime UI host (`MainWindow`) and legacy monolithic shell/auth ViewModels after migration to new `AppShell` + `LoginView` runtime flow.
+
+### User Stories Checked
+
+- [x] US-03.1 — User can move between core sections in migrated shell.
+- [x] Legacy isolation task — runtime no longer references monolithic `MainWindow`/`ShellViewModel`.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| Legacy.Ref.1 | Done | Runtime startup in `App.axaml.cs` uses `LoginView`/`CreateAppShellWindow`; `MainWindow` removed. |
+| Legacy.Ref.2 | Done | `ShellViewModel`, `AuthViewModel`, `ShellNavigationService`, `ShellRoute`, `ShellPage` removed; no runtime references remain. |
+| Legacy.Ref.3 | Done | `AppComposition` DI cleaned from legacy registrations; AppShell composition preserved. |
+| Routes.Check | Done | Verified runtime coverage: Login/Auth via `LoginView` + unlock flow; shell routes `dashboard`, `assets`, `asset-details`, `assets-import-manual`, `goals`, `taxes`, `settings` in `AppRoutes` + `AppShellViewModel.RegisterRoutes`. |
+| Tests.Update | Done | `tests/Proxima.App.Tests/Program.cs` updated to validate new runtime shell/auth flow and route presence instead of legacy MainWindow checks. |
+
+### Tests Added/Updated
+
+- Unit: none.
+- Integration: none.
+- UI: updated App smoke assertions for AppShell/Auth/runtime routes.
+- Manual: not required for this refactor-only pass.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Known limitations are available in: .codex/known-limitations.md
+
+### Commit
+
+Pending refactor(ui): remove legacy shell after app shell migration

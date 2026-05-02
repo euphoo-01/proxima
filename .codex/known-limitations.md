@@ -47,3 +47,5 @@
 - Taxes PDF export is wired to current reporting service; document content is a draft summary and not a legally verified declaration artifact.
 - Recovered `Settings` runtime screen now uses `SettingsView` + `SettingsViewModel` via `ISettingsService`, but current AppShell owner identity is temporary (`RuntimeOwnerUserId`) and not yet bound to authenticated profile context.
 - Settings security/data actions (`change password`, snapshot export/import) are wired as UI placeholders and status messages; full Auth/Sync runtime command integration is pending.
+- Legacy `MainWindow` + monolithic `ShellViewModel` runtime path has been removed after AppShell migration; any remaining UI recovery work must target `AppShell` and screen-specific ViewModels only.
+- `scripts/scan-xaml-style-violations.sh src/Proxima.App` currently reports violations in design-token and design-system files (hex/token definitions and template bindings), so this broad-scope command remains red until the scanner scope/rules are aligned with `15_AVALONIA_UI_STYLE_GUARDRAILS.md` allowances.
