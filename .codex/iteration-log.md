@@ -1166,3 +1166,55 @@ Partial
 - Verification:
   - `dotnet build Proxima.sln -m:1 -nr:false` passed (transient file-lock warnings observed in parallel runs).
   - `dotnet test Proxima.sln -m:1 -nr:false` passed.
+
+## Iteration 21 — Shell Runtime Host Migration (AppShell)
+
+### Scope
+
+Switch runtime host to the new `AppShellView` after successful login/unlock, add DI-based shell/navigation composition, register target routes, and show placeholder content for unmigrated screens while preserving legacy UI files.
+
+### User Stories Checked
+
+- [x] US-03.1 — User can move between core sections.
+- [x] US-03.2 — User always knows current location.
+- [x] US-03.3 — User can switch current portfolio globally (mock shell state in new host).
+- [x] US-03.4 — Runtime host is separated from legacy monolith shell.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-03.1 | Done | `App.axaml.cs` now uses DI composition and opens `AppShellView` as runtime host; release keeps login path, debug supports local auto-login flag. |
+| AC-03.2 | Done | New navigation service in `src/Proxima.App/Navigation/*` registers `Dashboard`, `Assets`, `AssetDetails`, `Goals`, `Taxes`, `Settings`; sidebar changes current route. |
+| AC-03.3 | Done | `TopbarViewModel` receives title/breadcrumb/current portfolio from route + shell state (`MockShellState`). |
+| AC-03.4 | Partial | Unmigrated route content uses `PlaceholderView`; functional feature views still live in legacy shell until full screen migration. |
+
+### Tests Added/Updated
+
+- Unit: Existing `tests/Proxima.App.Tests` regression suite executed (no new tests added in this pass).
+- Integration: N/A.
+- UI: `scripts/scan-xaml-style-violations.sh` passed for `Shell` and `Views`.
+- Manual: Runtime flow reviewed for `login -> AppShell` and debug auto-login mode.
+
+### Commands Run
+
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Shell src/Proxima.App/Views src/Proxima.App/DesignSystem
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+- `scan-xaml-style-violations` fails for `src/Proxima.App/DesignSystem` due pre-existing token/control style patterns outside this iteration scope.
+- `AppShell` currently renders placeholders for migrated route hosts; business screen migration is deferred.
+- Debug-only `DevAutoLogin` is enabled by default for local development and documented in `.codex/known-limitations.md`.
+
+### Commit
+
+Pending `refactor(app): use new app shell as runtime host`

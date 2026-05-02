@@ -1,60 +1,49 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using Proxima.App.Navigation;
 using Proxima.App.ViewModels;
 
 namespace Proxima.App.Shell;
 
 public sealed class SidebarViewModel : ViewModelBase
 {
-    private readonly Action<string> _onRouteChanged;
+    private readonly IAppNavigationService _navigation;
 
-    public SidebarViewModel(Action<string> onRouteChanged)
+    public SidebarViewModel(IAppNavigationService navigation)
     {
-        _onRouteChanged = onRouteChanged;
+        _navigation = navigation;
         Items = new ObservableCollection<SidebarItemViewModel>
         {
-            new("Dashboard", "Панель"),
-            new("Assets", "Активы"),
-            new("Goals", "Цели"),
-            new("Settings", "Настройки")
+            new(AppRoutes.Dashboard, "Dashboard"),
+            new(AppRoutes.Assets, "Assets"),
+            new(AppRoutes.AssetDetails, "AssetDetails"),
+            new(AppRoutes.Goals, "Goals"),
+            new(AppRoutes.Taxes, "Taxes"),
+            new(AppRoutes.Settings, "Settings")
         };
 
         NavigateCommand = new DelegateCommand(ExecuteNavigate);
-        SetActive(Items[0]);
+        _navigation.RouteChanged += OnRouteChanged;
     }
 
     public ObservableCollection<SidebarItemViewModel> Items { get; }
 
     public ICommand NavigateCommand { get; }
 
-    private SidebarItemViewModel? _activeItem;
-
-    public string ActiveRouteLabel => _activeItem?.Label ?? string.Empty;
-
     private void ExecuteNavigate(object? parameter)
     {
         if (parameter is SidebarItemViewModel item)
         {
-            SetActive(item);
+            _navigation.Navigate(item.RouteKey);
         }
     }
 
-    private void SetActive(SidebarItemViewModel item)
+    private void OnRouteChanged(AppRoute route)
     {
-        if (_activeItem == item)
+        foreach (SidebarItemViewModel item in Items)
         {
-            return;
+            item.IsActive = string.Equals(item.RouteKey, route.Key, StringComparison.OrdinalIgnoreCase);
         }
-
-        if (_activeItem is not null)
-        {
-            _activeItem.IsActive = false;
-        }
-
-        _activeItem = item;
-        _activeItem.IsActive = true;
-        OnPropertyChanged(nameof(ActiveRouteLabel));
-        _onRouteChanged(_activeItem.Label);
     }
 
     private sealed class DelegateCommand(Action<object?> execute) : ICommand

@@ -35,3 +35,4 @@
 - Manual QA (2026-04-30) found major UI fidelity issues versus expected Mockup: cramped/non-expandable window behavior, text overflow/clipping, weak color/accent usage, missing iconography, and broken visual rhythm in several screens.
 - Follow-up UI passes (2026-05-01) added real chart widgets (dashboard line, goals projection line, asset candlestick), improved shell sizing, overflow safety and icon consistency; however pixel-level parity with Mockup is still not fully verified.
 - Until strict Mockup parity is verified through custom `figma_mcp_server`, release readiness must remain `Partial`.
+- Runtime AppShell host currently supports development-only auto-login in local Debug builds (`DevAutoLogin` on by default when `PROXIMA_DEV_AUTO_LOGIN != 0`); Release builds keep auto-login disabled and require normal login/unlock flow.

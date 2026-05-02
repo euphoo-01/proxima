@@ -4,22 +4,32 @@ namespace Proxima.App.Shell;
 
 public sealed class TopbarViewModel : ViewModelBase
 {
-    private string _currentSection = "Панель";
-    public string CurrentSection
+    private string _title = "Dashboard";
+    private string _breadcrumb = "Dashboard";
+    private string _currentPortfolio = "Demo Portfolio";
+
+    public string Title
     {
-        get => _currentSection;
-        private set => SetProperty(ref _currentSection, value);
+        get => _title;
+        private set => SetProperty(ref _title, value);
     }
 
-    public string BreadcrumbRoot => "Proxima";
-
-    public string Breadcrumb => $"{BreadcrumbRoot} / {CurrentSection}";
-
-    public void SetCurrentSection(string section)
+    public string Breadcrumb
     {
-        if (SetProperty(ref _currentSection, section, nameof(CurrentSection)))
-        {
-            OnPropertyChanged(nameof(Breadcrumb));
-        }
+        get => _breadcrumb;
+        private set => SetProperty(ref _breadcrumb, value);
+    }
+
+    public string CurrentPortfolio
+    {
+        get => _currentPortfolio;
+        private set => SetProperty(ref _currentPortfolio, value);
+    }
+
+    public void Update(string title, string breadcrumb, string currentPortfolio)
+    {
+        Title = title;
+        Breadcrumb = breadcrumb;
+        CurrentPortfolio = currentPortfolio;
     }
 }

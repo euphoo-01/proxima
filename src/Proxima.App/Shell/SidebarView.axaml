@@ -23,7 +23,7 @@
                 </ItemsControl>
             </StackPanel>
 
-            <TextBlock Grid.Row="2" Classes="proxima-caption" Text="Figma-aligned shell stub" />
+            <TextBlock Grid.Row="2" Classes="proxima-caption" Text="Runtime AppShell" />
         </Grid>
     </Border>
 </UserControl>
