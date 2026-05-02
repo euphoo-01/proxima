@@ -1423,4 +1423,4 @@ Partial
 
 ### Commit
 
-Pending feat(ui): rebuild asset details from figma mockup
+1fd5a68 feat(ui): rebuild asset details from figma mockup
