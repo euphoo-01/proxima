@@ -2,7 +2,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Proxima.App.Navigation;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
+using Proxima.App.Views.Assets;
 using Proxima.App.Views.Dashboard;
+using Proxima.App.Views.Import;
 using Proxima.Infrastructure.Assets;
 using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Goals;
@@ -49,8 +51,12 @@ public static class AppComposition
 
         services.AddSingleton<IAppNavigationService, AppNavigationService>();
         services.AddSingleton<IShellState, MockShellState>();
+        services.AddSingleton<IImportPreviewGateway>(provider => new ImportPreviewGateway(ProximaImportComposition.CreateImportService()));
         services.AddSingleton<IDashboardDataProvider, MockDashboardDataProvider>();
         services.AddSingleton<DashboardViewModel>();
+        services.AddSingleton<ManualImportViewModel>();
+        services.AddSingleton<ImportDialogViewModel>();
+        services.AddSingleton<AssetsViewModel>();
         services.AddSingleton<SidebarViewModel>();
         services.AddSingleton<TopbarViewModel>();
         services.AddSingleton<AppShellViewModel>();

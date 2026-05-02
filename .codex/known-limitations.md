@@ -38,3 +38,5 @@
 - Runtime AppShell host currently supports development-only auto-login in local Debug builds (`DevAutoLogin` on by default when `PROXIMA_DEV_AUTO_LOGIN != 0`); Release builds keep auto-login disabled and require normal login/unlock flow.
 - Login/Unlock runtime currently uses a temporary in-memory `IAuthGateService` with seeded local credentials (`local` / `Proxima123!`) hashed in-memory with PBKDF2; durable profile-backed auth integration is pending.
 - Temporary auth recovery action is informational only and does not implement real recovery/reset flow yet.
+- Recovered AppShell import flow now includes `ImportDialogView` and `ManualImportView`, but native OS drag-and-drop handling is not wired yet (drag-over is UI-driven state).
+- Recovered manual import screen currently saves validated rows in UI state only; direct transaction persistence wiring for migrated AppShell flow is pending.

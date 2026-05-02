@@ -21,5 +21,9 @@
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/AllocationDonutCard.axaml" />
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/TransactionsTable.axaml" />
         <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/TimeframeSelector.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/ImportDropzone.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/ManualTransactionGrid.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/ImportValidationSummary.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/FileTypeBadge.axaml" />
     </Application.Styles>
 </Application>

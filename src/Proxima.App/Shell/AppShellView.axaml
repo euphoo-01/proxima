@@ -3,14 +3,24 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:shell="using:Proxima.App.Shell"
+    xmlns:assets="using:Proxima.App.Views.Assets"
+    xmlns:assetsViews="using:Proxima.App.Views.Assets"
     xmlns:dashboard="using:Proxima.App.Views.Dashboard"
     xmlns:dashboardViews="using:Proxima.App.Views.Dashboard"
+    xmlns:import="using:Proxima.App.Views.Import"
+    xmlns:importViews="using:Proxima.App.Views.Import"
     xmlns:placeholder="using:Proxima.App.ViewModels.Placeholder"
     xmlns:placeholderViews="using:Proxima.App.Views.Placeholder"
     x:DataType="shell:AppShellViewModel">
     <UserControl.DataTemplates>
         <DataTemplate x:DataType="dashboard:DashboardViewModel">
             <dashboardViews:DashboardView />
+        </DataTemplate>
+        <DataTemplate x:DataType="assets:AssetsViewModel">
+            <assetsViews:AssetsView />
+        </DataTemplate>
+        <DataTemplate x:DataType="import:ManualImportViewModel">
+            <importViews:ManualImportView />
         </DataTemplate>
         <DataTemplate x:DataType="placeholder:PlaceholderViewModel">
             <placeholderViews:PlaceholderView />

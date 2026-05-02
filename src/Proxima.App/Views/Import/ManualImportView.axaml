@@ -1,0 +1,66 @@
+<UserControl
+    x:Class="Proxima.App.Views.Import.ManualImportView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:import="using:Proxima.App.Views.Import"
+    x:DataType="import:ManualImportViewModel">
+    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24" Spacing="20">
+            <Border Classes="proxima-card-surface">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="proxima-page-title" Text="Ручной импорт" />
+                    <TextBlock Classes="proxima-body" Text="Заполните таблицу транзакций. Подозрительные строки подсвечиваются автоматически." />
+                </StackPanel>
+            </Border>
+
+            <Border Classes="proxima-import-validation-summary" IsVisible="{Binding HasWarnings}">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="proxima-card-title" Text="Есть подозрительные операции" />
+                    <TextBlock Classes="proxima-caption" Text="{Binding SuspiciousCount, StringFormat='Подозрительных строк: {0}'}" />
+                </StackPanel>
+            </Border>
+
+            <Border Classes="proxima-manual-grid-surface">
+                <StackPanel Spacing="12">
+                    <Grid Classes="proxima-manual-grid-header" ColumnDefinitions="110,150,130,90,90,100,90,140,Auto" ColumnSpacing="8">
+                        <TextBlock Classes="proxima-datagrid-header-text" Text="Дата" />
+                        <TextBlock Grid.Column="1" Classes="proxima-datagrid-header-text" Text="Тикер/Имя" />
+                        <TextBlock Grid.Column="2" Classes="proxima-datagrid-header-text" Text="Операция" />
+                        <TextBlock Grid.Column="3" Classes="proxima-datagrid-header-text" Text="Кол-во" />
+                        <TextBlock Grid.Column="4" Classes="proxima-datagrid-header-text" Text="Цена" />
+                        <TextBlock Grid.Column="5" Classes="proxima-datagrid-header-text" Text="Комиссия" />
+                        <TextBlock Grid.Column="6" Classes="proxima-datagrid-header-text" Text="Валюта" />
+                        <TextBlock Grid.Column="7" Classes="proxima-datagrid-header-text" Text="Тег/Категория" />
+                    </Grid>
+
+                    <ItemsControl ItemsSource="{Binding Rows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="import:ManualTransactionRowViewModel">
+                                <Border Classes="proxima-manual-grid-row" Classes.proxima-manual-row-suspicious="{Binding IsSuspicious}">
+                                    <Grid ColumnDefinitions="110,150,130,90,90,100,90,140,Auto" ColumnSpacing="8">
+                                        <TextBox Classes="proxima-input" Text="{Binding Date}" />
+                                        <TextBox Grid.Column="1" Classes="proxima-input" Text="{Binding TickerOrName}" />
+                                        <TextBox Grid.Column="2" Classes="proxima-input" Text="{Binding OperationType}" />
+                                        <TextBox Grid.Column="3" Classes="proxima-input" Text="{Binding Quantity}" />
+                                        <TextBox Grid.Column="4" Classes="proxima-input" Text="{Binding Price}" />
+                                        <TextBox Grid.Column="5" Classes="proxima-input" Text="{Binding Commission}" />
+                                        <TextBox Grid.Column="6" Classes="proxima-input" Text="{Binding Currency}" />
+                                        <TextBox Grid.Column="7" Classes="proxima-input" Text="{Binding TagOrCategory}" />
+                                        <Button Grid.Column="8" Classes="proxima-secondary proxima-toolbar" Command="{Binding DataContext.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=import:ManualImportView}}" CommandParameter="{Binding .}" Content="Удалить" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding AddRowCommand}" Content="Добавить строку" />
+                <Button Classes="proxima-primary proxima-toolbar" Command="{Binding SaveCommand}" Content="Сохранить импорт" />
+            </StackPanel>
+
+            <TextBlock Classes="proxima-caption" Text="{Binding StatusMessage}" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

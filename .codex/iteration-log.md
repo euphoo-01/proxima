@@ -1318,3 +1318,56 @@ Allocation donut uses a tokenized static ring composition in this iteration; ful
 ### Commit
 
 Pending feat(ui): rebuild dashboard from figma mockup
+
+## Iteration 24 — Assets Import/Manual Import UI Recovery (Figma Mapping)
+
+### Scope
+
+Rebuild Import + Manual Import flow for Assets route in runtime AppShell: add import modal states, parser preview boundary integration, manual fallback page with editable transaction table, and connect entry point from Assets screen.
+
+### User Stories Checked
+
+- [x] US-07.1 — User imports broker reports quickly.
+- [x] US-07.2 — User reviews suspicious imported rows.
+- [x] US-07.3 — User can recover from failed import.
+- [x] US-07.4 — Developer can add broker parsers.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-07.1 | Done | `AssetsView` contains `Импортировать активы` action and opens `ImportDialogView` modal in migrated runtime shell. |
+| AC-07.2 | Done | Import modal shows visible states: `idle`, `drag_over`, `file_selected`, `parsing`, `validation_warnings`, `parse_failed`. |
+| AC-07.3 | Done | Parse failure exposes redacted error and manual fallback route to `ManualImportView`. |
+| AC-07.4 | Done | UI does not parse files directly; `ImportDialogViewModel` uses `IImportPreviewGateway` over existing `Proxima.Importing.IImportService`. |
+| AC-07.5 | Done | `ManualImportView` includes editable transaction table with required columns, add/remove rows, suspicious highlighting and save action. |
+
+### Tests Added/Updated
+
+- Unit: None.
+- Integration: None.
+- UI: Import/Assets style guard scan.
+- Manual: Import modal + manual fallback runtime smoke via AppShell routes.
+
+### Commands Run
+
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/Import src/Proxima.App/Views/Assets src/Proxima.App/DesignSystem
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+- Current drag-over state in import modal is UI-driven and not yet wired to native OS drag-and-drop events.
+- Manual import `Save` currently commits UI state only; full transaction persistence wiring in new AppShell flow is pending.
+- PDF parser remains stub-based via `PdfStubImportParser` and still requires manual completion path.
+
+### Commit
+
+Pending feat(ui): rebuild asset import flow from figma mockup

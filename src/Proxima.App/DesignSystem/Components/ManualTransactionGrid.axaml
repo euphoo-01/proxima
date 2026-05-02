@@ -1,0 +1,24 @@
+<Styles xmlns="https://github.com/avaloniaui">
+    <Style Selector="Border.proxima-manual-grid-surface">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Large}" />
+        <Setter Property="BoxShadow" Value="{StaticResource ProximaShadow.Card}" />
+        <Setter Property="Padding" Value="{StaticResource ProximaSpace.16}" />
+    </Style>
+
+    <Style Selector="Grid.proxima-manual-grid-header">
+        <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
+
+    <Style Selector="Border.proxima-manual-grid-row">
+        <Setter Property="Padding" Value="{StaticResource ProximaSpace.8}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
+    </Style>
+
+    <Style Selector="Border.proxima-manual-grid-row.proxima-manual-row-suspicious">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.WarningSurface}" />
+    </Style>
+</Styles>

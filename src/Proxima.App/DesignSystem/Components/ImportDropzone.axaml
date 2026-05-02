@@ -1,0 +1,31 @@
+<Styles xmlns="https://github.com/avaloniaui">
+    <Style Selector="Border.proxima-import-dropzone">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Large}" />
+        <Setter Property="Padding" Value="{StaticResource ProximaSpace.20}" />
+    </Style>
+
+    <Style Selector="Border.proxima-import-dropzone.proxima-state-idle">
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+    </Style>
+
+    <Style Selector="Border.proxima-import-dropzone.proxima-state-dragover">
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.Brand}" />
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.SurfaceSubtle}" />
+    </Style>
+
+    <Style Selector="Border.proxima-import-dropzone.proxima-state-selected">
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.Success}" />
+    </Style>
+
+    <Style Selector="Border.proxima-import-dropzone.proxima-state-parsing">
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.Warning}" />
+    </Style>
+
+    <Style Selector="Border.proxima-import-dropzone.proxima-state-error">
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.Danger}" />
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.DangerSurface}" />
+    </Style>
+</Styles>

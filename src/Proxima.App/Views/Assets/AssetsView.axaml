@@ -1,0 +1,36 @@
+<UserControl
+    x:Class="Proxima.App.Views.Assets.AssetsView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:assets="using:Proxima.App.Views.Assets"
+    xmlns:import="using:Proxima.App.Views.Import"
+    x:DataType="assets:AssetsViewModel">
+    <Grid RowDefinitions="*,Auto">
+        <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="24" Spacing="24">
+                <Border Classes="proxima-card-surface">
+                    <StackPanel Spacing="16">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="proxima-page-title" Text="{Binding PageTitle}" />
+                            <TextBlock Classes="proxima-body" Text="{Binding PageDescription}" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button Classes="proxima-primary proxima-toolbar" Command="{Binding OpenImportDialogCommand}" Content="Импортировать активы" />
+                            <Button Classes="proxima-secondary proxima-toolbar" Content="Открыть детали актива" IsEnabled="False" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="proxima-card-surface">
+                    <StackPanel Spacing="12">
+                        <TextBlock Classes="proxima-card-title" Text="Список активов" />
+                        <TextBlock Classes="proxima-caption" Text="Экран управления активами восстанавливается. Импорт уже доступен через кнопку выше." />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <import:ImportDialogView Grid.Row="1" DataContext="{Binding ImportDialog}" IsVisible="{Binding IsImportDialogOpen}" />
+    </Grid>
+</UserControl>

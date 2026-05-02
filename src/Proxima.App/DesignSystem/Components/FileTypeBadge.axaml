@@ -1,0 +1,17 @@
+<Styles xmlns="https://github.com/avaloniaui">
+    <Style Selector="Border.proxima-filetype-badge">
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Pill}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.SurfaceSubtle}" />
+    </Style>
+
+    <Style Selector="Border.proxima-filetype-badge.proxima-filetype-csv">
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.Success}" />
+    </Style>
+
+    <Style Selector="Border.proxima-filetype-badge.proxima-filetype-pdf">
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.Warning}" />
+    </Style>
+</Styles>
