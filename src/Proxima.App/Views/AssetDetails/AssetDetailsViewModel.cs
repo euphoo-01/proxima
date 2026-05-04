@@ -14,6 +14,7 @@ public sealed class AssetDetailsViewModel : ViewModelBase
     private readonly DelegateCommand _sortByPriceCommand;
     private readonly DelegateCommand _sortByQuantityCommand;
     private readonly DelegateCommand _sortByAmountCommand;
+    private readonly DelegateCommand _resetChartZoomCommand;
 
     private IReadOnlyList<AssetTransactionRowViewModel> _allTransactions = [];
     private string _searchQuery = string.Empty;
@@ -23,6 +24,8 @@ public sealed class AssetDetailsViewModel : ViewModelBase
     private bool _isNotFound;
     private bool _hasError;
     private string _errorText = string.Empty;
+    private int _candlesVisibleStartIndex;
+    private int _candlesVisibleEndIndex;
 
     public AssetDetailsViewModel(IAppNavigationService navigation, IAssetDetailsReadModelProvider provider)
     {
@@ -40,6 +43,7 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         _sortByPriceCommand = new DelegateCommand(_ => SortBy("price"));
         _sortByQuantityCommand = new DelegateCommand(_ => SortBy("quantity"));
         _sortByAmountCommand = new DelegateCommand(_ => SortBy("amount"));
+        _resetChartZoomCommand = new DelegateCommand(_ => ResetCandlesVisibleRange());
 
         _navigation.RouteChanged += HandleRouteChanged;
     }
@@ -63,6 +67,7 @@ public sealed class AssetDetailsViewModel : ViewModelBase
     public ICommand SortByQuantityCommand => _sortByQuantityCommand;
 
     public ICommand SortByAmountCommand => _sortByAmountCommand;
+    public ICommand ResetChartZoomCommand => _resetChartZoomCommand;
 
     public string AssetName { get; private set; } = "Asset";
 
@@ -71,6 +76,19 @@ public sealed class AssetDetailsViewModel : ViewModelBase
     public string PriceText { get; private set; } = "Нет данных";
 
     public string DeltaText { get; private set; } = "Недоступно";
+    public string AssetCurrency { get; private set; } = "USD";
+
+    public int CandlesVisibleStartIndex
+    {
+        get => _candlesVisibleStartIndex;
+        set => SetProperty(ref _candlesVisibleStartIndex, value);
+    }
+
+    public int CandlesVisibleEndIndex
+    {
+        get => _candlesVisibleEndIndex;
+        set => SetProperty(ref _candlesVisibleEndIndex, value);
+    }
 
     public string SelectedTimeframe
     {
@@ -200,12 +218,14 @@ public sealed class AssetDetailsViewModel : ViewModelBase
             AssetTicker = model.AssetTicker;
             PriceText = model.PriceText;
             DeltaText = model.DeltaText;
+            AssetCurrency = model.CurrencyCode;
 
             Candles.Clear();
             foreach (CandlestickPointViewModel point in model.Candles)
             {
                 Candles.Add(point);
             }
+            ResetCandlesVisibleRange();
 
             BasicMetrics.Clear();
             foreach (AssetMetricItemViewModel metric in model.BasicMetrics)
@@ -226,6 +246,7 @@ public sealed class AssetDetailsViewModel : ViewModelBase
             OnPropertyChanged(nameof(AssetTicker));
             OnPropertyChanged(nameof(PriceText));
             OnPropertyChanged(nameof(DeltaText));
+            OnPropertyChanged(nameof(AssetCurrency));
             OnPropertyChanged(nameof(ShowEmptyChart));
         }
         catch (Exception ex)
@@ -237,6 +258,19 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         {
             IsLoading = false;
         }
+    }
+
+    private void ResetCandlesVisibleRange()
+    {
+        if (Candles.Count == 0)
+        {
+            CandlesVisibleStartIndex = 0;
+            CandlesVisibleEndIndex = 0;
+            return;
+        }
+
+        CandlesVisibleStartIndex = 0;
+        CandlesVisibleEndIndex = Candles.Count - 1;
     }
 
     private void SortBy(string key)
@@ -320,6 +354,7 @@ public sealed record AssetDetailsReadModel(
     string AssetTicker,
     string PriceText,
     string DeltaText,
+    string CurrencyCode,
     IReadOnlyList<CandlestickPointViewModel> Candles,
     IReadOnlyList<AssetMetricItemViewModel> BasicMetrics,
     IReadOnlyList<AssetMetricItemViewModel> RiskMetrics,
@@ -396,6 +431,7 @@ public sealed class MockAssetDetailsReadModelProvider : IAssetDetailsReadModelPr
             asset.Ticker,
             priceText,
             deltaText,
+            "USD",
             candles,
             basicMetrics,
             riskMetrics,
@@ -411,6 +447,14 @@ public sealed class MockAssetDetailsReadModelProvider : IAssetDetailsReadModelPr
             "30д" => [172m, 174m, 176.3m, 178.9m, 181.2m, 183m, 185.1m, 186.4m],
             _ => [184.8m, 185.2m, 184.9m, 185.7m, 186.2m, 185.8m, 186.4m, 186.1m]
         };
+        TimeSpan step = timeframe switch
+        {
+            "1ч" => TimeSpan.FromMinutes(5),
+            "7д" => TimeSpan.FromDays(1),
+            "30д" => TimeSpan.FromDays(3),
+            _ => TimeSpan.FromHours(3)
+        };
+        DateTimeOffset start = DateTimeOffset.UtcNow - TimeSpan.FromTicks(step.Ticks * baseValues.Length);
 
         List<CandlestickPointViewModel> result = new(baseValues.Length);
         for (int i = 0; i < baseValues.Length; i++)
@@ -419,7 +463,8 @@ public sealed class MockAssetDetailsReadModelProvider : IAssetDetailsReadModelPr
             decimal close = open + (i % 2 == 0 ? 0.35m : -0.27m);
             decimal high = Math.Max(open, close) + 0.44m;
             decimal low = Math.Min(open, close) - 0.41m;
-            result.Add(new CandlestickPointViewModel(open, high, low, close));
+            decimal volume = 12_000m + (i * 790m);
+            result.Add(new CandlestickPointViewModel(start + TimeSpan.FromTicks(step.Ticks * i), open, high, low, close, volume));
         }
 
         return result;

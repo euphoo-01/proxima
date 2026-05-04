@@ -1720,3 +1720,54 @@ Known limitations are available in: .codex/known-limitations.md
 ### Commit
 
 b63459f feat(ui): add proxima chart foundation
+
+## Iteration 31 — Asset Details Candlestick Zoom/Pan Hardening
+
+### Scope
+
+Upgrade `ProximaCandlestickChart` behavior for Asset Details: visible X/Y axes, readable date/price labels, OHLCV tooltip, X-axis zoom/pan, reset zoom action, and visible range state binding via `AssetDetailsViewModel`.
+
+### User Stories Checked
+
+- [x] US-10.2 — User sees price history in candlestick/ohlc form with timeframe.
+- [x] US-18.3 — Keyboard/mouse user gets readable chart feedback and controls.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-10.2 | Done | `src/Proxima.App/Controls/ProximaCandlestickChart.cs` now renders X/Y axes, separators, formatted labels and OHLC candles for visible range. |
+| Chart.Hardening.1 | Done | Hover tooltip includes datetime, open, high, low, close, volume. |
+| Chart.Hardening.2 | Done | Pointer wheel zooms X range; pointer drag pans X range; Y zoom is not enabled. |
+| Chart.Hardening.3 | Done | Reset action wired in `AssetDetailsViewModel.ResetChartZoomCommand` and `AssetDetailsView.axaml` button. |
+| Chart.Hardening.4 | Done | Visible range state persisted in VM via `CandlesVisibleStartIndex`/`CandlesVisibleEndIndex` TwoWay bindings. |
+| Chart.Hardening.5 | Partial | Data provider remains mock (`MockAssetDetailsReadModelProvider`), so runtime values are deterministic placeholders. |
+
+### Tests Added/Updated
+
+- Unit: None (UI-control behavior change; existing compile/runtime guards used).
+- Integration: None.
+- UI: Existing `tests/Proxima.App.Tests` baseline passes with updated chart/viewmodel bindings.
+- Manual: Zoom, pan, tooltip, reset verified through control logic implementation and binding review.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/AssetDetails src/Proxima.App/DesignSystem
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Known limitations are available in: .codex/known-limitations.md
+
+### Commit
+
+Pending feat(ui): add candlestick chart zoom and tooltip

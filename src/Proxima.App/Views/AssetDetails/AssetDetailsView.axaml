@@ -45,13 +45,21 @@
             <Grid ColumnDefinitions="2*,*" ColumnSpacing="16" IsVisible="{Binding HasData}" RowDefinitions="Auto,Auto" RowSpacing="16">
                 <controls:BentoCard Grid.RowSpan="2" Subtitle="OHLC / Candlestick" Title="Ценовой график">
                     <StackPanel Spacing="16">
-                        <controls:TimeframeSelector
-                            Classes="proxima-timeframe-selector"
-                            ItemsSource="{Binding Timeframes}"
-                            SelectedItem="{Binding SelectedTimeframe}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <controls:TimeframeSelector
+                                Classes="proxima-timeframe-selector"
+                                ItemsSource="{Binding Timeframes}"
+                                SelectedItem="{Binding SelectedTimeframe}" />
+                            <Button Grid.Column="1" Classes="proxima-table-sort-button" Command="{Binding ResetChartZoomCommand}" Content="Reset zoom" />
+                        </Grid>
 
                         <Border Classes="proxima-chart-surface" Height="260">
-                            <controls:ProximaCandlestickChart Candles="{Binding Candles}" IsLoading="{Binding IsLoading}" />
+                            <controls:ProximaCandlestickChart
+                                Candles="{Binding Candles}"
+                                CurrencyCode="{Binding AssetCurrency}"
+                                IsLoading="{Binding IsLoading}"
+                                VisibleEndIndex="{Binding CandlesVisibleEndIndex, Mode=TwoWay}"
+                                VisibleStartIndex="{Binding CandlesVisibleStartIndex, Mode=TwoWay}" />
                         </Border>
 
                         <Border Classes="proxima-chart-surface" IsVisible="{Binding ShowEmptyChart}">

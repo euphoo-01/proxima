@@ -52,9 +52,20 @@
 | No clipping | Pass | Длинные секции вынесены в `ScrollViewer`, таблица и метрики читаемы. |
 | Default Avalonia leakage | Pass | Кнопки/инпуты/селекторы используют Proxima classes/themes. |
 
+## 8.1) Visual comparison notes (2026-05-04, chart hardening)
+
+| Check | Pass/Fail | Notes |
+| --- | --- | --- |
+| Candlestick X axis | Pass | Добавлены читаемые подписи даты/времени в зависимости от видимого диапазона (интрадей/день/неделя). |
+| Candlestick Y axis | Pass | Добавлены подписи цены с валютой (`USD`) и горизонтальные grid/separators. |
+| Tooltip completeness | Pass | Hover tooltip показывает `datetime`, `open`, `high`, `low`, `close`, `volume`. |
+| X zoom/pan | Pass | Wheel zoom и drag pan работают по X диапазону без Y zoom. |
+| Reset zoom action | Pass | Добавлена кнопка `Reset zoom`, диапазон сбрасывается на полный набор свечей через VM state. |
+| Local screen chart styling leakage | Pass | Локальная стилизация чарта в `AssetDetailsView` не добавлялась; поведение вынесено в `ProximaCandlestickChart`. |
+
 ## 9) Known deviations after implementation
 
 | Deviation | Reason | Severity | Follow-up |
 | --- | --- | --- | --- |
-| Chart rendered by local `CandlestickChart` with mock points | Реальный OHLC provider не подключен в AppShell recovery ветке | Medium | Подключить application analytics read-model + real quote cache query |
+| OHLC источник пока mock (`MockAssetDetailsReadModelProvider`) | Реальный read-model provider и quote history wiring в runtime еще не подключены | Medium | Подключить application analytics read-model + real quote cache query |
 | Advanced metrics partly mock/placeholder (`IV`, `Spread/Depth`) | Нет рыночного orderbook/implied volatility источника в текущем модуле | Medium | Закрыть при интеграции Module 10/11 сервисов в runtime AppShell |

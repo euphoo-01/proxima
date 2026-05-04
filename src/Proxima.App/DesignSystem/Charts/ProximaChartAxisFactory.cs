@@ -39,4 +39,20 @@ public static class ProximaChartAxisFactory
             index => xLabels is not null && index >= 0 && index < xLabels.Count ? xLabels[index] : index.ToString(CultureInfo.InvariantCulture),
             value => ProximaChartTooltipFormatter.FormatValue(value, yKind));
     }
+
+    public static string FormatDateLabel(DateTimeOffset value, DateTimeOffset min, DateTimeOffset max)
+    {
+        TimeSpan span = max - min;
+        if (span.TotalDays >= 7)
+        {
+            return value.ToString("dd.MM", CultureInfo.CurrentCulture);
+        }
+
+        if (span.TotalDays >= 1)
+        {
+            return value.ToString("dd.MM HH:mm", CultureInfo.CurrentCulture);
+        }
+
+        return value.ToString("HH:mm", CultureInfo.CurrentCulture);
+    }
 }
