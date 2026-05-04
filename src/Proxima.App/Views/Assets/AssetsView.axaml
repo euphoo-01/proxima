@@ -21,7 +21,28 @@
                     </StackPanel>
                 </Border>
 
-                <Border Classes="proxima-card-surface">
+                <Border Classes="proxima-card-surface" IsVisible="{Binding IsLoading}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="proxima-card-title" Text="Загрузка активов..." />
+                        <TextBlock Classes="proxima-caption" Text="Подготавливаем список активов текущего портфеля." />
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="proxima-card-surface" IsVisible="{Binding HasError}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="proxima-card-title" Text="Ошибка загрузки" />
+                        <TextBlock Classes="proxima-caption" Text="{Binding ErrorText}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="proxima-card-surface" IsVisible="{Binding IsEmpty}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="proxima-card-title" Text="Нет активов" />
+                        <TextBlock Classes="proxima-caption" Text="Добавьте актив вручную или загрузите операции через импорт." />
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="proxima-card-surface" IsVisible="{Binding HasContent}">
                     <StackPanel Spacing="16">
                         <TextBlock Classes="proxima-card-title" Text="Список активов" />
                         <ItemsControl ItemsSource="{Binding Assets}">

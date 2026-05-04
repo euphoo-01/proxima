@@ -22,6 +22,7 @@ internal static class Program
         RuntimeAuthFlow_UsesLoginThenAppShell();
         RuntimeAuthFlow_UsesProfileBackedUserContext();
         RuntimeComposition_UsesPostgresRepositoriesByDefault();
+        RuntimeRefreshFlow_IsWiredForPortfolioAndImportInvalidation();
         RuntimeRoutes_ExistForMigratedShellScreens();
         RuntimeViews_ContainExpectedChartAndSecurityElements();
         RedactionHelper_RedactsSensitiveFragments();
@@ -71,6 +72,30 @@ internal static class Program
         Assert(composition.Contains("DatabaseConnectionStringProvider.Resolve()", StringComparison.Ordinal), "Runtime composition should resolve database options.");
         Assert(appCode.Contains("DatabaseBootstrapService", StringComparison.Ordinal), "App startup should bootstrap database before runtime shell.");
         Assert(appCode.Contains("Database unavailable", StringComparison.Ordinal), "App should show explicit database-unavailable window.");
+    }
+
+    private static void RuntimeRefreshFlow_IsWiredForPortfolioAndImportInvalidation()
+    {
+        string root = FindRepositoryRoot();
+        string composition = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Composition", "AppComposition.cs"));
+        string shellState = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Shell", "RuntimeShellState.cs"));
+        string appShellVm = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Shell", "AppShellViewModel.cs"));
+        string dashboardVm = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Dashboard", "DashboardViewModel.cs"));
+        string assetsVm = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Assets", "AssetsViewModel.cs"));
+        string goalsVm = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Goals", "GoalsViewModel.cs"));
+        string taxesVm = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Taxes", "TaxesViewModel.cs"));
+        string manualImportVm = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Import", "ManualImportViewModel.cs"));
+
+        Assert(composition.Contains("RuntimeShellState", StringComparison.Ordinal), "Runtime composition should register mutable runtime shell state.");
+        Assert(composition.Contains("IRuntimeDataInvalidation", StringComparison.Ordinal), "Runtime composition should register shared data invalidation service.");
+        Assert(shellState.Contains("SetCurrentPortfolio", StringComparison.Ordinal), "Runtime shell state should expose current portfolio switch method.");
+        Assert(shellState.Contains("PortfolioChanged?.Invoke", StringComparison.Ordinal), "Runtime shell state should emit portfolio changed events.");
+        Assert(appShellVm.Contains("HandlePortfolioChanged", StringComparison.Ordinal), "AppShell should update topbar on portfolio switch.");
+        Assert(dashboardVm.Contains("DataInvalidated", StringComparison.Ordinal), "Dashboard should react to data invalidation events.");
+        Assert(assetsVm.Contains("DataInvalidated", StringComparison.Ordinal), "Assets should react to data invalidation events.");
+        Assert(goalsVm.Contains("DataInvalidated", StringComparison.Ordinal), "Goals should react to data invalidation events.");
+        Assert(taxesVm.Contains("DataInvalidated", StringComparison.Ordinal), "Taxes should react to data invalidation events.");
+        Assert(manualImportVm.Contains("manual-import-commit", StringComparison.Ordinal), "Manual import should invalidate runtime data after successful commit.");
     }
 
     private static void RuntimeRoutes_ExistForMigratedShellScreens()

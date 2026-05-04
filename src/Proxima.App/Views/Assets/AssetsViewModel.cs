@@ -1,7 +1,10 @@
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Proxima.App.Navigation;
+using Proxima.App.Shell;
 using Proxima.App.ViewModels;
 using Proxima.App.Views.Import;
+using Proxima.Application.Assets;
 using Proxima.Domain.Assets;
 
 namespace Proxima.App.Views.Assets;
@@ -9,39 +12,123 @@ namespace Proxima.App.Views.Assets;
 public sealed class AssetsViewModel : ViewModelBase
 {
     private readonly IAppNavigationService _navigation;
+    private readonly IAssetService _assetService;
+    private readonly IShellState _shellState;
+    private readonly DelegateCommand _openImportDialogCommand;
     private readonly DelegateCommand _openAssetDetailsCommand;
-    private readonly IReadOnlyList<AssetListItemViewModel> _assets;
+    private bool _isLoading;
+    private bool _hasError;
+    private string _errorText = string.Empty;
 
-    public AssetsViewModel(IAppNavigationService navigation, ImportDialogViewModel importDialog)
+    public AssetsViewModel(
+        IAppNavigationService navigation,
+        ImportDialogViewModel importDialog,
+        IAssetService assetService,
+        IShellState shellState,
+        IRuntimeDataInvalidation dataInvalidation)
     {
         _navigation = navigation;
+        _assetService = assetService;
+        _shellState = shellState;
         ImportDialog = importDialog;
         ImportDialog.RequestClose += HandleImportDialogClose;
         ImportDialog.RequestOpenManualImport += HandleImportDialogOpenManualImport;
 
         _openImportDialogCommand = new DelegateCommand(_ => OpenImportDialog());
         _openAssetDetailsCommand = new DelegateCommand(OpenAssetDetails);
-        _assets =
-        [
-            new AssetListItemViewModel(Guid.Parse("0a896663-ec39-4ebc-9b28-bf537f8f2fe0"), "Apple Inc.", "AAPL", AssetType.Stock, "USD", 12m, 2223.60m),
-            new AssetListItemViewModel(Guid.Parse("f3b4b129-5478-4965-923f-03ef74ca7c07"), "Microsoft", "MSFT", AssetType.Stock, "USD", 9m, 3791.25m),
-            new AssetListItemViewModel(Guid.Parse("3ab7f07a-8c4b-44ec-9025-f4d0983e0fbf"), "Bitcoin", "BTC", AssetType.Crypto, "USD", 0.42m, 28784.12m)
-        ];
-    }
+        Assets = [];
 
-    private readonly DelegateCommand _openImportDialogCommand;
+        _shellState.PortfolioChanged += (_, _) => _ = LoadAsync();
+        dataInvalidation.DataInvalidated += (_, _) => _ = LoadAsync();
+        _ = LoadAsync();
+    }
 
     public ICommand OpenImportDialogCommand => _openImportDialogCommand;
     public ICommand OpenAssetDetailsCommand => _openAssetDetailsCommand;
 
     public ImportDialogViewModel ImportDialog { get; }
-    public IReadOnlyList<AssetListItemViewModel> Assets => _assets;
+    public ObservableCollection<AssetListItemViewModel> Assets { get; }
 
     public string PageTitle => "Все активы";
 
     public string PageDescription => "Управляйте активами и загружайте операции из отчётов брокера.";
 
     public bool IsImportDialogOpen => ImportDialog.IsOpen;
+
+    public bool IsLoading
+    {
+        get => _isLoading;
+        private set
+        {
+            if (SetProperty(ref _isLoading, value))
+            {
+                OnPropertyChanged(nameof(IsEmpty));
+                OnPropertyChanged(nameof(HasContent));
+            }
+        }
+    }
+
+    public bool HasError
+    {
+        get => _hasError;
+        private set
+        {
+            if (SetProperty(ref _hasError, value))
+            {
+                OnPropertyChanged(nameof(IsEmpty));
+                OnPropertyChanged(nameof(HasContent));
+            }
+        }
+    }
+
+    public bool IsEmpty => !IsLoading && !HasError && Assets.Count == 0;
+
+    public bool HasContent => !IsLoading && !HasError;
+
+    public string ErrorText
+    {
+        get => _errorText;
+        private set => SetProperty(ref _errorText, value);
+    }
+
+    private async Task LoadAsync()
+    {
+        IsLoading = true;
+        HasError = false;
+        ErrorText = string.Empty;
+
+        try
+        {
+            IReadOnlyList<Asset> assets = await _assetService
+                .ListActiveAsync(_shellState.CurrentPortfolioId, CancellationToken.None)
+                .ConfigureAwait(true);
+
+            Assets.Clear();
+            foreach (Asset asset in assets)
+            {
+                Assets.Add(new AssetListItemViewModel(
+                    asset.Id,
+                    asset.Name,
+                    asset.Ticker,
+                    asset.Type,
+                    asset.Currency,
+                    asset.Quantity,
+                    asset.Quantity * asset.CurrentPrice));
+            }
+
+            OnPropertyChanged(nameof(IsEmpty));
+            OnPropertyChanged(nameof(HasContent));
+        }
+        catch (Exception ex)
+        {
+            HasError = true;
+            ErrorText = ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
 
     private void OpenImportDialog()
     {

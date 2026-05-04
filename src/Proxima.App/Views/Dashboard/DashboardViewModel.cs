@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Proxima.Analytics.Dashboard;
+using Proxima.App.Shell;
 using Proxima.App.ViewModels;
 
 namespace Proxima.App.Views.Dashboard;
@@ -8,6 +9,7 @@ namespace Proxima.App.Views.Dashboard;
 public sealed class DashboardViewModel : ViewModelBase
 {
     private readonly IDashboardDataProvider _dataProvider;
+    private readonly IShellState _shellState;
     private readonly DelegateCommand _sortByAssetCommand;
     private readonly DelegateCommand _sortByTypeCommand;
     private readonly DelegateCommand _sortByDateCommand;
@@ -25,9 +27,10 @@ public sealed class DashboardViewModel : ViewModelBase
     private string? _portfolioChartErrorText;
     private string? _allocationChartErrorText;
 
-    public DashboardViewModel(IDashboardDataProvider dataProvider)
+    public DashboardViewModel(IDashboardDataProvider dataProvider, IShellState shellState, IRuntimeDataInvalidation dataInvalidation)
     {
         _dataProvider = dataProvider;
+        _shellState = shellState;
         Timeframes = new ObservableCollection<string> { "1 день", "7 дней", "месяц" };
         PortfolioValueSeries = [];
         AllocationRows = [];
@@ -38,6 +41,8 @@ public sealed class DashboardViewModel : ViewModelBase
         _sortByDateCommand = new DelegateCommand(_ => SortBy("date"));
         _sortByAmountCommand = new DelegateCommand(_ => SortBy("amount"));
         _sortByPriceCommand = new DelegateCommand(_ => SortBy("price"));
+        _shellState.PortfolioChanged += (_, _) => Load();
+        dataInvalidation.DataInvalidated += (_, _) => Load();
 
         Load();
     }
@@ -139,7 +144,7 @@ public sealed class DashboardViewModel : ViewModelBase
 
     public static DashboardViewModel CreateDesignData()
     {
-        return new DashboardViewModel(new MockDashboardDataProvider());
+        return new DashboardViewModel(new MockDashboardDataProvider(), new MockShellState(), new RuntimeDataInvalidation());
     }
 
     private void Load()

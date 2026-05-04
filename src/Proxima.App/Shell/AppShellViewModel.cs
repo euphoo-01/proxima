@@ -50,6 +50,7 @@ public sealed class AppShellViewModel : ViewModelBase
 
         RegisterRoutes();
         _navigation.RouteChanged += HandleRouteChanged;
+        _shellState.PortfolioChanged += HandlePortfolioChanged;
         _navigation.Navigate(AppRoutes.Dashboard);
     }
 
@@ -89,5 +90,11 @@ public sealed class AppShellViewModel : ViewModelBase
             AppRoutes.Settings => _settingsViewModel,
             _ => new PlaceholderViewModel(route.Title, "Screen is not migrated yet. PlaceholderView is shown by runtime shell.")
         };
+    }
+
+    private void HandlePortfolioChanged(object? sender, ShellPortfolioChangedEventArgs e)
+    {
+        AppRoute current = _navigation.Current;
+        Topbar.Update(current.Title, current.Breadcrumb, e.PortfolioName);
     }
 }

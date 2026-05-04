@@ -2017,3 +2017,55 @@ Done
 ### Commit
 
 Pending refactor(db): introduce unit-of-work repository pattern for postgres
+
+## Iteration 37 — REC-005 Runtime Route/Screen Readiness Wiring
+
+### Scope
+
+Implement runtime portfolio/data invalidation wiring across migrated AppShell screens and align route-level loading/empty/error behavior for authenticated runtime flows.
+
+### User Stories Checked
+
+- [x] US-03.1 — Authenticated user navigates stable AppShell routes.
+- [x] US-07.3 — Import commit updates runtime transaction context.
+- [x] US-09.1 — Dashboard runtime state refreshes after data changes.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| REC-005.1 | Done | Added mutable `RuntimeShellState` + `PortfolioChanged` event and wired topbar refresh in `AppShellViewModel`. |
+| REC-005.2 | Done | Added shared `IRuntimeDataInvalidation`; `DashboardViewModel`, `AssetsViewModel`, `GoalsViewModel`, `TaxesViewModel`, `AssetDetailsViewModel` subscribe and reload. |
+| REC-005.3 | Done | `ManualImportViewModel` now invalidates runtime data after successful DB commit (`manual-import-commit`). |
+| REC-005.4 | Done | `AssetsView` now has explicit `IsLoading/HasError/IsEmpty` route-level states; existing states in Goals/Taxes/Dashboard preserved and exercised. |
+| REC-005.5 | Partial | Runtime refresh wiring is complete, but user-facing portfolio selector/switch control in AppShell topbar is still pending. |
+
+### Tests Added/Updated
+
+- Unit: none.
+- Integration: none.
+- UI: updated `tests/Proxima.App.Tests/Program.cs` with `RuntimeRefreshFlow_IsWiredForPortfolioAndImportInvalidation` assertions.
+- Manual: style guard check for `src/Proxima.App/Views` passed.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+- User-triggered portfolio switching UI in AppShell is still pending.
+- Native drag-and-drop import UX remains pending (`REC-008`).
+
+### Commit
+
+Pending fix(runtime): complete authenticated route flow wiring

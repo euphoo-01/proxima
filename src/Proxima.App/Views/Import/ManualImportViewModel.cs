@@ -12,6 +12,7 @@ public sealed class ManualImportViewModel : ViewModelBase
 {
     private readonly IImportCommitService? _importCommitService;
     private readonly IShellState? _shellState;
+    private readonly IRuntimeDataInvalidation? _runtimeDataInvalidation;
     private readonly DelegateCommand _addRowCommand;
     private readonly DelegateCommand _removeRowCommand;
     private readonly DelegateCommand _saveCommand;
@@ -20,14 +21,15 @@ public sealed class ManualImportViewModel : ViewModelBase
     private bool _hasWarnings;
 
     public ManualImportViewModel()
-        : this(null, null)
+        : this(null, null, null)
     {
     }
 
-    public ManualImportViewModel(IImportCommitService? importCommitService, IShellState? shellState)
+    public ManualImportViewModel(IImportCommitService? importCommitService, IShellState? shellState, IRuntimeDataInvalidation? runtimeDataInvalidation)
     {
         _importCommitService = importCommitService;
         _shellState = shellState;
+        _runtimeDataInvalidation = runtimeDataInvalidation;
         Rows = [];
         OperationTypes = Enum.GetNames<TransactionType>();
 
@@ -165,6 +167,10 @@ public sealed class ManualImportViewModel : ViewModelBase
             .ConfigureAwait(true);
 
         StatusMessage = result.Message;
+        if (result.Succeeded && result.SavedRows > 0)
+        {
+            _runtimeDataInvalidation?.Invalidate("manual-import-commit");
+        }
     }
 
     private void RecalculateWarnings()

@@ -67,7 +67,10 @@ public static class AppComposition
         services.AddSingleton(_ => new LocalSettingsReader(ProximaSettingsComposition.GetDefaultSettingsStorePath()));
         services.AddSingleton<IQuoteProvider, ConfigurableQuoteProvider>();
         services.AddSingleton<IQuoteRefreshService, QuoteRefreshService>();
-        services.AddSingleton<IShellState, MockShellState>();
+        services.AddSingleton<RuntimeShellState>();
+        services.AddSingleton<IShellState>(provider => provider.GetRequiredService<RuntimeShellState>());
+        services.AddSingleton<IShellPortfolioCoordinator>(provider => provider.GetRequiredService<RuntimeShellState>());
+        services.AddSingleton<IRuntimeDataInvalidation, RuntimeDataInvalidation>();
         services.AddSingleton<IImportPreviewGateway>(provider => new ImportPreviewGateway(ProximaImportComposition.CreateImportService()));
         services.AddSingleton<IDashboardDataProvider, MockDashboardDataProvider>();
         services.AddSingleton<IAssetDetailsReadModelProvider, MockAssetDetailsReadModelProvider>();

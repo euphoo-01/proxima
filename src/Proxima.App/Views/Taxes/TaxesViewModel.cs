@@ -11,6 +11,7 @@ namespace Proxima.App.Views.Taxes;
 public sealed class TaxesViewModel : ViewModelBase
 {
     private readonly ITaxesReadModelProvider _provider;
+    private readonly IShellState _shellState;
     private readonly DelegateCommand _recalculateCommand;
     private readonly DelegateCommand _exportPdfCommand;
 
@@ -29,9 +30,10 @@ public sealed class TaxesViewModel : ViewModelBase
     private string _currency = "USD";
     private string _summaryStatus = "Draft";
 
-    public TaxesViewModel(ITaxesReadModelProvider provider)
+    public TaxesViewModel(ITaxesReadModelProvider provider, IShellState shellState, IRuntimeDataInvalidation dataInvalidation)
     {
         _provider = provider;
+        _shellState = shellState;
 
         Years =
         [
@@ -46,6 +48,8 @@ public sealed class TaxesViewModel : ViewModelBase
 
         _recalculateCommand = new DelegateCommand(_ => _ = RecalculateAsync());
         _exportPdfCommand = new DelegateCommand(_ => _ = ExportPdfAsync());
+        _shellState.PortfolioChanged += (_, _) => _ = RecalculateAsync();
+        dataInvalidation.DataInvalidated += (_, _) => _ = RecalculateAsync();
 
         _ = RecalculateAsync();
     }
@@ -166,7 +170,7 @@ public sealed class TaxesViewModel : ViewModelBase
 
     public static TaxesViewModel CreateDesignData()
     {
-        return new TaxesViewModel(new DesignTaxesReadModelProvider());
+        return new TaxesViewModel(new DesignTaxesReadModelProvider(), new MockShellState(), new RuntimeDataInvalidation());
     }
 
     private async Task RecalculateAsync()

@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Proxima.App.Navigation;
+using Proxima.App.Shell;
 using Proxima.App.ViewModels;
 
 namespace Proxima.App.Views.AssetDetails;
@@ -46,6 +47,12 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         _resetChartZoomCommand = new DelegateCommand(_ => ResetCandlesVisibleRange());
 
         _navigation.RouteChanged += HandleRouteChanged;
+    }
+
+    public AssetDetailsViewModel(IAppNavigationService navigation, IAssetDetailsReadModelProvider provider, IRuntimeDataInvalidation dataInvalidation)
+        : this(navigation, provider)
+    {
+        dataInvalidation.DataInvalidated += (_, _) => LoadByRoute(_navigation.Current);
     }
 
     public ObservableCollection<string> Timeframes { get; }

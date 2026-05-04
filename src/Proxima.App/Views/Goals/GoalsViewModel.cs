@@ -28,7 +28,7 @@ public sealed class GoalsViewModel : ViewModelBase
     private bool _isProjectionChartLoading;
     private string? _projectionChartErrorText;
 
-    public GoalsViewModel(IGoalService goalService, IShellState shellState, IGoalProjectionService projectionService)
+    public GoalsViewModel(IGoalService goalService, IShellState shellState, IGoalProjectionService projectionService, IRuntimeDataInvalidation dataInvalidation)
     {
         _goalService = goalService;
         _shellState = shellState;
@@ -45,6 +45,8 @@ public sealed class GoalsViewModel : ViewModelBase
 
         AddGoalDialog.SaveRequested += HandleSaveRequested;
         AddGoalDialog.ArchiveRequested += HandleArchiveRequested;
+        _shellState.PortfolioChanged += (_, _) => _ = LoadAsync();
+        dataInvalidation.DataInvalidated += (_, _) => _ = LoadAsync();
 
         LoadAsync().GetAwaiter().GetResult();
     }
@@ -170,7 +172,7 @@ public sealed class GoalsViewModel : ViewModelBase
 
     public static GoalsViewModel CreateDesignData()
     {
-        return new GoalsViewModel(new DesignGoalService(), new DesignShellState(), new GoalProjectionService());
+        return new GoalsViewModel(new DesignGoalService(), new DesignShellState(), new GoalProjectionService(), new RuntimeDataInvalidation());
     }
 
     private async Task LoadAsync()
@@ -430,6 +432,12 @@ public sealed record GoalProjection(IReadOnlyList<decimal> Series, decimal Proje
 
 file sealed class DesignShellState : IShellState
 {
+    public event EventHandler<ShellPortfolioChangedEventArgs>? PortfolioChanged
+    {
+        add { }
+        remove { }
+    }
+
     public Guid CurrentPortfolioId { get; } = Guid.Parse("1df177b8-b3f6-4d80-9f0d-3027d4f4a149");
 
     public string CurrentPortfolioName => "Growth Portfolio";
