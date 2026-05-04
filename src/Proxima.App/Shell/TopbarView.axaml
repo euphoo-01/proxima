@@ -1,0 +1,20 @@
+<UserControl
+    x:Class="Proxima.App.Shell.TopbarView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:shell="using:Proxima.App.Shell"
+    x:DataType="shell:TopbarViewModel">
+    <Border Classes="proxima-topbar-root">
+        <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="4">
+                <TextBlock Classes="proxima-breadcrumb" Text="{Binding Breadcrumb}" />
+                <TextBlock Classes="proxima-card-title" Text="{Binding Title}" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                <TextBlock Classes="proxima-caption" Text="Portfolio" />
+                <TextBlock Classes="proxima-body" Text="{Binding CurrentPortfolio}" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

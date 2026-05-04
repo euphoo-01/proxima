@@ -1,0 +1,81 @@
+<UserControl
+    x:Class="Proxima.App.Views.Import.ImportDialogView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:import="using:Proxima.App.Views.Import"
+    x:DataType="import:ImportDialogViewModel">
+    <Border Classes="proxima-modal-overlay" IsVisible="{Binding IsOpen}">
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Width="860">
+            <Border Classes="proxima-modal-surface">
+                <StackPanel Spacing="20">
+                    <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                        <StackPanel Spacing="6">
+                            <TextBlock Classes="proxima-card-title" Text="Импорт активов" />
+                            <TextBlock Classes="proxima-caption" Text="CSV/PDF, до 5MB. Ошибки выводятся без чувствительных данных." />
+                        </StackPanel>
+                        <Button Grid.Column="1" Classes="proxima-secondary proxima-toolbar" Command="{Binding CloseDialogCommand}" Content="Закрыть" />
+                    </Grid>
+
+                    <Border Classes="proxima-import-dropzone"
+                            Classes.proxima-state-idle="{Binding IsIdle}"
+                            Classes.proxima-state-dragover="{Binding IsDragOver}"
+                            Classes.proxima-state-selected="{Binding HasFileSelected}"
+                            Classes.proxima-state-parsing="{Binding IsParsing}"
+                            Classes.proxima-state-error="{Binding ParseFailed}">
+                        <StackPanel Spacing="12">
+                            <TextBlock Classes="proxima-body" Text="Перетащите файл или вставьте путь" />
+                            <TextBox Classes="proxima-input" Text="{Binding FilePath}" Watermark="/home/user/report.csv" />
+
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding MarkDragOverCommand}" Content="Drag Over" />
+                                <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding ClearDragOverCommand}" Content="Сброс drag" />
+                                <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding ClearSelectionCommand}" Content="Очистить" />
+                                <Button Classes="proxima-primary proxima-toolbar" Command="{Binding ParseFileCommand}" Content="Проверить файл" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" IsVisible="{Binding HasFileSelected}" Spacing="8">
+                                <Border Classes="proxima-filetype-badge proxima-filetype-csv" IsVisible="{Binding IsCsvFile}">
+                                    <TextBlock Classes="proxima-caption" Text="CSV" />
+                                </Border>
+                                <Border Classes="proxima-filetype-badge proxima-filetype-pdf" IsVisible="{Binding IsPdfFile}">
+                                    <TextBlock Classes="proxima-caption" Text="PDF" />
+                                </Border>
+                                <Border Classes="proxima-filetype-badge" IsVisible="{Binding IsUnknownFile}">
+                                    <TextBlock Classes="proxima-caption" Text="UNKNOWN" />
+                                </Border>
+                                <TextBlock Classes="proxima-caption" Text="Состояние: " />
+                                <TextBlock Classes="proxima-caption" Text="{Binding CurrentState}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="proxima-import-validation-summary" IsVisible="{Binding HasValidationWarnings}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="proxima-card-title" Text="Предупреждения валидации" />
+                            <ItemsControl ItemsSource="{Binding WarningItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Classes="proxima-caption" Text="{Binding .}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="proxima-import-validation-summary" IsVisible="{Binding ParseFailed}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="proxima-card-title" Text="Не удалось разобрать файл" />
+                            <TextBlock Classes="proxima-caption" Text="Откройте ручной импорт и заполните таблицу транзакций." />
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Classes="proxima-caption" Text="{Binding StatusMessage}" />
+
+                    <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+                        <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding OpenManualImportCommand}" Content="Ручной импорт" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

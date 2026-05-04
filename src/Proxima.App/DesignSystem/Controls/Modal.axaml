@@ -1,0 +1,15 @@
+<Styles xmlns="https://github.com/avaloniaui">
+    <Style Selector="Border.proxima-modal-overlay">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.SurfaceSubtle}" />
+        <Setter Property="Opacity" Value="0.96" />
+    </Style>
+
+    <Style Selector="Border.proxima-modal-surface">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.AuthCard}" />
+        <Setter Property="Padding" Value="{StaticResource ProximaSpace.48}" />
+        <Setter Property="BoxShadow" Value="{StaticResource ProximaShadow.Modal}" />
+    </Style>
+</Styles>

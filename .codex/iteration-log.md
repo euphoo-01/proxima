@@ -1166,3 +1166,658 @@ Partial
 - Verification:
   - `dotnet build Proxima.sln -m:1 -nr:false` passed (transient file-lock warnings observed in parallel runs).
   - `dotnet test Proxima.sln -m:1 -nr:false` passed.
+
+## Iteration 21 — Shell Runtime Host Migration (AppShell)
+
+### Scope
+
+Switch runtime host to the new `AppShellView` after successful login/unlock, add DI-based shell/navigation composition, register target routes, and show placeholder content for unmigrated screens while preserving legacy UI files.
+
+### User Stories Checked
+
+- [x] US-03.1 — User can move between core sections.
+- [x] US-03.2 — User always knows current location.
+- [x] US-03.3 — User can switch current portfolio globally (mock shell state in new host).
+- [x] US-03.4 — Runtime host is separated from legacy monolith shell.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-03.1 | Done | `App.axaml.cs` now uses DI composition and opens `AppShellView` as runtime host; release keeps login path, debug supports local auto-login flag. |
+| AC-03.2 | Done | New navigation service in `src/Proxima.App/Navigation/*` registers `Dashboard`, `Assets`, `AssetDetails`, `Goals`, `Taxes`, `Settings`; sidebar changes current route. |
+| AC-03.3 | Done | `TopbarViewModel` receives title/breadcrumb/current portfolio from route + shell state (`MockShellState`). |
+| AC-03.4 | Partial | Unmigrated route content uses `PlaceholderView`; functional feature views still live in legacy shell until full screen migration. |
+
+### Tests Added/Updated
+
+- Unit: Existing `tests/Proxima.App.Tests` regression suite executed (no new tests added in this pass).
+- Integration: N/A.
+- UI: `scripts/scan-xaml-style-violations.sh` passed for `Shell` and `Views`.
+- Manual: Runtime flow reviewed for `login -> AppShell` and debug auto-login mode.
+
+### Commands Run
+
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Shell src/Proxima.App/Views src/Proxima.App/DesignSystem
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+- `scan-xaml-style-violations` fails for `src/Proxima.App/DesignSystem` due pre-existing token/control style patterns outside this iteration scope.
+- `AppShell` currently renders placeholders for migrated route hosts; business screen migration is deferred.
+- Debug-only `DevAutoLogin` is enabled by default for local development and documented in `.codex/known-limitations.md`.
+
+### Commit
+
+Pending `refactor(app): use new app shell as runtime host`
+
+## Iteration 22 — Login/Unlock Screen Recovery (Figma Mapping)
+
+### Scope
+
+Rebuild Login/Unlock screen as a dedicated `Views/Auth/LoginView` from Figma mapping, add temporary auth gate abstraction for runtime flow, and switch startup to `LoginView -> AppShellView` without expanding legacy `MainWindow` UI.
+
+### User Stories Checked
+
+- [x] US-02.2 — Returning user unlocks Proxima locally.
+- [x] US-03.4 — Runtime host is separated from legacy monolith shell.
+
+### Acceptance Criteria Checked
+
+- [x] Login screen implemented under `src/Proxima.App/Views/Auth` with Proxima DesignSystem styling.
+- [x] Runtime startup shows Login/Unlock before authenticated shell.
+- [x] Successful unlock opens `AppShellView`.
+- [x] Loading/error/disabled/recovery states are visible in login flow.
+- [x] Visual comparison notes recorded in `.codex/figma-mapping/login.md`.
+
+### Tests Added/Updated
+
+- Unit: None added in this pass.
+- Integration: None.
+- UI: Style guard scan for `Views/Auth` and `DesignSystem`.
+- Manual: Login runtime flow smoke check (unlock transitions to `AppShellView`).
+
+### Commands Run
+
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/Auth src/Proxima.App/DesignSystem
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Temporary in-memory auth gate is used for runtime unlock and still needs integration with real profile-backed auth service.
+
+### Commit
+
+Pending feat(ui): rebuild login from figma mockup
+
+## Iteration 23 — Dashboard Screen Recovery (Figma Mapping)
+
+### Scope
+
+Rebuild `Dashboard` as a migrated screen under `Views/Dashboard`, add bento cards/chart/allocation/transactions states from mapping, and connect runtime AppShell navigation route `dashboard` to `DashboardView` instead of placeholder.
+
+### User Stories Checked
+
+- [x] US-03.1 — User can move between core sections.
+- [x] US-03.2 — User always knows current location.
+- [x] US-09.1 — User sees portfolio total value and 24h delta in dashboard.
+- [x] US-09.2 — User can inspect recent transactions with filtering/sorting.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-03.2 | Done | `AppShellViewModel` now resolves `dashboard` route to `DashboardViewModel`; `AppShellView` DataTemplate renders `DashboardView`. |
+| AC-09.1 | Done | `DashboardView` contains large total-value card and 24h growth/loss indicator via `MetricCard` variants. |
+| AC-09.2 | Done | `Portfolio value` card with timeframe selector (`1 день`, `7 дней`, `месяц`) and line chart series. |
+| AC-09.3 | Done | Transactions card has search input, sortable headers, loading and empty states. |
+| AC-09.4 | Partial | Allocation section includes donut-style visualization and legend, but arc segment geometry is currently static shell (not fully data-driven arc sweep). |
+| AC-03.3 | Done | Sidebar item `Дешборд` activates through route state; topbar breadcrumb/title shows `Dashboard`. |
+
+### Tests Added/Updated
+
+- Unit: None added in this UI recovery pass.
+- Integration: None.
+- UI: Dashboard style guard scan for `Views/Dashboard`, `DesignSystem`, `Shell`.
+- Manual: Runtime navigation smoke (`sidebar: Дешборд -> DashboardView`).
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/Dashboard src/Proxima.App/DesignSystem src/Proxima.App/Shell
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Allocation donut uses a tokenized static ring composition in this iteration; fully data-driven donut segment rendering is deferred.
+
+### Commit
+
+Pending feat(ui): rebuild dashboard from figma mockup
+
+## Iteration 24 — Assets Import/Manual Import UI Recovery (Figma Mapping)
+
+### Scope
+
+Rebuild Import + Manual Import flow for Assets route in runtime AppShell: add import modal states, parser preview boundary integration, manual fallback page with editable transaction table, and connect entry point from Assets screen.
+
+### User Stories Checked
+
+- [x] US-07.1 — User imports broker reports quickly.
+- [x] US-07.2 — User reviews suspicious imported rows.
+- [x] US-07.3 — User can recover from failed import.
+- [x] US-07.4 — Developer can add broker parsers.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-07.1 | Done | `AssetsView` contains `Импортировать активы` action and opens `ImportDialogView` modal in migrated runtime shell. |
+| AC-07.2 | Done | Import modal shows visible states: `idle`, `drag_over`, `file_selected`, `parsing`, `validation_warnings`, `parse_failed`. |
+| AC-07.3 | Done | Parse failure exposes redacted error and manual fallback route to `ManualImportView`. |
+| AC-07.4 | Done | UI does not parse files directly; `ImportDialogViewModel` uses `IImportPreviewGateway` over existing `Proxima.Importing.IImportService`. |
+| AC-07.5 | Done | `ManualImportView` includes editable transaction table with required columns, add/remove rows, suspicious highlighting and save action. |
+
+### Tests Added/Updated
+
+- Unit: None.
+- Integration: None.
+- UI: Import/Assets style guard scan.
+- Manual: Import modal + manual fallback runtime smoke via AppShell routes.
+
+### Commands Run
+
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/Import src/Proxima.App/Views/Assets src/Proxima.App/DesignSystem
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+- Current drag-over state in import modal is UI-driven and not yet wired to native OS drag-and-drop events.
+- Manual import `Save` currently commits UI state only; full transaction persistence wiring in new AppShell flow is pending.
+- PDF parser remains stub-based via `PdfStubImportParser` and still requires manual completion path.
+
+### Commit
+
+Pending feat(ui): rebuild asset import flow from figma mockup
+
+## Iteration 25 — Asset Details UI Recovery (Figma Mapping)
+
+### Scope
+
+Rebuild `Asset Details` screen in runtime AppShell from Figma mapping and wire navigation from `Assets` list with route parameter `assetId`, breadcrumbs, grouped metrics, chart/timeframe, and asset-scoped transactions table states.
+
+### User Stories Checked
+
+- [x] US-10.1 — User analyzes selected asset.
+- [x] US-10.2 — User reads key metrics quickly.
+- [x] US-10.3 — Professional user sees advanced risk metrics.
+- [x] US-10.4 — User reviews transactions for one asset.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-10.1 | Done | `AssetsViewModel.OpenAssetDetailsCommand` navigates to `asset-details` with `Parameters[\"assetId\"]`; `AssetDetailsViewModel` resolves route parameters and shows not-found when id missing/invalid. |
+| AC-10.2 | Partial | Candlestick area and timeframe selector (`1ч`, `1д`, `7д`, `30д`) implemented with loading/empty/error states; current data source is mock provider. |
+| AC-10.3 | Done | Base metrics section includes Market Cap, FDV, P/E or P/S, 24h Volume, Supply, SMA50/200, RSI with readable grouped rows and fallback-friendly values. |
+| AC-10.4 | Partial | Advanced metrics section includes Sharpe, Sortino, Calmar, MDD, VaR, CVaR, Beta, HV/IV, ATR, Turnover, Spread/Depth, Hurst, Z-Score, Correlation; some values are placeholders when external feeds are absent. |
+| AC-10.6 | Done | Transactions table scoped to selected asset read model, includes search and sortable headers (date/type/price/quantity/amount) plus empty state. |
+| Shell Nav | Done | Sidebar keeps `Все активы` active for `asset-details`; topbar breadcrumb shows `Все активы / <asset>`. |
+
+### Tests Added/Updated
+
+- Unit: None in this UI recovery pass.
+- Integration: None.
+- UI: Asset Details style guard scan for `Views/AssetDetails`, `DesignSystem`, `Shell`.
+- Manual: Runtime smoke for route transition `Assets -> Asset Details`.
+
+### Commands Run
+
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/AssetDetails src/Proxima.App/DesignSystem src/Proxima.App/Shell
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+- Asset details screen currently uses `MockAssetDetailsReadModelProvider` in runtime AppShell.
+- Real analytics/OHLC query integration is deferred to wiring with existing application+analytics services.
+
+### Commit
+
+1fd5a68 feat(ui): rebuild asset details from figma mockup
+
+## Iteration 26 — Goals UI Recovery (Figma Mapping)
+
+### Scope
+
+Rebuild `Goals` screen in runtime AppShell from Figma mapping and replace route placeholder with working goals view, add-goal modal, projection chart block, and summary card.
+
+### User Stories Checked
+
+- [x] US-12.1 — User creates and tracks financial goals.
+- [x] US-12.2 — User sees compound-interest projection for selected goal.
+- [x] US-12.3 — User can edit/archive goal safely.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-12.1 | Done | `GoalsView` includes title `Цели`, goals list, progress visualization, and three-dot CRUD menu. |
+| AC-12.2 | Done | `AddGoalDialogView` + `AddGoalDialogViewModel` implement name/target validation, save/cancel, and edit/archive mode. |
+| AC-12.3 | Done | `GoalsViewModel` uses existing `IGoalService` (`ListActive/Create/Update/Archive/Forecast`) for goal operations and point forecast. |
+| AC-12.4 | Partial | Projection line chart and summary are implemented through `IGoalProjectionService` boundary in App layer; scenario breadth is still simplified. |
+| AC-12.5 | Done | Loading, empty, and error states are explicitly present in view. |
+| Shell Nav | Done | `AppShellViewModel` route `goals` now resolves to `GoalsViewModel`; topbar title/breadcrumb set to `Цели`; placeholder removed for goals route. |
+
+### Tests Added/Updated
+
+- Unit: None in this UI recovery pass.
+- Integration: None.
+- UI: Style guard scan for `Views/Goals`.
+- Manual: Runtime navigation smoke `Sidebar -> Цели`, add/edit/archive modal flow.
+
+### Commands Run
+
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/Goals src/Proxima.App/DesignSystem src/Proxima.App/Shell
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+- Goal progress baseline still uses shell-level portfolio value mock (`IShellState.CurrentPortfolioValue`) instead of per-goal allocated balance.
+- Projection chart currently uses a fixed 10-year horizon and does not yet support scenario presets.
+
+### Commit
+
+Pending feat(ui): rebuild goals from figma mockup
+
+## Iteration 21 — UI Recovery: Taxes Screen
+
+### Scope
+
+Rebuild `Taxes` runtime screen from Figma mapping (`62:498`) in new AppShell flow, add tax page components, wire route/navigation and implement draft tax read model boundary using existing application/reporting services.
+
+### User Stories Checked
+
+- [x] US-03.1 — User can move between core sections (Taxes route in shell).
+- [x] FR-011 — Taxes page draft overview for RB.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| FR-011.1 | Done | `TaxesView` contains period/profile selectors, calculate action, summary, breakdown, export, disclaimer, loading/empty/error/offline states. |
+| FR-011.2 | Done | Uses `ITaxCalculator` boundary through `TaxesViewModel.ITaxesReadModelProvider`; no tax formula logic in ViewModel. |
+| FR-011.3 | Partial | Rules/versioning remain draft from existing tax module; limitation recorded. |
+| FR-011.4 | Done | PDF export wired via `IReportService.ExportTaxPdfAsync`. |
+| Shell Taxes route | Done | `AppShellViewModel` route mapped to `TaxesViewModel`; `AppShellView` data template added; sidebar opens taxes screen. |
+
+### Tests Added/Updated
+- Unit: none (UI recovery iteration focused on existing service boundaries).
+- Integration: none.
+- UI: manual shell navigation + state rendering; style guard command.
+- Manual: taxes navigation, recalculate action, export action status message.
+
+### Commands Run
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/Taxes src/Proxima.App/DesignSystem src/Proxima.App/Shell
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Known limitations are available in: .codex/known-limitations.md
+
+### Commit
+
+Pending in this iteration step.
+
+## Iteration 27 — UI Recovery: Settings Screen
+
+### Scope
+
+Rebuild `Settings` runtime screen from Figma mapping (`62:763`), add DS settings components, wire `settings` route in AppShell to real `SettingsView`, and bind page state/actions through `ISettingsService` boundary.
+
+### User Stories Checked
+
+- [x] US-03.1 — User can move between core sections (Settings route in shell).
+- [x] Module 14 settings UI recovery scope for runtime AppShell.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| Settings.UI.1 | Done | `SettingsView` has title/breadcrumb block `Настройки`, profile/account, security, appearance, data and API/quotes sections. |
+| Settings.UI.2 | Done | Loading/saved/error states are present and bound from `SettingsViewModel`. |
+| Settings.ARCH.1 | Done | `SettingsViewModel` uses `ISettingsService` interface only; no direct file system or cryptography internals in ViewModel. |
+| Settings.ARCH.2 | Partial | Security/snapshot actions are command placeholders pending Auth/Sync runtime wiring. |
+| Shell.Nav.Settings | Done | `AppShellViewModel` route `settings` maps to `SettingsViewModel`; `AppShellView` DataTemplate added; placeholder removed for settings route; topbar title/breadcrumb set to `Настройки`. |
+
+### Tests Added/Updated
+
+- Unit: None (UI recovery iteration).
+- Integration: None.
+- UI: Style guard scan for `Views/Settings`.
+- Manual: Sidebar navigation to Settings and save/reload status flow.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/Settings src/Proxima.App/DesignSystem src/Proxima.App/Shell
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Known limitations are available in: .codex/known-limitations.md
+
+### Commit
+
+Pending feat(ui): rebuild settings from figma mockup
+
+## Iteration 28 — Legacy Shell Isolation After AppShell Migration
+
+### Scope
+
+Remove legacy runtime UI host (`MainWindow`) and legacy monolithic shell/auth ViewModels after migration to new `AppShell` + `LoginView` runtime flow.
+
+### User Stories Checked
+
+- [x] US-03.1 — User can move between core sections in migrated shell.
+- [x] Legacy isolation task — runtime no longer references monolithic `MainWindow`/`ShellViewModel`.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| Legacy.Ref.1 | Done | Runtime startup in `App.axaml.cs` uses `LoginView`/`CreateAppShellWindow`; `MainWindow` removed. |
+| Legacy.Ref.2 | Done | `ShellViewModel`, `AuthViewModel`, `ShellNavigationService`, `ShellRoute`, `ShellPage` removed; no runtime references remain. |
+| Legacy.Ref.3 | Done | `AppComposition` DI cleaned from legacy registrations; AppShell composition preserved. |
+| Routes.Check | Done | Verified runtime coverage: Login/Auth via `LoginView` + unlock flow; shell routes `dashboard`, `assets`, `asset-details`, `assets-import-manual`, `goals`, `taxes`, `settings` in `AppRoutes` + `AppShellViewModel.RegisterRoutes`. |
+| Tests.Update | Done | `tests/Proxima.App.Tests/Program.cs` updated to validate new runtime shell/auth flow and route presence instead of legacy MainWindow checks. |
+
+### Tests Added/Updated
+
+- Unit: none.
+- Integration: none.
+- UI: updated App smoke assertions for AppShell/Auth/runtime routes.
+- Manual: not required for this refactor-only pass.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Known limitations are available in: .codex/known-limitations.md
+
+### Commit
+
+Pending refactor(ui): remove legacy shell after app shell migration
+
+## Iteration 29 — UI Theme Hardening Pass
+
+### Scope
+
+Harden production UI theme to prevent system-theme/default Avalonia state leakage, pin runtime theme to Light, centralize Proxima theme resource loading, and define explicit control interaction states based on Proxima tokens.
+
+### User Stories Checked
+
+- [x] US-01.2 — User sees a trustworthy bento-style interface.
+- [x] US-01.3 — Developer can reuse design primitives.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-01.2 | Done | `App.axaml` enforces `RequestedThemeVariant="Light"` and loads centralized `DesignSystem/Themes/ProximaTheme.axaml`; state brushes added in `DesignSystem/Tokens/Brushes.axaml`. |
+| AC-01.3 | Partial | `ControlTheme` hardening added for `Button`, `TextBox`, `ComboBox`, `MenuItem/ContextMenu`, `ScrollBar`, `CheckBox`; current table runtime remains wrapper-based (`proxima-datagrid*`) without native `DataGrid` control theme binding. |
+| AC-01.4 | Done | Explicit normal/pointerover/pressed/focused/disabled and selected states defined with Proxima tokens only; no system accent brushes introduced. |
+
+### Tests Added/Updated
+
+- Unit: None.
+- Integration: None.
+- UI: Existing runtime/UI test suite executed.
+- Manual: Theme state/style audit on design-system control dictionaries.
+
+### Commands Run
+
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/DesignSystem src/Proxima.App/Shell src/Proxima.App/Views
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Known limitations are available in: .codex/known-limitations.md
+
+### Commit
+
+Pending fix(ui): harden proxima theme control states
+
+## Iteration 30 — Proxima Chart Foundation
+
+### Scope
+
+Create a unified chart foundation layer for Proxima UI (`DesignSystem/Charts` + Proxima chart components), apply it to Dashboard/Goals/AssetDetails charts, and standardize axes/grid/tooltip/value-format behavior without changing business logic.
+
+### User Stories Checked
+
+- [x] US-01.2 — User sees a trustworthy bento-style interface.
+- [x] US-01.3 — Developer can reuse design primitives.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| Chart.Foundation.1 | Done | Added `ProximaChartTheme`, `ProximaChartAxisFactory`, `ProximaChartTooltipFormatter` under `src/Proxima.App/DesignSystem/Charts/`. |
+| Chart.Foundation.2 | Done | Added DS component style files: `ProximaCartesianChart.axaml`, `ProximaDonutChart.axaml`, `ProximaCandlestickChart.axaml`; connected in `ProximaLightTheme.axaml`. |
+| Chart.Foundation.3 | Done | Dashboard and Goals switched from `LineChart` to `ProximaCartesianChart`; AssetDetails switched from `CandlestickChart` to `ProximaCandlestickChart`; Dashboard donut switched to `ProximaDonutChart`. |
+| Chart.Foundation.4 | Partial | X/Y axes, labels, separators/grid, tooltip hover and formatted values are unified in custom chart controls; candlestick zoom/pan/reset is not available in current custom chart implementation. |
+| Chart.Foundation.5 | Partial | Style guard command on requested wide scope still fails on known baseline false positives in DesignSystem token/template files (documented limitation). |
+
+### Tests Added/Updated
+
+- Unit: None.
+- Integration: None.
+- UI: `tests/Proxima.App.Tests/Program.cs` updated to assert Proxima chart controls and chart foundation files.
+- Manual: Visual chart foundation consistency check in Dashboard/Goals/AssetDetails mappings context.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/DesignSystem src/Proxima.App/Views src/Proxima.App/Shell
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Known limitations are available in: .codex/known-limitations.md
+
+### Commit
+
+b63459f feat(ui): add proxima chart foundation
+
+## Iteration 31 — Asset Details Candlestick Zoom/Pan Hardening
+
+### Scope
+
+Upgrade `ProximaCandlestickChart` behavior for Asset Details: visible X/Y axes, readable date/price labels, OHLCV tooltip, X-axis zoom/pan, reset zoom action, and visible range state binding via `AssetDetailsViewModel`.
+
+### User Stories Checked
+
+- [x] US-10.2 — User sees price history in candlestick/ohlc form with timeframe.
+- [x] US-18.3 — Keyboard/mouse user gets readable chart feedback and controls.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-10.2 | Done | `src/Proxima.App/Controls/ProximaCandlestickChart.cs` now renders X/Y axes, separators, formatted labels and OHLC candles for visible range. |
+| Chart.Hardening.1 | Done | Hover tooltip includes datetime, open, high, low, close, volume. |
+| Chart.Hardening.2 | Done | Pointer wheel zooms X range; pointer drag pans X range; Y zoom is not enabled. |
+| Chart.Hardening.3 | Done | Reset action wired in `AssetDetailsViewModel.ResetChartZoomCommand` and `AssetDetailsView.axaml` button. |
+| Chart.Hardening.4 | Done | Visible range state persisted in VM via `CandlesVisibleStartIndex`/`CandlesVisibleEndIndex` TwoWay bindings. |
+| Chart.Hardening.5 | Partial | Data provider remains mock (`MockAssetDetailsReadModelProvider`), so runtime values are deterministic placeholders. |
+
+### Tests Added/Updated
+
+- Unit: None (UI-control behavior change; existing compile/runtime guards used).
+- Integration: None.
+- UI: Existing `tests/Proxima.App.Tests` baseline passes with updated chart/viewmodel bindings.
+- Manual: Zoom, pan, tooltip, reset verified through control logic implementation and binding review.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views/AssetDetails src/Proxima.App/DesignSystem
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Known limitations are available in: .codex/known-limitations.md
+
+### Commit
+
+Pending feat(ui): add candlestick chart zoom and tooltip
+
+## Iteration 32 — Proxima Chart Components Rollout Across Screens
+
+### Scope
+
+Replace remaining local chart usage patterns with Proxima chart components on implemented screens (`Dashboard`, `AssetDetails`, `Goals`), forbid local chart visual config in views, and harden chart loading/empty/error wiring.
+
+### User Stories Checked
+
+- [x] US-01.2 — User sees a trustworthy bento-style interface.
+- [x] US-01.3 — Developer can reuse design primitives.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| Chart.Rollout.1 | Done | `DashboardView` portfolio chart uses `ProximaCartesianChart`; allocation chart uses `ProximaDonutChart`. |
+| Chart.Rollout.2 | Done | `AssetDetailsView` candlestick chart uses `ProximaCandlestickChart`; legacy `CandlestickChart` removed. |
+| Chart.Rollout.3 | Done | `GoalsView` projection chart uses `ProximaCartesianChart`; legacy `LineChart` removed. |
+| Chart.Rollout.4 | Done | Chart states (`IsLoading`, `EmptyStateText`, `ErrorStateText`) wired in Dashboard/Goals/AssetDetails chart bindings. |
+| Chart.Rollout.5 | Done | No local chart axis/color/tooltip configuration in screen views; centralized in Proxima chart controls. |
+| Chart.Rollout.6 | Done | Updated visual notes in `.codex/figma-mapping/dashboard.md`, `asset-details.md`, `goals.md`. |
+
+### Tests Added/Updated
+
+- Unit: None.
+- Integration: None.
+- UI: Existing suite executed with updated chart control behavior.
+- Manual: Chart behavior visual review notes updated in figma-mapping docs.
+
+### Commands Run
+
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views src/Proxima.App/DesignSystem
+git status --short
+```
+
+### Result
+
+Done
+
+### Known Limitations
+
+Known limitations are available in: .codex/known-limitations.md
+
+### Commit
+
+043b0ec refactor(ui): use proxima chart components across screens

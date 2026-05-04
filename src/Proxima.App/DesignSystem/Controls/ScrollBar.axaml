@@ -1,0 +1,29 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type ScrollBar}" TargetType="ScrollBar">
+            <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackground}" />
+            <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlBorder}" />
+
+            <Style Selector="^:pointerover">
+                <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlBorderPointerOver}" />
+            </Style>
+
+            <Style Selector="^:pressed">
+                <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlBorderFocused}" />
+            </Style>
+
+            <Style Selector="^:focus-visible, ^:focus-within">
+                <Setter Property="Foreground" Value="{StaticResource ProximaBrushFocusRing}" />
+            </Style>
+
+            <Style Selector="^:disabled">
+                <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForegroundDisabled}" />
+            </Style>
+        </ControlTheme>
+    </Styles.Resources>
+
+    <Style Selector="ScrollBar">
+        <Setter Property="Theme" Value="{StaticResource {x:Type ScrollBar}}" />
+    </Style>
+</Styles>

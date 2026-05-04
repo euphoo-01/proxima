@@ -1,9 +1,3 @@
 <Styles xmlns="https://github.com/avaloniaui">
-    <Style Selector="Border.proxima-chart-surface">
-        <Setter Property="Background" Value="{StaticResource ProximaBrush.SurfaceSubtle}" />
-        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Card}" />
-        <Setter Property="Padding" Value="24" />
-    </Style>
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/TimeframeSelector.axaml" />
 </Styles>

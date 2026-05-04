@@ -1,0 +1,118 @@
+<UserControl
+    x:Class="Proxima.App.Views.Taxes.TaxesView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:Proxima.App.Controls"
+    xmlns:taxes="using:Proxima.App.Views.Taxes"
+    x:DataType="taxes:TaxesViewModel"
+    mc:Ignorable="d"
+    d:DataContext="{x:Static taxes:TaxesDesignData.Sample}">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32" Spacing="24">
+            <controls:PageHeader Subtitle="{Binding Subtitle}" Title="{Binding Title}" />
+
+            <Border Classes="proxima-tax-period-selector">
+                <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="12">
+                    <TextBlock Classes="proxima-caption" VerticalAlignment="Center" Text="Период" />
+                    <ComboBox Grid.Column="1" Classes="proxima-input" ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear}" />
+
+                    <TextBlock Grid.Column="2" Classes="proxima-caption" HorizontalAlignment="Right" VerticalAlignment="Center" Text="Налоговый профиль" />
+                    <ComboBox Grid.Column="3" Classes="proxima-input" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" MinWidth="220" />
+                    <Button Grid.Column="4" Classes="proxima-primary proxima-toolbar" Command="{Binding RecalculateCommand}" Content="Рассчитать налоги" />
+                </Grid>
+            </Border>
+
+            <Border Classes="proxima-card-surface" IsVisible="{Binding IsLoading}">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="proxima-card-title" Text="Расчет выполняется..." />
+                    <TextBlock Classes="proxima-caption" Text="Подготавливаем налоговый черновик и сверяем курс валют." />
+                </StackPanel>
+            </Border>
+
+            <Border Classes="proxima-card-surface" IsVisible="{Binding HasError}">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="proxima-card-title" Text="Ошибка расчета" />
+                    <TextBlock Classes="proxima-caption" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <Border Classes="proxima-card-surface" IsVisible="{Binding IsEmpty}">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="proxima-card-title" Text="Нет данных" />
+                    <TextBlock Classes="proxima-caption" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <Grid ColumnDefinitions="2*,*" ColumnSpacing="16" IsVisible="{Binding HasContent}">
+                <Border Classes="proxima-tax-summary-card">
+                    <StackPanel Spacing="14">
+                        <TextBlock Classes="proxima-card-title" Text="Сводка расчета" />
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="16" RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
+                            <TextBlock Classes="proxima-caption" Text="Налогооблагаемый доход" />
+                            <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding TaxableIncome}" />
+
+                            <TextBlock Grid.Row="1" Classes="proxima-caption" Text="Оценка налога" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Classes="proxima-body" Text="{Binding EstimatedTax}" />
+
+                            <TextBlock Grid.Row="2" Classes="proxima-caption" Text="Экономия" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" Classes="proxima-body" Text="{Binding TaxSaved}" />
+                        </Grid>
+                        <TextBlock Classes="proxima-caption" Text="{Binding SummaryStatus}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Classes="proxima-tax-export-card">
+                    <StackPanel Spacing="10">
+                        <TextBlock Classes="proxima-card-title" Text="Экспорт отчета" />
+                        <TextBlock Classes="proxima-caption" Text="Сформировать PDF-черновик для проверки перед подачей." TextWrapping="Wrap" />
+                        <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding ExportPdfCommand}" Content="Экспорт PDF" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border Classes="proxima-tax-breakdown-table" IsVisible="{Binding HasContent}">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="proxima-card-title" Text="Детализация" />
+
+                    <Border Classes="proxima-datagrid-header">
+                        <Grid ColumnDefinitions="2*,*,2*" ColumnSpacing="8">
+                            <TextBlock Classes="proxima-datagrid-header-text" Text="Показатель" />
+                            <TextBlock Grid.Column="1" Classes="proxima-datagrid-header-text" Text="Значение" />
+                            <TextBlock Grid.Column="2" Classes="proxima-datagrid-header-text" Text="Комментарий" />
+                        </Grid>
+                    </Border>
+
+                    <ItemsControl ItemsSource="{Binding BreakdownRows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="taxes:TaxBreakdownRowViewModel">
+                                <Border Classes="proxima-datagrid-cell">
+                                    <Grid ColumnDefinitions="2*,*,2*" ColumnSpacing="8">
+                                        <TextBlock Classes="proxima-datagrid-cell-text" Text="{Binding Name}" />
+                                        <TextBlock Grid.Column="1" Classes="proxima-datagrid-cell-text" Text="{Binding ValueText}" />
+                                        <TextBlock Grid.Column="2" Classes="proxima-datagrid-cell-text" Text="{Binding Note}" TextWrapping="Wrap" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Classes="proxima-info-notice" IsVisible="{Binding HasContent}">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="proxima-card-title" Text="Важно" />
+                    <TextBlock Classes="proxima-caption" Text="{Binding TaxDisclaimer}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <Border Classes="proxima-card-surface" IsVisible="{Binding IsOfflineRate}">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="proxima-card-title" Text="Проблема с курсом валют" />
+                    <TextBlock Classes="proxima-caption" Text="{Binding OfflineRateMessage}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

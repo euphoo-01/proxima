@@ -1,0 +1,98 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type Button}" TargetType="Button">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Small}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="24,12" />
+            <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackground}" />
+            <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
+            <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorder}" />
+
+            <Style Selector="^:pointerover">
+                <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundPointerOver}" />
+                <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorderPointerOver}" />
+            </Style>
+
+            <Style Selector="^:pressed">
+                <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundPressed}" />
+                <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorderFocused}" />
+            </Style>
+
+            <Style Selector="^:focus-visible">
+                <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushFocusRing}" />
+                <Setter Property="BorderThickness" Value="2" />
+            </Style>
+
+            <Style Selector="^:disabled">
+                <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundDisabled}" />
+                <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForegroundDisabled}" />
+                <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorder}" />
+            </Style>
+
+            <Style Selector="^:selected">
+                <Setter Property="Background" Value="{StaticResource ProximaBrushSelectionBackground}" />
+                <Setter Property="Foreground" Value="{StaticResource ProximaBrushSelectionForeground}" />
+                <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushSelectionBackground}" />
+            </Style>
+        </ControlTheme>
+    </Styles.Resources>
+
+    <Style Selector="Button.proxima-toolbar">
+        <Setter Property="Padding" Value="14,10" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <Style Selector="Button.proxima-primary">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Brand}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.Brand}" />
+    </Style>
+
+    <Style Selector="Button.proxima-primary:pointerover">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.BrandHover}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BrandHover}" />
+    </Style>
+
+    <Style Selector="Button.proxima-primary:pressed">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Brand}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorderFocused}" />
+    </Style>
+
+    <Style Selector="Button.proxima-primary:disabled">
+        <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundDisabled}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForegroundDisabled}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorder}" />
+    </Style>
+
+    <Style Selector="Button.proxima-secondary">
+        <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackground}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorder}" />
+    </Style>
+
+    <Style Selector="Button.proxima-secondary:pointerover">
+        <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundPointerOver}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorderPointerOver}" />
+    </Style>
+
+    <Style Selector="Button.proxima-secondary:pressed">
+        <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundPressed}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorderFocused}" />
+    </Style>
+
+    <Style Selector="Button.proxima-sidebar-item:selected, Button.proxima-sidebar-item.proxima-active">
+        <Setter Property="Background" Value="{StaticResource ProximaBrushSelectionBackground}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrushSelectionForeground}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushSelectionBackground}" />
+    </Style>
+
+    <Style Selector="Button:focus-visible">
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushFocusRing}" />
+        <Setter Property="BorderThickness" Value="2" />
+    </Style>
+</Styles>

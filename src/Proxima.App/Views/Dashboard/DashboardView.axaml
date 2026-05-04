@@ -1,0 +1,132 @@
+<UserControl
+    x:Class="Proxima.App.Views.Dashboard.DashboardView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:Proxima.App.Controls"
+    xmlns:dashboard="using:Proxima.App.Views.Dashboard"
+    x:DataType="dashboard:DashboardViewModel"
+    mc:Ignorable="d"
+    d:DataContext="{x:Static dashboard:DashboardDesignData.Sample}">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="24" Spacing="24">
+                <Grid ColumnDefinitions="2*,*" ColumnSpacing="16">
+                    <controls:MetricCard
+                        Classes="proxima-portfolio-value-card"
+                        Footer="Текущая оценка портфеля"
+                        Label="Общая стоимость"
+                        Value="{Binding TotalPortfolioValueText}" />
+
+                    <controls:MetricCard
+                        Grid.Column="1"
+                        Classes="proxima-growth-metric-card"
+                        Delta="{Binding Delta24hText}"
+                        DeltaKind="{Binding Delta24hKind}"
+                        Footer="24h"
+                        Label="Рост / падение"
+                        Value="{Binding Delta24hPercentText}" />
+                </Grid>
+
+                <Grid ColumnDefinitions="2*,*" ColumnSpacing="16" RowDefinitions="Auto,Auto" RowSpacing="16">
+                    <controls:BentoCard Grid.RowSpan="2" Classes="proxima-portfolio-chart-card" Subtitle="Динамика стоимости" Title="Portfolio Value">
+                        <StackPanel Spacing="16">
+                            <controls:TimeframeSelector
+                                Classes="proxima-timeframe-selector"
+                                ItemsSource="{Binding Timeframes}"
+                                SelectedItem="{Binding SelectedTimeframe}" />
+
+                            <Border Classes="proxima-chart-surface" Height="240">
+                                <controls:ProximaCartesianChart
+                                    EmptyStateText="Нет данных за выбранный период"
+                                    ErrorStateText="{Binding PortfolioChartErrorText}"
+                                    IsLoading="{Binding IsPortfolioChartLoading}"
+                                    Values="{Binding PortfolioValueSeries}"
+                                    ValueKind="Money"
+                                    XAxisTitle="Период"
+                                    YAxisTitle="Стоимость" />
+                            </Border>
+                        </StackPanel>
+                    </controls:BentoCard>
+
+                    <controls:BentoCard Grid.Column="1" Grid.Row="0" Classes="proxima-allocation-donut-card" Subtitle="По категориям" Title="Asset Allocation">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+                            <Grid Width="136" Height="136" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <controls:ProximaDonutChart
+                                    EmptyStateText="Нет данных по структуре"
+                                    ErrorStateText="{Binding AllocationChartErrorText}"
+                                    IsLoading="{Binding IsAllocationChartLoading}"
+                                    Values="{Binding AllocationPercents}" />
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Classes="proxima-caption" HorizontalAlignment="Center" Text="Категорий" />
+                                    <TextBlock Classes="proxima-card-title" HorizontalAlignment="Center" Text="{Binding AllocationCountText}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <ItemsControl Grid.Column="1" ItemsSource="{Binding AllocationRows}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="dashboard:AllocationRowViewModel">
+                                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                                            <TextBlock Classes="proxima-body" Text="{Binding Label}" />
+                                            <TextBlock Grid.Column="1" Classes="proxima-caption" Text="{Binding PercentText}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
+                    </controls:BentoCard>
+                </Grid>
+
+                <controls:BentoCard Classes="proxima-transactions-table-card" Subtitle="Последние операции по портфелю" Title="Latest Transactions">
+                    <StackPanel Spacing="16">
+                        <TextBox
+                            Classes="proxima-input"
+                            Text="{Binding SearchQuery}"
+                            Watermark="Поиск по активу / тикеру / типу" />
+
+                        <Border Classes="proxima-datagrid" IsVisible="{Binding IsTransactionsLoading}">
+                            <StackPanel Margin="16" Spacing="8">
+                                <TextBlock Classes="proxima-body" Text="Загрузка транзакций..." />
+                                <TextBlock Classes="proxima-caption" Text="Подготавливаем список операций" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="proxima-datagrid" IsVisible="{Binding IsTransactionsEmpty}">
+                            <StackPanel Margin="16" Spacing="6">
+                                <TextBlock Classes="proxima-card-title" Text="Нет транзакций" />
+                                <TextBlock Classes="proxima-caption" Text="Измените фильтр или добавьте операции в портфель." />
+                            </StackPanel>
+                        </Border>
+
+                        <Grid IsVisible="{Binding HasTransactions}" RowDefinitions="Auto,*">
+                            <Border Classes="proxima-datagrid-header">
+                                <Grid ColumnDefinitions="2*,*,*,*,*" ColumnSpacing="8">
+                                    <Button Classes="proxima-table-sort-button" Command="{Binding SortByAssetCommand}" Content="Актив" />
+                                    <Button Grid.Column="1" Classes="proxima-table-sort-button" Command="{Binding SortByTypeCommand}" Content="Тип" />
+                                    <Button Grid.Column="2" Classes="proxima-table-sort-button" Command="{Binding SortByDateCommand}" Content="Дата" />
+                                    <Button Grid.Column="3" Classes="proxima-table-sort-button" Command="{Binding SortByAmountCommand}" Content="Сумма" />
+                                    <Button Grid.Column="4" Classes="proxima-table-sort-button" Command="{Binding SortByPriceCommand}" Content="Цена" />
+                                </Grid>
+                            </Border>
+
+                            <ItemsControl Grid.Row="1" ItemsSource="{Binding VisibleTransactions}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="dashboard:TransactionRowItemViewModel">
+                                        <Border Classes="proxima-datagrid-cell">
+                                            <Grid ColumnDefinitions="2*,*,*,*,*" ColumnSpacing="8">
+                                                <TextBlock Classes="proxima-datagrid-cell-text" Text="{Binding AssetLabel}" />
+                                                <TextBlock Grid.Column="1" Classes="proxima-datagrid-cell-text" Text="{Binding TypeLabel}" />
+                                                <TextBlock Grid.Column="2" Classes="proxima-datagrid-cell-text" Text="{Binding DateText}" />
+                                                <TextBlock Grid.Column="3" Classes="proxima-datagrid-cell-text" Text="{Binding AmountText}" />
+                                                <TextBlock Grid.Column="4" Classes="proxima-datagrid-cell-text" Text="{Binding PriceText}" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
+                    </StackPanel>
+                </controls:BentoCard>
+            </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,23 @@
+<Styles xmlns="https://github.com/avaloniaui">
+    <Style Selector="Border.proxima-sidebar-root">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Sidebar}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="0,0,1,0" />
+        <Setter Property="Padding" Value="{StaticResource ProximaSpace.24}" />
+    </Style>
+
+    <Style Selector="Button.proxima-sidebar-item">
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextSecondary}" />
+    </Style>
+
+    <Style Selector="Button.proxima-sidebar-item:selected, Button.proxima-sidebar-item.proxima-active">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Brand}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+</Styles>

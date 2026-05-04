@@ -1,37 +1,3 @@
-<Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Styles.Resources>
-        <FontFamily x:Key="ProximaFont.Family">Manrope, Segoe UI, Arial</FontFamily>
-    </Styles.Resources>
-
-    <Style Selector="TextBlock.proxima-page-title">
-        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-        <Setter Property="FontSize" Value="36" />
-        <Setter Property="FontWeight" Value="ExtraBold" />
-        <Setter Property="LineHeight" Value="40" />
-        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextPrimary}" />
-    </Style>
-
-    <Style Selector="TextBlock.proxima-card-title">
-        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-        <Setter Property="FontSize" Value="17" />
-        <Setter Property="FontWeight" Value="Bold" />
-        <Setter Property="LineHeight" Value="24" />
-        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextPrimary}" />
-    </Style>
-
-    <Style Selector="TextBlock.proxima-body">
-        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-        <Setter Property="FontSize" Value="15" />
-        <Setter Property="FontWeight" Value="Medium" />
-        <Setter Property="LineHeight" Value="22" />
-        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextSecondary}" />
-    </Style>
-
-    <Style Selector="TextBlock.proxima-caption">
-        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-        <Setter Property="FontSize" Value="13" />
-        <Setter Property="LineHeight" Value="18" />
-        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextMuted}" />
-    </Style>
+<Styles xmlns="https://github.com/avaloniaui">
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Tokens/Typography.axaml" />
 </Styles>

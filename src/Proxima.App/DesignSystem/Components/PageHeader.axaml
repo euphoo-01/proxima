@@ -1,0 +1,16 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:controls="using:Proxima.App.Controls">
+    <Style Selector="controls|PageHeader">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="proxima-page-title" Text="{TemplateBinding Title}" />
+                        <TextBlock Classes="proxima-body" Text="{TemplateBinding Subtitle}" />
+                    </StackPanel>
+                    <ContentPresenter Grid.Column="1" Content="{TemplateBinding Content}" VerticalAlignment="Center" />
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+</Styles>

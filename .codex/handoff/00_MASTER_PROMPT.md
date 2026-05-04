@@ -17,14 +17,9 @@
 
 ## Figma source of truth
 
-Figma URL:
-
-`https://www.figma.com/design/Drxcen3JN69XP0fnYxkgOi/Proxima-2?node-id=62-497&p=f&t=5bNwquv4cza52Z5Z-0`
-
-Файл: `Drxcen3JN69XP0fnYxkgOi`  
 Начальный node id: `62:497`
 
-Используй Figma MCP для извлечения:
+Используй custom figma_mcp_server для извлечения:
 
 - структуры страниц/фреймов;
 - реальных размеров, отступов, сеток, радиусов, цветов, типографики;
@@ -134,7 +129,7 @@ Proxima/
 3. добавления/обновления тестов для модуля;
 4. выполнения тестов;
 5. исправления регрессий;
-6. обновления `docs/iteration-log.md`;
+6. обновления `.codex/iteration-log.md`;
 7. conventional commit.
 
 Запрещено переходить к следующему модулю, если текущий модуль не прошел quality gate из `14_ITERATION_QUALITY_GATE.md`.

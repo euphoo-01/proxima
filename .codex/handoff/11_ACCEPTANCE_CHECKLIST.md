@@ -109,4 +109,4 @@
 - [ ] Every implemented module has tests added or explicitly justified as manual.
 - [ ] Every implemented module has test execution evidence.
 - [ ] Every module iteration ends with Conventional Commit.
-- [ ] `docs/iteration-log.md` contains module-by-module evidence.
+- [ ] `.codex/iteration-log.md` contains module-by-module evidence.

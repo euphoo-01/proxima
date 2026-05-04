@@ -1,0 +1,47 @@
+<UserControl
+    x:Class="Proxima.App.Views.Auth.LoginView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:auth="using:Proxima.App.Views.Auth"
+    x:DataType="auth:LoginViewModel"
+    mc:Ignorable="d"
+    d:DataContext="{x:Static auth:LoginDesignData.Sample}">
+    <Grid Classes="proxima-auth-page">
+        <Border Classes="proxima-auth-card">
+            <StackPanel Spacing="{StaticResource ProximaGap.24}">
+                <StackPanel Spacing="{StaticResource ProximaGap.8}">
+                    <TextBlock Classes="proxima-auth-title" Text="Unlock Proxima" />
+                    <TextBlock Classes="proxima-body" Text="Введите локальный логин и пароль для входа." />
+                </StackPanel>
+
+                <StackPanel Spacing="{StaticResource ProximaGap.16}">
+                    <StackPanel Spacing="{StaticResource ProximaGap.8}">
+                        <TextBlock Classes="proxima-caption" Text="Логин / Email" />
+                        <TextBox Classes="proxima-input" Text="{Binding LoginOrEmail}" Watermark="local" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="{StaticResource ProximaGap.8}">
+                        <TextBlock Classes="proxima-caption" Text="Пароль" />
+                        <TextBox Classes="proxima-input" PasswordChar="•" Text="{Binding Password}" Watermark="Введите пароль" />
+                    </StackPanel>
+
+                    <TextBlock Classes="proxima-auth-error" IsVisible="{Binding HasError}" Text="{Binding ErrorMessage}" />
+
+                    <Button
+                        Classes="proxima-primary"
+                        Command="{Binding UnlockCommand}"
+                        Content="{Binding PrimaryActionText}"
+                        IsEnabled="{Binding CanSubmit}" />
+
+                    <Button
+                        Classes="proxima-tertiary-link"
+                        Command="{Binding ForgotPasswordCommand}"
+                        Content="Forgot password / Recovery"
+                        IsEnabled="{Binding IsNotBusy}" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

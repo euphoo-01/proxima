@@ -1,0 +1,172 @@
+<UserControl
+    x:Class="Proxima.App.Views.Settings.SettingsView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:settings="using:Proxima.App.Views.Settings"
+    x:DataType="settings:SettingsViewModel"
+    mc:Ignorable="d"
+    d:DataContext="{x:Static settings:SettingsDesignData.Sample}">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24" Spacing="24">
+            <StackPanel Spacing="4">
+                <TextBlock Classes="proxima-caption" Text="Настройки" />
+                <TextBlock Classes="proxima-page-title" Text="Настройки" />
+            </StackPanel>
+
+            <Border Classes="proxima-card-surface" IsVisible="{Binding IsLoading}">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="proxima-card-title" Text="Загрузка" />
+                    <TextBlock Classes="proxima-caption" Text="Подготавливаем параметры профиля и приложения." />
+                </StackPanel>
+            </Border>
+
+            <Border Classes="proxima-card-surface" IsVisible="{Binding HasError}">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="proxima-card-title" Text="Ошибка" />
+                    <TextBlock Classes="proxima-caption" Text="{Binding ErrorMessage}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <Border Classes="proxima-card-surface" IsVisible="{Binding IsSaved}">
+                <TextBlock Classes="proxima-caption" Text="{Binding StatusMessage}" />
+            </Border>
+
+            <Grid ColumnDefinitions="2*,*" ColumnSpacing="16" IsVisible="{Binding HasContent}">
+                <StackPanel Spacing="16">
+                    <Border Classes="proxima-settings-section">
+                        <StackPanel Spacing="12">
+                            <TextBlock Classes="proxima-card-title" Text="Профиль и аккаунт" />
+
+                            <Border Classes="proxima-settings-row">
+                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
+                                    <TextBlock Classes="proxima-caption" Text="Отображаемое имя" VerticalAlignment="Center" />
+                                    <TextBox Grid.Column="1" Classes="proxima-input" Text="{Binding DisplayName}" />
+                                </Grid>
+                            </Border>
+
+                            <Border Classes="proxima-settings-row">
+                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
+                                    <TextBlock Classes="proxima-caption" Text="Логин" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Login}" VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+
+                            <Border Classes="proxima-settings-row">
+                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
+                                    <TextBlock Classes="proxima-caption" Text="Роль" VerticalAlignment="Center" />
+                                    <ComboBox Grid.Column="1" Classes="proxima-input" ItemsSource="{Binding RoleOptions}" SelectedItem="{Binding SelectedRole}" />
+                                </Grid>
+                            </Border>
+
+                            <Border Classes="proxima-settings-row">
+                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
+                                    <TextBlock Classes="proxima-caption" Text="Базовая валюта" VerticalAlignment="Center" />
+                                    <ComboBox Grid.Column="1" Classes="proxima-input" ItemsSource="{Binding CurrencyOptions}" SelectedItem="{Binding PreferredCurrency}" />
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="proxima-settings-section">
+                        <StackPanel Spacing="12">
+                            <TextBlock Classes="proxima-card-title" Text="Внешние API и котировки" />
+
+                            <Border Classes="proxima-settings-row">
+                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
+                                    <TextBlock Classes="proxima-caption" Text="Провайдер котировок" VerticalAlignment="Center" />
+                                    <ComboBox Grid.Column="1" Classes="proxima-input" ItemsSource="{Binding QuoteProviderOptions}" SelectedItem="{Binding SelectedQuoteProvider}" />
+                                </Grid>
+                            </Border>
+
+                            <Border Classes="proxima-settings-row">
+                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
+                                    <TextBlock Classes="proxima-caption" Text="Интервал обновления (мин)" VerticalAlignment="Center" />
+                                    <TextBox Grid.Column="1" Classes="proxima-input" Text="{Binding QuoteRefreshMinutes}" />
+                                </Grid>
+                            </Border>
+
+                            <Border Classes="proxima-settings-row">
+                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
+                                    <TextBlock Classes="proxima-caption" Text="Провайдер курсов" VerticalAlignment="Center" />
+                                    <ComboBox Grid.Column="1" Classes="proxima-input" ItemsSource="{Binding CurrencyProviderOptions}" SelectedItem="{Binding SelectedCurrencyProvider}" />
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Spacing="16">
+                    <Border Classes="proxima-settings-section">
+                        <StackPanel Spacing="12">
+                            <TextBlock Classes="proxima-card-title" Text="Безопасность" />
+
+                            <Border Classes="proxima-security-status-card">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Classes="proxima-body" Text="Статус локального пароля" />
+                                    <TextBlock Classes="proxima-caption" Text="{Binding SecurityStatus}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="proxima-security-status-card">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Classes="proxima-body" Text="Состояние снапшотов" />
+                                    <TextBlock Classes="proxima-caption" Text="{Binding SnapshotStatus}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding ChangePasswordCommand}" Content="Сменить пароль" HorizontalAlignment="Left" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="proxima-settings-section">
+                        <StackPanel Spacing="12">
+                            <TextBlock Classes="proxima-card-title" Text="Внешний вид" />
+
+                            <Border Classes="proxima-settings-row">
+                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
+                                    <TextBlock Classes="proxima-caption" Text="Язык" VerticalAlignment="Center" />
+                                    <ComboBox Grid.Column="1" Classes="proxima-input proxima-language-selector" ItemsSource="{Binding LanguageOptions}" SelectedItem="{Binding SelectedLanguage}" />
+                                </Grid>
+                            </Border>
+
+                            <Border Classes="proxima-settings-row">
+                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
+                                    <TextBlock Classes="proxima-caption" Text="UI scale" VerticalAlignment="Center" />
+                                    <TextBox Grid.Column="1" Classes="proxima-input" Text="{Binding UiScale}" />
+                                </Grid>
+                            </Border>
+
+                            <Border Classes="proxima-settings-row">
+                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
+                                    <TextBlock Classes="proxima-caption" Text="Тема" VerticalAlignment="Center" />
+                                    <ComboBox Grid.Column="1" Classes="proxima-input proxima-theme-selector" ItemsSource="{Binding ThemeOptions}" SelectedIndex="0" />
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="proxima-settings-section">
+                        <StackPanel Spacing="12">
+                            <TextBlock Classes="proxima-card-title" Text="Данные" />
+                            <Border Classes="proxima-settings-row">
+                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
+                                    <TextBlock Classes="proxima-caption" Text="Синхронизация снапшотов" VerticalAlignment="Center" />
+                                    <ComboBox Grid.Column="1" Classes="proxima-input" ItemsSource="{Binding SyncModeOptions}" SelectedIndex="{Binding SelectedSyncModeIndex}" />
+                                </Grid>
+                            </Border>
+                            <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding ExportSnapshotCommand}" Content="Экспорт снапшота" HorizontalAlignment="Left" />
+                            <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding ImportSnapshotCommand}" Content="Импорт снапшота" HorizontalAlignment="Left" />
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Button Classes="proxima-primary proxima-toolbar" Command="{Binding SaveCommand}" Content="Сохранить" />
+                        <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding ReloadCommand}" Content="Обновить" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

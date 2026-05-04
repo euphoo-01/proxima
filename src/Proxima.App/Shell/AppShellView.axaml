@@ -1,0 +1,58 @@
+<UserControl
+    x:Class="Proxima.App.Shell.AppShellView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:shell="using:Proxima.App.Shell"
+    xmlns:assets="using:Proxima.App.Views.Assets"
+    xmlns:assetsViews="using:Proxima.App.Views.Assets"
+    xmlns:assetDetails="using:Proxima.App.Views.AssetDetails"
+    xmlns:assetDetailsViews="using:Proxima.App.Views.AssetDetails"
+    xmlns:dashboard="using:Proxima.App.Views.Dashboard"
+    xmlns:dashboardViews="using:Proxima.App.Views.Dashboard"
+    xmlns:goals="using:Proxima.App.Views.Goals"
+    xmlns:goalsViews="using:Proxima.App.Views.Goals"
+    xmlns:import="using:Proxima.App.Views.Import"
+    xmlns:importViews="using:Proxima.App.Views.Import"
+    xmlns:placeholder="using:Proxima.App.ViewModels.Placeholder"
+    xmlns:placeholderViews="using:Proxima.App.Views.Placeholder"
+    xmlns:settings="using:Proxima.App.Views.Settings"
+    xmlns:settingsViews="using:Proxima.App.Views.Settings"
+    xmlns:taxes="using:Proxima.App.Views.Taxes"
+    xmlns:taxesViews="using:Proxima.App.Views.Taxes"
+    x:DataType="shell:AppShellViewModel">
+    <UserControl.DataTemplates>
+        <DataTemplate x:DataType="dashboard:DashboardViewModel">
+            <dashboardViews:DashboardView />
+        </DataTemplate>
+        <DataTemplate x:DataType="assets:AssetsViewModel">
+            <assetsViews:AssetsView />
+        </DataTemplate>
+        <DataTemplate x:DataType="assetDetails:AssetDetailsViewModel">
+            <assetDetailsViews:AssetDetailsView />
+        </DataTemplate>
+        <DataTemplate x:DataType="import:ManualImportViewModel">
+            <importViews:ManualImportView />
+        </DataTemplate>
+        <DataTemplate x:DataType="goals:GoalsViewModel">
+            <goalsViews:GoalsView />
+        </DataTemplate>
+        <DataTemplate x:DataType="taxes:TaxesViewModel">
+            <taxesViews:TaxesView />
+        </DataTemplate>
+        <DataTemplate x:DataType="settings:SettingsViewModel">
+            <settingsViews:SettingsView />
+        </DataTemplate>
+        <DataTemplate x:DataType="placeholder:PlaceholderViewModel">
+            <placeholderViews:PlaceholderView />
+        </DataTemplate>
+    </UserControl.DataTemplates>
+
+    <Grid ColumnDefinitions="272,*">
+        <shell:SidebarView DataContext="{Binding Sidebar}" />
+
+        <Grid Grid.Column="1" RowDefinitions="Auto,*">
+            <shell:TopbarView DataContext="{Binding Topbar}" />
+            <ContentControl Grid.Row="1" Content="{Binding CurrentContent}" />
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,23 +1,22 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using Proxima.App.ViewModels;
-using Proxima.Infrastructure.Assets;
-using Proxima.Infrastructure.Auth;
-using Proxima.Infrastructure.Goals;
-using Proxima.Infrastructure.Portfolios;
-using Proxima.Infrastructure.Quotes;
-using Proxima.Infrastructure.Settings;
-using Proxima.Infrastructure.Taxes;
-using Proxima.Infrastructure.Transactions;
-using Proxima.Importing;
-using Proxima.Reporting.Reports;
-using Proxima.Sync.Snapshots;
+using Avalonia.Media;
+using Avalonia.Threading;
+using Microsoft.Extensions.DependencyInjection;
+using Proxima.App.Composition;
+using Proxima.App.Shell;
+using Proxima.App.Views.Auth;
 
 namespace Proxima.App;
 
 public partial class App : global::Avalonia.Application
 {
+    private static readonly bool DevAutoLogin =
+        Environment.GetEnvironmentVariable("PROXIMA_DEV_AUTO_LOGIN") != "0";
+
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -27,28 +26,59 @@ public partial class App : global::Avalonia.Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            string profileStorePath = ProximaAuthComposition.GetDefaultProfileStorePath();
-            string portfolioStorePath = ProximaPortfolioComposition.GetDefaultPortfolioStorePath();
-            string assetStorePath = ProximaAssetComposition.GetDefaultAssetStorePath();
-            string transactionStorePath = ProximaTransactionComposition.GetDefaultTransactionStorePath();
-            string quoteCachePath = ProximaQuoteComposition.GetDefaultQuoteCacheStorePath();
-            string goalsStorePath = ProximaGoalComposition.GetDefaultGoalsStorePath();
-            string settingsStorePath = ProximaSettingsComposition.GetDefaultSettingsStorePath();
-            ShellViewModel shell = new(
-                new ShellNavigationService(),
-                ProximaPortfolioComposition.CreatePortfolioService(portfolioStorePath),
-                ProximaAssetComposition.CreateAssetService(assetStorePath),
-                ProximaTransactionComposition.CreateTransactionService(transactionStorePath, assetStorePath),
-                ProximaImportComposition.CreateImportService(),
-                ProximaQuoteComposition.CreateQuoteRefreshService(assetStorePath, quoteCachePath, settingsStorePath),
-                ProximaGoalComposition.CreateGoalService(goalsStorePath),
-                ProximaTaxComposition.CreateTaxCalculator(settingsStorePath),
-                ProximaSettingsComposition.CreateSettingsService(settingsStorePath),
-                ProximaSyncComposition.CreateSnapshotService(),
-                ProximaReportingComposition.CreateReportService());
-            desktop.MainWindow = new MainWindow(new AuthViewModel(ProximaAuthComposition.CreateLocalAuthService(profileStorePath), shell));
+            ServiceProvider services = AppComposition.BuildServiceProvider();
+
+            if (DevAutoLogin)
+            {
+                desktop.MainWindow = CreateAppShellWindow(services);
+            }
+            else
+            {
+                LoginViewModel loginViewModel = new(new InMemoryAuthGateService());
+                LoginView loginView = new() { DataContext = loginViewModel };
+
+                Window loginWindow = new()
+                {
+                    Title = "Proxima — Login",
+                    Width = 960,
+                    Height = 720,
+                    MinWidth = 860,
+                    MinHeight = 640,
+                    Content = loginView,
+                };
+
+                loginViewModel.Unlocked += (_, _) =>
+                {
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        Window appShellWindow = CreateAppShellWindow(services);
+                        desktop.MainWindow = appShellWindow;
+                        appShellWindow.Show();
+                        loginWindow.Close();
+                    });
+                };
+
+                desktop.MainWindow = loginWindow;
+            }
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static Window CreateAppShellWindow(ServiceProvider services)
+    {
+        AppShellView appShellView = services.GetRequiredService<AppShellView>();
+        appShellView.DataContext = services.GetRequiredService<AppShellViewModel>();
+
+        return new Window
+        {
+            Title = "Proxima",
+            Width = 1280,
+            Height = 900,
+            MinWidth = 1120,
+            MinHeight = 720,
+            Background = Brushes.Transparent,
+            Content = appShellView,
+        };
     }
 }

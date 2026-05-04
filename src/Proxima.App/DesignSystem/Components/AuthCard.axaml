@@ -1,0 +1,48 @@
+<Styles xmlns="https://github.com/avaloniaui">
+    <Style Selector="Border.proxima-auth-card">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.AuthCard}" />
+        <Setter Property="BoxShadow" Value="{StaticResource ProximaShadow.AuthCard}" />
+        <Setter Property="Padding" Value="{StaticResource ProximaSpace.48}" />
+        <Setter Property="MaxWidth" Value="520" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="TextBlock.proxima-auth-title">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="32" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LineHeight" Value="36" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextPrimary}" />
+    </Style>
+
+    <Style Selector="TextBlock.proxima-auth-error">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="{StaticResource ProximaFontSize.Caption}" />
+        <Setter Property="LineHeight" Value="18" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Danger}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style Selector="Button.proxima-tertiary-link">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextMuted}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="FontWeight" Value="Medium" />
+    </Style>
+
+    <Style Selector="Button.proxima-tertiary-link:pointerover">
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Brand}" />
+    </Style>
+
+
+    <Style Selector="Grid.proxima-auth-page">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Page}" />
+    </Style>
+</Styles>

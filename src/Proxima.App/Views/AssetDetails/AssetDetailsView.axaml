@@ -1,0 +1,155 @@
+<UserControl
+    x:Class="Proxima.App.Views.AssetDetails.AssetDetailsView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Proxima.App.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:details="using:Proxima.App.Views.AssetDetails"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    x:DataType="details:AssetDetailsViewModel"
+    d:DataContext="{x:Static details:AssetDetailsDesignData.Sample}"
+    mc:Ignorable="d">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24" Spacing="24">
+            <controls:PageHeader Subtitle="Детальный анализ актива" Title="{Binding AssetName}">
+                <Border Classes="proxima-card-surface-subtle" Padding="12,8">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Classes="proxima-card-title" Text="{Binding AssetTicker}" />
+                        <TextBlock Classes="proxima-body" Text="{Binding PriceText}" />
+                        <TextBlock Classes="proxima-caption" Text="{Binding DeltaText}" />
+                    </StackPanel>
+                </Border>
+            </controls:PageHeader>
+
+            <Border Classes="proxima-card-surface" IsVisible="{Binding IsLoading}">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="proxima-card-title" Text="Загрузка данных актива..." />
+                    <TextBlock Classes="proxima-caption" Text="Подготавливаем график, метрики и транзакции." />
+                </StackPanel>
+            </Border>
+
+            <Border Classes="proxima-card-surface" IsVisible="{Binding IsNotFound}">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="proxima-card-title" Text="Актив не найден" />
+                    <TextBlock Classes="proxima-caption" Text="Проверьте переход из списка активов и корректность asset id." />
+                </StackPanel>
+            </Border>
+
+            <Border Classes="proxima-card-surface" IsVisible="{Binding HasError}">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="proxima-card-title" Text="Ошибка загрузки" />
+                    <TextBlock Classes="proxima-caption" Text="{Binding ErrorText}" />
+                </StackPanel>
+            </Border>
+
+            <Grid ColumnDefinitions="2*,*" ColumnSpacing="16" IsVisible="{Binding HasData}" RowDefinitions="Auto,Auto" RowSpacing="16">
+                <controls:BentoCard Grid.RowSpan="2" Subtitle="OHLC / Candlestick" Title="Ценовой график">
+                    <StackPanel Spacing="16">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <controls:TimeframeSelector
+                                Classes="proxima-timeframe-selector"
+                                ItemsSource="{Binding Timeframes}"
+                                SelectedItem="{Binding SelectedTimeframe}" />
+                            <Button Grid.Column="1" Classes="proxima-table-sort-button" Command="{Binding ResetChartZoomCommand}" Content="Reset zoom" />
+                        </Grid>
+
+                        <Border Classes="proxima-chart-surface" Height="260">
+                            <controls:ProximaCandlestickChart
+                                Candles="{Binding Candles}"
+                                CurrencyCode="{Binding AssetCurrency}"
+                                EmptyStateText="Нет свечных данных для выбранного периода"
+                                ErrorStateText="{Binding ErrorText}"
+                                IsLoading="{Binding IsLoading}"
+                                VisibleEndIndex="{Binding CandlesVisibleEndIndex, Mode=TwoWay}"
+                                VisibleStartIndex="{Binding CandlesVisibleStartIndex, Mode=TwoWay}" />
+                        </Border>
+
+                        <Border Classes="proxima-chart-surface" IsVisible="{Binding ShowEmptyChart}">
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="proxima-card-title" Text="Нет свечных данных" />
+                                <TextBlock Classes="proxima-caption" Text="Для выбранного периода нет OHLC. Выберите другой таймфрейм." />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </controls:BentoCard>
+
+                <controls:BentoCard Grid.Column="1" Grid.Row="0" Subtitle="Быстрый обзор" Title="Ключевые метрики">
+                    <ItemsControl ItemsSource="{Binding BasicMetrics}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="details:AssetMetricItemViewModel">
+                                <Border Classes="proxima-datagrid-cell">
+                                    <Grid ColumnDefinitions="2*,*" ColumnSpacing="8">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Classes="proxima-body" Text="{Binding Label}" />
+                                            <TextBlock Classes="proxima-caption" Text="{Binding Hint}" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Classes="proxima-datagrid-cell-text" HorizontalAlignment="Right" Text="{Binding Value}" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </controls:BentoCard>
+
+                <controls:BentoCard Grid.Column="1" Grid.Row="1" Subtitle="Risk/Advanced" Title="Продвинутые метрики">
+                    <ItemsControl ItemsSource="{Binding RiskMetrics}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="details:AssetMetricItemViewModel">
+                                <Border Classes="proxima-datagrid-cell">
+                                    <Grid ColumnDefinitions="2*,*" ColumnSpacing="8">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Classes="proxima-body" Text="{Binding Label}" />
+                                            <TextBlock Classes="proxima-caption" Text="{Binding Hint}" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Classes="proxima-datagrid-cell-text" HorizontalAlignment="Right" Text="{Binding Value}" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </controls:BentoCard>
+            </Grid>
+
+            <controls:BentoCard IsVisible="{Binding HasData}" Subtitle="Операции по выбранному активу" Title="Транзакции актива">
+                <StackPanel Spacing="16">
+                    <TextBox Classes="proxima-input" Text="{Binding SearchQuery}" Watermark="Поиск по типу или дате" />
+
+                    <Border Classes="proxima-datagrid" IsVisible="{Binding IsTransactionsEmpty}">
+                        <StackPanel Margin="16" Spacing="6">
+                            <TextBlock Classes="proxima-card-title" Text="Нет транзакций" />
+                            <TextBlock Classes="proxima-caption" Text="Для этого актива пока нет операций по выбранным фильтрам." />
+                        </StackPanel>
+                    </Border>
+
+                    <Grid IsVisible="{Binding ShowTransactions}" RowDefinitions="Auto,*">
+                        <Border Classes="proxima-datagrid-header">
+                            <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
+                                <Button Classes="proxima-table-sort-button" Command="{Binding SortByDateCommand}" Content="Дата" />
+                                <Button Grid.Column="1" Classes="proxima-table-sort-button" Command="{Binding SortByTypeCommand}" Content="Тип" />
+                                <Button Grid.Column="2" Classes="proxima-table-sort-button" Command="{Binding SortByPriceCommand}" Content="Цена" />
+                                <Button Grid.Column="3" Classes="proxima-table-sort-button" Command="{Binding SortByQuantityCommand}" Content="Кол-во" />
+                                <Button Grid.Column="4" Classes="proxima-table-sort-button" Command="{Binding SortByAmountCommand}" Content="Сумма" />
+                            </Grid>
+                        </Border>
+
+                        <ItemsControl Grid.Row="1" ItemsSource="{Binding VisibleTransactions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="details:AssetTransactionRowViewModel">
+                                    <Border Classes="proxima-datagrid-cell">
+                                        <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
+                                            <TextBlock Classes="proxima-datagrid-cell-text" Text="{Binding DateText}" />
+                                            <TextBlock Grid.Column="1" Classes="proxima-datagrid-cell-text" Text="{Binding TypeLabel}" />
+                                            <TextBlock Grid.Column="2" Classes="proxima-datagrid-cell-text" Text="{Binding PriceText}" />
+                                            <TextBlock Grid.Column="3" Classes="proxima-datagrid-cell-text" Text="{Binding QuantityText}" />
+                                            <TextBlock Grid.Column="4" Classes="proxima-datagrid-cell-text" Text="{Binding AmountText}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </StackPanel>
+            </controls:BentoCard>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,23 @@
+<Styles xmlns="https://github.com/avaloniaui">
+    <Style Selector="Border.proxima-goal-list-card">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Large}" />
+        <Setter Property="Padding" Value="{StaticResource ProximaSpace.24}" />
+        <Setter Property="BoxShadow" Value="{StaticResource ProximaShadow.Card}" />
+    </Style>
+
+    <Style Selector="Border.proxima-goal-card">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.SurfaceSubtle}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Card}" />
+        <Setter Property="Padding" Value="{StaticResource ProximaSpace.16}" />
+    </Style>
+
+    <Style Selector="ProgressBar.proxima-goal-progress">
+        <Setter Property="Height" Value="10" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Brand}" />
+    </Style>
+</Styles>

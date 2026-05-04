@@ -1,15 +1,10 @@
 <Application
     x:Class="Proxima.App.App"
     xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    RequestedThemeVariant="Light">
     <Application.Styles>
         <FluentTheme />
-        <StyleInclude Source="avares://Proxima.App/Styles/Tokens.axaml" />
-        <StyleInclude Source="avares://Proxima.App/Styles/Typography.axaml" />
-        <StyleInclude Source="avares://Proxima.App/Styles/Buttons.axaml" />
-        <StyleInclude Source="avares://Proxima.App/Styles/Inputs.axaml" />
-        <StyleInclude Source="avares://Proxima.App/Styles/Cards.axaml" />
-        <StyleInclude Source="avares://Proxima.App/Styles/Tables.axaml" />
-        <StyleInclude Source="avares://Proxima.App/Styles/Charts.axaml" />
+        <StyleInclude Source="avares://Proxima.App/DesignSystem/Themes/ProximaTheme.axaml" />
     </Application.Styles>
 </Application>
