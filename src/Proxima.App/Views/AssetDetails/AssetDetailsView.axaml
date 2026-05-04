@@ -51,7 +51,7 @@
                             SelectedItem="{Binding SelectedTimeframe}" />
 
                         <Border Classes="proxima-chart-surface" Height="260">
-                            <controls:CandlestickChart Candles="{Binding Candles}" />
+                            <controls:ProximaCandlestickChart Candles="{Binding Candles}" IsLoading="{Binding IsLoading}" />
                         </Border>
 
                         <Border Classes="proxima-chart-surface" IsVisible="{Binding ShowEmptyChart}">

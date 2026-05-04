@@ -25,6 +25,9 @@
     <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/PortfolioChartCard.axaml" />
     <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/AllocationDonutCard.axaml" />
     <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/TransactionsTable.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/ProximaCartesianChart.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/ProximaDonutChart.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/ProximaCandlestickChart.axaml" />
     <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/TimeframeSelector.axaml" />
     <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/ImportDropzone.axaml" />
     <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/ManualTransactionGrid.axaml" />

@@ -66,6 +66,8 @@ public sealed class DashboardViewModel : ViewModelBase
 
     public string AllocationCountText => AllocationRows.Count.ToString();
 
+    public IReadOnlyList<decimal> AllocationPercents => AllocationRows.Select(static row => row.Percent).ToArray();
+
     public bool IsTransactionsLoading
     {
         get => _isTransactionsLoading;
@@ -159,6 +161,7 @@ public sealed class DashboardViewModel : ViewModelBase
         OnPropertyChanged(nameof(Delta24hPercentText));
         OnPropertyChanged(nameof(Delta24hKind));
         OnPropertyChanged(nameof(AllocationCountText));
+        OnPropertyChanged(nameof(AllocationPercents));
     }
 
     private void LoadSeries()

@@ -112,7 +112,7 @@
                             <StackPanel Spacing="12">
                                 <TextBlock Classes="proxima-card-title" Text="Прогноз накоплений" />
                                 <Border Classes="proxima-chart-surface" Height="220">
-                                    <controls:LineChart Values="{Binding ProjectionSeries}" />
+                                    <controls:ProximaCartesianChart Values="{Binding ProjectionSeries}" ValueKind="Money" XAxisTitle="Годы" YAxisTitle="Сумма" />
                                 </Border>
                             </StackPanel>
                         </Border>

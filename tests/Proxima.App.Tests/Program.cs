@@ -80,8 +80,9 @@ internal static class Program
         Assert(appShellView.Contains("SidebarView", StringComparison.Ordinal), "AppShell should contain sidebar host.");
         Assert(appShellView.Contains("TopbarView", StringComparison.Ordinal), "AppShell should contain topbar host.");
         Assert(appShellView.Contains("ManualImportView", StringComparison.Ordinal), "AppShell should bind Manual Import content.");
-        Assert(dashboardView.Contains("controls:LineChart", StringComparison.Ordinal), "Dashboard should include line chart control.");
-        Assert(assetDetailsView.Contains("controls:CandlestickChart", StringComparison.Ordinal), "Asset details should include candlestick chart control.");
+        Assert(dashboardView.Contains("controls:ProximaCartesianChart", StringComparison.Ordinal), "Dashboard should include Proxima cartesian chart control.");
+        Assert(dashboardView.Contains("controls:ProximaDonutChart", StringComparison.Ordinal), "Dashboard should include Proxima donut chart control.");
+        Assert(assetDetailsView.Contains("controls:ProximaCandlestickChart", StringComparison.Ordinal), "Asset details should include Proxima candlestick chart control.");
         Assert(settingsView.Contains("Сменить пароль", StringComparison.Ordinal), "Settings should expose password change action.");
         Assert(settingsView.Contains("Экспорт снапшота", StringComparison.Ordinal), "Settings should expose snapshot export action.");
     }
@@ -199,6 +200,12 @@ internal static class Program
             "src/Proxima.App/Controls/SearchBox.cs",
             "src/Proxima.App/Controls/TimeframeSelector.cs",
             "src/Proxima.App/Controls/DataTableHeaderCell.cs",
+            "src/Proxima.App/DesignSystem/Charts/ProximaChartTheme.cs",
+            "src/Proxima.App/DesignSystem/Charts/ProximaChartAxisFactory.cs",
+            "src/Proxima.App/DesignSystem/Charts/ProximaChartTooltipFormatter.cs",
+            "src/Proxima.App/DesignSystem/Components/ProximaCartesianChart.axaml",
+            "src/Proxima.App/DesignSystem/Components/ProximaDonutChart.axaml",
+            "src/Proxima.App/DesignSystem/Components/ProximaCandlestickChart.axaml",
         ];
 
         foreach (string file in requiredFiles)

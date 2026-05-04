@@ -1670,3 +1670,53 @@ Known limitations are available in: .codex/known-limitations.md
 ### Commit
 
 Pending fix(ui): harden proxima theme control states
+
+## Iteration 30 — Proxima Chart Foundation
+
+### Scope
+
+Create a unified chart foundation layer for Proxima UI (`DesignSystem/Charts` + Proxima chart components), apply it to Dashboard/Goals/AssetDetails charts, and standardize axes/grid/tooltip/value-format behavior without changing business logic.
+
+### User Stories Checked
+
+- [x] US-01.2 — User sees a trustworthy bento-style interface.
+- [x] US-01.3 — Developer can reuse design primitives.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| Chart.Foundation.1 | Done | Added `ProximaChartTheme`, `ProximaChartAxisFactory`, `ProximaChartTooltipFormatter` under `src/Proxima.App/DesignSystem/Charts/`. |
+| Chart.Foundation.2 | Done | Added DS component style files: `ProximaCartesianChart.axaml`, `ProximaDonutChart.axaml`, `ProximaCandlestickChart.axaml`; connected in `ProximaLightTheme.axaml`. |
+| Chart.Foundation.3 | Done | Dashboard and Goals switched from `LineChart` to `ProximaCartesianChart`; AssetDetails switched from `CandlestickChart` to `ProximaCandlestickChart`; Dashboard donut switched to `ProximaDonutChart`. |
+| Chart.Foundation.4 | Partial | X/Y axes, labels, separators/grid, tooltip hover and formatted values are unified in custom chart controls; candlestick zoom/pan/reset is not available in current custom chart implementation. |
+| Chart.Foundation.5 | Partial | Style guard command on requested wide scope still fails on known baseline false positives in DesignSystem token/template files (documented limitation). |
+
+### Tests Added/Updated
+
+- Unit: None.
+- Integration: None.
+- UI: `tests/Proxima.App.Tests/Program.cs` updated to assert Proxima chart controls and chart foundation files.
+- Manual: Visual chart foundation consistency check in Dashboard/Goals/AssetDetails mappings context.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/DesignSystem src/Proxima.App/Views src/Proxima.App/Shell
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Known limitations are available in: .codex/known-limitations.md
+
+### Commit
+
+Pending feat(ui): add proxima chart foundation
