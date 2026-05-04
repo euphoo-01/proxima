@@ -4,11 +4,12 @@ using Proxima.Domain.Transactions;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 
-public sealed class PostgresTransactionRepository(DatabaseBootstrapService db) : ITransactionRepository
+public sealed class PostgresTransactionRepository(IProximaUnitOfWorkFactory uowFactory, IProximaUnitOfWorkAccessor uowAccessor) : ITransactionRepository
 {
     public async Task<IReadOnlyList<PortfolioTransaction>> ListByPortfolioAsync(Guid portfolioId, bool includeArchived, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         IQueryable<TransactionEntity> query = ctx.Transactions.AsNoTracking().Where(x => x.PortfolioId == portfolioId);
         if (!includeArchived)
         {
@@ -40,7 +41,8 @@ public sealed class PostgresTransactionRepository(DatabaseBootstrapService db) :
 
     public async Task<PortfolioTransaction?> FindByIdAsync(Guid portfolioId, Guid transactionId, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         TransactionEntity? x = await ctx.Transactions.AsNoTracking()
             .FirstOrDefaultAsync(i => i.PortfolioId == portfolioId && i.Id == transactionId, cancellationToken)
             .ConfigureAwait(false);
@@ -69,7 +71,8 @@ public sealed class PostgresTransactionRepository(DatabaseBootstrapService db) :
 
     public async Task AddAsync(PortfolioTransaction transaction, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         ctx.Transactions.Add(new TransactionEntity
         {
             Id = transaction.Id,
@@ -90,12 +93,13 @@ public sealed class PostgresTransactionRepository(DatabaseBootstrapService db) :
             CreatedAt = transaction.CreatedAt,
             UpdatedAt = transaction.UpdatedAt,
         });
-        await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task UpdateAsync(PortfolioTransaction transaction, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         TransactionEntity entity = await ctx.Transactions.FirstAsync(
             x => x.PortfolioId == transaction.PortfolioId && x.Id == transaction.Id,
             cancellationToken).ConfigureAwait(false);
@@ -115,6 +119,6 @@ public sealed class PostgresTransactionRepository(DatabaseBootstrapService db) :
         entity.IsArchived = transaction.IsArchived;
         entity.UpdatedAt = transaction.UpdatedAt;
 
-        await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }

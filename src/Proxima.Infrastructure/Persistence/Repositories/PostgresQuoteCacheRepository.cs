@@ -3,11 +3,12 @@ using Proxima.Application.Quotes;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 
-public sealed class PostgresQuoteCacheRepository(DatabaseBootstrapService db) : IQuoteCacheRepository
+public sealed class PostgresQuoteCacheRepository(IProximaUnitOfWorkFactory uowFactory, IProximaUnitOfWorkAccessor uowAccessor) : IQuoteCacheRepository
 {
     public async Task<QuoteCacheEntry?> FindLatestByAssetIdAsync(Guid assetId, CancellationToken cancellationToken = default)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         QuoteCacheEntity? x = await ctx.QuoteCache.AsNoTracking()
             .FirstOrDefaultAsync(i => i.AssetId == assetId, cancellationToken)
             .ConfigureAwait(false);
@@ -17,7 +18,8 @@ public sealed class PostgresQuoteCacheRepository(DatabaseBootstrapService db) : 
 
     public async Task UpsertLatestAsync(QuoteCacheEntry entry, CancellationToken cancellationToken = default)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         QuoteCacheEntity? existing = await ctx.QuoteCache.FirstOrDefaultAsync(i => i.AssetId == entry.AssetId, cancellationToken).ConfigureAwait(false);
         if (existing is null)
         {
@@ -41,6 +43,6 @@ public sealed class PostgresQuoteCacheRepository(DatabaseBootstrapService db) : 
             existing.Source = entry.Source;
         }
 
-        await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }

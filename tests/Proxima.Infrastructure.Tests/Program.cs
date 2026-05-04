@@ -46,6 +46,7 @@ internal static class Program
         await BelarusbankExchangeRateProvider_ParsesRatesPayload().ConfigureAwait(false);
         await DatabaseBootstrap_ReturnsGracefulMessage_WhenUnavailable().ConfigureAwait(false);
         await JsonAuditLogRepository_AppendsEvents().ConfigureAwait(false);
+        PostgresRepositories_UseUnitOfWorkPattern();
         RedactionHelper_RemovesSensitiveKeys();
         InitialSchemaScript_ContainsRequiredTables();
         Console.WriteLine("Proxima.Infrastructure.Tests passed.");
@@ -80,6 +81,25 @@ internal static class Program
         DatabaseBootstrapService service = new(new DatabaseOptions("Host=localhost;Port=59999;Database=none;Username=none;Password=none", EnableSeed: false));
         string result = await service.EnsureReadyAsync().ConfigureAwait(false);
         Assert(result.StartsWith("Database unavailable:", StringComparison.Ordinal), "Unavailable DB should return safe guidance message.");
+    }
+
+    private static void PostgresRepositories_UseUnitOfWorkPattern()
+    {
+        string root = FindRepositoryRoot();
+        string repoDir = Path.Combine(root, "src", "Proxima.Infrastructure", "Persistence", "Repositories");
+        string[] postgresRepos = Directory.GetFiles(repoDir, "Postgres*.cs", SearchOption.TopDirectoryOnly);
+        foreach (string file in postgresRepos)
+        {
+            string code = File.ReadAllText(file);
+            if (Path.GetFileName(file) == "PostgresImportCommitService.cs")
+            {
+                Assert(code.Contains("IProximaUnitOfWorkFactory", StringComparison.Ordinal), "Import commit service should use UnitOfWork factory.");
+                continue;
+            }
+
+            Assert(code.Contains("IProximaUnitOfWorkFactory", StringComparison.Ordinal), $"Repository should depend on UnitOfWork factory: {Path.GetFileName(file)}");
+            Assert(code.Contains("UowLease", StringComparison.Ordinal), $"Repository should resolve context through UowLease: {Path.GetFileName(file)}");
+        }
     }
 
     private static void InitialSchemaScript_ContainsRequiredTables()

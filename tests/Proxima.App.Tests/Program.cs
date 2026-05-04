@@ -66,6 +66,8 @@ internal static class Program
         Assert(composition.Contains("PostgresTransactionRepository", StringComparison.Ordinal), "Runtime composition should bind transaction repository to PostgreSQL.");
         Assert(composition.Contains("PostgresGoalRepository", StringComparison.Ordinal), "Runtime composition should bind goal repository to PostgreSQL.");
         Assert(composition.Contains("PostgresUserSettingsRepository", StringComparison.Ordinal), "Runtime composition should bind settings repository to PostgreSQL.");
+        Assert(composition.Contains("IProximaUnitOfWorkFactory", StringComparison.Ordinal), "Runtime composition should register UnitOfWork factory.");
+        Assert(composition.Contains("IProximaUnitOfWorkAccessor", StringComparison.Ordinal), "Runtime composition should register UnitOfWork accessor.");
         Assert(composition.Contains("DatabaseConnectionStringProvider.Resolve()", StringComparison.Ordinal), "Runtime composition should resolve database options.");
         Assert(appCode.Contains("DatabaseBootstrapService", StringComparison.Ordinal), "App startup should bootstrap database before runtime shell.");
         Assert(appCode.Contains("Database unavailable", StringComparison.Ordinal), "App should show explicit database-unavailable window.");

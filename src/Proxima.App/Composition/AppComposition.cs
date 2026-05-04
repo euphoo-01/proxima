@@ -47,6 +47,8 @@ public static class AppComposition
         services.AddSingleton<IRuntimeAuthBootstrapper, RuntimeAuthBootstrapper>();
         services.AddSingleton(databaseOptions);
         services.AddSingleton(db);
+        services.AddSingleton<IProximaUnitOfWorkAccessor, ProximaUnitOfWorkAccessor>();
+        services.AddSingleton<IProximaUnitOfWorkFactory, ProximaUnitOfWorkFactory>();
         services.AddSingleton<IPortfolioRepository, PostgresPortfolioRepository>();
         services.AddSingleton<IAssetRepository, PostgresAssetRepository>();
         services.AddSingleton<ITransactionRepository, PostgresTransactionRepository>();

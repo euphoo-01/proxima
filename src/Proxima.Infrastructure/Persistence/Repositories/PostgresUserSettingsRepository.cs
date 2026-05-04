@@ -4,11 +4,12 @@ using Proxima.Domain.Auth;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 
-public sealed class PostgresUserSettingsRepository(DatabaseBootstrapService db) : IUserSettingsRepository
+public sealed class PostgresUserSettingsRepository(IProximaUnitOfWorkFactory uowFactory, IProximaUnitOfWorkAccessor uowAccessor) : IUserSettingsRepository
 {
     public async Task<UserSettings?> FindByOwnerAsync(Guid ownerUserId, CancellationToken cancellationToken = default)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         UserSettingsEntity? x = await ctx.UserSettings.AsNoTracking()
             .FirstOrDefaultAsync(i => i.OwnerUserId == ownerUserId, cancellationToken)
             .ConfigureAwait(false);
@@ -18,7 +19,8 @@ public sealed class PostgresUserSettingsRepository(DatabaseBootstrapService db) 
 
     public async Task UpsertAsync(UserSettings settings, CancellationToken cancellationToken = default)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         UserSettingsEntity? existing = await ctx.UserSettings
             .FirstOrDefaultAsync(i => i.OwnerUserId == settings.OwnerUserId, cancellationToken)
             .ConfigureAwait(false);
@@ -43,7 +45,7 @@ public sealed class PostgresUserSettingsRepository(DatabaseBootstrapService db) 
             existing.LastSnapshotAt = settings.LastSnapshotAt;
         }
 
-        await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static UserSettings ToDomain(UserSettingsEntity x)

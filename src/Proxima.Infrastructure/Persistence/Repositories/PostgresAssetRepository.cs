@@ -4,11 +4,12 @@ using Proxima.Domain.Assets;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 
-public sealed class PostgresAssetRepository(DatabaseBootstrapService db) : IAssetRepository
+public sealed class PostgresAssetRepository(IProximaUnitOfWorkFactory uowFactory, IProximaUnitOfWorkAccessor uowAccessor) : IAssetRepository
 {
     public async Task<IReadOnlyList<Asset>> ListByPortfolioAsync(Guid portfolioId, bool includeArchived, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
 
         IQueryable<AssetEntity> query = ctx.Assets.AsNoTracking().Where(x => x.PortfolioId == portfolioId);
         if (!includeArchived)
@@ -26,7 +27,8 @@ public sealed class PostgresAssetRepository(DatabaseBootstrapService db) : IAsse
 
     public async Task<Asset?> FindByIdAsync(Guid portfolioId, Guid assetId, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         AssetEntity? entity = await ctx.Assets.AsNoTracking()
             .FirstOrDefaultAsync(x => x.PortfolioId == portfolioId && x.Id == assetId, cancellationToken)
             .ConfigureAwait(false);
@@ -41,20 +43,22 @@ public sealed class PostgresAssetRepository(DatabaseBootstrapService db) : IAsse
 
     public async Task AddAsync(Asset asset, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         await using var tx = await ctx.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
         ctx.Assets.Add(ToEntity(asset));
-        await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await UpsertAssetTagsAsync(ctx, asset.Id, asset.Tags, cancellationToken).ConfigureAwait(false);
-        await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task UpdateAsync(Asset asset, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         await using var tx = await ctx.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
         AssetEntity entity = await ctx.Assets.FirstAsync(x => x.PortfolioId == asset.PortfolioId && x.Id == asset.Id, cancellationToken).ConfigureAwait(false);
@@ -71,13 +75,13 @@ public sealed class PostgresAssetRepository(DatabaseBootstrapService db) : IAsse
         entity.IsArchived = asset.IsArchived;
         entity.UpdatedAt = asset.UpdatedAt;
 
-        await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         List<AssetTagEntity> existing = await ctx.AssetTags.Where(x => x.AssetId == asset.Id).ToListAsync(cancellationToken).ConfigureAwait(false);
         ctx.AssetTags.RemoveRange(existing);
         await UpsertAssetTagsAsync(ctx, asset.Id, asset.Tags, cancellationToken).ConfigureAwait(false);
 
-        await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -153,7 +157,6 @@ public sealed class PostgresAssetRepository(DatabaseBootstrapService db) : IAsse
             {
                 tag = new TagEntity { Id = Guid.NewGuid(), Name = tagName };
                 ctx.Tags.Add(tag);
-                await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             }
 
             ctx.AssetTags.Add(new AssetTagEntity { AssetId = assetId, TagId = tag.Id });

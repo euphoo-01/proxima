@@ -4,11 +4,12 @@ using Proxima.Domain.Portfolios;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 
-public sealed class PostgresPortfolioRepository(DatabaseBootstrapService db) : IPortfolioRepository
+public sealed class PostgresPortfolioRepository(IProximaUnitOfWorkFactory uowFactory, IProximaUnitOfWorkAccessor uowAccessor) : IPortfolioRepository
 {
     public async Task<IReadOnlyList<Portfolio>> ListByOwnerAsync(Guid ownerUserId, bool includeArchived, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         IQueryable<PortfolioEntity> query = ctx.Portfolios.AsNoTracking().Where(x => x.OwnerUserId == ownerUserId);
         if (!includeArchived)
         {
@@ -33,7 +34,8 @@ public sealed class PostgresPortfolioRepository(DatabaseBootstrapService db) : I
 
     public async Task<Portfolio?> FindByIdAsync(Guid ownerUserId, Guid portfolioId, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         PortfolioEntity? entity = await ctx.Portfolios.AsNoTracking()
             .FirstOrDefaultAsync(x => x.OwnerUserId == ownerUserId && x.Id == portfolioId, cancellationToken)
             .ConfigureAwait(false);
@@ -45,7 +47,8 @@ public sealed class PostgresPortfolioRepository(DatabaseBootstrapService db) : I
 
     public async Task AddAsync(Portfolio portfolio, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         ctx.Portfolios.Add(new PortfolioEntity
         {
             Id = portfolio.Id,
@@ -58,12 +61,13 @@ public sealed class PostgresPortfolioRepository(DatabaseBootstrapService db) : I
             CreatedAt = portfolio.CreatedAt,
             UpdatedAt = portfolio.UpdatedAt,
         });
-        await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task UpdateAsync(Portfolio portfolio, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         PortfolioEntity entity = await ctx.Portfolios.FirstAsync(
             x => x.OwnerUserId == portfolio.OwnerUserId && x.Id == portfolio.Id,
             cancellationToken).ConfigureAwait(false);
@@ -75,6 +79,6 @@ public sealed class PostgresPortfolioRepository(DatabaseBootstrapService db) : I
         entity.IsArchived = portfolio.IsArchived;
         entity.UpdatedAt = portfolio.UpdatedAt;
 
-        await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }

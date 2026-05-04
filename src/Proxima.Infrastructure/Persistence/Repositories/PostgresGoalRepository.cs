@@ -4,11 +4,12 @@ using Proxima.Domain.Goals;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 
-public sealed class PostgresGoalRepository(DatabaseBootstrapService db) : IGoalRepository
+public sealed class PostgresGoalRepository(IProximaUnitOfWorkFactory uowFactory, IProximaUnitOfWorkAccessor uowAccessor) : IGoalRepository
 {
     public async Task<IReadOnlyList<Goal>> ListByPortfolioAsync(Guid portfolioId, bool includeArchived, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         IQueryable<GoalEntity> query = ctx.Goals.AsNoTracking().Where(x => x.PortfolioId == portfolioId);
         if (!includeArchived)
         {
@@ -35,7 +36,8 @@ public sealed class PostgresGoalRepository(DatabaseBootstrapService db) : IGoalR
 
     public async Task<Goal?> FindByIdAsync(Guid portfolioId, Guid goalId, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         GoalEntity? x = await ctx.Goals.AsNoTracking()
             .FirstOrDefaultAsync(i => i.PortfolioId == portfolioId && i.Id == goalId, cancellationToken)
             .ConfigureAwait(false);
@@ -58,7 +60,8 @@ public sealed class PostgresGoalRepository(DatabaseBootstrapService db) : IGoalR
 
     public async Task AddAsync(Goal goal, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         ctx.Goals.Add(new GoalEntity
         {
             Id = goal.Id,
@@ -73,12 +76,13 @@ public sealed class PostgresGoalRepository(DatabaseBootstrapService db) : IGoalR
             CreatedAt = goal.CreatedAt,
             UpdatedAt = goal.UpdatedAt,
         });
-        await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task UpdateAsync(Goal goal, CancellationToken cancellationToken)
     {
-        await using ProximaDbContext ctx = db.CreateDbContext();
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        ProximaDbContext ctx = lease.Context;
         GoalEntity entity = await ctx.Goals.FirstAsync(x => x.PortfolioId == goal.PortfolioId && x.Id == goal.Id, cancellationToken).ConfigureAwait(false);
 
         entity.Title = goal.Title;
@@ -90,6 +94,6 @@ public sealed class PostgresGoalRepository(DatabaseBootstrapService db) : IGoalR
         entity.IsArchived = goal.IsArchived;
         entity.UpdatedAt = goal.UpdatedAt;
 
-        await ctx.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }
