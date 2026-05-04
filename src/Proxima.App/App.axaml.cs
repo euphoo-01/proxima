@@ -9,6 +9,7 @@ using Proxima.App.Composition;
 using Proxima.App.Shell;
 using Proxima.App.Views.Auth;
 using Proxima.Domain.Auth;
+using Proxima.Infrastructure.Persistence;
 
 namespace Proxima.App;
 
@@ -28,6 +29,15 @@ public partial class App : global::Avalonia.Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             ServiceProvider services = AppComposition.BuildServiceProvider();
+            DatabaseBootstrapService dbBootstrap = services.GetRequiredService<DatabaseBootstrapService>();
+            string dbStatus = dbBootstrap.EnsureReadyAsync().GetAwaiter().GetResult();
+            if (!dbStatus.StartsWith("Database ready", StringComparison.OrdinalIgnoreCase))
+            {
+                desktop.MainWindow = CreateDatabaseUnavailableWindow(dbStatus);
+                base.OnFrameworkInitializationCompleted();
+                return;
+            }
+
             IRuntimeAuthBootstrapper authBootstrapper = services.GetRequiredService<IRuntimeAuthBootstrapper>();
             IRuntimeUserContext runtimeUserContext = services.GetRequiredService<IRuntimeUserContext>();
 
@@ -85,6 +95,25 @@ public partial class App : global::Avalonia.Application
             MinHeight = 720,
             Background = Brushes.Transparent,
             Content = appShellView,
+        };
+    }
+
+    private static Window CreateDatabaseUnavailableWindow(string message)
+    {
+        return new Window
+        {
+            Title = "Proxima — Database unavailable",
+            Width = 860,
+            Height = 540,
+            MinWidth = 760,
+            MinHeight = 480,
+            Content = new TextBlock
+            {
+                Margin = new Thickness(24),
+                Text = $"PostgreSQL startup failed.\\n{message}\\n\\nCheck docker-compose and PROXIMA_DB_CONNECTION.",
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 16,
+            },
         };
     }
 }

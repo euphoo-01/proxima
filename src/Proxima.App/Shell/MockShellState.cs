@@ -2,7 +2,7 @@ namespace Proxima.App.Shell;
 
 public sealed class MockShellState : IShellState
 {
-    public Guid CurrentPortfolioId { get; } = Guid.Parse("d0fd72f6-3ebc-44cc-b3bb-31f2f03fcaeb");
+    public Guid CurrentPortfolioId { get; } = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
     public string CurrentPortfolioName => "Demo Portfolio";
 

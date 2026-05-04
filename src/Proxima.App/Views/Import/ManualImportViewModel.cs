@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using Proxima.App.Shell;
+using Proxima.Application.Transactions;
 using Proxima.App.ViewModels;
 using Proxima.Domain.Transactions;
 using Proxima.Importing;
@@ -8,6 +10,8 @@ namespace Proxima.App.Views.Import;
 
 public sealed class ManualImportViewModel : ViewModelBase
 {
+    private readonly IImportCommitService? _importCommitService;
+    private readonly IShellState? _shellState;
     private readonly DelegateCommand _addRowCommand;
     private readonly DelegateCommand _removeRowCommand;
     private readonly DelegateCommand _saveCommand;
@@ -16,13 +20,20 @@ public sealed class ManualImportViewModel : ViewModelBase
     private bool _hasWarnings;
 
     public ManualImportViewModel()
+        : this(null, null)
     {
+    }
+
+    public ManualImportViewModel(IImportCommitService? importCommitService, IShellState? shellState)
+    {
+        _importCommitService = importCommitService;
+        _shellState = shellState;
         Rows = [];
         OperationTypes = Enum.GetNames<TransactionType>();
 
         _addRowCommand = new DelegateCommand(_ => AddRow());
         _removeRowCommand = new DelegateCommand(row => RemoveRow(row as ManualTransactionRowViewModel));
-        _saveCommand = new DelegateCommand(_ => SaveImport());
+        _saveCommand = new DelegateCommand(_ => _ = SaveImportAsync());
 
         AddRow();
     }
@@ -112,12 +123,48 @@ public sealed class ManualImportViewModel : ViewModelBase
         RecalculateWarnings();
     }
 
-    private void SaveImport()
+    private async Task SaveImportAsync()
     {
         RecalculateWarnings();
-        StatusMessage = HasWarnings
-            ? "Импорт сохранён с предупреждениями. Подозрительные строки помечены для проверки."
-            : "Импорт сохранён.";
+        if (_importCommitService is null || _shellState is null)
+        {
+            StatusMessage = HasWarnings
+                ? "Импорт сохранён с предупреждениями. Подозрительные строки помечены для проверки."
+                : "Импорт сохранён.";
+            return;
+        }
+
+        List<ImportTransactionDraft> drafts = [];
+        foreach (ManualTransactionRowViewModel row in Rows)
+        {
+            if (!DateTimeOffset.TryParse(row.Date, out DateTimeOffset tradeDate)
+                || !Enum.TryParse(row.OperationType, true, out TransactionType type)
+                || !decimal.TryParse(row.Quantity, out decimal quantity)
+                || !decimal.TryParse(row.Price, out decimal price)
+                || !decimal.TryParse(row.Commission, out decimal commission)
+                || string.IsNullOrWhiteSpace(row.Currency)
+                || string.IsNullOrWhiteSpace(row.TickerOrName))
+            {
+                StatusMessage = "Импорт не выполнен: проверьте формат дат, чисел и тикеров.";
+                return;
+            }
+
+            drafts.Add(new ImportTransactionDraft(
+                tradeDate,
+                row.TickerOrName.Trim().ToUpperInvariant(),
+                type,
+                quantity,
+                price,
+                commission,
+                row.Currency.Trim().ToUpperInvariant(),
+                row.SuspiciousReason));
+        }
+
+        ImportCommitResult result = await _importCommitService
+            .CommitAsync(_shellState.CurrentPortfolioId, drafts, CancellationToken.None)
+            .ConfigureAwait(true);
+
+        StatusMessage = result.Message;
     }
 
     private void RecalculateWarnings()

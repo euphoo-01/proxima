@@ -17,6 +17,7 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
     public DbSet<ImportSessionEntity> ImportSessions => Set<ImportSessionEntity>();
     public DbSet<ImportRowEntity> ImportRows => Set<ImportRowEntity>();
     public DbSet<QuoteCacheEntity> QuoteCache => Set<QuoteCacheEntity>();
+    public DbSet<UserSettingsEntity> UserSettings => Set<UserSettingsEntity>();
     public DbSet<SyncSnapshotEntity> SyncSnapshots => Set<SyncSnapshotEntity>();
     public DbSet<AuditLogEntity> AuditLog => Set<AuditLogEntity>();
 
@@ -38,6 +39,8 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
             e.ToTable("portfolios");
             e.HasKey(x => x.Id);
             e.Property(x => x.BaseCurrency).HasMaxLength(8);
+            e.Property(x => x.Description).HasMaxLength(1024);
+            e.Property(x => x.ClientLabel).HasMaxLength(256);
             e.HasOne<UserEntity>().WithMany().HasForeignKey(x => x.OwnerUserId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.OwnerUserId, x.IsArchived });
         });
@@ -48,6 +51,8 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
             e.HasKey(x => x.Id);
             e.Property(x => x.Ticker).HasMaxLength(32);
             e.Property(x => x.Currency).HasMaxLength(8);
+            e.Property(x => x.Exchange).HasMaxLength(128);
+            e.Property(x => x.Isin).HasMaxLength(32);
             e.Property(x => x.Quantity).HasPrecision(20, 8);
             e.Property(x => x.AverageBuyPrice).HasPrecision(20, 8);
             e.Property(x => x.CurrentPrice).HasPrecision(20, 8);
@@ -60,6 +65,7 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
             e.ToTable("tags");
             e.HasKey(x => x.Id);
             e.Property(x => x.Name).HasMaxLength(64);
+            e.HasIndex(x => x.Name).IsUnique();
         });
 
         model.Entity<AssetTagEntity>(e =>
@@ -80,6 +86,8 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
             e.Property(x => x.FeeAmount).HasPrecision(20, 8);
             e.Property(x => x.TaxAmount).HasPrecision(20, 8);
             e.Property(x => x.Currency).HasMaxLength(8);
+            e.Property(x => x.Broker).HasMaxLength(128);
+            e.Property(x => x.ExternalId).HasMaxLength(128);
             e.HasOne<PortfolioEntity>().WithMany().HasForeignKey(x => x.PortfolioId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<AssetEntity>().WithMany().HasForeignKey(x => x.AssetId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.PortfolioId, x.TradeDate });
@@ -100,6 +108,7 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
             e.ToTable("goals");
             e.HasKey(x => x.Id);
             e.Property(x => x.TargetAmount).HasPrecision(20, 8);
+            e.Property(x => x.Currency).HasMaxLength(8);
             e.Property(x => x.MonthlyContribution).HasPrecision(20, 8);
             e.HasOne<PortfolioEntity>().WithMany().HasForeignKey(x => x.PortfolioId).OnDelete(DeleteBehavior.Restrict);
         });
@@ -138,9 +147,26 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
         {
             e.ToTable("quote_cache");
             e.HasKey(x => x.Id);
+            e.Property(x => x.Ticker).HasMaxLength(32);
             e.Property(x => x.Price).HasPrecision(20, 8);
             e.Property(x => x.Currency).HasMaxLength(8);
             e.HasIndex(x => x.AssetId).IsUnique();
+        });
+
+        model.Entity<UserSettingsEntity>(e =>
+        {
+            e.ToTable("user_settings");
+            e.HasKey(x => x.OwnerUserId);
+            e.Property(x => x.DisplayName).HasMaxLength(128);
+            e.Property(x => x.Role).HasMaxLength(64);
+            e.Property(x => x.Login).HasMaxLength(128);
+            e.Property(x => x.PreferredCurrency).HasMaxLength(8);
+            e.Property(x => x.Language).HasMaxLength(16);
+            e.Property(x => x.UiScale).HasPrecision(10, 4);
+            e.Property(x => x.QuoteProvider).HasMaxLength(64);
+            e.Property(x => x.FinnhubApiKeyProtected).HasMaxLength(2048);
+            e.Property(x => x.CurrencyProvider).HasMaxLength(64);
+            e.HasOne<UserEntity>().WithMany().HasForeignKey(x => x.OwnerUserId).OnDelete(DeleteBehavior.Cascade);
         });
 
         model.Entity<SyncSnapshotEntity>(e =>

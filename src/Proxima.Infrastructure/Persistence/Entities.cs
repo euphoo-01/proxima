@@ -16,6 +16,8 @@ public sealed class PortfolioEntity
     public Guid OwnerUserId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string BaseCurrency { get; set; } = "USD";
+    public string? Description { get; set; }
+    public string? ClientLabel { get; set; }
     public bool IsArchived { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
@@ -29,6 +31,9 @@ public sealed class AssetEntity
     public string Name { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
     public string Currency { get; set; } = "USD";
+    public string? Exchange { get; set; }
+    public string? Isin { get; set; }
+    public string? EncryptedNotes { get; set; }
     public decimal Quantity { get; set; }
     public decimal AverageBuyPrice { get; set; }
     public decimal CurrentPrice { get; set; }
@@ -62,7 +67,12 @@ public sealed class TransactionEntity
     public decimal FeeAmount { get; set; }
     public decimal TaxAmount { get; set; }
     public string Currency { get; set; } = "USD";
+    public string? Broker { get; set; }
+    public string? ExternalId { get; set; }
+    public string? EncryptedNotes { get; set; }
     public bool IsArchived { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
 }
 
 public sealed class AssetPriceEntity
@@ -80,11 +90,30 @@ public sealed class GoalEntity
     public Guid PortfolioId { get; set; }
     public string Title { get; set; } = string.Empty;
     public decimal TargetAmount { get; set; }
+    public string Currency { get; set; } = "USD";
     public decimal MonthlyContribution { get; set; }
     public decimal? ExpectedAnnualReturnPercent { get; set; }
+    public DateTimeOffset? TargetDate { get; set; }
     public bool IsArchived { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public sealed class UserSettingsEntity
+{
+    public Guid OwnerUserId { get; set; }
+    public string DisplayName { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string Login { get; set; } = string.Empty;
+    public string PreferredCurrency { get; set; } = "USD";
+    public string Language { get; set; } = "RU";
+    public decimal UiScale { get; set; }
+    public string QuoteProvider { get; set; } = "Mock";
+    public int QuoteRefreshMinutes { get; set; }
+    public string FinnhubApiKeyProtected { get; set; } = string.Empty;
+    public string CurrencyProvider { get; set; } = "Mock";
+    public bool SyncEnabled { get; set; }
+    public DateTimeOffset? LastSnapshotAt { get; set; }
 }
 
 public sealed class TaxProfileEntity
@@ -126,6 +155,7 @@ public sealed class QuoteCacheEntity
 {
     public Guid Id { get; set; }
     public Guid AssetId { get; set; }
+    public string Ticker { get; set; } = string.Empty;
     public decimal Price { get; set; }
     public string Currency { get; set; } = "USD";
     public DateTimeOffset Timestamp { get; set; }

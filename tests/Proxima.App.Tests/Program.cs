@@ -21,6 +21,7 @@ internal static class Program
         DesignSystem_FilesExist();
         RuntimeAuthFlow_UsesLoginThenAppShell();
         RuntimeAuthFlow_UsesProfileBackedUserContext();
+        RuntimeComposition_UsesPostgresRepositoriesByDefault();
         RuntimeRoutes_ExistForMigratedShellScreens();
         RuntimeViews_ContainExpectedChartAndSecurityElements();
         RedactionHelper_RedactsSensitiveFragments();
@@ -52,6 +53,22 @@ internal static class Program
         Assert(composition.Contains("IRuntimeUserContext", StringComparison.Ordinal), "Runtime user context must be registered in composition.");
         Assert(!settingsVm.Contains("RuntimeOwnerUserId", StringComparison.Ordinal), "Settings runtime path must not use hardcoded owner id.");
         Assert(settingsVm.Contains("_runtimeUserContext.UserId", StringComparison.Ordinal), "Settings should use authenticated runtime user context.");
+    }
+
+    private static void RuntimeComposition_UsesPostgresRepositoriesByDefault()
+    {
+        string root = FindRepositoryRoot();
+        string composition = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Composition", "AppComposition.cs"));
+        string appCode = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "App.axaml.cs"));
+
+        Assert(composition.Contains("PostgresPortfolioRepository", StringComparison.Ordinal), "Runtime composition should bind portfolio repository to PostgreSQL.");
+        Assert(composition.Contains("PostgresAssetRepository", StringComparison.Ordinal), "Runtime composition should bind asset repository to PostgreSQL.");
+        Assert(composition.Contains("PostgresTransactionRepository", StringComparison.Ordinal), "Runtime composition should bind transaction repository to PostgreSQL.");
+        Assert(composition.Contains("PostgresGoalRepository", StringComparison.Ordinal), "Runtime composition should bind goal repository to PostgreSQL.");
+        Assert(composition.Contains("PostgresUserSettingsRepository", StringComparison.Ordinal), "Runtime composition should bind settings repository to PostgreSQL.");
+        Assert(composition.Contains("DatabaseConnectionStringProvider.Resolve()", StringComparison.Ordinal), "Runtime composition should resolve database options.");
+        Assert(appCode.Contains("DatabaseBootstrapService", StringComparison.Ordinal), "App startup should bootstrap database before runtime shell.");
+        Assert(appCode.Contains("Database unavailable", StringComparison.Ordinal), "App should show explicit database-unavailable window.");
     }
 
     private static void RuntimeRoutes_ExistForMigratedShellScreens()
