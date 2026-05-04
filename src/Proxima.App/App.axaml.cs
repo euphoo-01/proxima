@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Proxima.App.Composition;
 using Proxima.App.Shell;
 using Proxima.App.Views.Auth;
+using Proxima.Domain.Auth;
 
 namespace Proxima.App;
 
@@ -27,14 +28,19 @@ public partial class App : global::Avalonia.Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             ServiceProvider services = AppComposition.BuildServiceProvider();
+            IRuntimeAuthBootstrapper authBootstrapper = services.GetRequiredService<IRuntimeAuthBootstrapper>();
+            IRuntimeUserContext runtimeUserContext = services.GetRequiredService<IRuntimeUserContext>();
 
             if (DevAutoLogin)
             {
+                LocalUserProfile profile = authBootstrapper.EnsureRuntimeProfileAsync().GetAwaiter().GetResult();
+                runtimeUserContext.SetAuthenticated(profile);
                 desktop.MainWindow = CreateAppShellWindow(services);
             }
             else
             {
-                LoginViewModel loginViewModel = new(new InMemoryAuthGateService());
+                _ = authBootstrapper.EnsureRuntimeProfileAsync().GetAwaiter().GetResult();
+                LoginViewModel loginViewModel = services.GetRequiredService<LoginViewModel>();
                 LoginView loginView = new() { DataContext = loginViewModel };
 
                 Window loginWindow = new()

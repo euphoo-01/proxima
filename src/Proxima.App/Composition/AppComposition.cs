@@ -6,12 +6,15 @@ using Proxima.App.Views.AssetDetails;
 using Proxima.App.Views.Dashboard;
 using Proxima.App.Views.Goals;
 using Proxima.App.Views.Import;
+using Proxima.App.Views.Auth;
 using Proxima.App.Views.Settings;
 using Proxima.App.Views.Taxes;
+using Proxima.Application.Auth;
 using Proxima.Application.Settings;
 using Proxima.Application.Taxes;
 using Proxima.Application.Transactions;
 using Proxima.Infrastructure.Assets;
+using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Goals;
 using Proxima.Infrastructure.Portfolios;
 using Proxima.Infrastructure.Quotes;
@@ -36,8 +39,13 @@ public static class AppComposition
         string quoteCachePath = ProximaQuoteComposition.GetDefaultQuoteCacheStorePath();
         string goalsStorePath = ProximaGoalComposition.GetDefaultGoalsStorePath();
         string settingsStorePath = ProximaSettingsComposition.GetDefaultSettingsStorePath();
+        string profileStorePath = ProximaAuthComposition.GetDefaultProfileStorePath();
 
         services.AddSingleton<IAppNavigationService, AppNavigationService>();
+        services.AddSingleton<IRuntimeUserContext, RuntimeUserContext>();
+        services.AddSingleton<ILocalAuthService>(_ => ProximaAuthComposition.CreateLocalAuthService(profileStorePath));
+        services.AddSingleton<IAuthGateService, LocalProfileAuthGateService>();
+        services.AddSingleton<IRuntimeAuthBootstrapper, RuntimeAuthBootstrapper>();
         services.AddSingleton<IShellState, MockShellState>();
         services.AddSingleton<IImportPreviewGateway>(provider => new ImportPreviewGateway(ProximaImportComposition.CreateImportService()));
         services.AddSingleton<IDashboardDataProvider, MockDashboardDataProvider>();
@@ -49,6 +57,7 @@ public static class AppComposition
         services.AddSingleton(_ => ProximaGoalComposition.CreateGoalService(goalsStorePath));
         services.AddSingleton<IGoalProjectionService, GoalProjectionService>();
         services.AddSingleton<DashboardViewModel>();
+        services.AddTransient<LoginViewModel>();
         services.AddSingleton<ManualImportViewModel>();
         services.AddSingleton<ImportDialogViewModel>();
         services.AddSingleton<AssetsViewModel>();

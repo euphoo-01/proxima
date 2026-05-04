@@ -20,6 +20,7 @@ internal static class Program
         Domain_HasNoForbiddenDependencies();
         DesignSystem_FilesExist();
         RuntimeAuthFlow_UsesLoginThenAppShell();
+        RuntimeAuthFlow_UsesProfileBackedUserContext();
         RuntimeRoutes_ExistForMigratedShellScreens();
         RuntimeViews_ContainExpectedChartAndSecurityElements();
         RedactionHelper_RedactsSensitiveFragments();
@@ -35,10 +36,22 @@ internal static class Program
         string loginView = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Auth", "LoginView.axaml"));
 
         Assert(appCode.Contains("LoginViewModel", StringComparison.Ordinal), "Runtime should initialize LoginViewModel.");
-        Assert(appCode.Contains("InMemoryAuthGateService", StringComparison.Ordinal), "Runtime login/auth flow should use auth gate service.");
+        Assert(appCode.Contains("IRuntimeAuthBootstrapper", StringComparison.Ordinal), "Runtime should bootstrap profile-backed auth before opening shell/login.");
         Assert(appCode.Contains("CreateAppShellWindow", StringComparison.Ordinal), "Runtime should create AppShell window after unlock.");
         Assert(loginView.Contains("PasswordChar=\"•\"", StringComparison.Ordinal), "Login view password input must be masked.");
         Assert(loginView.Contains("Forgot password / Recovery", StringComparison.Ordinal), "Login view should expose recovery action.");
+    }
+
+    private static void RuntimeAuthFlow_UsesProfileBackedUserContext()
+    {
+        string root = FindRepositoryRoot();
+        string composition = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Composition", "AppComposition.cs"));
+        string settingsVm = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Settings", "SettingsViewModel.cs"));
+
+        Assert(composition.Contains("LocalProfileAuthGateService", StringComparison.Ordinal), "App composition should use profile-backed auth gate service.");
+        Assert(composition.Contains("IRuntimeUserContext", StringComparison.Ordinal), "Runtime user context must be registered in composition.");
+        Assert(!settingsVm.Contains("RuntimeOwnerUserId", StringComparison.Ordinal), "Settings runtime path must not use hardcoded owner id.");
+        Assert(settingsVm.Contains("_runtimeUserContext.UserId", StringComparison.Ordinal), "Settings should use authenticated runtime user context.");
     }
 
     private static void RuntimeRoutes_ExistForMigratedShellScreens()

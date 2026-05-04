@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using Proxima.App.Views.Auth;
 using Proxima.App.ViewModels;
 using Proxima.Application.Settings;
 using Proxima.Domain.Auth;
@@ -8,9 +9,8 @@ namespace Proxima.App.Views.Settings;
 
 public sealed class SettingsViewModel : ViewModelBase
 {
-    private static readonly Guid RuntimeOwnerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-
     private readonly ISettingsService _settingsService;
+    private readonly IRuntimeUserContext _runtimeUserContext;
     private readonly DelegateCommand _saveCommand;
     private readonly DelegateCommand _reloadCommand;
     private readonly DelegateCommand _changePasswordCommand;
@@ -38,9 +38,10 @@ public sealed class SettingsViewModel : ViewModelBase
     private string _securityStatus = "Локальный пароль включен.";
     private string _snapshotStatus = "Снапшоты еще не создавались.";
 
-    public SettingsViewModel(ISettingsService settingsService)
+    public SettingsViewModel(ISettingsService settingsService, IRuntimeUserContext runtimeUserContext)
     {
         _settingsService = settingsService;
+        _runtimeUserContext = runtimeUserContext;
 
         CurrencyOptions = ["USD", "EUR", "BYN", "RUB"];
         LanguageOptions = Enum.GetValues<AppLanguage>();
@@ -222,7 +223,17 @@ public sealed class SettingsViewModel : ViewModelBase
 
     public static SettingsViewModel CreateDesignData()
     {
-        return new SettingsViewModel(new DesignSettingsService());
+        RuntimeUserContext context = new();
+        context.SetAuthenticated(new Proxima.Domain.Auth.LocalUserProfile(
+            Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            "Андрей К.",
+            "local",
+            UserRole.PrivateInvestor,
+            new Proxima.Domain.Auth.PasswordCredential("design", [], [], 1, 1),
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow,
+            0));
+        return new SettingsViewModel(new DesignSettingsService(), context);
     }
 
     private async Task LoadAsync()
@@ -234,11 +245,18 @@ public sealed class SettingsViewModel : ViewModelBase
 
         try
         {
+            if (!_runtimeUserContext.IsAuthenticated)
+            {
+                HasError = true;
+                ErrorMessage = "Пользователь не авторизован. Перезапустите вход.";
+                return;
+            }
+
             UserSettings settings = await _settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
-                RuntimeOwnerUserId,
-                "Proxima User",
-                UserRole.PrivateInvestor,
-                "local",
+                _runtimeUserContext.UserId,
+                _runtimeUserContext.DisplayName,
+                _runtimeUserContext.Role,
+                _runtimeUserContext.Login,
                 "USD")).ConfigureAwait(true);
 
             Apply(settings);
@@ -264,8 +282,15 @@ public sealed class SettingsViewModel : ViewModelBase
 
         try
         {
+            if (!_runtimeUserContext.IsAuthenticated)
+            {
+                HasError = true;
+                ErrorMessage = "Пользователь не авторизован. Перезапустите вход.";
+                return;
+            }
+
             SettingsOperationResult result = await _settingsService.UpdateAsync(new UpdateSettingsRequest(
-                RuntimeOwnerUserId,
+                _runtimeUserContext.UserId,
                 DisplayName,
                 SelectedRole,
                 PreferredCurrency,

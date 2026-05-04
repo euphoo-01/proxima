@@ -36,7 +36,7 @@
 - Follow-up UI passes (2026-05-01) added real chart widgets (dashboard line, goals projection line, asset candlestick), improved shell sizing, overflow safety and icon consistency; however pixel-level parity with Mockup is still not fully verified.
 - Until strict Mockup parity is verified through custom `figma_mcp_server`, release readiness must remain `Partial`.
 - Runtime AppShell host currently supports development-only auto-login in local Debug builds (`DevAutoLogin` on by default when `PROXIMA_DEV_AUTO_LOGIN != 0`); Release builds keep auto-login disabled and require normal login/unlock flow.
-- Login/Unlock runtime currently uses a temporary in-memory `IAuthGateService` with seeded local credentials (`local` / `Proxima123!`) hashed in-memory with PBKDF2; durable profile-backed auth integration is pending.
+- Login/Unlock runtime now uses profile-backed local auth (`LocalProfileAuthGateService` + JSON profile store bootstrap) and binds authenticated user context into AppShell runtime services; default bootstrap credentials (`local` / `Proxima123!`) are still temporary and must be hardened in REC-007.
 - Temporary auth recovery action is informational only and does not implement real recovery/reset flow yet.
 - Recovered AppShell import flow now includes `ImportDialogView` and `ManualImportView`, but native OS drag-and-drop handling is not wired yet (drag-over is UI-driven state).
 - Recovered manual import screen currently saves validated rows in UI state only; direct transaction persistence wiring for migrated AppShell flow is pending.
@@ -45,7 +45,7 @@
 - Goals projection chart currently uses `IGoalProjectionService` with fixed 10-year horizon and no scenario presets; richer forecasting controls are deferred.
 - Recovered Taxes runtime screen now uses `TaxesView` + `TaxesViewModel` in AppShell and invokes `ITaxCalculator`/`IReportService` via provider boundary, but legal/tax rule coverage remains draft-only and must be validated against official sources before production legal use.
 - Taxes PDF export is wired to current reporting service; document content is a draft summary and not a legally verified declaration artifact.
-- Recovered `Settings` runtime screen now uses `SettingsView` + `SettingsViewModel` via `ISettingsService`, but current AppShell owner identity is temporary (`RuntimeOwnerUserId`) and not yet bound to authenticated profile context.
+- Recovered `Settings` runtime screen now uses `SettingsView` + `SettingsViewModel` via `ISettingsService` and authenticated runtime user context (owner ID is no longer hardcoded).
 - Settings security/data actions (`change password`, snapshot export/import) are wired as UI placeholders and status messages; full Auth/Sync runtime command integration is pending.
 - Legacy `MainWindow` + monolithic `ShellViewModel` runtime path has been removed after AppShell migration; any remaining UI recovery work must target `AppShell` and screen-specific ViewModels only.
 - `scripts/scan-xaml-style-violations.sh src/Proxima.App` currently reports violations in design-token and design-system files (hex/token definitions and template bindings), so this broad-scope command remains red until the scanner scope/rules are aligned with `15_AVALONIA_UI_STYLE_GUARDRAILS.md` allowances.

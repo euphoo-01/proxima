@@ -1868,3 +1868,53 @@ Known limitations are available in: .codex/known-limitations.md
 ### Commit
 
 Pending docs(recovery): structure known limitations backlog
+
+## Iteration 34 — REC-003 AppShell Authenticated Owner Context Wiring
+
+### Scope
+
+Close REC-003 by replacing temporary runtime auth wiring with profile-backed auth gate integration and binding authenticated user context to AppShell runtime services (especially Settings owner scope).
+
+### User Stories Checked
+
+- [x] US-02.2 — Returning user unlocks Proxima locally.
+- [x] US-03.1 — Authenticated user navigates migrated AppShell routes with stable composition root.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| REC-003.1 | Done | `AppComposition` now registers `ILocalAuthService`, `IAuthGateService=LocalProfileAuthGateService`, `IRuntimeUserContext`, `IRuntimeAuthBootstrapper`. |
+| REC-003.2 | Done | `App.axaml.cs` resolves `LoginViewModel` from DI, bootstraps profile store, and sets authenticated context before AppShell in dev auto-login path. |
+| REC-003.3 | Done | `SettingsViewModel` no longer uses hardcoded `RuntimeOwnerUserId`; load/save use `_runtimeUserContext.UserId`. |
+| REC-003.4 | Done | `tests/Proxima.App.Tests` include runtime checks for profile-backed auth/user-context wiring and absence of hardcoded owner ID. |
+
+### Tests Added/Updated
+
+- Unit: none.
+- Integration: none.
+- UI: updated `tests/Proxima.App.Tests/Program.cs` runtime auth wiring assertions.
+- Manual: not required.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+- `dotnet format` fails in current sandbox with named-pipe permission error (`System.Net.Sockets.SocketException (13): Permission denied /tmp/...`).
+- Settings security actions (`change password`, snapshot export/import) remain placeholders and are tracked by REC-010/REC-007.
+
+### Commit
+
+Pending fix(shell): complete appshell composition with authenticated owner context
