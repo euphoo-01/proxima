@@ -1908,13 +1908,12 @@ git status --short
 
 ### Result
 
-Partial
+Done
 
 ### Known Limitations
 
-- `dotnet format` fails in current sandbox with named-pipe permission error (`System.Net.Sockets.SocketException (13): Permission denied /tmp/...`).
 - Settings security actions (`change password`, snapshot export/import) remain placeholders and are tracked by REC-010/REC-007.
 
 ### Commit
 
-Pending fix(shell): complete appshell composition with authenticated owner context
+85524b0 fix(shell): complete appshell composition with authenticated owner context
