@@ -13,12 +13,9 @@ namespace Proxima.App;
 
 public partial class App : global::Avalonia.Application
 {
-#if DEBUG
     private static readonly bool DevAutoLogin =
         Environment.GetEnvironmentVariable("PROXIMA_DEV_AUTO_LOGIN") != "0";
-#else
-    private const bool DevAutoLogin = false;
-#endif
+
 
     public override void Initialize()
     {

@@ -1623,3 +1623,50 @@ Known limitations are available in: .codex/known-limitations.md
 ### Commit
 
 Pending refactor(ui): remove legacy shell after app shell migration
+
+## Iteration 29 — UI Theme Hardening Pass
+
+### Scope
+
+Harden production UI theme to prevent system-theme/default Avalonia state leakage, pin runtime theme to Light, centralize Proxima theme resource loading, and define explicit control interaction states based on Proxima tokens.
+
+### User Stories Checked
+
+- [x] US-01.2 — User sees a trustworthy bento-style interface.
+- [x] US-01.3 — Developer can reuse design primitives.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| AC-01.2 | Done | `App.axaml` enforces `RequestedThemeVariant="Light"` and loads centralized `DesignSystem/Themes/ProximaTheme.axaml`; state brushes added in `DesignSystem/Tokens/Brushes.axaml`. |
+| AC-01.3 | Partial | `ControlTheme` hardening added for `Button`, `TextBox`, `ComboBox`, `MenuItem/ContextMenu`, `ScrollBar`, `CheckBox`; current table runtime remains wrapper-based (`proxima-datagrid*`) without native `DataGrid` control theme binding. |
+| AC-01.4 | Done | Explicit normal/pointerover/pressed/focused/disabled and selected states defined with Proxima tokens only; no system accent brushes introduced. |
+
+### Tests Added/Updated
+
+- Unit: None.
+- Integration: None.
+- UI: Existing runtime/UI test suite executed.
+- Manual: Theme state/style audit on design-system control dictionaries.
+
+### Commands Run
+
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/DesignSystem src/Proxima.App/Shell src/Proxima.App/Views
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+Known limitations are available in: .codex/known-limitations.md
+
+### Commit
+
+Pending fix(ui): harden proxima theme control states

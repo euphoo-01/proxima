@@ -23,5 +23,21 @@
         <SolidColorBrush x:Key="ProximaBrush.WarningSurface" Color="{StaticResource ProximaColor.WarningSurface}" />
         <SolidColorBrush x:Key="ProximaBrush.Danger" Color="{StaticResource ProximaColor.Danger}" />
         <SolidColorBrush x:Key="ProximaBrush.DangerSurface" Color="{StaticResource ProximaColor.DangerSurface}" />
+
+        <SolidColorBrush x:Key="ProximaBrushControlBackground" Color="{StaticResource ProximaColor.Surface}" />
+        <SolidColorBrush x:Key="ProximaBrushControlBackgroundPointerOver" Color="{StaticResource ProximaColor.SurfaceSubtle}" />
+        <SolidColorBrush x:Key="ProximaBrushControlBackgroundPressed" Color="{StaticResource ProximaColor.Sidebar}" />
+        <SolidColorBrush x:Key="ProximaBrushControlBackgroundDisabled" Color="{StaticResource ProximaColor.SurfaceSubtle}" />
+
+        <SolidColorBrush x:Key="ProximaBrushControlForeground" Color="{StaticResource ProximaColor.TextPrimary}" />
+        <SolidColorBrush x:Key="ProximaBrushControlForegroundDisabled" Color="{StaticResource ProximaColor.TextFaint}" />
+
+        <SolidColorBrush x:Key="ProximaBrushControlBorder" Color="{StaticResource ProximaColor.BorderSubtle}" />
+        <SolidColorBrush x:Key="ProximaBrushControlBorderPointerOver" Color="{StaticResource ProximaColor.Border}" />
+        <SolidColorBrush x:Key="ProximaBrushControlBorderFocused" Color="{StaticResource ProximaColor.Focus}" />
+
+        <SolidColorBrush x:Key="ProximaBrushFocusRing" Color="{StaticResource ProximaColor.Focus}" />
+        <SolidColorBrush x:Key="ProximaBrushSelectionBackground" Color="{StaticResource ProximaColor.Brand}" />
+        <SolidColorBrush x:Key="ProximaBrushSelectionForeground" Color="{StaticResource ProximaColor.Surface}" />
     </Styles.Resources>
 </Styles>

@@ -1,14 +1,27 @@
 <Styles xmlns="https://github.com/avaloniaui">
     <Style Selector="Border.proxima-datagrid">
-        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
-        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackground}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorder}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Card}" />
         <Setter Property="Padding" Value="0" />
     </Style>
 
+    <Style Selector="Border.proxima-datagrid:pointerover">
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorderPointerOver}" />
+    </Style>
+
+    <Style Selector="Border.proxima-datagrid:focus-within">
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorderFocused}" />
+    </Style>
+
+    <Style Selector="Border.proxima-datagrid:disabled">
+        <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundDisabled}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorder}" />
+    </Style>
+
     <Style Selector="Border.proxima-datagrid-header">
-        <Setter Property="Background" Value="{StaticResource ProximaBrush.SurfaceSubtle}" />
+        <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundPointerOver}" />
         <Setter Property="Padding" Value="12,10" />
     </Style>
 
@@ -20,14 +33,22 @@
     </Style>
 
     <Style Selector="Border.proxima-datagrid-cell">
-        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorder}" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
         <Setter Property="Padding" Value="12,10" />
+    </Style>
+
+    <Style Selector="Border.proxima-datagrid-cell:selected">
+        <Setter Property="Background" Value="{StaticResource ProximaBrushSelectionBackground}" />
     </Style>
 
     <Style Selector="TextBlock.proxima-datagrid-cell-text">
         <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextPrimary}" />
+    </Style>
+
+    <Style Selector="TextBlock.proxima-datagrid-cell-text:selected">
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrushSelectionForeground}" />
     </Style>
 </Styles>

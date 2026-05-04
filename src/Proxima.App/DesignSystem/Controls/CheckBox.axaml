@@ -1,0 +1,32 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Styles.Resources>
+        <ControlTheme x:Key="{x:Type CheckBox}" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
+
+            <Style Selector="^:pointerover">
+                <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
+            </Style>
+
+            <Style Selector="^:pressed">
+                <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
+            </Style>
+
+            <Style Selector="^:focus-visible, ^:focus-within">
+                <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
+            </Style>
+
+            <Style Selector="^:disabled">
+                <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForegroundDisabled}" />
+            </Style>
+
+            <Style Selector="^:checked">
+                <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
+            </Style>
+        </ControlTheme>
+    </Styles.Resources>
+
+    <Style Selector="CheckBox">
+        <Setter Property="Theme" Value="{StaticResource {x:Type CheckBox}}" />
+    </Style>
+</Styles>

@@ -8,6 +8,7 @@ using Proxima.App.Views.Goals;
 using Proxima.App.Views.Import;
 using Proxima.App.Views.Settings;
 using Proxima.App.Views.Taxes;
+using Proxima.Application.Settings;
 using Proxima.Application.Taxes;
 using Proxima.Application.Transactions;
 using Proxima.Infrastructure.Assets;
@@ -42,6 +43,7 @@ public static class AppComposition
         services.AddSingleton<IDashboardDataProvider, MockDashboardDataProvider>();
         services.AddSingleton<IAssetDetailsReadModelProvider, MockAssetDetailsReadModelProvider>();
         services.AddSingleton<ITransactionService>(_ => ProximaTransactionComposition.CreateTransactionService(transactionStorePath, assetStorePath));
+        services.AddSingleton<ISettingsService>(_ => ProximaSettingsComposition.CreateSettingsService(settingsStorePath));
         services.AddSingleton<ITaxCalculator>(_ => ProximaTaxComposition.CreateTaxCalculator(settingsStorePath));
         services.AddSingleton<IReportService>(_ => ProximaReportingComposition.CreateReportService());
         services.AddSingleton(_ => ProximaGoalComposition.CreateGoalService(goalsStorePath));
