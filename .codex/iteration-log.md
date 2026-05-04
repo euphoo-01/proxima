@@ -1821,3 +1821,50 @@ Known limitations are available in: .codex/known-limitations.md
 ### Commit
 
 043b0ec refactor(ui): use proxima chart components across screens
+
+## Iteration 33 — Recovery Backlog Triage from Known Limitations
+
+### Scope
+
+Transform `.codex/known-limitations.md` into a structured recovery backlog (`.codex/recovery-backlog.md`) with deduplication, phased priority, dependencies, and verifiable acceptance criteria. No feature implementation in this iteration.
+
+### User Stories Checked
+
+- [x] Process quality: enforce traceable iteration evidence per `.codex/handoff/13_MODULE_US_AC_TESTS.md`.
+- [x] Process quality: produce gate-ready recovery order and verification evidence per `.codex/handoff/14_ITERATION_QUALITY_GATE.md`.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| TRIAGE-01 | Done | `.codex/recovery-backlog.md` created with `REC-001..REC-018`, phases, dependencies, and AC/verification fields. |
+| TRIAGE-02 | Done | Known limitations coverage map explicitly states mapping for lines `3-54` and deduplicated groups. |
+| TRIAGE-03 | Done | Missing `backend-integration-audit.md` recorded as `source missing` + `needs investigation`. |
+| TRIAGE-04 | Done | Verification snapshot includes factual `dotnet build`, `dotnet test`, `git status --short` results from this iteration. |
+
+### Tests Added/Updated
+
+- Unit: None.
+- Integration: None.
+- UI: None.
+- Manual: Documentation consistency and traceability review.
+
+### Commands Run
+
+```bash
+dotnet build
+dotnet test
+git status --short
+```
+
+### Result
+
+Done
+
+### Known Limitations
+
+Known limitations are available in: .codex/known-limitations.md
+
+### Commit
+
+Pending docs(recovery): structure known limitations backlog
