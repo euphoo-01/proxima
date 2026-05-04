@@ -28,7 +28,7 @@
 - Module 15 adds encrypted snapshot export/import with AES-GCM and conflict checks, but Google Drive sync remains a stub adapter without OAuth flow.
 - Snapshot import currently writes JSON stores transactionally at file level in local-first mode; full PostgreSQL transactional restore semantics are deferred to DB module integration.
 - Module 16 adds PDF export for portfolio and tax draft reports, but interactive on-screen preview and destination picker/overwrite confirmation are still pending UI enhancements.
-- Module 17 adds PostgreSQL schema/bootstrap foundation and committed SQL migration scripts; runtime AppShell now defaults to PostgreSQL repositories (Iteration 35 / REC-004), while auth profile persistence remains JSON-backed until REC-007.
+- Module 17 adds PostgreSQL schema/bootstrap foundation and committed SQL migration scripts; runtime AppShell now defaults to PostgreSQL repositories and uses explicit Repository + UnitOfWork infrastructure patterns (Iteration 35-36 / REC-004), while auth profile persistence remains JSON-backed until REC-007.
 - EF `dotnet ef` migration artifacts are not yet generated; current migration baseline is maintained as committed SQL scripts.
 - Module 18 adds RU/EN shell localization and persisted UI scaling, but localization coverage is currently focused on shell/topbar/core page headers; several feature-specific validation/error strings remain Russian-first and will be expanded in Module 19.
 - Module 19 adds in-app notification feed, audit events for key flows, and redaction helper for sensitive keys, but full structured log sink with per-operation correlation IDs and complete exception-boundary mapping is still in progress.

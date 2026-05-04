@@ -1967,3 +1967,53 @@ Partial
 ### Commit
 
 0a45ae6 feat(db): switch runtime repositories from json to postgresql
+
+## Iteration 36 — REC-004 Repository + UnitOfWork Pattern Hardening
+
+### Scope
+
+Harden REC-004 persistence architecture by introducing explicit UnitOfWork infrastructure for PostgreSQL runtime repositories and refactoring Postgres repositories to consume shared UoW context lease instead of direct per-method DbContext construction.
+
+### User Stories Checked
+
+- [x] US-04.1 — Runtime repository layer follows consistent DB architecture pattern.
+- [x] US-06.1 — Transactional import commit flow uses explicit UoW transaction orchestration.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| REC-004-UOW.1 | Done | Added `IProximaUnitOfWork`, `IProximaUnitOfWorkFactory`, `IProximaUnitOfWorkAccessor`, `ProximaUnitOfWork`, and `ProximaUnitOfWorkFactory`. |
+| REC-004-UOW.2 | Done | Postgres repositories use `UowLease` + `IProximaUnitOfWorkFactory`/`Accessor` rather than `DatabaseBootstrapService.CreateDbContext()` direct calls. |
+| REC-004-UOW.3 | Done | `PostgresImportCommitService` now executes inside UoW factory transaction boundary. |
+| REC-004-UOW.4 | Done | Composition/runtime test guards extended in `tests/Proxima.App.Tests` and `tests/Proxima.Infrastructure.Tests` for UoW pattern usage. |
+
+### Tests Added/Updated
+
+- Unit: none.
+- Integration: architecture assertions for UoW pattern usage in infrastructure tests.
+- UI: none.
+- Manual: none.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views
+git status --short
+```
+
+### Result
+
+Done
+
+### Known Limitations
+
+- Snapshot restore DB-aware transactional workflow remains deferred to REC-010.
+- Auth profile persistence migration to PostgreSQL remains deferred to REC-007.
+
+### Commit
+
+Pending refactor(db): introduce unit-of-work repository pattern for postgres
