@@ -57,6 +57,8 @@
                             <controls:ProximaCandlestickChart
                                 Candles="{Binding Candles}"
                                 CurrencyCode="{Binding AssetCurrency}"
+                                EmptyStateText="Нет свечных данных для выбранного периода"
+                                ErrorStateText="{Binding ErrorText}"
                                 IsLoading="{Binding IsLoading}"
                                 VisibleEndIndex="{Binding CandlesVisibleEndIndex, Mode=TwoWay}"
                                 VisibleStartIndex="{Binding CandlesVisibleStartIndex, Mode=TwoWay}" />

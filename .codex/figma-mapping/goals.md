@@ -53,6 +53,15 @@
 | No clipping / overflow | Partial | Primary desktop layout is covered; additional small-window stress test remains pending manual QA pass. |
 | No default Avalonia leakage | Partial | Button/TextBox use Proxima classes; context menu and progress visuals still rely on default templates with Proxima tokenized wrappers. |
 
+## 10) Visual comparison notes (2026-05-04, Proxima chart components)
+
+| Check | Pass/Fail | Notes |
+| --- | --- | --- |
+| Projection chart component | Pass | `GoalsView` использует `ProximaCartesianChart` как единый chart component. |
+| Axes/grid/tooltip | Pass | В компоненте отображаются X/Y axis, grid/separators, hover tooltip и форматированные денежные значения. |
+| Chart states | Pass | Привязаны `IsLoading`, `EmptyStateText`, `ErrorStateText` для прогноза. |
+| Local chart styling leakage | Pass | В `GoalsView` отсутствуют локальные chart-настройки осей/цветов/tooltip. |
+
 ## 9) Known deviations
 
 | Deviation | Reason | Severity | Follow-up |

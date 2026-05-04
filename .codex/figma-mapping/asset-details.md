@@ -69,3 +69,12 @@
 | --- | --- | --- | --- |
 | OHLC источник пока mock (`MockAssetDetailsReadModelProvider`) | Реальный read-model provider и quote history wiring в runtime еще не подключены | Medium | Подключить application analytics read-model + real quote cache query |
 | Advanced metrics partly mock/placeholder (`IV`, `Spread/Depth`) | Нет рыночного orderbook/implied volatility источника в текущем модуле | Medium | Закрыть при интеграции Module 10/11 сервисов в runtime AppShell |
+
+## 10) Visual comparison notes (2026-05-04, Proxima chart components)
+
+| Check | Pass/Fail | Notes |
+| --- | --- | --- |
+| Candlestick chart component | Pass | В `AssetDetailsView` используется `ProximaCandlestickChart` вместо локальных chart controls. |
+| Axes/grid/tooltip | Pass | X-axis и Y-axis, grid/separators, OHLCV tooltip и форматирование значений обеспечиваются компонентом. |
+| Chart states | Pass | Подключены `IsLoading`, `EmptyStateText`, `ErrorStateText`; внешний empty-state card сохранен для явной UX-подсказки. |
+| Local chart styling leakage | Pass | Локальные оси/цвета/tooltips в view не настраиваются, только биндинги данных и состояний. |

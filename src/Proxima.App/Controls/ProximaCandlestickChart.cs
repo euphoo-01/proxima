@@ -299,13 +299,21 @@ public sealed class ProximaCandlestickChart : Control
 
     private static void DrawStateText(DrawingContext context, string text)
     {
+        IBrush brush = Brushes.Gray;
+        if (Avalonia.Application.Current is not null
+            && Avalonia.Application.Current.TryFindResource("ProximaBrush.TextMuted", Avalonia.Application.Current.ActualThemeVariant, out object? rawBrush)
+            && rawBrush is IBrush resolved)
+        {
+            brush = resolved;
+        }
+
         FormattedText formatted = new(
             text,
             System.Globalization.CultureInfo.CurrentCulture,
             FlowDirection.LeftToRight,
             Typeface.Default,
             12,
-            Brushes.Gray);
+            brush);
         context.DrawText(formatted, new Point(12, 12));
     }
 

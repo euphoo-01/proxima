@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media;
 using Proxima.App.DesignSystem.Charts;
 
@@ -15,6 +16,12 @@ public sealed class ProximaDonutChart : Control
 
     public static readonly StyledProperty<bool> IsLoadingProperty =
         AvaloniaProperty.Register<ProximaDonutChart, bool>(nameof(IsLoading));
+
+    public static readonly StyledProperty<string?> ErrorStateTextProperty =
+        AvaloniaProperty.Register<ProximaDonutChart, string?>(nameof(ErrorStateText));
+
+    private IReadOnlyList<(double Start, double End, decimal Value)> _segments = [];
+    private int _hoverIndex = -1;
 
     public IReadOnlyList<decimal>? Values
     {
@@ -34,13 +41,77 @@ public sealed class ProximaDonutChart : Control
         set => SetValue(IsLoadingProperty, value);
     }
 
+    public string? ErrorStateText
+    {
+        get => GetValue(ErrorStateTextProperty);
+        set => SetValue(ErrorStateTextProperty, value);
+    }
+
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+        if (_segments.Count == 0)
+        {
+            _hoverIndex = -1;
+            InvalidateVisual();
+            return;
+        }
+
+        Point p = e.GetPosition(this);
+        double cx = Bounds.Width / 2d;
+        double cy = Bounds.Height / 2d;
+        double dx = p.X - cx;
+        double dy = p.Y - cy;
+        double distance = Math.Sqrt(dx * dx + dy * dy);
+        double r = Math.Max(16, Math.Min(Bounds.Width, Bounds.Height) / 2d - 8);
+        double inner = r * 0.62;
+        if (distance < inner || distance > r)
+        {
+            _hoverIndex = -1;
+            InvalidateVisual();
+            return;
+        }
+
+        double angle = Math.Atan2(dy, dx) * 180d / Math.PI + 90d;
+        if (angle < 0)
+        {
+            angle += 360d;
+        }
+
+        _hoverIndex = -1;
+        for (int i = 0; i < _segments.Count; i++)
+        {
+            (double start, double end, _) = _segments[i];
+            if (angle >= start && angle <= end)
+            {
+                _hoverIndex = i;
+                break;
+            }
+        }
+
+        InvalidateVisual();
+    }
+
+    protected override void OnPointerExited(PointerEventArgs e)
+    {
+        base.OnPointerExited(e);
+        _hoverIndex = -1;
+        InvalidateVisual();
+    }
+
     public override void Render(DrawingContext context)
     {
         base.Render(context);
 
         if (IsLoading)
         {
-            DrawText(context, "Загрузка...", ProximaChartTheme.ResolveBrush(this, "ProximaBrush.TextMuted"), 12, 12, 12);
+            DrawStateText(context, "Загрузка графика...");
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(ErrorStateText))
+        {
+            DrawStateText(context, ErrorStateText!);
             return;
         }
 
@@ -60,12 +131,13 @@ public sealed class ProximaDonutChart : Control
         ];
 
         decimal sum = values.Sum();
+        List<(double Start, double End, decimal Value)> segments = [];
         double cx = Bounds.Width / 2d;
         double cy = Bounds.Height / 2d;
         double r = Math.Max(16, Math.Min(Bounds.Width, Bounds.Height) / 2d - 8);
         double inner = r * 0.62;
 
-        double start = -90;
+        double start = 0;
         for (int i = 0; i < values.Count; i++)
         {
             double sweep = sum <= 0m ? 0 : (double)(values[i] / sum * 360m);
@@ -74,9 +146,27 @@ public sealed class ProximaDonutChart : Control
                 continue;
             }
 
-            StreamGeometry arc = BuildSegment(cx, cy, r, inner, start, start + sweep);
+            StreamGeometry arc = BuildSegment(cx, cy, r, inner, start - 90, start + sweep - 90);
             context.DrawGeometry(palette[i % palette.Length], null, arc);
+
+            segments.Add((start, start + sweep, values[i]));
             start += sweep;
+        }
+        _segments = segments;
+
+        if (_hoverIndex >= 0 && _hoverIndex < _segments.Count && sum > 0m)
+        {
+            IBrush labelBrush = ProximaChartTheme.ResolveBrush(this, "ProximaBrush.TextSecondary");
+            IBrush tooltipBackground = ProximaChartTheme.ResolveBrush(this, "ProximaBrush.Surface");
+            IBrush borderBrush = ProximaChartTheme.ResolveBrush(this, "ProximaBrush.Border");
+            decimal value = _segments[_hoverIndex].Value;
+            string text = ProximaChartTooltipFormatter.FormatValue(sum == 0m ? 0m : value / sum * 100m, ProximaChartValueKind.Percent);
+            double boxWidth = 96;
+            double boxHeight = 26;
+            double boxX = Math.Clamp(cx - boxWidth / 2d, 8, Bounds.Width - boxWidth - 8);
+            double boxY = Math.Clamp(cy - boxHeight / 2d, 8, Bounds.Height - boxHeight - 8);
+            context.DrawRectangle(tooltipBackground, new Pen(borderBrush, 1), new Rect(boxX, boxY, boxWidth, boxHeight), 6, 6);
+            DrawText(context, text, labelBrush, boxX + 8, boxY + 6, ProximaChartTheme.TooltipFontSize);
         }
     }
 
@@ -115,5 +205,18 @@ public sealed class ProximaDonutChart : Control
             size,
             brush);
         context.DrawText(formatted, new Point(x, y));
+    }
+
+    private static void DrawStateText(DrawingContext context, string text)
+    {
+        IBrush brush = Brushes.Gray;
+        if (Avalonia.Application.Current is not null
+            && Avalonia.Application.Current.TryFindResource("ProximaBrush.TextMuted", Avalonia.Application.Current.ActualThemeVariant, out object? rawBrush)
+            && rawBrush is IBrush resolved)
+        {
+            brush = resolved;
+        }
+
+        DrawText(context, text, brush, 12, 12, 12);
     }
 }

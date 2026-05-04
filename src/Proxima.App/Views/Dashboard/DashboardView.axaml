@@ -37,7 +37,14 @@
                                 SelectedItem="{Binding SelectedTimeframe}" />
 
                             <Border Classes="proxima-chart-surface" Height="240">
-                                <controls:ProximaCartesianChart Values="{Binding PortfolioValueSeries}" ValueKind="Money" XAxisTitle="Период" YAxisTitle="Стоимость" />
+                                <controls:ProximaCartesianChart
+                                    EmptyStateText="Нет данных за выбранный период"
+                                    ErrorStateText="{Binding PortfolioChartErrorText}"
+                                    IsLoading="{Binding IsPortfolioChartLoading}"
+                                    Values="{Binding PortfolioValueSeries}"
+                                    ValueKind="Money"
+                                    XAxisTitle="Период"
+                                    YAxisTitle="Стоимость" />
                             </Border>
                         </StackPanel>
                     </controls:BentoCard>
@@ -45,7 +52,11 @@
                     <controls:BentoCard Grid.Column="1" Grid.Row="0" Classes="proxima-allocation-donut-card" Subtitle="По категориям" Title="Asset Allocation">
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
                             <Grid Width="136" Height="136" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <controls:ProximaDonutChart Values="{Binding AllocationPercents}" />
+                                <controls:ProximaDonutChart
+                                    EmptyStateText="Нет данных по структуре"
+                                    ErrorStateText="{Binding AllocationChartErrorText}"
+                                    IsLoading="{Binding IsAllocationChartLoading}"
+                                    Values="{Binding AllocationPercents}" />
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <TextBlock Classes="proxima-caption" HorizontalAlignment="Center" Text="Категорий" />
                                     <TextBlock Classes="proxima-card-title" HorizontalAlignment="Center" Text="{Binding AllocationCountText}" />

@@ -25,6 +25,8 @@ public sealed class GoalsViewModel : ViewModelBase
     private decimal? _expectedAnnualReturnPercent;
     private decimal _projectedAmount;
     private string _selectedGoalSummary = "Выберите цель для прогноза.";
+    private bool _isProjectionChartLoading;
+    private string? _projectionChartErrorText;
 
     public GoalsViewModel(IGoalService goalService, IShellState shellState, IGoalProjectionService projectionService)
     {
@@ -117,6 +119,18 @@ public sealed class GoalsViewModel : ViewModelBase
     }
 
     public bool HasSelectedGoal => SelectedGoal is not null;
+
+    public bool IsProjectionChartLoading
+    {
+        get => _isProjectionChartLoading;
+        private set => SetProperty(ref _isProjectionChartLoading, value);
+    }
+
+    public string? ProjectionChartErrorText
+    {
+        get => _projectionChartErrorText;
+        private set => SetProperty(ref _projectionChartErrorText, value);
+    }
 
     public bool IsLoading
     {
@@ -291,29 +305,44 @@ public sealed class GoalsViewModel : ViewModelBase
 
     private void RecalculateProjection()
     {
+        IsProjectionChartLoading = true;
+        ProjectionChartErrorText = null;
         ProjectionSeries.Clear();
 
-        if (SelectedGoal is null)
+        try
         {
-            SelectedGoalSummary = "Выберите цель для прогноза.";
+            if (SelectedGoal is null)
+            {
+                SelectedGoalSummary = "Выберите цель для прогноза.";
+                ProjectedAmount = 0m;
+                return;
+            }
+
+            GoalProjection projection = _projectionService.BuildProjection(new GoalProjectionRequest(
+                SelectedGoal.Name,
+                SelectedGoal.TargetAmount,
+                SelectedGoal.CurrentAmount,
+                MonthlyContribution,
+                ExpectedAnnualReturnPercent));
+
+            foreach (decimal point in projection.Series)
+            {
+                ProjectionSeries.Add(point);
+            }
+
+            ProjectedAmount = projection.ProjectedAmount;
+            SelectedGoalSummary = projection.Summary;
+        }
+        catch (Exception ex)
+        {
+            ProjectionSeries.Clear();
             ProjectedAmount = 0m;
-            return;
+            ProjectionChartErrorText = ex.Message;
         }
-
-        GoalProjection projection = _projectionService.BuildProjection(new GoalProjectionRequest(
-            SelectedGoal.Name,
-            SelectedGoal.TargetAmount,
-            SelectedGoal.CurrentAmount,
-            MonthlyContribution,
-            ExpectedAnnualReturnPercent));
-
-        foreach (decimal point in projection.Series)
+        finally
         {
-            ProjectionSeries.Add(point);
+            IsProjectionChartLoading = false;
         }
-
-        ProjectedAmount = projection.ProjectedAmount;
-        SelectedGoalSummary = projection.Summary;
     }
 
     private sealed class DelegateCommand(Action<object?> execute) : ICommand

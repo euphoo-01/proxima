@@ -261,6 +261,13 @@ public sealed class ProximaCartesianChart : Control
     private static void DrawStateText(DrawingContext context, string text)
     {
         IBrush brush = Brushes.Gray;
+        if (Avalonia.Application.Current is not null
+            && Avalonia.Application.Current.TryFindResource("ProximaBrush.TextMuted", Avalonia.Application.Current.ActualThemeVariant, out object? rawBrush)
+            && rawBrush is IBrush resolved)
+        {
+            brush = resolved;
+        }
+
         FormattedText formatted = new(
             text,
             System.Globalization.CultureInfo.CurrentCulture,

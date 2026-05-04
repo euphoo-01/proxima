@@ -1771,3 +1771,53 @@ Known limitations are available in: .codex/known-limitations.md
 ### Commit
 
 Pending feat(ui): add candlestick chart zoom and tooltip
+
+## Iteration 32 — Proxima Chart Components Rollout Across Screens
+
+### Scope
+
+Replace remaining local chart usage patterns with Proxima chart components on implemented screens (`Dashboard`, `AssetDetails`, `Goals`), forbid local chart visual config in views, and harden chart loading/empty/error wiring.
+
+### User Stories Checked
+
+- [x] US-01.2 — User sees a trustworthy bento-style interface.
+- [x] US-01.3 — Developer can reuse design primitives.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| Chart.Rollout.1 | Done | `DashboardView` portfolio chart uses `ProximaCartesianChart`; allocation chart uses `ProximaDonutChart`. |
+| Chart.Rollout.2 | Done | `AssetDetailsView` candlestick chart uses `ProximaCandlestickChart`; legacy `CandlestickChart` removed. |
+| Chart.Rollout.3 | Done | `GoalsView` projection chart uses `ProximaCartesianChart`; legacy `LineChart` removed. |
+| Chart.Rollout.4 | Done | Chart states (`IsLoading`, `EmptyStateText`, `ErrorStateText`) wired in Dashboard/Goals/AssetDetails chart bindings. |
+| Chart.Rollout.5 | Done | No local chart axis/color/tooltip configuration in screen views; centralized in Proxima chart controls. |
+| Chart.Rollout.6 | Done | Updated visual notes in `.codex/figma-mapping/dashboard.md`, `asset-details.md`, `goals.md`. |
+
+### Tests Added/Updated
+
+- Unit: None.
+- Integration: None.
+- UI: Existing suite executed with updated chart control behavior.
+- Manual: Chart behavior visual review notes updated in figma-mapping docs.
+
+### Commands Run
+
+```bash
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views src/Proxima.App/DesignSystem
+git status --short
+```
+
+### Result
+
+Done
+
+### Known Limitations
+
+Known limitations are available in: .codex/known-limitations.md
+
+### Commit
+
+Pending refactor(ui): use proxima chart components across screens

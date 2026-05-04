@@ -20,6 +20,10 @@ public sealed class DashboardViewModel : ViewModelBase
     private string _sortKey = "date";
     private bool _sortDescending = true;
     private bool _isTransactionsLoading;
+    private bool _isPortfolioChartLoading;
+    private bool _isAllocationChartLoading;
+    private string? _portfolioChartErrorText;
+    private string? _allocationChartErrorText;
 
     public DashboardViewModel(IDashboardDataProvider dataProvider)
     {
@@ -85,6 +89,30 @@ public sealed class DashboardViewModel : ViewModelBase
 
     public bool IsTransactionsEmpty => !IsTransactionsLoading && VisibleTransactions.Count == 0;
 
+    public bool IsPortfolioChartLoading
+    {
+        get => _isPortfolioChartLoading;
+        private set => SetProperty(ref _isPortfolioChartLoading, value);
+    }
+
+    public bool IsAllocationChartLoading
+    {
+        get => _isAllocationChartLoading;
+        private set => SetProperty(ref _isAllocationChartLoading, value);
+    }
+
+    public string? PortfolioChartErrorText
+    {
+        get => _portfolioChartErrorText;
+        private set => SetProperty(ref _portfolioChartErrorText, value);
+    }
+
+    public string? AllocationChartErrorText
+    {
+        get => _allocationChartErrorText;
+        private set => SetProperty(ref _allocationChartErrorText, value);
+    }
+
     public string SearchQuery
     {
         get => _searchQuery;
@@ -116,7 +144,24 @@ public sealed class DashboardViewModel : ViewModelBase
 
     private void Load()
     {
-        DashboardSnapshot snapshot = _dataProvider.GetSnapshot();
+        IsPortfolioChartLoading = true;
+        IsAllocationChartLoading = true;
+        PortfolioChartErrorText = null;
+        AllocationChartErrorText = null;
+
+        DashboardSnapshot snapshot;
+        try
+        {
+            snapshot = _dataProvider.GetSnapshot();
+        }
+        catch (Exception ex)
+        {
+            PortfolioChartErrorText = ex.Message;
+            AllocationChartErrorText = ex.Message;
+            IsPortfolioChartLoading = false;
+            IsAllocationChartLoading = false;
+            return;
+        }
 
         decimal total = PortfolioDashboardCalculator.CalculateTotalValue(snapshot.Assets);
         TotalPortfolioValueText = $"{total:N2} {snapshot.Currency}";
@@ -143,6 +188,10 @@ public sealed class DashboardViewModel : ViewModelBase
             decimal pct = allocationTotal == 0m ? 0m : slice.Value / allocationTotal * 100m;
             AllocationRows.Add(new AllocationRowViewModel(slice.Tag, pct));
         }
+        if (AllocationRows.Count == 0)
+        {
+            AllocationChartErrorText = null;
+        }
 
         _allTransactions = snapshot.Transactions
             .Select(item => new TransactionRowItemViewModel(
@@ -155,6 +204,8 @@ public sealed class DashboardViewModel : ViewModelBase
             .ToArray();
 
         LoadSeries();
+        IsPortfolioChartLoading = false;
+        IsAllocationChartLoading = false;
         ApplyTransactionFilters();
         OnPropertyChanged(nameof(TotalPortfolioValueText));
         OnPropertyChanged(nameof(Delta24hText));
@@ -166,29 +217,43 @@ public sealed class DashboardViewModel : ViewModelBase
 
     private void LoadSeries()
     {
+        IsPortfolioChartLoading = true;
+        PortfolioChartErrorText = null;
         PortfolioValueSeries.Clear();
 
-        DashboardSnapshot snapshot = _dataProvider.GetSnapshot();
-        string analyticsWindow = SelectedTimeframe switch
+        try
         {
-            "1 день" => "1D",
-            "7 дней" => "7D",
-            _ => "1M"
-        };
+            DashboardSnapshot snapshot = _dataProvider.GetSnapshot();
+            string analyticsWindow = SelectedTimeframe switch
+            {
+                "1 день" => "1D",
+                "7 дней" => "7D",
+                _ => "1M"
+            };
 
-        IReadOnlyList<(DateTimeOffset Time, decimal Value)> points = PortfolioDashboardCalculator.BuildHistorySeries(snapshot.Transactions, analyticsWindow);
-        foreach ((DateTimeOffset _, decimal value) in points)
-        {
-            PortfolioValueSeries.Add(value);
+            IReadOnlyList<(DateTimeOffset Time, decimal Value)> points = PortfolioDashboardCalculator.BuildHistorySeries(snapshot.Transactions, analyticsWindow);
+            foreach ((DateTimeOffset _, decimal value) in points)
+            {
+                PortfolioValueSeries.Add(value);
+            }
+
+            if (PortfolioValueSeries.Count < 2)
+            {
+                PortfolioValueSeries.Clear();
+                foreach (decimal fallback in snapshot.FallbackSeries)
+                {
+                    PortfolioValueSeries.Add(fallback);
+                }
+            }
         }
-
-        if (PortfolioValueSeries.Count < 2)
+        catch (Exception ex)
         {
             PortfolioValueSeries.Clear();
-            foreach (decimal fallback in snapshot.FallbackSeries)
-            {
-                PortfolioValueSeries.Add(fallback);
-            }
+            PortfolioChartErrorText = ex.Message;
+        }
+        finally
+        {
+            IsPortfolioChartLoading = false;
         }
     }
 

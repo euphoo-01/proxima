@@ -2,5 +2,13 @@ namespace Proxima.App.Views.Goals;
 
 public static class GoalsDesignData
 {
-    public static GoalsViewModel Sample { get; } = GoalsViewModel.CreateDesignData();
+    public static GoalsViewModel Sample { get; } = CreateSample();
+
+    private static GoalsViewModel CreateSample()
+    {
+        GoalsViewModel vm = GoalsViewModel.CreateDesignData();
+        vm.MonthlyContribution = 450m;
+        vm.ExpectedAnnualReturnPercent = 8.5m;
+        return vm;
+    }
 }

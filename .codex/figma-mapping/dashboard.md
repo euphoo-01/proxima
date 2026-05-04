@@ -55,3 +55,12 @@
 | Transactions states | Pass | Loading/Empty/Data состояния видимы в таблице; сортировка по header-кнопкам и фильтр по поиску реализованы. |
 | No default Avalonia leakage | Pass | Экран использует Proxima classes/components (`BentoCard`, `MetricCard`, `TimeframeSelector`, `proxima-datagrid`). |
 | Known deviation | Partial | Donut визуализирован как токенизированный статичный ring shell + legend, без точной сегментации дуг по процентам в текущей итерации. |
+
+## 9) Visual comparison notes (2026-05-04, Proxima chart components)
+
+| Check | Pass/Fail | Notes |
+| --- | --- | --- |
+| Portfolio chart component | Pass | `DashboardView` использует только `ProximaCartesianChart` с обязательными X/Y axis, grid/separators, hover tooltip и форматированными значениями. |
+| Allocation chart component | Pass | `DashboardView` использует `ProximaDonutChart`; локальные chart colors/axes/tooltips в screen view не настраиваются. |
+| Chart states | Pass | Для обоих графиков подключены `IsLoading`, `EmptyStateText`, `ErrorStateText` через VM-состояние. |
+| Local chart styling leakage | Pass | Локальные chart style-настройки в экране не добавлялись; визуальное поведение централизовано в Proxima chart controls. |
