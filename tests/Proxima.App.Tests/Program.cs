@@ -102,6 +102,7 @@ internal static class Program
     {
         Assert(AppRoutes.Dashboard == "dashboard", "Dashboard route key mismatch.");
         Assert(AppRoutes.Assets == "assets", "Assets route key mismatch.");
+        Assert(AppRoutes.ImportPreview == "assets-import-preview", "Import Preview route key mismatch.");
         Assert(AppRoutes.AssetDetails == "asset-details", "Asset Details route key mismatch.");
         Assert(AppRoutes.ManualImport == "assets-import-manual", "Manual Import route key mismatch.");
         Assert(AppRoutes.Goals == "goals", "Goals route key mismatch.");
@@ -113,6 +114,7 @@ internal static class Program
         [
             "AppRoutes.Dashboard",
             "AppRoutes.Assets",
+            "AppRoutes.ImportPreview",
             "AppRoutes.AssetDetails",
             "AppRoutes.ManualImport",
             "AppRoutes.Goals",
@@ -132,11 +134,16 @@ internal static class Program
         string appShellView = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Shell", "AppShellView.axaml"));
         string dashboardView = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Dashboard", "DashboardView.axaml"));
         string assetDetailsView = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "AssetDetails", "AssetDetailsView.axaml"));
+        string assetsView = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Assets", "AssetsView.axaml"));
+        string importPreviewView = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Import", "ImportDialogView.axaml"));
         string settingsView = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Settings", "SettingsView.axaml"));
 
         Assert(appShellView.Contains("SidebarView", StringComparison.Ordinal), "AppShell should contain sidebar host.");
         Assert(appShellView.Contains("TopbarView", StringComparison.Ordinal), "AppShell should contain topbar host.");
+        Assert(appShellView.Contains("ImportDialogView", StringComparison.Ordinal), "AppShell should bind import preview screen content.");
         Assert(appShellView.Contains("ManualImportView", StringComparison.Ordinal), "AppShell should bind Manual Import content.");
+        Assert(!assetsView.Contains("ImportDialogView", StringComparison.Ordinal), "Assets screen should not host import modal view directly.");
+        Assert(!importPreviewView.Contains("proxima-modal-overlay", StringComparison.Ordinal), "Import preview should be a dedicated screen, not modal overlay.");
         Assert(dashboardView.Contains("controls:ProximaCartesianChart", StringComparison.Ordinal), "Dashboard should include Proxima cartesian chart control.");
         Assert(dashboardView.Contains("controls:ProximaDonutChart", StringComparison.Ordinal), "Dashboard should include Proxima donut chart control.");
         Assert(assetDetailsView.Contains("controls:ProximaCandlestickChart", StringComparison.Ordinal), "Asset details should include Proxima candlestick chart control.");

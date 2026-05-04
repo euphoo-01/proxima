@@ -4,18 +4,17 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:import="using:Proxima.App.Views.Import"
     x:DataType="import:ImportDialogViewModel">
-    <Border Classes="proxima-modal-overlay" IsVisible="{Binding IsOpen}">
-        <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Width="860">
-            <Border Classes="proxima-modal-surface">
-                <StackPanel Spacing="20">
-                    <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                        <StackPanel Spacing="6">
-                            <TextBlock Classes="proxima-card-title" Text="Импорт активов" />
-                            <TextBlock Classes="proxima-caption" Text="CSV/PDF, до 5MB. Ошибки выводятся без чувствительных данных." />
-                        </StackPanel>
-                        <Button Grid.Column="1" Classes="proxima-secondary proxima-toolbar" Command="{Binding CloseDialogCommand}" Content="Закрыть" />
-                    </Grid>
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24" Spacing="24">
+            <Border Classes="proxima-card-surface">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="proxima-page-title" Text="Импорт активов" />
+                    <TextBlock Classes="proxima-body" Text="CSV/PDF, до 5MB. Ошибки выводятся без чувствительных данных." />
+                </StackPanel>
+            </Border>
 
+            <Border Classes="proxima-card-surface">
+                <StackPanel Spacing="20">
                     <Border Classes="proxima-import-dropzone"
                             Classes.proxima-state-idle="{Binding IsIdle}"
                             Classes.proxima-state-dragover="{Binding IsDragOver}"
@@ -69,13 +68,13 @@
                         </StackPanel>
                     </Border>
 
-                    <TextBlock Classes="proxima-caption" Text="{Binding StatusMessage}" />
+                    <TextBlock Classes="proxima-caption" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
 
                     <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
                         <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding OpenManualImportCommand}" Content="Ручной импорт" />
                     </StackPanel>
                 </StackPanel>
             </Border>
-        </Grid>
-    </Border>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

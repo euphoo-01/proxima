@@ -22,7 +22,6 @@ public sealed class AssetsViewModel : ViewModelBase
 
     public AssetsViewModel(
         IAppNavigationService navigation,
-        ImportDialogViewModel importDialog,
         IAssetService assetService,
         IShellState shellState,
         IRuntimeDataInvalidation dataInvalidation)
@@ -30,10 +29,6 @@ public sealed class AssetsViewModel : ViewModelBase
         _navigation = navigation;
         _assetService = assetService;
         _shellState = shellState;
-        ImportDialog = importDialog;
-        ImportDialog.RequestClose += HandleImportDialogClose;
-        ImportDialog.RequestOpenManualImport += HandleImportDialogOpenManualImport;
-
         _openImportDialogCommand = new DelegateCommand(_ => OpenImportDialog());
         _openAssetDetailsCommand = new DelegateCommand(OpenAssetDetails);
         Assets = [];
@@ -46,14 +41,11 @@ public sealed class AssetsViewModel : ViewModelBase
     public ICommand OpenImportDialogCommand => _openImportDialogCommand;
     public ICommand OpenAssetDetailsCommand => _openAssetDetailsCommand;
 
-    public ImportDialogViewModel ImportDialog { get; }
     public ObservableCollection<AssetListItemViewModel> Assets { get; }
 
     public string PageTitle => "Все активы";
 
     public string PageDescription => "Управляйте активами и загружайте операции из отчётов брокера.";
-
-    public bool IsImportDialogOpen => ImportDialog.IsOpen;
 
     public bool IsLoading
     {
@@ -132,19 +124,7 @@ public sealed class AssetsViewModel : ViewModelBase
 
     private void OpenImportDialog()
     {
-        ImportDialog.Open();
-        OnPropertyChanged(nameof(IsImportDialogOpen));
-    }
-
-    private void HandleImportDialogClose(object? sender, EventArgs e)
-    {
-        OnPropertyChanged(nameof(IsImportDialogOpen));
-    }
-
-    private void HandleImportDialogOpenManualImport(object? sender, EventArgs e)
-    {
-        OnPropertyChanged(nameof(IsImportDialogOpen));
-        _navigation.Navigate(AppRoutes.ManualImport);
+        _navigation.Navigate(AppRoutes.ImportPreview);
     }
 
     private void OpenAssetDetails(object? parameter)

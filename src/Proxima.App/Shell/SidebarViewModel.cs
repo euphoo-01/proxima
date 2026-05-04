@@ -43,7 +43,8 @@ public sealed class SidebarViewModel : ViewModelBase
         {
             item.IsActive = string.Equals(item.RouteKey, route.Key, StringComparison.OrdinalIgnoreCase)
                 || (string.Equals(item.RouteKey, AppRoutes.Assets, StringComparison.OrdinalIgnoreCase)
-                    && (string.Equals(route.Key, AppRoutes.AssetDetails, StringComparison.OrdinalIgnoreCase)
+                    && (string.Equals(route.Key, AppRoutes.ImportPreview, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(route.Key, AppRoutes.AssetDetails, StringComparison.OrdinalIgnoreCase)
                         || string.Equals(route.Key, AppRoutes.ManualImport, StringComparison.OrdinalIgnoreCase)));
         }
     }

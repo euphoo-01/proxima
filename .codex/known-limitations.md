@@ -9,7 +9,7 @@
 - Hard-delete flow with transaction dependency checks is deferred until Module 06 transaction persistence is available; current module supports archive-only safe removal.
 - Module 06 adds local transaction CRUD/search/sort and portfolio/asset scoping checks, but transactional DB semantics are still deferred because persistence remains JSON-backed.
 - Manual transaction form currently prioritizes type-level validation and asset scoping, while field-by-field inline error UX and full portfolio analytics recalculation are deferred to analytics/persistence modules.
-- Module 07 adds CSV import preview, PDF parser stub, and commit-to-transactions flow, but drag&drop/file-picker UX is simplified to manual file-path input in the modal.
+- Module 07 adds CSV import preview, PDF parser stub, and commit-to-transactions flow; import preview now runs as a dedicated route/screen (not modal), but drag&drop/file-picker UX is still simplified to manual file-path input.
 - Import commit currently stops on first failed row and does not provide true DB transaction rollback guarantees until PostgreSQL/EF Core persistence module is implemented.
 - Module 08 adds quote provider abstraction, mock quotes, and offline JSON cache fallback, but historical OHLC storage and real API integrations are deferred.
 - Quote refresh is manual for now; scheduled interval refresh and advanced rate-limit retry/backoff are documented stubs and not fully implemented yet.
@@ -38,7 +38,7 @@
 - Runtime AppShell host currently supports development-only auto-login in local Debug builds (`DevAutoLogin` on by default when `PROXIMA_DEV_AUTO_LOGIN != 0`); Release builds keep auto-login disabled and require normal login/unlock flow.
 - Login/Unlock runtime now uses profile-backed local auth (`LocalProfileAuthGateService` + JSON profile store bootstrap) and binds authenticated user context into AppShell runtime services; default bootstrap credentials (`local` / `Proxima123!`) are still temporary and must be hardened in REC-007.
 - Temporary auth recovery action is informational only and does not implement real recovery/reset flow yet.
-- Recovered AppShell import flow now includes `ImportDialogView` and `ManualImportView`, but native OS drag-and-drop handling is not wired yet (drag-over is UI-driven state).
+- Recovered AppShell import flow now includes dedicated `ImportDialogView` route-screen and `ManualImportView`; native OS drag-and-drop handling is still not wired yet (drag-over is UI-driven state).
 - Recovered manual import screen now commits validated rows through DB-backed `IImportCommitService` and triggers runtime data invalidation for dependent screens; native drag-and-drop and richer per-row validation UX remain pending.
 - Recovered `Asset Details` runtime screen currently binds to `MockAssetDetailsReadModelProvider`; OHLC candles and advanced metrics include deterministic placeholders until real Application/Analytics read-model wiring is connected.
 - Recovered `Goals` runtime screen now uses real `IGoalService` CRUD/forecast boundary, but progress baseline currently comes from shell-level mock portfolio value (`IShellState.CurrentPortfolioValue`) rather than per-goal allocated balance.

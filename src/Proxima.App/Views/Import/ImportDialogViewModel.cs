@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using Proxima.App.Navigation;
 using Proxima.App.ViewModels;
 using Proxima.Importing;
 
@@ -7,15 +8,14 @@ namespace Proxima.App.Views.Import;
 
 public sealed class ImportDialogViewModel : ViewModelBase
 {
+    private readonly IAppNavigationService _navigation;
     private readonly IImportPreviewGateway _importPreviewGateway;
     private readonly AsyncCommand _parseFileCommand;
     private readonly DelegateCommand _openManualImportCommand;
-    private readonly DelegateCommand _closeDialogCommand;
     private readonly DelegateCommand _clearSelectionCommand;
     private readonly DelegateCommand _markDragOverCommand;
     private readonly DelegateCommand _clearDragOverCommand;
 
-    private bool _isOpen;
     private bool _isDragOver;
     private bool _isParsing;
     private string _filePath = string.Empty;
@@ -23,23 +23,20 @@ public sealed class ImportDialogViewModel : ViewModelBase
     private bool _parseFailed;
     private bool _hasValidationWarnings;
 
-    public ImportDialogViewModel(IImportPreviewGateway importPreviewGateway, ManualImportViewModel manualImport)
+    public ImportDialogViewModel(IAppNavigationService navigation, IImportPreviewGateway importPreviewGateway, ManualImportViewModel manualImport)
     {
+        _navigation = navigation;
         _importPreviewGateway = importPreviewGateway;
         ManualImport = manualImport;
         WarningItems = [];
 
-        _parseFileCommand = new AsyncCommand(ParseFileAsync, () => IsOpen && !IsParsing && !string.IsNullOrWhiteSpace(FilePath));
+        _parseFileCommand = new AsyncCommand(ParseFileAsync, () => !IsParsing && !string.IsNullOrWhiteSpace(FilePath));
         _openManualImportCommand = new DelegateCommand(_ => OpenManualImport());
-        _closeDialogCommand = new DelegateCommand(_ => Close());
         _clearSelectionCommand = new DelegateCommand(_ => ClearSelection());
         _markDragOverCommand = new DelegateCommand(_ => IsDragOver = true);
         _clearDragOverCommand = new DelegateCommand(_ => IsDragOver = false);
+        _navigation.RouteChanged += HandleRouteChanged;
     }
-
-    public event EventHandler? RequestClose;
-
-    public event EventHandler? RequestOpenManualImport;
 
     public ManualImportViewModel ManualImport { get; }
 
@@ -49,26 +46,11 @@ public sealed class ImportDialogViewModel : ViewModelBase
 
     public ICommand OpenManualImportCommand => _openManualImportCommand;
 
-    public ICommand CloseDialogCommand => _closeDialogCommand;
-
     public ICommand ClearSelectionCommand => _clearSelectionCommand;
 
     public ICommand MarkDragOverCommand => _markDragOverCommand;
 
     public ICommand ClearDragOverCommand => _clearDragOverCommand;
-
-    public bool IsOpen
-    {
-        get => _isOpen;
-        private set
-        {
-            if (SetProperty(ref _isOpen, value))
-            {
-                _parseFileCommand.RaiseCanExecuteChanged();
-                OnPropertyChanged(nameof(CurrentState));
-            }
-        }
-    }
 
     public bool IsDragOver
     {
@@ -172,23 +154,6 @@ public sealed class ImportDialogViewModel : ViewModelBase
 
     public bool IsUnknownFile => SelectedFileType == "UNKNOWN";
 
-    public void Open()
-    {
-        IsOpen = true;
-        IsDragOver = false;
-        ParseFailed = false;
-        HasValidationWarnings = false;
-        WarningItems.Clear();
-        StatusMessage = "Перетащите CSV/PDF или укажите путь к файлу.";
-    }
-
-    public void Close()
-    {
-        IsOpen = false;
-        IsDragOver = false;
-        RequestClose?.Invoke(this, EventArgs.Empty);
-    }
-
     private void ClearSelection()
     {
         FilePath = string.Empty;
@@ -263,8 +228,21 @@ public sealed class ImportDialogViewModel : ViewModelBase
 
     private void OpenManualImport()
     {
-        RequestOpenManualImport?.Invoke(this, EventArgs.Empty);
-        Close();
+        _navigation.Navigate(AppRoutes.ManualImport);
+    }
+
+    private void HandleRouteChanged(AppRoute route)
+    {
+        if (!string.Equals(route.Key, AppRoutes.ImportPreview, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        IsDragOver = false;
+        ParseFailed = false;
+        HasValidationWarnings = false;
+        WarningItems.Clear();
+        StatusMessage = "Перетащите CSV/PDF или укажите путь к файлу.";
     }
 
     private sealed class DelegateCommand(Action<object?> execute) : ICommand

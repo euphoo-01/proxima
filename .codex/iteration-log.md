@@ -2068,4 +2068,56 @@ Partial
 
 ### Commit
 
-Pending fix(runtime): complete authenticated route flow wiring
+98351f2 fix(runtime): complete authenticated route flow wiring
+
+## Iteration 38 — REC-005 Import Preview Screen (Modal Removal)
+
+### Scope
+
+Fix import modal centering bug by replacing modal-hosted import preview with a dedicated AppShell route/screen and preserving transition into manual import.
+
+### User Stories Checked
+
+- [x] US-07.1 — User can start import flow from Assets and review parse state.
+- [x] US-07.2 — User can move from preview to manual import for corrections.
+- [x] US-03.1 — Shell navigation remains stable for authenticated routes.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| REC-005-UI.1 | Done | Added `AppRoutes.ImportPreview` and registered it in AppShell route table. |
+| REC-005-UI.2 | Done | Assets import action now navigates to dedicated import preview route instead of modal open/close flow. |
+| REC-005-UI.3 | Done | `ImportDialogView` no longer uses modal overlay container; rendered as normal screen content in AppShell. |
+| REC-005-UI.4 | Done | `ImportDialogViewModel` modal lifecycle (`IsOpen`, `Open`, `Close`, close events) removed; route-driven reset behavior added. |
+| REC-005-UI.5 | Done | Runtime test guards updated to verify dedicated-screen wiring and absence of modal host in `AssetsView`. |
+
+### Tests Added/Updated
+
+- Unit: none.
+- Integration: none.
+- UI: updated `tests/Proxima.App.Tests/Program.cs` route/view assertions for import preview screen behavior.
+- Manual: style guard check for `src/Proxima.App/Views` passed.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views
+git status --short
+```
+
+### Result
+
+Done
+
+### Known Limitations
+
+- Native OS drag-and-drop import UX remains pending (`REC-008`).
+- Portfolio selector/switch UI in topbar remains pending.
+
+### Commit
+
+Pending refactor(import): move import preview from modal to dedicated screen

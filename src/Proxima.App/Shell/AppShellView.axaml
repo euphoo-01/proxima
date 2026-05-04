@@ -27,6 +27,9 @@
         <DataTemplate x:DataType="assets:AssetsViewModel">
             <assetsViews:AssetsView />
         </DataTemplate>
+        <DataTemplate x:DataType="import:ImportDialogViewModel">
+            <importViews:ImportDialogView />
+        </DataTemplate>
         <DataTemplate x:DataType="assetDetails:AssetDetailsViewModel">
             <assetDetailsViews:AssetDetailsView />
         </DataTemplate>
