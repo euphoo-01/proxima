@@ -1917,3 +1917,53 @@ Done
 ### Commit
 
 85524b0 fix(shell): complete appshell composition with authenticated owner context
+
+## Iteration 35 — REC-004 PostgreSQL/EF Runtime Repository Switch
+
+### Scope
+
+Close REC-004 by switching default AppShell runtime persistence from JSON repositories to PostgreSQL/EF repositories, adding DB bootstrap gating at app startup, and introducing transactional DB import-commit boundary service.
+
+### User Stories Checked
+
+- [x] US-04.1 — Runtime portfolio/assets/transactions persistence uses PostgreSQL-backed repositories.
+- [x] US-06.1 — Runtime transaction flows rely on DB persistence semantics.
+- [x] US-14.1 — Runtime settings are persisted through database-backed repository contract.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| REC-004.1 | Done | `AppComposition` binds `IPortfolioRepository/IAssetRepository/ITransactionRepository/IGoalRepository/IUserSettingsRepository/IQuoteCacheRepository/IAuditLogRepository` to `Postgres*` implementations. |
+| REC-004.2 | Done | `App.axaml.cs` calls `DatabaseBootstrapService.EnsureReadyAsync()` before runtime shell/login flow and shows explicit DB-unavailable window on failure. |
+| REC-004.3 | Partial | Added transactional `PostgresImportCommitService` (`IImportCommitService`) and wired `ManualImportViewModel` to persist rows via DB transaction boundary; snapshot restore remains JSON-file based and is deferred to REC-010. |
+
+### Tests Added/Updated
+
+- Unit: none.
+- Integration: runtime DB repository switch assertions in `tests/Proxima.App.Tests/Program.cs`.
+- UI: `ManualImportViewModel` save path now calls DB-backed import commit service when DI is available.
+- Manual: DB-unavailable startup window behavior review.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+- REC-004 transactional coverage for snapshot restore is still pending (`REC-010`): current snapshot import/export flow remains file-based JSON payload restore.
+- Drag-and-drop native OS import UX remains pending (`REC-008`).
+
+### Commit
+
+0a45ae6 feat(db): switch runtime repositories from json to postgresql

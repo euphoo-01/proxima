@@ -28,7 +28,7 @@
 - Module 15 adds encrypted snapshot export/import with AES-GCM and conflict checks, but Google Drive sync remains a stub adapter without OAuth flow.
 - Snapshot import currently writes JSON stores transactionally at file level in local-first mode; full PostgreSQL transactional restore semantics are deferred to DB module integration.
 - Module 16 adds PDF export for portfolio and tax draft reports, but interactive on-screen preview and destination picker/overwrite confirmation are still pending UI enhancements.
-- Module 17 adds PostgreSQL schema/bootstrap foundation and committed SQL migration scripts, but runtime repositories still use JSON stores by default until full DB repository switch is completed.
+- Module 17 adds PostgreSQL schema/bootstrap foundation and committed SQL migration scripts; runtime AppShell now defaults to PostgreSQL repositories (Iteration 35 / REC-004), while auth profile persistence remains JSON-backed until REC-007.
 - EF `dotnet ef` migration artifacts are not yet generated; current migration baseline is maintained as committed SQL scripts.
 - Module 18 adds RU/EN shell localization and persisted UI scaling, but localization coverage is currently focused on shell/topbar/core page headers; several feature-specific validation/error strings remain Russian-first and will be expanded in Module 19.
 - Module 19 adds in-app notification feed, audit events for key flows, and redaction helper for sensitive keys, but full structured log sink with per-operation correlation IDs and complete exception-boundary mapping is still in progress.
@@ -39,7 +39,7 @@
 - Login/Unlock runtime now uses profile-backed local auth (`LocalProfileAuthGateService` + JSON profile store bootstrap) and binds authenticated user context into AppShell runtime services; default bootstrap credentials (`local` / `Proxima123!`) are still temporary and must be hardened in REC-007.
 - Temporary auth recovery action is informational only and does not implement real recovery/reset flow yet.
 - Recovered AppShell import flow now includes `ImportDialogView` and `ManualImportView`, but native OS drag-and-drop handling is not wired yet (drag-over is UI-driven state).
-- Recovered manual import screen currently saves validated rows in UI state only; direct transaction persistence wiring for migrated AppShell flow is pending.
+- Recovered manual import screen now commits validated rows through DB-backed `IImportCommitService`; native drag-and-drop and richer per-row validation UX remain pending.
 - Recovered `Asset Details` runtime screen currently binds to `MockAssetDetailsReadModelProvider`; OHLC candles and advanced metrics include deterministic placeholders until real Application/Analytics read-model wiring is connected.
 - Recovered `Goals` runtime screen now uses real `IGoalService` CRUD/forecast boundary, but progress baseline currently comes from shell-level mock portfolio value (`IShellState.CurrentPortfolioValue`) rather than per-goal allocated balance.
 - Goals projection chart currently uses `IGoalProjectionService` with fixed 10-year horizon and no scenario presets; richer forecasting controls are deferred.
