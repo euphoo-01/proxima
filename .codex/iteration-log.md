@@ -1820,4 +1820,4 @@ Known limitations are available in: .codex/known-limitations.md
 
 ### Commit
 
-Pending refactor(ui): use proxima chart components across screens
+043b0ec refactor(ui): use proxima chart components across screens
