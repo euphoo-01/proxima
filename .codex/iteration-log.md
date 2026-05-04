@@ -1719,4 +1719,4 @@ Known limitations are available in: .codex/known-limitations.md
 
 ### Commit
 
-Pending feat(ui): add proxima chart foundation
+b63459f feat(ui): add proxima chart foundation
