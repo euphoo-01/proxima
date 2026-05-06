@@ -9,51 +9,363 @@
     x:DataType="details:AssetDetailsViewModel"
     d:DataContext="{x:Static details:AssetDetailsDesignData.Sample}"
     mc:Ignorable="d">
-    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="24" Spacing="24">
-            <controls:PageHeader Subtitle="Детальный анализ актива" Title="{Binding AssetName}">
-                <Border Classes="proxima-card-surface-subtle" Padding="12,8">
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <TextBlock Classes="proxima-card-title" Text="{Binding AssetTicker}" />
-                        <TextBlock Classes="proxima-body" Text="{Binding PriceText}" />
-                        <TextBlock Classes="proxima-caption" Text="{Binding DeltaText}" />
-                    </StackPanel>
-                </Border>
-            </controls:PageHeader>
 
-            <Border Classes="proxima-card-surface" IsVisible="{Binding IsLoading}">
+    <UserControl.Styles>
+        <Style Selector="ScrollViewer.asset-page">
+            <Setter Property="Background" Value="#F7F8F9" />
+        </Style>
+
+        <Style Selector="TextBlock.asset-title">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="34" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.asset-subtitle">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="#738197" />
+        </Style>
+
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Padding" Value="24" />
+            <Setter Property="BoxShadow" Value="0 12 36 0 #08001629" />
+        </Style>
+
+        <Style Selector="Border.muted-card">
+            <Setter Property="Background" Value="#EEF2F5" />
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Padding" Value="24" />
+        </Style>
+
+        <Style Selector="Border.logo">
+            <Setter Property="Width" Value="64" />
+            <Setter Property="Height" Value="64" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="Background" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.logo-text">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+        </Style>
+
+        <Style Selector="TextBlock.price">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="30" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="Border.delta">
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="Background" Value="#F3D4D8" />
+        </Style>
+
+        <Style Selector="Border.delta.positive">
+            <Setter Property="Background" Value="#CBF7C5" />
+        </Style>
+
+        <Style Selector="TextBlock.delta-text">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#7B1B22" />
+        </Style>
+
+        <Style Selector="TextBlock.delta-text.positive">
+            <Setter Property="Foreground" Value="#1B6D24" />
+        </Style>
+
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.kicker">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#8A99AB" />
+        </Style>
+
+        <Style Selector="TextBlock.metric-value">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.metric-hint">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#77869A" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style Selector="Border.metric-card">
+            <Setter Property="Background" Value="#F7F8F9" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="14" />
+            <Setter Property="MinHeight" Value="96" />
+        </Style>
+
+        <Style Selector="Border.metric-card.good">
+            <Setter Property="Background" Value="#EAF8EA" />
+        </Style>
+
+        <Style Selector="Border.metric-card.warning">
+            <Setter Property="Background" Value="#FFF4D8" />
+        </Style>
+
+        <Style Selector="Border.metric-card.danger">
+            <Setter Property="Background" Value="#FBE8EA" />
+        </Style>
+
+        <Style Selector="Button.time-button">
+            <Setter Property="MinWidth" Value="54" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="#F3F6F8" />
+            <Setter Property="Foreground" Value="#6F7E92" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.time-button:pointerover">
+            <Setter Property="Background" Value="#E6ECF1" />
+        </Style>
+
+        <Style Selector="TextBlock.table-header">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#9AAABD" />
+        </Style>
+
+        <Style Selector="Border.transaction-row">
+            <Setter Property="Height" Value="58" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="16,0" />
+        </Style>
+
+        <Style Selector="TextBlock.cell">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="#2F3A46" />
+        </Style>
+
+        <Style Selector="Border.badge">
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="Background" Value="#DADCDD" />
+        </Style>
+
+        <Style Selector="Border.badge.buy">
+            <Setter Property="Background" Value="#CBF7C5" />
+        </Style>
+
+        <Style Selector="Border.badge.sell">
+            <Setter Property="Background" Value="#F1D6DA" />
+        </Style>
+
+        <Style Selector="TextBlock.badge-text">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#3D4248" />
+        </Style>
+
+        <Style Selector="TextBlock.badge-text.buy">
+            <Setter Property="Foreground" Value="#1B6D24" />
+        </Style>
+
+        <Style Selector="TextBlock.badge-text.sell">
+            <Setter Property="Foreground" Value="#7B1B22" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer Classes="asset-page" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,29,34,60" Spacing="24">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="asset-title" Text="{Binding AssetName}" />
+                    <TextBlock Classes="asset-subtitle" Text="{Binding MarketDataSource}" />
+                </StackPanel>
+
+                <Button
+                    Grid.Column="1"
+                    Classes="time-button"
+                    Command="{Binding ReloadCommand}"
+                    Content="Обновить"
+                    Width="112" />
+            </Grid>
+
+            <Border Classes="card" IsVisible="{Binding IsLoading}">
                 <StackPanel Spacing="8">
-                    <TextBlock Classes="proxima-card-title" Text="Загрузка данных актива..." />
-                    <TextBlock Classes="proxima-caption" Text="Подготавливаем график, метрики и транзакции." />
+                    <TextBlock Classes="section-title" Text="Загрузка данных актива..." />
+                    <TextBlock Classes="asset-subtitle" Text="Подготавливаем график, метрики и транзакции." />
                 </StackPanel>
             </Border>
 
-            <Border Classes="proxima-card-surface" IsVisible="{Binding IsNotFound}">
+            <Border Classes="card" IsVisible="{Binding IsNotFound}">
                 <StackPanel Spacing="8">
-                    <TextBlock Classes="proxima-card-title" Text="Актив не найден" />
-                    <TextBlock Classes="proxima-caption" Text="Проверьте переход из списка активов и корректность asset id." />
+                    <TextBlock Classes="section-title" Text="Актив не найден" />
+                    <TextBlock Classes="asset-subtitle" Text="Проверьте переход из списка активов и корректность asset id." />
                 </StackPanel>
             </Border>
 
-            <Border Classes="proxima-card-surface" IsVisible="{Binding HasError}">
+            <Border Classes="card" IsVisible="{Binding HasError}">
                 <StackPanel Spacing="8">
-                    <TextBlock Classes="proxima-card-title" Text="Ошибка загрузки" />
-                    <TextBlock Classes="proxima-caption" Text="{Binding ErrorText}" />
+                    <TextBlock Classes="section-title" Text="Ошибка загрузки" />
+                    <TextBlock Classes="asset-subtitle" Text="{Binding ErrorText}" />
                 </StackPanel>
             </Border>
 
-            <Grid ColumnDefinitions="2*,*" ColumnSpacing="16" IsVisible="{Binding HasData}" RowDefinitions="Auto,Auto" RowSpacing="16">
-                <controls:BentoCard Grid.RowSpan="2" Subtitle="OHLC / Candlestick" Title="Ценовой график">
-                    <StackPanel Spacing="16">
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                            <controls:TimeframeSelector
-                                Classes="proxima-timeframe-selector"
-                                ItemsSource="{Binding Timeframes}"
-                                SelectedItem="{Binding SelectedTimeframe}" />
-                            <Button Grid.Column="1" Classes="proxima-table-sort-button" Command="{Binding ResetChartZoomCommand}" Content="Reset zoom" />
+            <Grid IsVisible="{Binding HasData}" ColumnDefinitions="1.35*,24,1*" RowDefinitions="Auto,24,Auto">
+                <Border Classes="card">
+                    <Grid RowDefinitions="Auto,28,Auto,24,Auto">
+                        <Grid ColumnDefinitions="64,18,*">
+                            <Border Classes="logo">
+                                <TextBlock
+                                    Classes="logo-text"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding LogoText}" />
+                            </Border>
+
+                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="6">
+                                <TextBlock Classes="asset-title" FontSize="28" Text="{Binding AssetTicker}" />
+                                <TextBlock Classes="asset-subtitle" Text="{Binding AssetName}" />
+                            </StackPanel>
                         </Grid>
 
-                        <Border Classes="proxima-chart-surface" Height="260">
+                        <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
+                            <TextBlock Classes="price" Text="{Binding PriceText}" />
+
+                            <Border Grid.Column="1" Classes="delta" Classes.positive="{Binding IsDeltaPositive}" VerticalAlignment="Center">
+                                <TextBlock Classes="delta-text" Classes.positive="{Binding IsDeltaPositive}" Text="{Binding DeltaText}" />
+                            </Border>
+                        </Grid>
+
+                        <Grid Grid.Row="4" ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                            <Border Classes="metric-card">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Classes="kicker" Text="MARKET CAP" />
+                                    <TextBlock Classes="metric-value" Text="{Binding MarketCapText}" />
+                                    <TextBlock Classes="metric-hint" Text="Размер актива" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="1" Classes="metric-card">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Classes="kicker" Text="P/E" />
+                                    <TextBlock Classes="metric-value" Text="{Binding PeText}" />
+                                    <TextBlock Classes="metric-hint" Text="Мультипликатор оценки" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="2" Classes="metric-card">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Classes="kicker" Text="24H VOLUME" />
+                                    <TextBlock Classes="metric-value" Text="{Binding Volume24hText}" />
+                                    <TextBlock Classes="metric-hint" Text="Ликвидность" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="2" Classes="card">
+                    <StackPanel Spacing="16">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Spacing="4">
+                                <TextBlock Classes="section-title" Text="Оценка и предложение" />
+                                <TextBlock Classes="asset-subtitle" Text="FDV, supply и базовая ликвидность" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+                            <Border Classes="metric-card">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Classes="kicker" Text="FDV" />
+                                    <TextBlock Classes="metric-value" Text="{Binding FdvText}" />
+                                    <TextBlock Classes="metric-hint" Text="Fully Diluted Valuation" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="1" Classes="metric-card">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Classes="kicker" Text="SUPPLY" />
+                                    <TextBlock Classes="metric-value" Text="{Binding SupplyText}" />
+                                    <TextBlock Classes="metric-hint" Text="Обращение / объем" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="2" Grid.ColumnSpan="3" Classes="card">
+                    <StackPanel Spacing="18">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Spacing="4">
+                                <TextBlock Classes="section-title" Text="История цены" />
+                                <TextBlock Classes="asset-subtitle" Text="Свечной график. Колесо мыши — масштаб, drag — перемещение." />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                <ItemsControl ItemsSource="{Binding Timeframes}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="8" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button
+                                                Classes="time-button"
+                                                Command="{Binding DataContext.ReloadCommand, RelativeSource={RelativeSource AncestorType=details:AssetDetailsView}}"
+                                                Content="{Binding}"
+                                                ClickMode="Release">
+                                                <Button.DataContext>
+                                                    <Binding />
+                                                </Button.DataContext>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <Button
+                                    Classes="time-button"
+                                    Command="{Binding ResetChartZoomCommand}"
+                                    Content="Reset"
+                                    Width="68" />
+                            </StackPanel>
+                        </Grid>
+
+                        <ComboBox
+                            Width="220"
+                            HorizontalAlignment="Right"
+                            ItemsSource="{Binding Timeframes}"
+                            SelectedItem="{Binding SelectedTimeframe}"
+                            Classes="proxima-input" />
+
+                        <Border Background="#F7F8F9" CornerRadius="14" Height="330" Padding="16">
                             <controls:ProximaCandlestickChart
                                 Candles="{Binding Candles}"
                                 CurrencyCode="{Binding AssetCurrency}"
@@ -63,93 +375,141 @@
                                 VisibleEndIndex="{Binding CandlesVisibleEndIndex, Mode=TwoWay}"
                                 VisibleStartIndex="{Binding CandlesVisibleStartIndex, Mode=TwoWay}" />
                         </Border>
-
-                        <Border Classes="proxima-chart-surface" IsVisible="{Binding ShowEmptyChart}">
-                            <StackPanel Spacing="6">
-                                <TextBlock Classes="proxima-card-title" Text="Нет свечных данных" />
-                                <TextBlock Classes="proxima-caption" Text="Для выбранного периода нет OHLC. Выберите другой таймфрейм." />
-                            </StackPanel>
-                        </Border>
                     </StackPanel>
-                </controls:BentoCard>
-
-                <controls:BentoCard Grid.Column="1" Grid.Row="0" Subtitle="Быстрый обзор" Title="Ключевые метрики">
-                    <ItemsControl ItemsSource="{Binding BasicMetrics}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="details:AssetMetricItemViewModel">
-                                <Border Classes="proxima-datagrid-cell">
-                                    <Grid ColumnDefinitions="2*,*" ColumnSpacing="8">
-                                        <StackPanel Spacing="2">
-                                            <TextBlock Classes="proxima-body" Text="{Binding Label}" />
-                                            <TextBlock Classes="proxima-caption" Text="{Binding Hint}" />
-                                        </StackPanel>
-                                        <TextBlock Grid.Column="1" Classes="proxima-datagrid-cell-text" HorizontalAlignment="Right" Text="{Binding Value}" />
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </controls:BentoCard>
-
-                <controls:BentoCard Grid.Column="1" Grid.Row="1" Subtitle="Risk/Advanced" Title="Продвинутые метрики">
-                    <ItemsControl ItemsSource="{Binding RiskMetrics}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="details:AssetMetricItemViewModel">
-                                <Border Classes="proxima-datagrid-cell">
-                                    <Grid ColumnDefinitions="2*,*" ColumnSpacing="8">
-                                        <StackPanel Spacing="2">
-                                            <TextBlock Classes="proxima-body" Text="{Binding Label}" />
-                                            <TextBlock Classes="proxima-caption" Text="{Binding Hint}" />
-                                        </StackPanel>
-                                        <TextBlock Grid.Column="1" Classes="proxima-datagrid-cell-text" HorizontalAlignment="Right" Text="{Binding Value}" />
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </controls:BentoCard>
+                </Border>
             </Grid>
 
-            <controls:BentoCard IsVisible="{Binding HasData}" Subtitle="Операции по выбранному активу" Title="Транзакции актива">
-                <StackPanel Spacing="16">
-                    <TextBox Classes="proxima-input" Text="{Binding SearchQuery}" Watermark="Поиск по типу или дате" />
+            <Grid IsVisible="{Binding HasData}" ColumnDefinitions="1*,24,1*" MinHeight="280">
+                <Border Classes="card">
+                    <StackPanel Spacing="16">
+                        <TextBlock Classes="section-title" Text="Базовые показатели" />
 
-                    <Border Classes="proxima-datagrid" IsVisible="{Binding IsTransactionsEmpty}">
-                        <StackPanel Margin="16" Spacing="6">
-                            <TextBlock Classes="proxima-card-title" Text="Нет транзакций" />
-                            <TextBlock Classes="proxima-caption" Text="Для этого актива пока нет операций по выбранным фильтрам." />
-                        </StackPanel>
-                    </Border>
+                        <ItemsControl ItemsSource="{Binding BasicMetrics}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
 
-                    <Grid IsVisible="{Binding ShowTransactions}" RowDefinitions="Auto,*">
-                        <Border Classes="proxima-datagrid-header">
-                            <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
-                                <Button Classes="proxima-table-sort-button" Command="{Binding SortByDateCommand}" Content="Дата" />
-                                <Button Grid.Column="1" Classes="proxima-table-sort-button" Command="{Binding SortByTypeCommand}" Content="Тип" />
-                                <Button Grid.Column="2" Classes="proxima-table-sort-button" Command="{Binding SortByPriceCommand}" Content="Цена" />
-                                <Button Grid.Column="3" Classes="proxima-table-sort-button" Command="{Binding SortByQuantityCommand}" Content="Кол-во" />
-                                <Button Grid.Column="4" Classes="proxima-table-sort-button" Command="{Binding SortByAmountCommand}" Content="Сумма" />
-                            </Grid>
-                        </Border>
-
-                        <ItemsControl Grid.Row="1" ItemsSource="{Binding VisibleTransactions}">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="details:AssetTransactionRowViewModel">
-                                    <Border Classes="proxima-datagrid-cell">
-                                        <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
-                                            <TextBlock Classes="proxima-datagrid-cell-text" Text="{Binding DateText}" />
-                                            <TextBlock Grid.Column="1" Classes="proxima-datagrid-cell-text" Text="{Binding TypeLabel}" />
-                                            <TextBlock Grid.Column="2" Classes="proxima-datagrid-cell-text" Text="{Binding PriceText}" />
-                                            <TextBlock Grid.Column="3" Classes="proxima-datagrid-cell-text" Text="{Binding QuantityText}" />
-                                            <TextBlock Grid.Column="4" Classes="proxima-datagrid-cell-text" Text="{Binding AmountText}" />
-                                        </Grid>
+                                <DataTemplate x:DataType="details:AssetMetricItemViewModel">
+                                    <Border
+                                        Classes="metric-card"
+                                        Classes.good="{Binding IsGood}"
+                                        Classes.warning="{Binding IsWarning}"
+                                        Classes.danger="{Binding IsDanger}"
+                                        Width="220"
+                                        Margin="0,0,12,12">
+                                        <StackPanel Spacing="5">
+                                            <TextBlock Classes="kicker" Text="{Binding Label}" />
+                                            <TextBlock Classes="metric-value" Text="{Binding Value}" />
+                                            <TextBlock Classes="metric-hint" Text="{Binding Hint}" />
+                                        </StackPanel>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Classes="card">
+                    <StackPanel Spacing="16">
+                        <TextBlock Classes="section-title" Text="Риск и продвинутая аналитика" />
+
+                        <ItemsControl ItemsSource="{Binding RiskMetrics}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="details:AssetMetricItemViewModel">
+                                    <Border
+                                        Classes="metric-card"
+                                        Classes.good="{Binding IsGood}"
+                                        Classes.warning="{Binding IsWarning}"
+                                        Classes.danger="{Binding IsDanger}"
+                                        Width="220"
+                                        Margin="0,0,12,12">
+                                        <StackPanel Spacing="5">
+                                            <TextBlock Classes="kicker" Text="{Binding Label}" />
+                                            <TextBlock Classes="metric-value" Text="{Binding Value}" />
+                                            <TextBlock Classes="metric-hint" Text="{Binding Hint}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border IsVisible="{Binding HasData}" Classes="muted-card">
+                <Grid RowDefinitions="Auto,18,Auto,14,*">
+                    <Grid ColumnDefinitions="*,280">
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="section-title" Text="Транзакции актива" />
+                            <TextBlock Classes="asset-subtitle" Text="История операций только по выбранному инструменту" />
+                        </StackPanel>
+
+                        <TextBox
+                            Grid.Column="1"
+                            Classes="proxima-input"
+                            Height="38"
+                            Text="{Binding SearchQuery}"
+                            Watermark="Поиск по типу, дате, сумме" />
                     </Grid>
-                </StackPanel>
-            </controls:BentoCard>
+
+                    <Border Grid.Row="2" Background="Transparent">
+                        <Grid ColumnDefinitions="1.4*,1.2*,1.2*,1.2*,1.2*" Margin="16,0,16,0">
+                            <Button Classes="proxima-table-sort-button" Command="{Binding SortByDateCommand}" Content="ДАТА" />
+                            <Button Grid.Column="1" Classes="proxima-table-sort-button" Command="{Binding SortByTypeCommand}" Content="ТИП" />
+                            <Button Grid.Column="2" Classes="proxima-table-sort-button" Command="{Binding SortByPriceCommand}" Content="ЦЕНА" />
+                            <Button Grid.Column="3" Classes="proxima-table-sort-button" Command="{Binding SortByQuantityCommand}" Content="КОЛ-ВО" />
+                            <Button Grid.Column="4" Classes="proxima-table-sort-button" Command="{Binding SortByAmountCommand}" Content="СУММА" />
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Row="4" Classes="transaction-row" IsVisible="{Binding IsTransactionsEmpty}">
+                        <TextBlock
+                            Classes="cell"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Text="Для этого актива пока нет транзакций." />
+                    </Border>
+
+                    <ItemsControl Grid.Row="4" ItemsSource="{Binding VisibleTransactions}" IsVisible="{Binding ShowTransactions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="details:AssetTransactionRowViewModel">
+                                <Border Classes="transaction-row" Margin="0,0,0,10">
+                                    <Grid ColumnDefinitions="1.4*,1.2*,1.2*,1.2*,1.2*">
+                                        <TextBlock Classes="cell" VerticalAlignment="Center" Text="{Binding DateText}" />
+
+                                        <Border
+                                            Grid.Column="1"
+                                            Classes="badge"
+                                            Classes.buy="{Binding IsBuy}"
+                                            Classes.sell="{Binding IsSell}"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center">
+                                            <TextBlock
+                                                Classes="badge-text"
+                                                Classes.buy="{Binding IsBuy}"
+                                                Classes.sell="{Binding IsSell}"
+                                                Text="{Binding TypeLabel}" />
+                                        </Border>
+
+                                        <TextBlock Grid.Column="2" Classes="cell" VerticalAlignment="Center" Text="{Binding PriceText}" />
+                                        <TextBlock Grid.Column="3" Classes="cell" VerticalAlignment="Center" Text="{Binding QuantityText}" />
+                                        <TextBlock Grid.Column="4" Classes="cell" VerticalAlignment="Center" Text="{Binding AmountText}" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

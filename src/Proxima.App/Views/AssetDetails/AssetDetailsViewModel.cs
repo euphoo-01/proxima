@@ -1,21 +1,25 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows.Input;
 using Proxima.App.Navigation;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
+using Proxima.Application.AssetDetails;
 
 namespace Proxima.App.Views.AssetDetails;
 
 public sealed class AssetDetailsViewModel : ViewModelBase
 {
     private readonly IAppNavigationService _navigation;
-    private readonly IAssetDetailsReadModelProvider _provider;
+    private readonly IAssetDetailsService _assetDetailsService;
+
     private readonly DelegateCommand _sortByDateCommand;
     private readonly DelegateCommand _sortByTypeCommand;
     private readonly DelegateCommand _sortByPriceCommand;
     private readonly DelegateCommand _sortByQuantityCommand;
     private readonly DelegateCommand _sortByAmountCommand;
     private readonly DelegateCommand _resetChartZoomCommand;
+    private readonly DelegateCommand _reloadCommand;
 
     private IReadOnlyList<AssetTransactionRowViewModel> _allTransactions = [];
     private string _searchQuery = string.Empty;
@@ -25,15 +29,19 @@ public sealed class AssetDetailsViewModel : ViewModelBase
     private bool _isNotFound;
     private bool _hasError;
     private string _errorText = string.Empty;
+    private string _selectedTimeframe = "1д";
     private int _candlesVisibleStartIndex;
     private int _candlesVisibleEndIndex;
 
-    public AssetDetailsViewModel(IAppNavigationService navigation, IAssetDetailsReadModelProvider provider)
+    public AssetDetailsViewModel(
+        IAppNavigationService navigation,
+        IAssetDetailsService assetDetailsService,
+        IRuntimeDataInvalidation dataInvalidation)
     {
         _navigation = navigation;
-        _provider = provider;
+        _assetDetailsService = assetDetailsService;
 
-        Timeframes = new ObservableCollection<string> { "1ч", "1д", "7д", "30д" };
+        Timeframes = new ObservableCollection<string> { "1ч", "1д", "7д", "30д", "1г" };
         Candles = new ObservableCollection<CandlestickPointViewModel>();
         BasicMetrics = new ObservableCollection<AssetMetricItemViewModel>();
         RiskMetrics = new ObservableCollection<AssetMetricItemViewModel>();
@@ -45,14 +53,23 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         _sortByQuantityCommand = new DelegateCommand(_ => SortBy("quantity"));
         _sortByAmountCommand = new DelegateCommand(_ => SortBy("amount"));
         _resetChartZoomCommand = new DelegateCommand(_ => ResetCandlesVisibleRange());
+        _reloadCommand = new DelegateCommand(_ => _ = LoadByRouteAsync(_navigation.Current));
 
-        _navigation.RouteChanged += HandleRouteChanged;
-    }
+        _navigation.RouteChanged += route =>
+        {
+            if (string.Equals(route.Key, AppRoutes.AssetDetails, StringComparison.OrdinalIgnoreCase))
+            {
+                _ = LoadByRouteAsync(route);
+            }
+        };
 
-    public AssetDetailsViewModel(IAppNavigationService navigation, IAssetDetailsReadModelProvider provider, IRuntimeDataInvalidation dataInvalidation)
-        : this(navigation, provider)
-    {
-        dataInvalidation.DataInvalidated += (_, _) => LoadByRoute(_navigation.Current);
+        dataInvalidation.DataInvalidated += (_, _) =>
+        {
+            if (string.Equals(_navigation.Current.Key, AppRoutes.AssetDetails, StringComparison.OrdinalIgnoreCase))
+            {
+                _ = LoadByRouteAsync(_navigation.Current);
+            }
+        };
     }
 
     public ObservableCollection<string> Timeframes { get; }
@@ -74,40 +91,50 @@ public sealed class AssetDetailsViewModel : ViewModelBase
     public ICommand SortByQuantityCommand => _sortByQuantityCommand;
 
     public ICommand SortByAmountCommand => _sortByAmountCommand;
+
     public ICommand ResetChartZoomCommand => _resetChartZoomCommand;
 
-    public string AssetName { get; private set; } = "Asset";
+    public ICommand ReloadCommand => _reloadCommand;
+
+    public string AssetName { get; private set; } = "Актив";
 
     public string AssetTicker { get; private set; } = "---";
+
+    public string LogoText { get; private set; } = "A";
 
     public string PriceText { get; private set; } = "Нет данных";
 
     public string DeltaText { get; private set; } = "Недоступно";
+
+    public bool IsDeltaPositive { get; private set; }
+
     public string AssetCurrency { get; private set; } = "USD";
 
-    public int CandlesVisibleStartIndex
-    {
-        get => _candlesVisibleStartIndex;
-        set => SetProperty(ref _candlesVisibleStartIndex, value);
-    }
+    public string MarketCapText { get; private set; } = "—";
 
-    public int CandlesVisibleEndIndex
-    {
-        get => _candlesVisibleEndIndex;
-        set => SetProperty(ref _candlesVisibleEndIndex, value);
-    }
+    public string FdvText { get; private set; } = "—";
+
+    public string PeText { get; private set; } = "—";
+
+    public string Volume24hText { get; private set; } = "—";
+
+    public string SupplyText { get; private set; } = "—";
+
+    public string MarketDataSource { get; private set; } = "Источник: PostgreSQL";
 
     public string SelectedTimeframe
     {
-        get;
+        get => _selectedTimeframe;
         set
         {
-            if (SetProperty(ref field, value))
+            string normalized = string.IsNullOrWhiteSpace(value) ? "1д" : value.Trim();
+
+            if (SetProperty(ref _selectedTimeframe, normalized))
             {
-                LoadByRoute(_navigation.Current);
+                _ = LoadByRouteAsync(_navigation.Current);
             }
         }
-    } = "1д";
+    }
 
     public string SearchQuery
     {
@@ -121,6 +148,18 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         }
     }
 
+    public int CandlesVisibleStartIndex
+    {
+        get => _candlesVisibleStartIndex;
+        set => SetProperty(ref _candlesVisibleStartIndex, value);
+    }
+
+    public int CandlesVisibleEndIndex
+    {
+        get => _candlesVisibleEndIndex;
+        set => SetProperty(ref _candlesVisibleEndIndex, value);
+    }
+
     public bool IsLoading
     {
         get => _isLoading;
@@ -128,10 +167,7 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         {
             if (SetProperty(ref _isLoading, value))
             {
-                OnPropertyChanged(nameof(HasData));
-                OnPropertyChanged(nameof(ShowEmptyChart));
-                OnPropertyChanged(nameof(ShowTransactions));
-                OnPropertyChanged(nameof(IsTransactionsEmpty));
+                RefreshStateProperties();
             }
         }
     }
@@ -143,7 +179,7 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         {
             if (SetProperty(ref _isNotFound, value))
             {
-                OnPropertyChanged(nameof(HasData));
+                RefreshStateProperties();
             }
         }
     }
@@ -155,7 +191,7 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         {
             if (SetProperty(ref _hasError, value))
             {
-                OnPropertyChanged(nameof(HasData));
+                RefreshStateProperties();
             }
         }
     }
@@ -174,31 +210,36 @@ public sealed class AssetDetailsViewModel : ViewModelBase
 
     public bool IsTransactionsEmpty => HasData && VisibleTransactions.Count == 0;
 
+    public bool HasBasicMetrics => HasData && BasicMetrics.Count > 0;
+
+    public bool HasRiskMetrics => HasData && RiskMetrics.Count > 0;
+
     public static AssetDetailsViewModel CreateDesignData()
     {
         AppNavigationService navigation = new();
-        navigation.Register(new AppRoute(AppRoutes.AssetDetails, "Asset Details", "Все активы / Apple Inc."));
-        AssetDetailsViewModel viewModel = new(navigation, new MockAssetDetailsReadModelProvider());
+        RuntimeDataInvalidation invalidation = new();
+        AssetDetailsViewModel viewModel = new(navigation, new DesignAssetDetailsService(), invalidation);
+
+        navigation.Register(new AppRoute(AppRoutes.AssetDetails, "Детальная информация", "Все активы / Apple Inc."));
         navigation.Navigate(
             AppRoutes.AssetDetails,
-            new Dictionary<string, string> { ["assetId"] = MockAssetDetailsReadModelProvider.PrimaryAssetId.ToString() },
+            new Dictionary<string, string>
+            {
+                ["assetId"] = DesignAssetDetailsService.PrimaryAssetId.ToString()
+            },
             "Apple Inc.",
             "Все активы / Apple Inc.");
+
         return viewModel;
     }
 
-    private void HandleRouteChanged(AppRoute route)
+    private async Task LoadByRouteAsync(AppRoute route)
     {
         if (!string.Equals(route.Key, AppRoutes.AssetDetails, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
-        LoadByRoute(route);
-    }
-
-    private void LoadByRoute(AppRoute route)
-    {
         IsLoading = true;
         HasError = false;
         IsNotFound = false;
@@ -210,54 +251,27 @@ public sealed class AssetDetailsViewModel : ViewModelBase
                 || !route.Parameters.TryGetValue("assetId", out string? assetIdRaw)
                 || !Guid.TryParse(assetIdRaw, out Guid assetId))
             {
+                ClearData();
                 IsNotFound = true;
                 return;
             }
 
-            AssetDetailsReadModel? model = _provider.Get(assetId, SelectedTimeframe);
+            AssetDetailsReadModel? model = await _assetDetailsService
+                .GetAsync(assetId, SelectedTimeframe)
+                .ConfigureAwait(true);
+
             if (model is null)
             {
+                ClearData();
                 IsNotFound = true;
                 return;
             }
 
-            AssetName = model.AssetName;
-            AssetTicker = model.AssetTicker;
-            PriceText = model.PriceText;
-            DeltaText = model.DeltaText;
-            AssetCurrency = model.CurrencyCode;
-
-            Candles.Clear();
-            foreach (CandlestickPointViewModel point in model.Candles)
-            {
-                Candles.Add(point);
-            }
-            ResetCandlesVisibleRange();
-
-            BasicMetrics.Clear();
-            foreach (AssetMetricItemViewModel metric in model.BasicMetrics)
-            {
-                BasicMetrics.Add(metric);
-            }
-
-            RiskMetrics.Clear();
-            foreach (AssetMetricItemViewModel metric in model.RiskMetrics)
-            {
-                RiskMetrics.Add(metric);
-            }
-
-            _allTransactions = model.Transactions;
-            ApplyTransactionFilters();
-
-            OnPropertyChanged(nameof(AssetName));
-            OnPropertyChanged(nameof(AssetTicker));
-            OnPropertyChanged(nameof(PriceText));
-            OnPropertyChanged(nameof(DeltaText));
-            OnPropertyChanged(nameof(AssetCurrency));
-            OnPropertyChanged(nameof(ShowEmptyChart));
+            ApplyModel(model);
         }
         catch (Exception ex)
         {
+            ClearData();
             HasError = true;
             ErrorText = ex.Message;
         }
@@ -265,6 +279,108 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         {
             IsLoading = false;
         }
+    }
+
+    private void ApplyModel(AssetDetailsReadModel model)
+    {
+        AssetName = model.AssetName;
+        AssetTicker = model.AssetTicker;
+        LogoText = model.LogoText;
+        PriceText = model.PriceText;
+        DeltaText = model.DeltaText;
+        IsDeltaPositive = model.IsDeltaPositive;
+        AssetCurrency = model.CurrencyCode;
+        MarketCapText = model.MarketCapText;
+        FdvText = model.FdvText;
+        PeText = model.PeText;
+        Volume24hText = model.Volume24hText;
+        SupplyText = model.SupplyText;
+        MarketDataSource = model.MarketDataSource;
+
+        Candles.Clear();
+        foreach (AssetDetailsCandle candle in model.Candles)
+        {
+            Candles.Add(new CandlestickPointViewModel(
+                candle.Timestamp,
+                candle.Open,
+                candle.High,
+                candle.Low,
+                candle.Close,
+                candle.Volume));
+        }
+
+        ResetCandlesVisibleRange();
+
+        BasicMetrics.Clear();
+        foreach (AssetDetailsMetric metric in model.BasicMetrics)
+        {
+            BasicMetrics.Add(AssetMetricItemViewModel.FromMetric(metric));
+        }
+
+        RiskMetrics.Clear();
+        foreach (AssetDetailsMetric metric in model.RiskMetrics)
+        {
+            RiskMetrics.Add(AssetMetricItemViewModel.FromMetric(metric));
+        }
+
+        _allTransactions = model.Transactions
+            .Select(AssetTransactionRowViewModel.FromTransaction)
+            .ToArray();
+
+        ApplyTransactionFilters();
+
+        OnPropertyChanged(nameof(AssetName));
+        OnPropertyChanged(nameof(AssetTicker));
+        OnPropertyChanged(nameof(LogoText));
+        OnPropertyChanged(nameof(PriceText));
+        OnPropertyChanged(nameof(DeltaText));
+        OnPropertyChanged(nameof(IsDeltaPositive));
+        OnPropertyChanged(nameof(AssetCurrency));
+        OnPropertyChanged(nameof(MarketCapText));
+        OnPropertyChanged(nameof(FdvText));
+        OnPropertyChanged(nameof(PeText));
+        OnPropertyChanged(nameof(Volume24hText));
+        OnPropertyChanged(nameof(SupplyText));
+        OnPropertyChanged(nameof(MarketDataSource));
+        RefreshStateProperties();
+    }
+
+    private void ClearData()
+    {
+        Candles.Clear();
+        BasicMetrics.Clear();
+        RiskMetrics.Clear();
+        VisibleTransactions.Clear();
+        _allTransactions = [];
+
+        AssetName = "Актив";
+        AssetTicker = "---";
+        LogoText = "A";
+        PriceText = "Нет данных";
+        DeltaText = "Недоступно";
+        IsDeltaPositive = false;
+        AssetCurrency = "USD";
+        MarketCapText = "—";
+        FdvText = "—";
+        PeText = "—";
+        Volume24hText = "—";
+        SupplyText = "—";
+        MarketDataSource = "Источник: PostgreSQL";
+
+        OnPropertyChanged(nameof(AssetName));
+        OnPropertyChanged(nameof(AssetTicker));
+        OnPropertyChanged(nameof(LogoText));
+        OnPropertyChanged(nameof(PriceText));
+        OnPropertyChanged(nameof(DeltaText));
+        OnPropertyChanged(nameof(IsDeltaPositive));
+        OnPropertyChanged(nameof(AssetCurrency));
+        OnPropertyChanged(nameof(MarketCapText));
+        OnPropertyChanged(nameof(FdvText));
+        OnPropertyChanged(nameof(PeText));
+        OnPropertyChanged(nameof(Volume24hText));
+        OnPropertyChanged(nameof(SupplyText));
+        OnPropertyChanged(nameof(MarketDataSource));
+        RefreshStateProperties();
     }
 
     private void ResetCandlesVisibleRange()
@@ -276,7 +392,7 @@ public sealed class AssetDetailsViewModel : ViewModelBase
             return;
         }
 
-        CandlesVisibleStartIndex = 0;
+        CandlesVisibleStartIndex = Math.Max(0, Candles.Count - 48);
         CandlesVisibleEndIndex = Candles.Count - 1;
     }
 
@@ -302,9 +418,13 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         if (!string.IsNullOrWhiteSpace(SearchQuery))
         {
             string term = SearchQuery.Trim();
+
             query = query.Where(item =>
                 item.TypeLabel.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || item.DateText.Contains(term, StringComparison.OrdinalIgnoreCase));
+                || item.DateText.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || item.PriceText.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || item.QuantityText.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || item.AmountText.Contains(term, StringComparison.OrdinalIgnoreCase));
         }
 
         query = _sortKey switch
@@ -312,168 +432,207 @@ public sealed class AssetDetailsViewModel : ViewModelBase
             "type" => _sortDescending
                 ? query.OrderByDescending(item => item.TypeLabel, StringComparer.OrdinalIgnoreCase)
                 : query.OrderBy(item => item.TypeLabel, StringComparer.OrdinalIgnoreCase),
-            "price" => _sortDescending ? query.OrderByDescending(item => item.Price) : query.OrderBy(item => item.Price),
-            "quantity" => _sortDescending ? query.OrderByDescending(item => item.Quantity) : query.OrderBy(item => item.Quantity),
-            "amount" => _sortDescending ? query.OrderByDescending(item => item.Amount) : query.OrderBy(item => item.Amount),
-            _ => _sortDescending ? query.OrderByDescending(item => item.Date) : query.OrderBy(item => item.Date)
+
+            "price" => _sortDescending
+                ? query.OrderByDescending(item => item.Price)
+                : query.OrderBy(item => item.Price),
+
+            "quantity" => _sortDescending
+                ? query.OrderByDescending(item => item.Quantity)
+                : query.OrderBy(item => item.Quantity),
+
+            "amount" => _sortDescending
+                ? query.OrderByDescending(item => item.Amount)
+                : query.OrderBy(item => item.Amount),
+
+            _ => _sortDescending
+                ? query.OrderByDescending(item => item.Date)
+                : query.OrderBy(item => item.Date)
         };
 
         VisibleTransactions.Clear();
+
         foreach (AssetTransactionRowViewModel row in query)
         {
             VisibleTransactions.Add(row);
         }
 
+        RefreshStateProperties();
+    }
+
+    private void RefreshStateProperties()
+    {
+        OnPropertyChanged(nameof(HasData));
+        OnPropertyChanged(nameof(ShowEmptyChart));
         OnPropertyChanged(nameof(ShowTransactions));
         OnPropertyChanged(nameof(IsTransactionsEmpty));
+        OnPropertyChanged(nameof(HasBasicMetrics));
+        OnPropertyChanged(nameof(HasRiskMetrics));
     }
 
     private sealed class DelegateCommand(Action<object?> execute) : ICommand
     {
         private readonly Action<object?> _execute = execute;
 
-        public event EventHandler? CanExecuteChanged;
+        public event EventHandler? CanExecuteChanged
+        {
+            add { }
+            remove { }
+        }
 
         public bool CanExecute(object? parameter) => true;
 
         public void Execute(object? parameter) => _execute(parameter);
+    }
 
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    private sealed class DesignAssetDetailsService : IAssetDetailsService
+    {
+        public static readonly Guid PrimaryAssetId = Guid.Parse("0a896663-ec39-4ebc-9b28-bf537f8f2fe0");
+
+        public Task<AssetDetailsReadModel?> GetAsync(
+            Guid assetId,
+            string timeframe,
+            CancellationToken cancellationToken = default)
+        {
+            DateTimeOffset start = DateTimeOffset.UtcNow.AddDays(-10);
+
+            AssetDetailsCandle[] candles = Enumerable.Range(0, 48)
+                .Select(index =>
+                {
+                    decimal basePrice = 180m + index * 0.18m + (decimal)Math.Sin(index * 0.65d) * 2.1m;
+                    decimal open = basePrice;
+                    decimal close = basePrice + (index % 2 == 0 ? 1.15m : -0.82m);
+                    decimal high = Math.Max(open, close) + 1.7m;
+                    decimal low = Math.Min(open, close) - 1.3m;
+
+                    return new AssetDetailsCandle(
+                        start.AddHours(index * 5),
+                        open,
+                        high,
+                        low,
+                        close,
+                        25_000m + index * 900m);
+                })
+                .ToArray();
+
+            AssetDetailsMetric[] basic =
+            [
+                new("SMA 50/200", "Золотой крест", "Цена выше долгосрочной средней", AssetDetailsMetricSeverity.Good),
+                new("RSI", "57.8", "Нейтральная зона", AssetDetailsMetricSeverity.Good),
+                new("ATR", "3.42", "Умеренная волатильность", AssetDetailsMetricSeverity.Neutral),
+                new("Turnover", "7.4%", "Здоровая ликвидность", AssetDetailsMetricSeverity.Good)
+            ];
+
+            AssetDetailsMetric[] risk =
+            [
+                new("Max Drawdown", "18.3%", "Максимальная историческая просадка", AssetDetailsMetricSeverity.Warning),
+                new("VaR 95%", "3.9%", "Историческая оценка дневного риска", AssetDetailsMetricSeverity.Warning),
+                new("CVaR", "5.8%", "Средний хвостовой убыток", AssetDetailsMetricSeverity.Warning),
+                new("Sharpe", "1.21", "Доходность на единицу риска", AssetDetailsMetricSeverity.Good),
+                new("Sortino", "1.47", "Доходность на негативную волатильность", AssetDetailsMetricSeverity.Good),
+                new("Calmar", "0.93", "Доходность к просадке", AssetDetailsMetricSeverity.Neutral),
+                new("Hurst", "0.58", "Трендовость ряда", AssetDetailsMetricSeverity.Good),
+                new("Z-Score", "+1.07", "Отклонение от средней", AssetDetailsMetricSeverity.Neutral),
+                new("Beta", "1.12", "Чувствительность к рынку", AssetDetailsMetricSeverity.Neutral),
+                new("Spread", "0.12%", "Оценка торгового спреда", AssetDetailsMetricSeverity.Good)
+            ];
+
+            AssetDetailsTransaction[] transactions =
+            [
+                new(Guid.NewGuid(), DateTimeOffset.UtcNow.AddDays(-2), "Покупка", 186.20m, 2m, 372.40m, 0m, "USD", "Completed"),
+                new(Guid.NewGuid(), DateTimeOffset.UtcNow.AddDays(-5), "Покупка", 184.30m, 1.5m, 276.45m, 0m, "USD", "Completed"),
+                new(Guid.NewGuid(), DateTimeOffset.UtcNow.AddDays(-10), "Продажа", 188.10m, 0.7m, 131.67m, 0m, "USD", "Completed")
+            ];
+
+            AssetDetailsReadModel model = new(
+                PrimaryAssetId,
+                "Apple Inc.",
+                "AAPL",
+                "AP",
+                "$186.43",
+                "↗ +0.84%",
+                true,
+                "USD",
+                "$2.89T",
+                "$2.94T",
+                "28.4",
+                "$81.2B",
+                "15.6B AAPL",
+                "Источник: Finnhub + PostgreSQL",
+                candles,
+                basic,
+                risk,
+                transactions);
+
+            return Task.FromResult<AssetDetailsReadModel?>(model);
+        }
     }
 }
 
-public sealed record AssetMetricItemViewModel(string Label, string Value, string Hint, string Severity)
+public sealed record AssetMetricItemViewModel(
+    string Label,
+    string Value,
+    string Hint,
+    string Severity)
 {
-    public string SeverityLabel => Severity;
+    public bool IsGood => string.Equals(Severity, "good", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsWarning => string.Equals(Severity, "warning", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsDanger => string.Equals(Severity, "danger", StringComparison.OrdinalIgnoreCase);
+
+    public static AssetMetricItemViewModel FromMetric(AssetDetailsMetric metric)
+    {
+        string severity = metric.Severity switch
+        {
+            AssetDetailsMetricSeverity.Good => "good",
+            AssetDetailsMetricSeverity.Warning => "warning",
+            AssetDetailsMetricSeverity.Danger => "danger",
+            _ => "neutral"
+        };
+
+        return new AssetMetricItemViewModel(metric.Label, metric.Value, metric.Hint, severity);
+    }
 }
 
-public sealed record AssetTransactionRowViewModel(DateTimeOffset Date, string TypeLabel, decimal Price, decimal Quantity, decimal Amount, string Currency)
+public sealed record AssetTransactionRowViewModel(
+    Guid TransactionId,
+    DateTimeOffset Date,
+    string TypeLabel,
+    decimal Price,
+    decimal Quantity,
+    decimal Amount,
+    decimal FeeAmount,
+    string Currency,
+    string Status)
 {
-    public string DateText => Date.LocalDateTime.ToString("dd.MM.yyyy");
+    public string DateText => Date.LocalDateTime.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
+
     public string PriceText => $"{Price:N2} {Currency}";
+
     public string QuantityText => $"{Quantity:N4}";
+
     public string AmountText => $"{Amount:N2} {Currency}";
-}
 
-public sealed record AssetDetailsReadModel(
-    Guid AssetId,
-    string AssetName,
-    string AssetTicker,
-    string PriceText,
-    string DeltaText,
-    string CurrencyCode,
-    IReadOnlyList<CandlestickPointViewModel> Candles,
-    IReadOnlyList<AssetMetricItemViewModel> BasicMetrics,
-    IReadOnlyList<AssetMetricItemViewModel> RiskMetrics,
-    IReadOnlyList<AssetTransactionRowViewModel> Transactions);
+    public string FeeText => $"{FeeAmount:N2} {Currency}";
 
-public interface IAssetDetailsReadModelProvider
-{
-    AssetDetailsReadModel? Get(Guid assetId, string timeframe);
-}
+    public bool IsBuy => TypeLabel.Contains("покуп", StringComparison.OrdinalIgnoreCase)
+        || TypeLabel.Contains("buy", StringComparison.OrdinalIgnoreCase);
 
-public sealed class MockAssetDetailsReadModelProvider : IAssetDetailsReadModelProvider
-{
-    public static readonly Guid PrimaryAssetId = Guid.Parse("0a896663-ec39-4ebc-9b28-bf537f8f2fe0");
+    public bool IsSell => TypeLabel.Contains("прод", StringComparison.OrdinalIgnoreCase)
+        || TypeLabel.Contains("sell", StringComparison.OrdinalIgnoreCase);
 
-    private static readonly Dictionary<Guid, (string Name, string Ticker)> AssetNames = new()
+    public static AssetTransactionRowViewModel FromTransaction(AssetDetailsTransaction transaction)
     {
-        [PrimaryAssetId] = ("Apple Inc.", "AAPL"),
-        [Guid.Parse("f3b4b129-5478-4965-923f-03ef74ca7c07")] = ("Microsoft", "MSFT"),
-        [Guid.Parse("3ab7f07a-8c4b-44ec-9025-f4d0983e0fbf")] = ("Bitcoin", "BTC")
-    };
-
-    public AssetDetailsReadModel? Get(Guid assetId, string timeframe)
-    {
-        if (!AssetNames.TryGetValue(assetId, out (string Name, string Ticker) asset))
-        {
-            return null;
-        }
-
-        IReadOnlyList<CandlestickPointViewModel> candles = BuildCandles(timeframe);
-
-        AssetMetricItemViewModel[] basicMetrics =
-        [
-            new("Market Cap", "2.89T USD", "Оценка рыночной капитализации", "low"),
-            new("FDV", "2.94T USD", "Полностью разводнённая оценка", "low"),
-            new("P/E or P/S", "28.4 P/E", "P/S отображается если P/E недоступен", "medium"),
-            new("24h Volume", "81.2B USD", "Объём торгов за 24 часа", "low"),
-            new("Circulating vs Total", "15.6B / 16.1B", "Текущий и общий объём обращения", "low"),
-            new("SMA 50 / SMA 200", "182.10 / 176.45", "Скользящие средние закрытия", "medium"),
-            new("RSI", "57.8", "RSI(14), нейтральная зона", "medium")
-        ];
-
-        AssetMetricItemViewModel[] riskMetrics =
-        [
-            new("Sharpe", "1.21", "Risk-adjusted доходность", "medium"),
-            new("Sortino", "1.47", "Downside-risk adjusted", "medium"),
-            new("Calmar", "0.93", "Доходность к max drawdown", "medium"),
-            new("Max Drawdown", "-18.3%", "Максимальная просадка", "high"),
-            new("VaR", "-3.9%", "95% историческая оценка", "medium"),
-            new("CVaR", "-5.8%", "Усреднение хвоста распределения", "high"),
-            new("Beta", "1.12", "Относительно индекса NASDAQ", "medium"),
-            new("HV / IV", "24.6% / Недоступно", "IV ожидает внешний провайдер", "medium"),
-            new("ATR", "3.42", "ATR(14), абсолютная волатильность", "medium"),
-            new("Turnover", "0.74", "Оборот за период", "low"),
-            new("Spread / Depth", "Недоступно", "Требуется orderbook feed", "high"),
-            new("Hurst", "0.58", "Трендовость ряда", "medium"),
-            new("Z-Score", "1.07", "Отклонение от среднего", "medium"),
-            new("Correlation", "0.76", "Корреляция с benchmark", "medium")
-        ];
-
-        AssetTransactionRowViewModel[] transactions =
-        [
-            new(DateTimeOffset.UtcNow.AddDays(-2), "Buy", 186.2m, 2m, 372.4m, "USD"),
-            new(DateTimeOffset.UtcNow.AddDays(-5), "Buy", 184.3m, 1.5m, 276.45m, "USD"),
-            new(DateTimeOffset.UtcNow.AddDays(-10), "Sell", 188.1m, 0.7m, 131.67m, "USD"),
-            new(DateTimeOffset.UtcNow.AddDays(-17), "Dividend", 0m, 0m, 12.50m, "USD")
-        ];
-
-        string priceText = asset.Ticker == "BTC" ? "68 534.23 USD" : "186.43 USD";
-        string deltaText = asset.Ticker == "BTC" ? "+2.18%" : "+0.84%";
-
-        return new AssetDetailsReadModel(
-            assetId,
-            asset.Name,
-            asset.Ticker,
-            priceText,
-            deltaText,
-            "USD",
-            candles,
-            basicMetrics,
-            riskMetrics,
-            transactions);
-    }
-
-    private static IReadOnlyList<CandlestickPointViewModel> BuildCandles(string timeframe)
-    {
-        decimal[] baseValues = timeframe switch
-        {
-            "1ч" => [186.1m, 186.4m, 186.0m, 186.3m, 186.6m, 186.5m, 186.7m, 186.4m],
-            "7д" => [181m, 182.4m, 183.1m, 184.2m, 185m, 184.7m, 186.3m, 186.4m],
-            "30д" => [172m, 174m, 176.3m, 178.9m, 181.2m, 183m, 185.1m, 186.4m],
-            _ => [184.8m, 185.2m, 184.9m, 185.7m, 186.2m, 185.8m, 186.4m, 186.1m]
-        };
-        TimeSpan step = timeframe switch
-        {
-            "1ч" => TimeSpan.FromMinutes(5),
-            "7д" => TimeSpan.FromDays(1),
-            "30д" => TimeSpan.FromDays(3),
-            _ => TimeSpan.FromHours(3)
-        };
-        DateTimeOffset start = DateTimeOffset.UtcNow - TimeSpan.FromTicks(step.Ticks * baseValues.Length);
-
-        List<CandlestickPointViewModel> result = new(baseValues.Length);
-        for (int i = 0; i < baseValues.Length; i++)
-        {
-            decimal open = baseValues[i];
-            decimal close = open + (i % 2 == 0 ? 0.35m : -0.27m);
-            decimal high = Math.Max(open, close) + 0.44m;
-            decimal low = Math.Min(open, close) - 0.41m;
-            decimal volume = 12_000m + (i * 790m);
-            result.Add(new CandlestickPointViewModel(start + TimeSpan.FromTicks(step.Ticks * i), open, high, low, close, volume));
-        }
-
-        return result;
+        return new AssetTransactionRowViewModel(
+            transaction.TransactionId,
+            transaction.Date,
+            transaction.TypeLabel,
+            transaction.Price,
+            transaction.Quantity,
+            transaction.Amount,
+            transaction.FeeAmount,
+            transaction.Currency,
+            transaction.Status);
     }
 }

@@ -1,8 +1,11 @@
+using Proxima.Application.Portfolios;
+
 namespace Proxima.App.Shell;
 
-public sealed class RuntimeShellState : IShellState, IShellPortfolioCoordinator
+public sealed class RuntimeShellState : IShellState, IShellPortfolioCoordinator, ICurrentPortfolioContext
 {
     private readonly object _sync = new();
+
     private Guid _currentPortfolioId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private string _currentPortfolioName = "Demo Portfolio";
     private decimal _currentPortfolioValue = 18750m;
@@ -54,6 +57,7 @@ public sealed class RuntimeShellState : IShellState, IShellPortfolioCoordinator
             : portfolioName.Trim();
 
         bool changed;
+
         lock (_sync)
         {
             changed = _currentPortfolioId != portfolioId
@@ -70,6 +74,11 @@ public sealed class RuntimeShellState : IShellState, IShellPortfolioCoordinator
             return;
         }
 
-        PortfolioChanged?.Invoke(this, new ShellPortfolioChangedEventArgs(portfolioId, normalizedName, portfolioValue));
+        PortfolioChanged?.Invoke(
+            this,
+            new ShellPortfolioChangedEventArgs(
+                portfolioId,
+                normalizedName,
+                portfolioValue));
     }
 }
