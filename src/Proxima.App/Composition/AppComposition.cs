@@ -73,12 +73,14 @@ public static class AppComposition
         services.AddSingleton<IRuntimeDataInvalidation, RuntimeDataInvalidation>();
         services.AddSingleton<IImportPreviewGateway>(provider => new ImportPreviewGateway(ProximaImportComposition.CreateImportService()));
         services.AddSingleton<IDashboardDataProvider, MockDashboardDataProvider>();
-        services.AddSingleton<IAssetDetailsReadModelProvider, MockAssetDetailsReadModelProvider>();
+        services.AddSingleton<IAssetDetailsReadModelProvider, AppAssetDetailsReadModelProvider>();
         services.AddSingleton<ITaxCalculator>(_ => ProximaTaxComposition.CreateTaxCalculator(Proxima.Infrastructure.Settings.ProximaSettingsComposition.GetDefaultSettingsStorePath()));
         services.AddSingleton<IReportService>(_ => ProximaReportingComposition.CreateReportService());
         services.AddSingleton<IGoalProjectionService, GoalProjectionService>();
+        services.AddSingleton<IGoalProgressBaselineService, GoalProgressBaselineService>();
         services.AddSingleton<DashboardViewModel>();
         services.AddTransient<LoginViewModel>();
+        services.AddTransient<RegisterViewModel>();
         services.AddSingleton<ManualImportViewModel>();
         services.AddSingleton<ImportDialogViewModel>();
         services.AddSingleton<AssetsViewModel>();

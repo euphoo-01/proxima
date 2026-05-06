@@ -5,6 +5,7 @@
         <SolidColorBrush x:Key="ProximaBrush.Sidebar" Color="{StaticResource ProximaColor.Sidebar}" />
         <SolidColorBrush x:Key="ProximaBrush.Surface" Color="{StaticResource ProximaColor.Surface}" />
         <SolidColorBrush x:Key="ProximaBrush.SurfaceSubtle" Color="{StaticResource ProximaColor.SurfaceSubtle}" />
+        <SolidColorBrush x:Key="ProximaBrush.ContentBackground" Color="{StaticResource ProximaColor.ContentBackground}" />
 
         <SolidColorBrush x:Key="ProximaBrush.TextPrimary" Color="{StaticResource ProximaColor.TextPrimary}" />
         <SolidColorBrush x:Key="ProximaBrush.Brand" Color="{StaticResource ProximaColor.Brand}" />
@@ -23,6 +24,32 @@
         <SolidColorBrush x:Key="ProximaBrush.WarningSurface" Color="{StaticResource ProximaColor.WarningSurface}" />
         <SolidColorBrush x:Key="ProximaBrush.Danger" Color="{StaticResource ProximaColor.Danger}" />
         <SolidColorBrush x:Key="ProximaBrush.DangerSurface" Color="{StaticResource ProximaColor.DangerSurface}" />
+
+        <SolidColorBrush x:Key="ProximaBrush.AccentBlueSurface" Color="{StaticResource ProximaColor.AccentBlueSurface}" />
+        <SolidColorBrush x:Key="ProximaBrush.AccentBlueBorder" Color="{StaticResource ProximaColor.AccentBlueBorder}" />
+        <SolidColorBrush x:Key="ProximaBrush.AccentMintSurface" Color="{StaticResource ProximaColor.AccentMintSurface}" />
+        <SolidColorBrush x:Key="ProximaBrush.AccentMintBorder" Color="{StaticResource ProximaColor.AccentMintBorder}" />
+        <SolidColorBrush x:Key="ProximaBrush.AccentAmberSurface" Color="{StaticResource ProximaColor.AccentAmberSurface}" />
+        <SolidColorBrush x:Key="ProximaBrush.AccentAmberBorder" Color="{StaticResource ProximaColor.AccentAmberBorder}" />
+        <SolidColorBrush x:Key="ProximaBrush.AccentCoralSurface" Color="{StaticResource ProximaColor.AccentCoralSurface}" />
+        <SolidColorBrush x:Key="ProximaBrush.AccentCoralBorder" Color="{StaticResource ProximaColor.AccentCoralBorder}" />
+
+        <LinearGradientBrush x:Key="ProximaBrush.GradientBlueHero" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Offset="0" Color="#F4F8FF" />
+            <GradientStop Offset="1" Color="#E6F0FF" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="ProximaBrush.GradientMintHero" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Offset="0" Color="#F2FCF7" />
+            <GradientStop Offset="1" Color="#E4F8EF" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="ProximaBrush.GradientAmberHero" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Offset="0" Color="#FFF9EE" />
+            <GradientStop Offset="1" Color="#FDEFD7" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="ProximaBrush.GradientCoralHero" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Offset="0" Color="#FFF6F3" />
+            <GradientStop Offset="1" Color="#FEE8E2" />
+        </LinearGradientBrush>
 
         <SolidColorBrush x:Key="ProximaBrushControlBackground" Color="{StaticResource ProximaColor.Surface}" />
         <SolidColorBrush x:Key="ProximaBrushControlBackgroundPointerOver" Color="{StaticResource ProximaColor.SurfaceSubtle}" />

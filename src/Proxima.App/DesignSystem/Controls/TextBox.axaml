@@ -1,40 +1,67 @@
-<Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:controls="using:Proxima.App.Controls">
-    <Styles.Resources>
-        <ControlTheme x:Key="{x:Type TextBox}" TargetType="TextBox">
-            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="MinHeight" Value="44" />
-            <Setter Property="Padding" Value="16,10" />
-            <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackground}" />
-            <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
-            <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorder}" />
-            <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Small}" />
-
-            <Style Selector="^:pointerover">
-                <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundPointerOver}" />
-                <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorderPointerOver}" />
-            </Style>
-
-            <Style Selector="^:pressed">
-                <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundPressed}" />
-                <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorderFocused}" />
-            </Style>
-
-            <Style Selector="^:focus-visible, ^:focus-within">
-                <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorderFocused}" />
-            </Style>
-
-            <Style Selector="^:disabled">
-                <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundDisabled}" />
-                <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForegroundDisabled}" />
-                <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorder}" />
-            </Style>
-        </ControlTheme>
-    </Styles.Resources>
-
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Proxima.App.Controls">
     <Style Selector="TextBox, controls|SearchBox">
-        <Setter Property="Theme" Value="{StaticResource {x:Type TextBox}}" />
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Regular" />
+
+        <Setter Property="MinHeight" Value="44" />
+        <Setter Property="Padding" Value="16,10" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Small}" />
+
+        <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackground}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
+        <Setter Property="CaretBrush" Value="{StaticResource ProximaBrushControlForeground}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorder}" />
+
+        <Setter Property="SelectionBrush" Value="{StaticResource ProximaBrushSelectionBackground}" />
+        <Setter Property="SelectionForegroundBrush" Value="{StaticResource ProximaBrushSelectionForeground}" />
     </Style>
+
+    <Style Selector="TextBox:pointerover, controls|SearchBox:pointerover">
+        <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundPointerOver}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorderPointerOver}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
+        <Setter Property="CaretBrush" Value="{StaticResource ProximaBrushControlForeground}" />
+    </Style>
+
+    <Style Selector="TextBox:focus, TextBox:focus-visible, TextBox:focus-within, controls|SearchBox:focus, controls|SearchBox:focus-visible, controls|SearchBox:focus-within">
+        <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundPointerOver}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorderFocused}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
+        <Setter Property="CaretBrush" Value="{StaticResource ProximaBrushControlForeground}" />
+    </Style>
+
+    <Style Selector="TextBox:disabled, controls|SearchBox:disabled">
+        <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundDisabled}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForegroundDisabled}" />
+        <Setter Property="CaretBrush" Value="{StaticResource ProximaBrushControlForegroundDisabled}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorder}" />
+    </Style>
+
+    <Style Selector="TextBox.proxima-input, controls|SearchBox.proxima-input">
+        <Setter Property="MinHeight" Value="44" />
+        <Setter Property="Padding" Value="16,10" />
+        <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackground}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
+        <Setter Property="CaretBrush" Value="{StaticResource ProximaBrushControlForeground}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorder}" />
+    </Style>
+
+    <Style Selector="TextBox.proxima-input:pointerover, controls|SearchBox.proxima-input:pointerover">
+        <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundPointerOver}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorderPointerOver}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
+    </Style>
+
+    <Style Selector="TextBox.proxima-input:focus, TextBox.proxima-input:focus-visible, TextBox.proxima-input:focus-within, controls|SearchBox.proxima-input:focus, controls|SearchBox.proxima-input:focus-visible, controls|SearchBox.proxima-input:focus-within">
+        <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundPointerOver}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrushControlBorderFocused}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
+        <Setter Property="CaretBrush" Value="{StaticResource ProximaBrushControlForeground}" />
+    </Style>
+
 </Styles>

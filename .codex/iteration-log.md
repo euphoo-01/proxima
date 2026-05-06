@@ -2121,3 +2121,212 @@ Done
 ### Commit
 
 Pending refactor(import): move import preview from modal to dedicated screen
+
+## Iteration 39 — REC-006 Runtime Mock Replacement (Core Slice)
+
+### Scope
+
+Replace key AppShell runtime mocks in Asset Details and Goals flows with application/persistence-backed services, while keeping provider-history/legal hardening for dependent REC modules.
+
+### User Stories Checked
+
+- [x] US-10.1 — Asset details screen reads real runtime data for selected asset.
+- [x] US-12.1 — Goals progress is derived from persisted portfolio data rather than shell mock value.
+- [x] US-03.1 — Runtime route integration remains stable after service wiring changes.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| REC-006.1 | Done | `AppComposition` binds `IAssetDetailsReadModelProvider` to `AppAssetDetailsReadModelProvider` (no runtime mock binding). |
+| REC-006.2 | Done | `AppAssetDetailsReadModelProvider` reads `IAssetRepository` + `ITransactionRepository` + `IQuoteCacheRepository` and maps analytics metrics into `AssetDetailsReadModel`. |
+| REC-006.3 | Done | `GoalsViewModel` uses `IGoalProgressBaselineService` to compute per-goal baseline from persisted assets instead of `IShellState.CurrentPortfolioValue`. |
+| REC-006.4 | Partial | Core runtime mock replacement is complete; real OHLC history/provider path and tax FX provider completion remain in `REC-009` / `REC-011`. |
+
+### Tests Added/Updated
+
+- Unit: none.
+- Integration: none.
+- UI: updated `tests/Proxima.App.Tests/Program.cs` runtime composition assertions for AssetDetails provider and Goals baseline service wiring.
+- Manual: `bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views` passed.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+- Native OS drag-and-drop import UX remains pending (`REC-008`).
+- Real OHLC historical provider persistence remains pending (`REC-009`).
+- Tax/legal provider hardening remains pending (`REC-011`).
+
+### Commit
+
+Pending fix(integration): replace asset-details/goals runtime mocks with app services
+
+## Iteration 40 — REC-007 Auth Runtime Hardening
+
+### Scope
+
+Remove fixed runtime bootstrap credentials, harden dev auto-login policy, and make recovery/reset behavior explicitly security-disabled in the login flow.
+
+### User Stories Checked
+
+- [x] US-02.2 — Returning user unlocks Proxima via local profile auth gate.
+- [x] US-02.4 — Recovery limitation is communicated explicitly and safely.
+- [x] US-03.1 — Authenticated shell launch flow remains stable after auth bootstrap refactor.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| REC-007.1 | Done | `RuntimeAuthBootstrapper` no longer contains hardcoded bootstrap credentials or auto-create defaults. |
+| REC-007.2 | Done | Dev auto-login now requires explicit env credentials (`PROXIMA_DEV_AUTOLOGIN_LOGIN` + `PROXIMA_DEV_AUTOLOGIN_PASSWORD`). |
+| REC-007.3 | Done | Login recovery action now shows explicit security-disabled policy text instead of temporary placeholder messaging. |
+| REC-007.4 | Partial | First-run secure setup UX is still separate; runtime currently shows explicit setup-required state window instead of insecure default profile creation. |
+
+### Tests Added/Updated
+
+- Unit: none.
+- Integration: none.
+- UI: updated `tests/Proxima.App.Tests/Program.cs` assertions for bootstrap credential removal, env-based dev auto-login, and explicit recovery policy messaging.
+- Manual: `bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views` passed.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+- Dedicated secure first-run profile setup UX is not yet wired in AppShell auth runtime path.
+- Native OS drag-and-drop import UX remains pending (`REC-008`).
+- Real OHLC historical provider persistence remains pending (`REC-009`).
+
+### Commit
+
+Pending security(auth): harden runtime bootstrap and recovery policy
+
+## Iteration 41 — First-Run Registration Runtime Flow
+
+### Scope
+
+Implement real first-run registration (`RegisterView` + `RegisterViewModel`) and replace first-run auth placeholder window with a production runtime registration path that auto-enters AppShell on success.
+
+### User Stories Checked
+
+- [x] US-02.1 — First-time user can create a local profile.
+- [x] US-02.2 — Returning user unlocks existing profile (login path preserved).
+- [x] US-03.1 — Authenticated shell launch remains stable after registration wiring.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| REG-41.1 | Done | `App.axaml.cs` now opens `CreateRegisterWindow` when `RuntimeAuthBootstrapResult.IsFirstRunRequired` is true. |
+| REG-41.2 | Done | `RegisterViewModel` implements first-run create-profile flow via `ILocalAuthService.CreateProfileAsync` with busy/error validation state. |
+| REG-41.3 | Done | `RegisterView.axaml` replaced placeholder content with full form (display name, login, role, password, confirmation) and binds `RegisterCommand`. |
+| REG-41.4 | Done | Successful registration triggers authenticated auto-entry into `AppShell` through `IRuntimeUserContext.SetAuthenticated(profile)`. |
+| REG-41.5 | Done | DI composition includes runtime registration VM (`services.AddTransient<RegisterViewModel>()`) and app smoke tests were updated. |
+
+### Tests Added/Updated
+
+- Unit: none.
+- Integration: none.
+- UI: updated `tests/Proxima.App.Tests/Program.cs` runtime assertions for register window routing, register command binding, role selector, DI registration, and first-run create profile usage.
+- Manual: `bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views` passed.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views
+git status --short
+```
+
+### Result
+
+Done
+
+### Known Limitations
+
+- Recovery/reset flow remains intentionally disabled by security policy (no insecure fallback reset path).
+- Native OS drag-and-drop import UX remains pending (`REC-008`).
+- Real OHLC historical provider persistence remains pending (`REC-009`).
+
+### Commit
+
+Pending feat(auth): add first-run registration flow with auto-entry into appshell
+
+## Iteration 42 — UI Palette Refresh (Light Bento Contrast)
+
+### Scope
+
+Improve Proxima light-bento color system by setting a solid white content base, introducing shared accent/gradient tokens, and applying contrast variants to selected summary cards while preserving readability of table/chart-heavy blocks.
+
+### User Stories Checked
+
+- [x] US-01.2 — User sees a clean trustworthy bento interface.
+- [x] US-03.1 — Authenticated shell visual layer remains stable with improved contrast.
+- [x] US-09.1 — Dashboard highlight cards are more legible and visually differentiated.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| UI-42.1 | Done | Added accent + gradient token set in `DesignSystem/Tokens/Colors.axaml` and `Brushes.axaml`. |
+| UI-42.2 | Done | Main shell content now uses solid white base (`ProximaBrush.ContentBackground` + white app window background). |
+| UI-42.3 | Done | Applied accent/gradient variants to key cards (portfolio summary, growth metric, chart hero, goals/tax/settings summary cards). |
+| UI-42.4 | Done | Data-dense tables and transaction grids remain neutral surfaces for readability. |
+| UI-42.5 | Done | Style guard for `src/Proxima.App/Views` passed without raw visual violations in production views. |
+
+### Tests Added/Updated
+
+- Unit: none.
+- Integration: none.
+- UI: regression checks via existing app smoke tests after token/style updates.
+- Manual: visual pass on dashboard/goals/taxes/settings contrast + `scan-xaml-style-violations` command.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views
+git status --short
+```
+
+### Result
+
+Done
+
+### Known Limitations
+
+- Pixel-perfect parity verification against Mockup remains pending (`REC-016`).
+- Style-guard false positives outside `Views` scope remain tracked under `REC-017`.
+
+### Commit
+
+Pending feat(ui): refresh bento palette with accent gradients and white content base

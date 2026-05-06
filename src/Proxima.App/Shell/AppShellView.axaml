@@ -50,7 +50,7 @@
         </DataTemplate>
     </UserControl.DataTemplates>
 
-    <Grid ColumnDefinitions="272,*">
+    <Grid Background="{StaticResource ProximaBrush.ContentBackground}" ColumnDefinitions="272,*">
         <shell:SidebarView DataContext="{Binding Sidebar}" />
 
         <Grid Grid.Column="1" RowDefinitions="Auto,*">

@@ -36,12 +36,19 @@ internal static class Program
         string root = FindRepositoryRoot();
         string appCode = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "App.axaml.cs"));
         string loginView = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Auth", "LoginView.axaml"));
+        string registerView = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Auth", "RegisterView.axaml"));
+        string runtimeAuth = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Auth", "RuntimeAuthServices.cs"));
 
         Assert(appCode.Contains("LoginViewModel", StringComparison.Ordinal), "Runtime should initialize LoginViewModel.");
         Assert(appCode.Contains("IRuntimeAuthBootstrapper", StringComparison.Ordinal), "Runtime should bootstrap profile-backed auth before opening shell/login.");
         Assert(appCode.Contains("CreateAppShellWindow", StringComparison.Ordinal), "Runtime should create AppShell window after unlock.");
+        Assert(appCode.Contains("CreateRegisterWindow", StringComparison.Ordinal), "Runtime should route first-run users to registration window.");
+        Assert(runtimeAuth.Contains("PROXIMA_DEV_AUTOLOGIN_LOGIN", StringComparison.Ordinal), "Dev auto-login should use explicit environment credentials.");
+        Assert(!appCode.Contains("Proxima123!", StringComparison.Ordinal), "Runtime must not contain hardcoded bootstrap password.");
         Assert(loginView.Contains("PasswordChar=\"•\"", StringComparison.Ordinal), "Login view password input must be masked.");
         Assert(loginView.Contains("Forgot password / Recovery", StringComparison.Ordinal), "Login view should expose recovery action.");
+        Assert(registerView.Contains("RegisterCommand", StringComparison.Ordinal), "Register view should bind registration command.");
+        Assert(registerView.Contains("ComboBox", StringComparison.Ordinal), "Register view should expose role selector.");
     }
 
     private static void RuntimeAuthFlow_UsesProfileBackedUserContext()
@@ -49,11 +56,18 @@ internal static class Program
         string root = FindRepositoryRoot();
         string composition = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Composition", "AppComposition.cs"));
         string settingsVm = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Settings", "SettingsViewModel.cs"));
+        string runtimeAuth = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Auth", "RuntimeAuthServices.cs"));
+        string loginVm = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Auth", "LoginViewModel.cs"));
+        string registerVm = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Views", "Auth", "RegisterViewModel.cs"));
 
         Assert(composition.Contains("LocalProfileAuthGateService", StringComparison.Ordinal), "App composition should use profile-backed auth gate service.");
         Assert(composition.Contains("IRuntimeUserContext", StringComparison.Ordinal), "Runtime user context must be registered in composition.");
+        Assert(composition.Contains("RegisterViewModel", StringComparison.Ordinal), "Runtime composition should register register view-model.");
         Assert(!settingsVm.Contains("RuntimeOwnerUserId", StringComparison.Ordinal), "Settings runtime path must not use hardcoded owner id.");
         Assert(settingsVm.Contains("_runtimeUserContext.UserId", StringComparison.Ordinal), "Settings should use authenticated runtime user context.");
+        Assert(!runtimeAuth.Contains("Proxima123!", StringComparison.Ordinal), "Runtime auth bootstrapper must not rely on hardcoded credentials.");
+        Assert(loginVm.Contains("intentionally disabled", StringComparison.OrdinalIgnoreCase), "Recovery action should explicitly communicate security-disabled status.");
+        Assert(registerVm.Contains("CreateProfileAsync", StringComparison.Ordinal), "Register view-model should create first-run profile via local auth service.");
     }
 
     private static void RuntimeComposition_UsesPostgresRepositoriesByDefault()
@@ -88,12 +102,16 @@ internal static class Program
 
         Assert(composition.Contains("RuntimeShellState", StringComparison.Ordinal), "Runtime composition should register mutable runtime shell state.");
         Assert(composition.Contains("IRuntimeDataInvalidation", StringComparison.Ordinal), "Runtime composition should register shared data invalidation service.");
+        Assert(composition.Contains("AppAssetDetailsReadModelProvider", StringComparison.Ordinal), "Runtime composition should use app-backed asset details read-model provider.");
+        Assert(!composition.Contains("IAssetDetailsReadModelProvider, MockAssetDetailsReadModelProvider", StringComparison.Ordinal), "Runtime composition should not bind asset details provider to mock.");
+        Assert(composition.Contains("IGoalProgressBaselineService", StringComparison.Ordinal), "Runtime composition should register goal progress baseline service.");
         Assert(shellState.Contains("SetCurrentPortfolio", StringComparison.Ordinal), "Runtime shell state should expose current portfolio switch method.");
         Assert(shellState.Contains("PortfolioChanged?.Invoke", StringComparison.Ordinal), "Runtime shell state should emit portfolio changed events.");
         Assert(appShellVm.Contains("HandlePortfolioChanged", StringComparison.Ordinal), "AppShell should update topbar on portfolio switch.");
         Assert(dashboardVm.Contains("DataInvalidated", StringComparison.Ordinal), "Dashboard should react to data invalidation events.");
         Assert(assetsVm.Contains("DataInvalidated", StringComparison.Ordinal), "Assets should react to data invalidation events.");
         Assert(goalsVm.Contains("DataInvalidated", StringComparison.Ordinal), "Goals should react to data invalidation events.");
+        Assert(goalsVm.Contains("CalculateCurrentAmounts", StringComparison.Ordinal), "Goals should derive baseline from persisted portfolio data service.");
         Assert(taxesVm.Contains("DataInvalidated", StringComparison.Ordinal), "Taxes should react to data invalidation events.");
         Assert(manualImportVm.Contains("manual-import-commit", StringComparison.Ordinal), "Manual import should invalidate runtime data after successful commit.");
     }

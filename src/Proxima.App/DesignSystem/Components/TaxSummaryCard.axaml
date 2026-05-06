@@ -1,7 +1,7 @@
 <Styles xmlns="https://github.com/avaloniaui">
     <Style Selector="Border.proxima-tax-summary-card">
-        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
-        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.GradientAmberHero}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.AccentAmberBorder}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Card}" />
         <Setter Property="Padding" Value="20" />

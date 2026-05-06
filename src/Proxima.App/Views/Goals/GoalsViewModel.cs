@@ -12,6 +12,7 @@ public sealed class GoalsViewModel : ViewModelBase
     private readonly IGoalService _goalService;
     private readonly IShellState _shellState;
     private readonly IGoalProjectionService _projectionService;
+    private readonly IGoalProgressBaselineService _baselineService;
     private readonly DelegateCommand _openAddGoalCommand;
     private readonly DelegateCommand _openEditGoalCommand;
     private readonly DelegateCommand _archiveGoalCommand;
@@ -28,11 +29,17 @@ public sealed class GoalsViewModel : ViewModelBase
     private bool _isProjectionChartLoading;
     private string? _projectionChartErrorText;
 
-    public GoalsViewModel(IGoalService goalService, IShellState shellState, IGoalProjectionService projectionService, IRuntimeDataInvalidation dataInvalidation)
+    public GoalsViewModel(
+        IGoalService goalService,
+        IShellState shellState,
+        IGoalProjectionService projectionService,
+        IGoalProgressBaselineService baselineService,
+        IRuntimeDataInvalidation dataInvalidation)
     {
         _goalService = goalService;
         _shellState = shellState;
         _projectionService = projectionService;
+        _baselineService = baselineService;
 
         Goals = [];
         ProjectionSeries = [];
@@ -172,7 +179,7 @@ public sealed class GoalsViewModel : ViewModelBase
 
     public static GoalsViewModel CreateDesignData()
     {
-        return new GoalsViewModel(new DesignGoalService(), new DesignShellState(), new GoalProjectionService(), new RuntimeDataInvalidation());
+        return new GoalsViewModel(new DesignGoalService(), new DesignShellState(), new GoalProjectionService(), new DesignGoalProgressBaselineService(), new RuntimeDataInvalidation());
     }
 
     private async Task LoadAsync()
@@ -186,19 +193,22 @@ public sealed class GoalsViewModel : ViewModelBase
             IReadOnlyList<Goal> items = await _goalService.ListActiveAsync(_shellState.CurrentPortfolioId).ConfigureAwait(false);
             Goals.Clear();
 
+            IReadOnlyDictionary<Guid, decimal> baselineByGoal = _baselineService.CalculateCurrentAmounts(_shellState.CurrentPortfolioId, items);
+
             foreach (Goal goal in items)
             {
-                GoalForecast forecast = _goalService.Forecast(goal, _shellState.CurrentPortfolioValue);
+                decimal currentAmount = baselineByGoal.TryGetValue(goal.Id, out decimal allocated) ? allocated : 0m;
+                GoalForecast forecast = _goalService.Forecast(goal, currentAmount);
                 decimal progressPercent = goal.TargetAmount <= 0m
                     ? 0m
-                    : Math.Clamp(_shellState.CurrentPortfolioValue / goal.TargetAmount * 100m, 0m, 100m);
+                    : Math.Clamp(currentAmount / goal.TargetAmount * 100m, 0m, 100m);
 
                 Goals.Add(new GoalListItemViewModel(
                     goal.Id,
                     goal.Title,
                     goal.TargetAmount,
                     goal.Currency,
-                    _shellState.CurrentPortfolioValue,
+                    currentAmount,
                     progressPercent,
                     goal.MonthlyContribution,
                     goal.ExpectedAnnualReturnPercent,
@@ -480,5 +490,27 @@ file sealed class DesignGoalService : IGoalService
     public GoalForecast Forecast(Goal goal, decimal currentPortfolioValue)
     {
         return new GoalForecast(true, 18, DateTimeOffset.UtcNow.AddMonths(18), goal.TargetAmount, "OK");
+    }
+}
+
+file sealed class DesignGoalProgressBaselineService : IGoalProgressBaselineService
+{
+    public IReadOnlyDictionary<Guid, decimal> CalculateCurrentAmounts(Guid portfolioId, IReadOnlyList<Goal> goals)
+    {
+        if (goals.Count == 0)
+        {
+            return new Dictionary<Guid, decimal>();
+        }
+
+        decimal total = goals.Sum(goal => goal.TargetAmount);
+        if (total <= 0m)
+        {
+            return goals.ToDictionary(goal => goal.Id, _ => 0m);
+        }
+
+        const decimal designPortfolioValue = 25000m;
+        return goals.ToDictionary(
+            goal => goal.Id,
+            goal => Math.Round(designPortfolioValue * (goal.TargetAmount / total), 2, MidpointRounding.AwayFromZero));
     }
 }

@@ -125,6 +125,7 @@
   - [ ] Quote/OHLC and tax FX providers have real-provider path and fallback policy.
 - Verification: `dotnet test tests/Proxima.Application.Tests/Proxima.Application.Tests.csproj`.
 - Recommended commit: `fix(integration): replace runtime mock providers with application services`
+- Progress note (2026-05-05): Core slice implemented in Iteration 39 — runtime `Asset Details` switched from `MockAssetDetailsReadModelProvider` to app-backed provider and `Goals` baseline switched to persisted per-goal allocation service. Provider-path completion for real OHLC history + tax FX remains tracked by `REC-009` / `REC-011`.
 
 ## REC-007 - Auth runtime hardening
 - Source:
@@ -140,6 +141,7 @@
   - [ ] Auth persistence is bound to durable user profile context.
 - Verification: `dotnet test tests/Proxima.Application.Tests/Proxima.Application.Tests.csproj`.
 - Recommended commit: `security(auth): harden runtime auth recovery and credential flow`
+- Progress note (2026-05-05): Iteration 40 removed runtime fixed bootstrap credentials and switched dev auto-login to explicit env-provided credentials; recovery/reset action is explicitly security-disabled by policy. Iteration 41 completed first-run registration UX (`RegisterView`) with authenticated auto-entry to AppShell, closing the remaining onboarding gap for REC-007.
 
 ## REC-008 - Import persistence and UX completion
 - Source:

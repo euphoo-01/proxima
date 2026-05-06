@@ -1,17 +1,235 @@
 <UserControl
+    x:Class="Proxima.App.Views.Auth.RegisterView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:auth="using:Proxima.App.Views.Auth"
-    x:DataType="auth:RegisterViewModel">
-    <Grid Classes="proxima-auth-page">
-        <Border Classes="proxima-auth-card">
-            <StackPanel Spacing="{StaticResource ProximaGap.24}">
-                <StackPanel Spacing="{StaticResource ProximaGap.8}">
-                    <TextBlock Classes="proxima-auth-title" Text="Create Local Profile" />
-                    <TextBlock Classes="proxima-body" Text="Registration flow is mapped and reserved for the next auth iteration." />
+    x:DataType="auth:RegisterViewModel"
+    d:DataContext="{x:Static auth:RegisterDesignData.Sample}"
+    mc:Ignorable="d">
+
+    <UserControl.Styles>
+        <Style Selector="Grid.auth-page">
+            <Setter Property="Background" Value="#F7F8F9" />
+        </Style>
+
+        <Style Selector="Border.auth-card">
+            <Setter Property="Width" Value="516" />
+            <Setter Property="MinHeight" Value="446" />
+            <Setter Property="Padding" Value="48,28,48,32" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="CornerRadius" Value="24" />
+            <Setter Property="BoxShadow" Value="0 22 54 0 #18001629" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="TextBlock.auth-title">
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="LineHeight" Value="30" />
+        </Style>
+
+        <Style Selector="TextBlock.auth-subtitle">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Regular" />
+            <Setter Property="Foreground" Value="#4C5560" />
+            <Setter Property="LineHeight" Value="20" />
+        </Style>
+
+        <Style Selector="TextBlock.auth-label">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="LetterSpacing" Value="1.8" />
+            <Setter Property="Foreground" Value="#3C4249" />
+        </Style>
+
+        <Style Selector="TextBox.auth-input">
+            <Setter Property="Height" Value="60" />
+            <Setter Property="Padding" Value="18,0,52,0" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="Regular" />
+            <Setter Property="Background" Value="#F1F2F3" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="BorderBrush" Value="#F1F2F3" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="TextBox.auth-input:focus">
+            <Setter Property="BorderBrush" Value="#9FC7F5" />
+            <Setter Property="Background" Value="#F4F7FA" />
+        </Style>
+
+        <Style Selector="Button.auth-primary">
+            <Setter Property="Height" Value="56" />
+            <Setter Property="Padding" Value="20,0" />
+            <Setter Property="Background" Value="#001629" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#001629" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.auth-primary:pointerover">
+            <Setter Property="Background" Value="#06243C" />
+        </Style>
+
+        <Style Selector="Button.auth-primary:disabled">
+            <Setter Property="Opacity" Value="0.55" />
+        </Style>
+
+        <Style Selector="Button.auth-inline-link">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Regular" />
+        </Style>
+
+        <Style Selector="Button.auth-inline-link:pointerover">
+            <Setter Property="Foreground" Value="#0F4C81" />
+        </Style>
+
+        <Style Selector="TextBlock.auth-footer-text">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="#4C5560" />
+        </Style>
+
+        <Style Selector="TextBlock.auth-error">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#93000A" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="LineHeight" Value="17" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid Classes="auth-page">
+        <Border Classes="auth-card">
+            <StackPanel Spacing="0">
+                <TextBlock
+                    Classes="auth-title"
+                    Text="Зарегистрироваться" />
+
+                <TextBlock
+                    Margin="0,2,0,31"
+                    Classes="auth-subtitle"
+                    Text="Для продолжения необходимо зарегистрироваться" />
+
+                <StackPanel Spacing="10">
+                    <TextBlock
+                        Margin="4,0,0,0"
+                        Classes="auth-label"
+                        Text="ЛОГИН" />
+
+                    <Grid Height="60">
+                        <TextBox
+                            Classes="auth-input"
+                            Text="{Binding Login, Mode=TwoWay}"
+                            Watermark="Username или Email" />
+
+                        <Canvas
+                            Width="18"
+                            Height="18"
+                            Margin="0,0,17,0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            IsHitTestVisible="False">
+                            <Ellipse
+                                Canvas.Left="6.2"
+                                Canvas.Top="2"
+                                Width="5.6"
+                                Height="5.6"
+                                Stroke="#C7CDD3"
+                                StrokeThickness="2" />
+                            <Path
+                                Data="M3 16 C3 12.5 5.6 10.4 9 10.4 C12.4 10.4 15 12.5 15 16"
+                                Stroke="#C7CDD3"
+                                StrokeThickness="2"
+                                StrokeLineCap="Round"
+                                Fill="Transparent" />
+                        </Canvas>
+                    </Grid>
                 </StackPanel>
 
-                <Button Classes="proxima-primary" Content="Continue" IsEnabled="False" />
+                <StackPanel Margin="0,23,0,0" Spacing="10">
+                    <TextBlock
+                        Margin="4,0,0,0"
+                        Classes="auth-label"
+                        Text="ПАРОЛЬ" />
+
+                    <Grid Height="60">
+                        <TextBox
+                            Classes="auth-input"
+                            PasswordChar="•"
+                            Text="{Binding Password, Mode=TwoWay}"
+                            Watermark="••••••••••••" />
+
+                        <Canvas
+                            Width="18"
+                            Height="20"
+                            Margin="0,0,17,0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            IsHitTestVisible="False">
+                            <Path
+                                Data="M5 8 V6 C5 3.8 6.7 2 9 2 C11.3 2 13 3.8 13 6 V8"
+                                Stroke="#C7CDD3"
+                                StrokeThickness="2"
+                                StrokeLineCap="Round"
+                                Fill="Transparent" />
+                            <Path
+                                Data="M4 8 H14 V17 H4 Z"
+                                Stroke="#C7CDD3"
+                                StrokeThickness="2"
+                                StrokeJoin="Round"
+                                Fill="Transparent" />
+                            <Ellipse
+                                Canvas.Left="8"
+                                Canvas.Top="12"
+                                Width="2"
+                                Height="2"
+                                Fill="#C7CDD3" />
+                        </Canvas>
+                    </Grid>
+                </StackPanel>
+
+                <TextBlock
+                    Margin="0,12,0,0"
+                    Classes="auth-error"
+                    IsVisible="{Binding HasError}"
+                    Text="{Binding ErrorMessage}" />
+
+                <Button
+                    Margin="0,24,0,0"
+                    Classes="auth-primary"
+                    Command="{Binding RegisterCommand}"
+                    Content="{Binding PrimaryActionText}"
+                    IsEnabled="{Binding CanSubmit}" />
+
+                <StackPanel
+                    Margin="0,9,0,0"
+                    HorizontalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="4">
+                    <TextBlock
+                        Classes="auth-footer-text"
+                        Text="Уже есть аккаунт?" />
+
+                    <Button
+                        Classes="auth-inline-link"
+                        Command="{Binding NavigateToLoginCommand}"
+                        Content="Авторизоваться" />
+                </StackPanel>
             </StackPanel>
         </Border>
     </Grid>

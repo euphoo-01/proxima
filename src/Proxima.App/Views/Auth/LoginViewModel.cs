@@ -10,6 +10,7 @@ public sealed class LoginViewModel : ViewModelBase
     private readonly IAuthGateService _authGateService;
     private readonly AsyncCommand _unlockCommand;
     private readonly DelegateCommand _forgotPasswordCommand;
+    private readonly DelegateCommand _navigateToRegisterCommand;
 
     private string _loginOrEmail = string.Empty;
     private string _password = string.Empty;
@@ -21,9 +22,12 @@ public sealed class LoginViewModel : ViewModelBase
         _authGateService = authGateService;
         _unlockCommand = new AsyncCommand(UnlockAsync, () => CanSubmit);
         _forgotPasswordCommand = new DelegateCommand(_ => ShowRecoveryInfo(), _ => IsNotBusy);
+        _navigateToRegisterCommand = new DelegateCommand(_ => RegisterRequested?.Invoke(this, EventArgs.Empty), _ => IsNotBusy);
     }
 
     public event EventHandler? Unlocked;
+
+    public event EventHandler? RegisterRequested;
 
     public string LoginOrEmail
     {
@@ -54,7 +58,13 @@ public sealed class LoginViewModel : ViewModelBase
     public string ErrorMessage
     {
         get => _errorMessage;
-        private set => SetProperty(ref _errorMessage, value);
+        private set
+        {
+            if (SetProperty(ref _errorMessage, value))
+            {
+                OnPropertyChanged(nameof(HasError));
+            }
+        }
     }
 
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
@@ -71,6 +81,7 @@ public sealed class LoginViewModel : ViewModelBase
                 OnPropertyChanged(nameof(PrimaryActionText));
                 _unlockCommand.RaiseCanExecuteChanged();
                 _forgotPasswordCommand.RaiseCanExecuteChanged();
+                _navigateToRegisterCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -82,18 +93,20 @@ public sealed class LoginViewModel : ViewModelBase
         && !string.IsNullOrWhiteSpace(LoginOrEmail)
         && !string.IsNullOrWhiteSpace(Password);
 
-    public string PrimaryActionText => IsBusy ? "Unlocking..." : "Unlock";
+    public string PrimaryActionText => IsBusy ? "Входим..." : "Войти  →";
 
     public ICommand UnlockCommand => _unlockCommand;
 
     public ICommand ForgotPasswordCommand => _forgotPasswordCommand;
 
+    public ICommand NavigateToRegisterCommand => _navigateToRegisterCommand;
+
     public static LoginViewModel CreateDesignData()
     {
         return new LoginViewModel(new InMemoryAuthGateService())
         {
-            LoginOrEmail = "local",
-            Password = string.Empty,
+            LoginOrEmail = string.Empty,
+            Password = "Proxima2026!"
         };
     }
 
@@ -107,11 +120,15 @@ public sealed class LoginViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            AuthGateResult result = await _authGateService.UnlockAsync(LoginOrEmail, Password).ConfigureAwait(true);
+            AuthGateResult result = await _authGateService
+                .UnlockAsync(LoginOrEmail, Password)
+                .ConfigureAwait(true);
+
             if (!result.Succeeded)
             {
-                ErrorMessage = result.ErrorMessage;
-                OnPropertyChanged(nameof(HasError));
+                ErrorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Не удалось войти. Проверьте логин и пароль."
+                    : result.ErrorMessage;
                 return;
             }
 
@@ -126,19 +143,15 @@ public sealed class LoginViewModel : ViewModelBase
 
     private void ShowRecoveryInfo()
     {
-        ErrorMessage = "Recovery is unavailable in this temporary build. Recreate local profile if password is lost.";
-        OnPropertyChanged(nameof(HasError));
+        ErrorMessage = "Восстановление пароля в локальной MVP-версии отключено. Если пароль утрачен, потребуется создать новый локальный профиль.";
     }
 
     private void ClearError()
     {
-        if (string.IsNullOrEmpty(ErrorMessage))
+        if (!string.IsNullOrWhiteSpace(ErrorMessage))
         {
-            return;
+            ErrorMessage = string.Empty;
         }
-
-        ErrorMessage = string.Empty;
-        OnPropertyChanged(nameof(HasError));
     }
 
     private void RefreshCommands()
@@ -204,12 +217,15 @@ public sealed class InMemoryAuthGateService : IAuthGateService
         string normalized = loginOrEmail.Trim().ToLowerInvariant();
         if (normalized is not ("local" or "local@proxima"))
         {
-            return Task.FromResult(AuthGateResult.Fail("Invalid credentials."));
+            return Task.FromResult(AuthGateResult.Fail("Не удалось войти. Проверьте логин и пароль."));
         }
 
         byte[] passwordHash = ComputeHash(password, Salt);
         bool isValid = CryptographicOperations.FixedTimeEquals(passwordHash, SeedHash);
-        return Task.FromResult(isValid ? AuthGateResult.Success() : AuthGateResult.Fail("Invalid credentials."));
+
+        return Task.FromResult(isValid
+            ? AuthGateResult.Success()
+            : AuthGateResult.Fail("Не удалось войти. Проверьте логин и пароль."));
     }
 
     private static byte[] ComputeHash(string password, byte[] salt)
