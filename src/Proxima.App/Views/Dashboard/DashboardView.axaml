@@ -467,9 +467,8 @@
                                         <Button Grid.Column="4" Classes="more-button" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <Button.Flyout>
                                                 <MenuFlyout>
-                                                    <MenuItem Header="Открыть актив" />
-                                                    <MenuItem Header="Редактировать" />
-                                                    <MenuItem Header="Архивировать" />
+                                                    <MenuItem Header="Редактировать" Command="{Binding EditCommand}" />
+                                                    <MenuItem Header="Удалить" Command="{Binding DeleteCommand}" />
                                                 </MenuFlyout>
                                             </Button.Flyout>
                                             <TextBlock Text="•••" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -480,7 +479,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <Button Grid.Row="4" Classes="more-transactions" Command="{Binding MoreTransactionsCommand}" Content="Больше транзакций⌄" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
+                    <Button Grid.Row="4" Classes="more-transactions" Command="{Binding MoreTransactionsCommand}" Content="{Binding MoreTransactionsButtonText}" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
                 </Grid>
             </Border>
         </Grid>

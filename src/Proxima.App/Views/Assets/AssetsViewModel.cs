@@ -370,7 +370,8 @@ public sealed class AssetsViewModel : ViewModelBase
             share,
             change,
             () => OpenAssetDetails(asset.Id, asset.Name),
-            () => _ = ArchiveAssetAsync(asset.Id));
+            () => EditAsset(asset),
+            () => _ = DeleteAssetAsync(asset.Id));
     }
 
     private void SelectManualTransactionType(TransactionType type)
@@ -584,7 +585,24 @@ public sealed class AssetsViewModel : ViewModelBase
         }
     }
 
-    private async Task ArchiveAssetAsync(Guid assetId)
+    private void EditAsset(Asset asset)
+    {
+        ManualAssetName = asset.Name;
+        ManualPriceText = asset.CurrentPrice.ToString(CultureInfo.InvariantCulture);
+        ManualQuantityText = asset.Quantity.ToString(CultureInfo.InvariantCulture);
+        ManualTagText = asset.Tags.FirstOrDefault() ?? asset.Type switch
+        {
+            AssetType.Crypto => "Криптовалюта",
+            AssetType.Currency or AssetType.Cash => "Наличность",
+            AssetType.Bond => "Облигации",
+            AssetType.Etf => "ETF",
+            _ => "Акции",
+        };
+        SelectedManualTransactionType = ManualTransactionTypeOptions[0];
+        SetFormSuccess("Данные актива перенесены в форму. Измените значения и добавьте корректирующую транзакцию.");
+    }
+
+    private async Task DeleteAssetAsync(Guid assetId)
     {
         if (IsBusy)
         {
@@ -597,11 +615,11 @@ public sealed class AssetsViewModel : ViewModelBase
             AssetOperationResult result = await _assetService.ArchiveAsync(_shellState.CurrentPortfolioId, assetId, CancellationToken.None).ConfigureAwait(true);
             if (!result.Succeeded)
             {
-                SetFormError(string.IsNullOrWhiteSpace(result.Message) ? "Не удалось архивировать актив." : result.Message);
+                SetFormError(string.IsNullOrWhiteSpace(result.Message) ? "Не удалось удалить актив." : result.Message);
                 return;
             }
 
-            SetFormSuccess("Актив архивирован.");
+            SetFormSuccess("Актив удалён.");
             _dataInvalidation.Invalidate("asset-archived");
             await LoadAsync().ConfigureAwait(true);
         }
@@ -934,7 +952,8 @@ public sealed class ManualTransactionTypeOption(string label, TransactionType ty
 public sealed class AssetListItemViewModel : ViewModelBase
 {
     private readonly Action _open;
-    private readonly Action _archive;
+    private readonly Action _edit;
+    private readonly Action _delete;
 
     public AssetListItemViewModel(
         Guid id,
@@ -948,7 +967,8 @@ public sealed class AssetListItemViewModel : ViewModelBase
         decimal share,
         decimal change24H,
         Action open,
-        Action archive)
+        Action edit,
+        Action delete)
     {
         Id = id;
         Name = name;
@@ -961,9 +981,11 @@ public sealed class AssetListItemViewModel : ViewModelBase
         Share = share;
         Change24H = change24H;
         _open = open;
-        _archive = archive;
+        _edit = edit;
+        _delete = delete;
         OpenCommand = new RowCommand(_ => _open());
-        ArchiveCommand = new RowCommand(_ => _archive());
+        EditCommand = new RowCommand(_ => _edit());
+        DeleteCommand = new RowCommand(_ => _delete());
     }
 
     public Guid Id { get; }
@@ -988,7 +1010,9 @@ public sealed class AssetListItemViewModel : ViewModelBase
 
     public ICommand OpenCommand { get; }
 
-    public ICommand ArchiveCommand { get; }
+    public ICommand EditCommand { get; }
+
+    public ICommand DeleteCommand { get; }
 
     public string TypeLabel => Type switch
     {

@@ -6,6 +6,8 @@ using Proxima.Analytics.Dashboard;
 using Proxima.App.Navigation;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
+using Proxima.Application.Transactions;
+using Proxima.Domain.Transactions;
 
 namespace Proxima.App.Views.Dashboard;
 
@@ -16,11 +18,14 @@ public sealed class DashboardViewModel : ViewModelBase
     private readonly IDashboardDataProvider _dataProvider;
     private readonly IShellState _shellState;
     private readonly IAppNavigationService _navigation;
+    private readonly ITransactionService _transactionService;
+    private readonly IRuntimeDataInvalidation _dataInvalidation;
     private readonly DelegateCommand _selectTimeframeCommand;
     private readonly DelegateCommand _rowMoreCommand;
     private readonly DelegateCommand _moreTransactionsCommand;
     private IReadOnlyList<DashboardTransactionRowViewModel> _allTransactions = [];
     private DashboardSnapshot _snapshot = DashboardSnapshot.Empty("USD");
+    private bool _isShowingAllTransactions;
     private string _searchQuery = string.Empty;
     private string _selectedTimeframe = "1д";
 
@@ -28,15 +33,18 @@ public sealed class DashboardViewModel : ViewModelBase
         IDashboardDataProvider dataProvider,
         IShellState shellState,
         IRuntimeDataInvalidation dataInvalidation,
-        IAppNavigationService navigation)
+        IAppNavigationService navigation,
+        ITransactionService transactionService)
     {
         _dataProvider = dataProvider;
         _shellState = shellState;
         _navigation = navigation;
+        _transactionService = transactionService;
+        _dataInvalidation = dataInvalidation;
 
         _selectTimeframeCommand = new DelegateCommand(SelectTimeframe);
         _rowMoreCommand = new DelegateCommand(_ => { });
-        _moreTransactionsCommand = new DelegateCommand(_ => _navigation.Navigate(AppRoutes.Assets));
+        _moreTransactionsCommand = new DelegateCommand(_ => ToggleTransactionsLimit());
 
         Timeframes =
         [
@@ -114,13 +122,16 @@ public sealed class DashboardViewModel : ViewModelBase
 
     public ICommand MoreTransactionsCommand => _moreTransactionsCommand;
 
+    public string MoreTransactionsButtonText => _isShowingAllTransactions ? "Скрыть транзакции⌃" : "Все транзакции⌄";
+
     public static DashboardViewModel CreateDesignData()
     {
         return new DashboardViewModel(
             new DesignDashboardDataProvider(),
             new MockShellState(),
             new RuntimeDataInvalidation(),
-            new DesignNavigationService());
+            new DesignNavigationService(),
+            new DesignTransactionService());
     }
 
     private void Load()
@@ -258,9 +269,14 @@ public sealed class DashboardViewModel : ViewModelBase
                 || item.DateText.Contains(term, StringComparison.OrdinalIgnoreCase));
         }
 
+        if (!_isShowingAllTransactions)
+        {
+            query = query.Take(3);
+        }
+
         VisibleTransactions.Clear();
 
-        foreach (DashboardTransactionRowViewModel item in query.Take(3))
+        foreach (DashboardTransactionRowViewModel item in query)
         {
             VisibleTransactions.Add(item);
         }
@@ -332,17 +348,47 @@ public sealed class DashboardViewModel : ViewModelBase
             : $"Крупнейшая доля: {allocation[0].Tag} — {topShare:0}%";
     }
 
-    private static DashboardTransactionRowViewModel MapTransaction(DashboardTransactionSnapshot item)
+    private DashboardTransactionRowViewModel MapTransaction(DashboardTransactionSnapshot item)
     {
         bool positive = item.GrossAmount >= 0m;
         string iconKind = ResolveIconKind(item.AssetName, item.Ticker);
         return new DashboardTransactionRowViewModel(
+            item.TransactionId,
             item.AssetName,
             FormatDate(item.TradeDate),
             item.TypeLabel,
-            FormatMoney(item.GrossAmount, "USD", showPlus: true),
+            FormatMoney(item.GrossAmount, _snapshot.Currency, showPlus: true),
             iconKind,
-            positive);
+            positive,
+            () => EditTransaction(item),
+            () => _ = DeleteTransactionAsync(item.TransactionId));
+    }
+
+    private void ToggleTransactionsLimit()
+    {
+        _isShowingAllTransactions = !_isShowingAllTransactions;
+        OnPropertyChanged(nameof(MoreTransactionsButtonText));
+        ApplyTransactionFilter();
+    }
+
+    private void EditTransaction(DashboardTransactionSnapshot transaction)
+    {
+        SearchQuery = transaction.AssetName;
+    }
+
+    private async Task DeleteTransactionAsync(Guid transactionId)
+    {
+        TransactionOperationResult result = await _transactionService
+            .ArchiveAsync(_shellState.CurrentPortfolioId, transactionId, CancellationToken.None)
+            .ConfigureAwait(true);
+
+        if (!result.Succeeded)
+        {
+            return;
+        }
+
+        _dataInvalidation.Invalidate("dashboard-transaction-deleted");
+        Load();
     }
 
     private void SelectTimeframe(object? parameter)
@@ -512,13 +558,15 @@ public sealed class DashboardViewModel : ViewModelBase
     {
         private readonly Action<object?> _execute = execute;
 
-        public event EventHandler? CanExecuteChanged;
+        public event EventHandler? CanExecuteChanged
+        {
+            add { }
+            remove { }
+        }
 
         public bool CanExecute(object? parameter) => true;
 
         public void Execute(object? parameter) => _execute(parameter);
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private sealed class DesignNavigationService : IAppNavigationService
@@ -540,6 +588,47 @@ public sealed class DashboardViewModel : ViewModelBase
             Current = new AppRoute(routeKey, titleOverride ?? routeKey, breadcrumbOverride ?? routeKey) { Parameters = parameters };
             RouteChanged?.Invoke(Current);
         }
+    }
+}
+
+internal sealed class DesignTransactionService : ITransactionService
+{
+    public Task<IReadOnlyList<PortfolioTransaction>> ListActiveAsync(Guid portfolioId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyList<PortfolioTransaction>>([]);
+    }
+
+    public Task<TransactionOperationResult> CreateAsync(CreateTransactionRequest request, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(TransactionOperationResult.Failure("Design-time service."));
+    }
+
+    public Task<TransactionOperationResult> UpdateAsync(UpdateTransactionRequest request, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(TransactionOperationResult.Failure("Design-time service."));
+    }
+
+    public Task<TransactionOperationResult> ArchiveAsync(Guid portfolioId, Guid transactionId, CancellationToken cancellationToken = default)
+    {
+        PortfolioTransaction transaction = new(
+            transactionId,
+            portfolioId,
+            null,
+            TransactionType.Fee,
+            DateTimeOffset.UtcNow,
+            0m,
+            0m,
+            0m,
+            0m,
+            0m,
+            "USD",
+            null,
+            null,
+            null,
+            true,
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow);
+        return Task.FromResult(TransactionOperationResult.Success(transaction));
     }
 }
 
@@ -641,21 +730,34 @@ public sealed class DashboardAllocationRowViewModel
 
 public sealed class DashboardTransactionRowViewModel
 {
+    private readonly Action _edit;
+    private readonly Action _delete;
+
     public DashboardTransactionRowViewModel(
+        Guid id,
         string assetName,
         string dateText,
         string typeText,
         string amountText,
         string iconKind,
-        bool isPositiveAmount)
+        bool isPositiveAmount,
+        Action edit,
+        Action delete)
     {
+        Id = id;
         AssetName = assetName;
         DateText = dateText;
         TypeText = typeText;
         AmountText = amountText;
         IconKind = iconKind;
         IsPositiveAmount = isPositiveAmount;
+        _edit = edit;
+        _delete = delete;
+        EditCommand = new RowCommand(_ => _edit());
+        DeleteCommand = new RowCommand(_ => _delete());
     }
+
+    public Guid Id { get; }
 
     public string AssetName { get; }
 
@@ -668,6 +770,10 @@ public sealed class DashboardTransactionRowViewModel
     public string IconKind { get; }
 
     public bool IsPositiveAmount { get; }
+
+    public ICommand EditCommand { get; }
+
+    public ICommand DeleteCommand { get; }
 
     public bool IsBitcoin => IconKind.Equals("bitcoin", StringComparison.OrdinalIgnoreCase);
 
@@ -689,4 +795,19 @@ public sealed class DashboardTransactionRowViewModel
         "sp" => "S&P",
         _ => IconKind.Length <= 3 ? IconKind : IconKind[..3]
     };
+
+    private sealed class RowCommand(Action<object?> execute) : ICommand
+    {
+        private readonly Action<object?> _execute = execute;
+
+        public event EventHandler? CanExecuteChanged
+        {
+            add { }
+            remove { }
+        }
+
+        public bool CanExecute(object? parameter) => true;
+
+        public void Execute(object? parameter) => _execute(parameter);
+    }
 }

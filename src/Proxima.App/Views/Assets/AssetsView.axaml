@@ -560,8 +560,9 @@
                                         <Button Grid.Column="6" Classes="more-button" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <Button.Flyout>
                                                 <MenuFlyout>
-                                                    <MenuItem Header="Открыть актив" Command="{Binding OpenCommand}" />
-                                                    <MenuItem Header="Архивировать" Command="{Binding ArchiveCommand}" />
+                                                    <MenuItem Header="Подробности" Command="{Binding OpenCommand}" />
+                                                    <MenuItem Header="Редактировать" Command="{Binding EditCommand}" />
+                                                    <MenuItem Header="Удалить" Command="{Binding DeleteCommand}" />
                                                 </MenuFlyout>
                                             </Button.Flyout>
                                             <TextBlock Text="•••" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />

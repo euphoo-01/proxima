@@ -1,49 +1,37 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Styles.Resources>
-        <ControlTheme x:Key="{x:Type ContextMenu}" TargetType="ContextMenu">
-            <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackground}" />
-            <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
-        </ControlTheme>
-
-        <ControlTheme x:Key="{x:Type MenuItem}" TargetType="MenuItem">
-            <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackground}" />
-            <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
-
-            <Style Selector="^:pointerover">
-                <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundPointerOver}" />
-            </Style>
-
-            <Style Selector="^:pressed">
-                <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundPressed}" />
-            </Style>
-
-            <Style Selector="^:focus-visible, ^:focus-within">
-                <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackgroundPointerOver}" />
-                <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
-            </Style>
-
-            <Style Selector="^:disabled">
-                <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForegroundDisabled}" />
-            </Style>
-
-            <Style Selector="^:selected">
-                <Setter Property="Background" Value="{StaticResource ProximaBrushSelectionBackground}" />
-                <Setter Property="Foreground" Value="{StaticResource ProximaBrushSelectionForeground}" />
-            </Style>
-        </ControlTheme>
-    </Styles.Resources>
-
-    <Style Selector="ContextMenu">
-        <Setter Property="Theme" Value="{StaticResource {x:Type ContextMenu}}" />
-    </Style>
+    <!--
+        Важно: не задаём ControlTheme для ContextMenu/MenuItem без Template.
+        Такой theme ломает стандартный Fluent template и даёт пустой прямоугольник
+        вместо меню. Оставляем стандартные шаблоны Avalonia и переопределяем
+        только безопасные визуальные свойства через Style.
+    -->
 
     <Style Selector="MenuItem">
-        <Setter Property="Theme" Value="{StaticResource {x:Type MenuItem}}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="#001629" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Medium" />
+    </Style>
+
+    <Style Selector="MenuItem:pointerover">
+        <Setter Property="Background" Value="#F1F5F9" />
+        <Setter Property="Foreground" Value="#001629" />
+    </Style>
+
+    <Style Selector="MenuItem:pressed">
+        <Setter Property="Background" Value="#E2E8F0" />
+        <Setter Property="Foreground" Value="#001629" />
+    </Style>
+
+    <Style Selector="MenuItem:disabled">
+        <Setter Property="Foreground" Value="#94A3B8" />
     </Style>
 
     <Style Selector="Menu">
-        <Setter Property="Background" Value="{StaticResource ProximaBrushControlBackground}" />
-        <Setter Property="Foreground" Value="{StaticResource ProximaBrushControlForeground}" />
+        <Setter Property="Background" Value="#FFFFFF" />
+        <Setter Property="Foreground" Value="#001629" />
     </Style>
 </Styles>
