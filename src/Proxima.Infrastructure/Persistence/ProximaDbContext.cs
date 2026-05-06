@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Proxima.Infrastructure.Persistence;
 
@@ -183,5 +184,57 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
             e.HasOne<UserEntity>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => x.Timestamp);
         });
+
+        ApplySnakeCaseColumnNames(model);
+    }
+
+    private static void ApplySnakeCaseColumnNames(ModelBuilder model)
+    {
+        foreach (IMutableEntityType entity in model.Model.GetEntityTypes())
+        {
+            foreach (IMutableProperty property in entity.GetProperties())
+            {
+                property.SetColumnName(ToSnakeCase(property.Name));
+            }
+        }
+    }
+
+    private static string ToSnakeCase(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+
+        Span<char> buffer = stackalloc char[value.Length * 2];
+        int position = 0;
+
+        for (int i = 0; i < value.Length; i++)
+        {
+            char current = value[i];
+
+            if (char.IsUpper(current))
+            {
+                bool shouldInsertUnderscore = i > 0
+                    && position > 0
+                    && buffer[position - 1] != '_'
+                    && (char.IsLower(value[i - 1])
+                        || char.IsDigit(value[i - 1])
+                        || (i + 1 < value.Length && char.IsLower(value[i + 1])));
+
+                if (shouldInsertUnderscore)
+                {
+                    buffer[position++] = '_';
+                }
+
+                buffer[position++] = char.ToLowerInvariant(current);
+            }
+            else
+            {
+                buffer[position++] = current;
+            }
+        }
+
+        return new string(buffer[..position]);
     }
 }
