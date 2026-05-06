@@ -4,26 +4,143 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:shell="using:Proxima.App.Shell"
     x:DataType="shell:SidebarViewModel">
-    <Border Classes="proxima-sidebar-root">
+
+    <UserControl.Styles>
+        <Style Selector="Border.sidebar-root">
+            <Setter Property="Background" Value="#F3F6F8" />
+            <Setter Property="Padding" Value="24,30,24,28" />
+        </Style>
+
+        <Style Selector="TextBlock.logo">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="Button.nav-item">
+            <Setter Property="Height" Value="44" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+
+        <Style Selector="Button.nav-item:pointerover">
+            <Setter Property="Background" Value="#FFFFFF" />
+        </Style>
+
+        <Style Selector="Button.nav-item.active">
+            <Setter Property="Background" Value="#FFFFFF" />
+        </Style>
+
+        <Style Selector="TextBlock.nav-label">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="Foreground" Value="#5B6B80" />
+        </Style>
+
+        <Style Selector="TextBlock.nav-label.active">
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="Path.nav-icon">
+            <Setter Property="Stroke" Value="#607086" />
+            <Setter Property="StrokeThickness" Value="1.9" />
+            <Setter Property="StrokeLineCap" Value="Round" />
+            <Setter Property="StrokeJoin" Value="Round" />
+        </Style>
+
+        <Style Selector="Path.nav-icon.active">
+            <Setter Property="Stroke" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.profile-name">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.profile-role">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#8090A4" />
+        </Style>
+
+        <Style Selector="Button.support-button, Button.profile-button">
+            <Setter Property="Height" Value="44" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+
+        <Style Selector="Button.support-button:pointerover, Button.profile-button:pointerover">
+            <Setter Property="Background" Value="#FFFFFF" />
+        </Style>
+    </UserControl.Styles>
+
+    <Border Classes="sidebar-root">
         <Grid RowDefinitions="Auto,*,Auto">
-            <TextBlock Classes="proxima-page-title" Text="Proxima" />
+            <TextBlock Classes="logo" Text="Proxima" />
 
-            <StackPanel Grid.Row="1" Margin="0,24,0,0" Spacing="8">
-                <ItemsControl ItemsSource="{Binding Items}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="shell:SidebarItemViewModel">
-                            <Button
-                                Classes="proxima-sidebar-item"
-                                Classes.proxima-active="{Binding IsActive}"
-                                Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=shell:SidebarView}}"
-                                CommandParameter="{Binding .}"
-                                Content="{Binding Label}" />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+            <ItemsControl Grid.Row="1" Margin="0,42,0,0" ItemsSource="{Binding Items}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="shell:SidebarItemViewModel">
+                        <Button
+                            Classes="nav-item"
+                            Classes.active="{Binding IsActive}"
+                            Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=shell:SidebarView}}"
+                            CommandParameter="{Binding .}"
+                            Margin="0,0,0,10">
+                            <Grid ColumnDefinitions="24,*" ColumnSpacing="12">
+                                <Canvas Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Path Classes="nav-icon" Classes.active="{Binding IsActive}" Data="{Binding Icon}" Fill="Transparent" />
+                                </Canvas>
+                                <TextBlock Grid.Column="1" Classes="nav-label" Classes.active="{Binding IsActive}" VerticalAlignment="Center" Text="{Binding Label}" />
+                            </Grid>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <StackPanel Grid.Row="2" Spacing="14">
+                <Border Height="1" Background="#DDE5ED" />
+
+                <Button Classes="profile-button" Command="{Binding ProfileCommand}">
+                    <Grid ColumnDefinitions="40,*" ColumnSpacing="12">
+                        <Border Width="40" Height="40" CornerRadius="20" ClipToBounds="True" Background="#0E7A4B">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="{StaticResource ProximaFont.Family}" FontSize="15" FontWeight="ExtraBold" Foreground="#FFFFFF" Text="{Binding UserInitial}" />
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                            <TextBlock Classes="profile-name" Text="{Binding UserDisplayName}" />
+                            <TextBlock Classes="profile-role" Text="{Binding UserRoleDisplayName}" />
+                        </StackPanel>
+                    </Grid>
+                </Button>
+
+                <Button Classes="support-button" Command="{Binding SupportCommand}">
+                    <Grid ColumnDefinitions="24,*" ColumnSpacing="12">
+                        <Canvas Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Path
+                                Data="M10,18 A8,8 0 1,0 10,2 A8,8 0 0,0 10,18 M10,14 L10,14.1 M10,11 C10,8.8 12.2,9 12.2,6.9 C12.2,5.3 11.1,4.4 9.8,4.4 C8.4,4.4 7.4,5.2 7.2,6.6"
+                                Fill="Transparent"
+                                Stroke="#607086"
+                                StrokeThickness="1.8"
+                                StrokeLineCap="Round"
+                                StrokeJoin="Round" />
+                        </Canvas>
+                        <TextBlock Grid.Column="1" Classes="nav-label" VerticalAlignment="Center" Text="Поддержка" />
+                    </Grid>
+                </Button>
             </StackPanel>
-
-            <TextBlock Grid.Row="2" Classes="proxima-caption" Text="Runtime AppShell" />
         </Grid>
     </Border>
 </UserControl>

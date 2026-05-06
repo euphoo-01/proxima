@@ -1,33 +1,67 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using Avalonia.Media;
 using Proxima.App.Navigation;
 using Proxima.App.ViewModels;
+using Proxima.App.Views.Auth;
+using Proxima.Domain.Auth;
 
 namespace Proxima.App.Shell;
 
 public sealed class SidebarViewModel : ViewModelBase
 {
     private readonly IAppNavigationService _navigation;
+    private readonly IRuntimeUserContext _userContext;
 
-    public SidebarViewModel(IAppNavigationService navigation)
+    public SidebarViewModel(IAppNavigationService navigation, IRuntimeUserContext userContext)
     {
         _navigation = navigation;
-        Items = new ObservableCollection<SidebarItemViewModel>
-        {
-            new(AppRoutes.Dashboard, "Дешборд"),
-            new(AppRoutes.Assets, "Все активы"),
-            new(AppRoutes.Goals, "Цели"),
-            new(AppRoutes.Taxes, "Налоги"),
-            new(AppRoutes.Settings, "Настройки")
-        };
+        _userContext = userContext;
+
+        Items =
+        [
+            new SidebarItemViewModel(
+                AppRoutes.Dashboard,
+                "Дешборд",
+                "M3,3 H8 V8 H3 Z M12,3 H17 V8 H12 Z M3,12 H8 V17 H3 Z M12,12 H17 V17 H12 Z"),
+            new SidebarItemViewModel(
+                AppRoutes.Assets,
+                "Все активы",
+                "M4,5 H16 V17 H4 Z M7,8 H17 V14 M8,11 H12"),
+            new SidebarItemViewModel(
+                AppRoutes.Taxes,
+                "Налоги",
+                "M5,3 H15 V17 H5 Z M8,6 H12 M8,9 H12 M8,12 H10 M14,4 H17 V15"),
+            new SidebarItemViewModel(
+                AppRoutes.Goals,
+                "Цели",
+                "M10,18 A8,8 0 1,1 18,10 M10,14 A4,4 0 1,1 14,10 M10,10 L18,18 M15,18 H18 V15")
+        ];
 
         NavigateCommand = new DelegateCommand(ExecuteNavigate);
+        SupportCommand = new DelegateCommand(_ => _navigation.Navigate(AppRoutes.Support));
+        ProfileCommand = new DelegateCommand(_ => _navigation.Navigate(AppRoutes.Profile));
+
         _navigation.RouteChanged += OnRouteChanged;
     }
 
     public ObservableCollection<SidebarItemViewModel> Items { get; }
 
     public ICommand NavigateCommand { get; }
+
+    public ICommand SupportCommand { get; }
+
+    public ICommand ProfileCommand { get; }
+
+    public string UserDisplayName => string.IsNullOrWhiteSpace(_userContext.DisplayName)
+        ? "Пользователь"
+        : _userContext.DisplayName;
+
+    public string UserInitial => UserDisplayName.Trim()[..1].ToUpperInvariant();
+
+    public string UserRoleDisplayName => _userContext.Role == UserRole.FinancialAnalyst
+        ? "Финансовый аналитик"
+        : "Частный инвестор";
 
     private void ExecuteNavigate(object? parameter)
     {
@@ -42,10 +76,13 @@ public sealed class SidebarViewModel : ViewModelBase
         foreach (SidebarItemViewModel item in Items)
         {
             item.IsActive = string.Equals(item.RouteKey, route.Key, StringComparison.OrdinalIgnoreCase)
-                || (string.Equals(item.RouteKey, AppRoutes.Assets, StringComparison.OrdinalIgnoreCase)
-                    && (string.Equals(route.Key, AppRoutes.ImportPreview, StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(route.Key, AppRoutes.AssetDetails, StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(route.Key, AppRoutes.ManualImport, StringComparison.OrdinalIgnoreCase)));
+                            || (string.Equals(item.RouteKey, AppRoutes.Assets, StringComparison.OrdinalIgnoreCase)
+                                && (string.Equals(route.Key, AppRoutes.ImportPreview,
+                                        StringComparison.OrdinalIgnoreCase)
+                                    || string.Equals(route.Key, AppRoutes.AssetDetails,
+                                        StringComparison.OrdinalIgnoreCase)
+                                    || string.Equals(route.Key, AppRoutes.ManualImport,
+                                        StringComparison.OrdinalIgnoreCase)));
         }
     }
 
@@ -53,23 +90,35 @@ public sealed class SidebarViewModel : ViewModelBase
     {
         private readonly Action<object?> _execute = execute;
 
-        public event EventHandler? CanExecuteChanged;
+        public event EventHandler? CanExecuteChanged
+        {
+            add { }
+            remove { }
+        }
 
         public bool CanExecute(object? parameter) => true;
 
         public void Execute(object? parameter) => _execute(parameter);
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 }
 
-public sealed class SidebarItemViewModel(string routeKey, string label) : ViewModelBase
+public sealed class SidebarItemViewModel : ViewModelBase
 {
-    public string RouteKey { get; } = routeKey;
-
-    public string Label { get; } = label;
-
     private bool _isActive;
+
+    public SidebarItemViewModel(string routeKey, string label, string iconData)
+    {
+        RouteKey = routeKey;
+        Label = label;
+        Icon = Geometry.Parse(iconData);
+    }
+
+    public string RouteKey { get; }
+
+    public string Label { get; }
+
+    public Geometry Icon { get; }
+
     public bool IsActive
     {
         get => _isActive;

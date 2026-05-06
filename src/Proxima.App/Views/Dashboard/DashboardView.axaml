@@ -7,126 +7,482 @@
     xmlns:controls="using:Proxima.App.Controls"
     xmlns:dashboard="using:Proxima.App.Views.Dashboard"
     x:DataType="dashboard:DashboardViewModel"
-    mc:Ignorable="d"
-    d:DataContext="{x:Static dashboard:DashboardDesignData.Sample}">
-    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="24" Spacing="24">
-                <Grid ColumnDefinitions="2*,*" ColumnSpacing="16">
-                    <controls:MetricCard
-                        Classes="proxima-portfolio-value-card"
-                        Footer="Текущая оценка портфеля"
-                        Label="Общая стоимость"
-                        Value="{Binding TotalPortfolioValueText}" />
+    d:DataContext="{x:Static dashboard:DashboardDesignData.Sample}"
+    mc:Ignorable="d">
 
-                    <controls:MetricCard
-                        Grid.Column="1"
-                        Classes="proxima-growth-metric-card"
-                        Delta="{Binding Delta24hText}"
-                        DeltaKind="{Binding Delta24hKind}"
-                        Footer="24h"
-                        Label="Рост / падение"
-                        Value="{Binding Delta24hPercentText}" />
-                </Grid>
+    <UserControl.Styles>
+        <Style Selector="ScrollViewer.dashboard-scroll">
+            <Setter Property="Background" Value="#F7F8F9" />
+        </Style>
 
-                <Grid ColumnDefinitions="2*,*" ColumnSpacing="16" RowDefinitions="Auto,Auto" RowSpacing="16">
-                    <controls:BentoCard Grid.RowSpan="2" Classes="proxima-portfolio-chart-card" Subtitle="Динамика стоимости" Title="Portfolio Value">
-                        <StackPanel Spacing="16">
-                            <controls:TimeframeSelector
-                                Classes="proxima-timeframe-selector"
-                                ItemsSource="{Binding Timeframes}"
-                                SelectedItem="{Binding SelectedTimeframe}" />
+        <Style Selector="TextBlock.page-title">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="36" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="LineHeight" Value="44" />
+        </Style>
 
-                            <Border Classes="proxima-chart-surface" Height="240">
-                                <controls:ProximaCartesianChart
-                                    EmptyStateText="Нет данных за выбранный период"
-                                    ErrorStateText="{Binding PortfolioChartErrorText}"
-                                    IsLoading="{Binding IsPortfolioChartLoading}"
-                                    Values="{Binding PortfolioValueSeries}"
-                                    ValueKind="Money"
-                                    XAxisTitle="Период"
-                                    YAxisTitle="Стоимость" />
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BoxShadow" Value="0 12 36 0 #08001629" />
+        </Style>
+
+        <Style Selector="Border.card-muted">
+            <Setter Property="Background" Value="#F0F2F4" />
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+
+        <Style Selector="TextBlock.card-kicker">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#4E5966" />
+        </Style>
+
+        <Style Selector="TextBlock.hero-value">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="58" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="LineHeight" Value="66" />
+        </Style>
+
+        <Style Selector="TextBlock.small-muted">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#5E6B79" />
+        </Style>
+
+        <Style Selector="TextBlock.small-strong">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="Border.growth-pill">
+            <Setter Property="Background" Value="#A3F69C" />
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="Padding" Value="14,6" />
+        </Style>
+
+        <Style Selector="TextBlock.growth-pill-text">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#16641D" />
+        </Style>
+
+        <Style Selector="Border.risk-card">
+            <Setter Property="Background" Value="#001629" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="BoxShadow" Value="0 14 24 0 #1F001629" />
+        </Style>
+
+        <Style Selector="TextBlock.risk-kicker">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#AEB9C7" />
+        </Style>
+
+        <Style Selector="TextBlock.risk-title">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+        </Style>
+
+        <Style Selector="TextBlock.balance-title">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.balance-subtitle">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#5E6B79" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style Selector="Button.timeframe-chip">
+            <Setter Property="MinWidth" Value="54" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#8CA0B7" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.timeframe-chip.active">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="Border.bar">
+            <Setter Property="Width" Value="54" />
+            <Setter Property="Background" Value="#D9E6F1" />
+        </Style>
+
+        <Style Selector="Border.bar.active">
+            <Setter Property="Background" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.bar-label">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#91A6BE" />
+        </Style>
+
+        <Style Selector="TextBlock.bar-label.active">
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.legend-label">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="#3E4753" />
+        </Style>
+
+        <Style Selector="TextBlock.legend-percent">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.table-title">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.table-header">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#9AAABD" />
+        </Style>
+
+        <Style Selector="Border.transaction-row">
+            <Setter Property="Height" Value="64" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="CornerRadius" Value="7" />
+        </Style>
+
+        <Style Selector="TextBlock.transaction-name">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.transaction-cell">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="#2F3A46" />
+        </Style>
+
+        <Style Selector="TextBlock.transaction-amount">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.transaction-amount.positive">
+            <Setter Property="Foreground" Value="#1B6D24" />
+        </Style>
+
+        <Style Selector="Border.asset-icon">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="#F3F6F8" />
+        </Style>
+
+        <Style Selector="Border.asset-icon.bitcoin">
+            <Setter Property="Background" Value="#FF9900" />
+            <Setter Property="CornerRadius" Value="16" />
+        </Style>
+
+        <Style Selector="TextBlock.asset-icon-text">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.asset-icon-text.bitcoin">
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="FontSize" Value="18" />
+        </Style>
+
+        <Style Selector="TextBlock.asset-icon-text.sp">
+            <Setter Property="Foreground" Value="#FF1233" />
+        </Style>
+
+        <Style Selector="Border.badge">
+            <Setter Property="Padding" Value="12,5" />
+            <Setter Property="CornerRadius" Value="999" />
+        </Style>
+
+        <Style Selector="Border.badge.buy">
+            <Setter Property="Background" Value="#CBF7C5" />
+        </Style>
+
+        <Style Selector="Border.badge.dividend">
+            <Setter Property="Background" Value="#CBF7C5" />
+        </Style>
+
+        <Style Selector="Border.badge.sell">
+            <Setter Property="Background" Value="#DADCDD" />
+        </Style>
+
+        <Style Selector="TextBlock.badge-text">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#1B6D24" />
+        </Style>
+
+        <Style Selector="TextBlock.badge-text.sell">
+            <Setter Property="Foreground" Value="#3D4248" />
+        </Style>
+
+        <Style Selector="TextBox.search-box">
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Width" Value="288" />
+            <Setter Property="Padding" Value="38,0,12,0" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#FFFFFF" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="CaretBrush" Value="#001629" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.more-button">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Foreground" Value="#CDD6E0" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.more-button:pointerover">
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="Background" Value="#F3F6F8" />
+        </Style>
+
+        <Style Selector="Button.more-transactions">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer Classes="dashboard-scroll" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <Grid Margin="0,29,34,60" RowDefinitions="Auto,32,Auto,44,Auto,46,Auto">
+            <TextBlock Classes="page-title" Text="Дешборд" />
+
+            <Grid Grid.Row="2" ColumnDefinitions="2.08*,24,*">
+                <Border Classes="card" MinHeight="236" Padding="32,30,32,28">
+                    <Grid RowDefinitions="Auto,Auto,*,Auto">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Classes="card-kicker" Text="ЦЕНА АКТИВОВ" />
+                            <Border Grid.Column="1" Classes="growth-pill" VerticalAlignment="Top">
+                                <TextBlock Classes="growth-pill-text" Text="{Binding GrowthPillText}" />
                             </Border>
+                        </Grid>
+                        <TextBlock Grid.Row="1" Margin="0,10,0,0" Classes="hero-value" Text="{Binding TotalPortfolioValueText}" />
+                        <StackPanel Grid.Row="3" Spacing="4">
+                            <TextBlock Classes="small-muted" Text="Прирост за выбранный период" />
+                            <TextBlock Classes="small-strong" Text="{Binding MonthlyGrowthText}" />
                         </StackPanel>
-                    </controls:BentoCard>
+                    </Grid>
+                </Border>
 
-                    <controls:BentoCard Grid.Column="1" Grid.Row="0" Classes="proxima-allocation-donut-card" Subtitle="По категориям" Title="Asset Allocation">
-                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
-                            <Grid Width="136" Height="136" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <controls:ProximaDonutChart
-                                    EmptyStateText="Нет данных по структуре"
-                                    ErrorStateText="{Binding AllocationChartErrorText}"
-                                    IsLoading="{Binding IsAllocationChartLoading}"
-                                    Values="{Binding AllocationPercents}" />
-                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <TextBlock Classes="proxima-caption" HorizontalAlignment="Center" Text="Категорий" />
-                                    <TextBlock Classes="proxima-card-title" HorizontalAlignment="Center" Text="{Binding AllocationCountText}" />
-                                </StackPanel>
-                            </Grid>
-
-                            <ItemsControl Grid.Column="1" ItemsSource="{Binding AllocationRows}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="dashboard:AllocationRowViewModel">
-                                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
-                                            <TextBlock Classes="proxima-body" Text="{Binding Label}" />
-                                            <TextBlock Grid.Column="1" Classes="proxima-caption" Text="{Binding PercentText}" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                <Grid Grid.Column="2" RowDefinitions="96,24,112">
+                    <Border Classes="risk-card" Padding="24,20">
+                        <Grid ColumnDefinitions="*,44">
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="risk-kicker" Text="ОЦЕНКА РИСКА" />
+                                <TextBlock Classes="risk-title" Text="{Binding RiskLevelText}" />
+                            </StackPanel>
+                            <Canvas Grid.Column="1" Width="28" Height="28" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Path Data="M14,2 L23,5.4 V12.2 C23,18.4 18.8,22.6 14,25 C9.2,22.6 5,18.4 5,12.2 V5.4 Z" Fill="Transparent" Stroke="#82F694" StrokeThickness="3" StrokeJoin="Round" />
+                                <Path Data="M10,13 L13,16 L18,10" Fill="Transparent" Stroke="#82F694" StrokeThickness="2.5" StrokeLineCap="Round" StrokeJoin="Round" />
+                            </Canvas>
                         </Grid>
-                    </controls:BentoCard>
+                    </Border>
+
+                    <Border Grid.Row="2" Classes="card" Padding="24,22">
+                        <Grid ColumnDefinitions="*,40">
+                            <StackPanel Spacing="7">
+                                <TextBlock Classes="card-kicker" Text="БАЛАНС ПОРТФЕЛЯ" />
+                                <TextBlock Classes="balance-title" Text="{Binding BalanceBlockTitle}" />
+                                <TextBlock Classes="balance-subtitle" Text="{Binding BalanceBlockSubtitle}" />
+                            </StackPanel>
+                            <Canvas Grid.Column="1" Width="30" Height="30" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Path Data="M4,20 L4,10 M12,20 L12,5 M20,20 L20,13 M3,22 H23" Fill="Transparent" Stroke="#001629" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" />
+                            </Canvas>
+                        </Grid>
+                    </Border>
                 </Grid>
+            </Grid>
 
-                <controls:BentoCard Classes="proxima-transactions-table-card" Subtitle="Последние операции по портфелю" Title="Latest Transactions">
-                    <StackPanel Spacing="16">
-                        <TextBox
-                            Classes="proxima-input"
-                            Text="{Binding SearchQuery}"
-                            Watermark="Поиск по активу / тикеру / типу" />
-
-                        <Border Classes="proxima-datagrid" IsVisible="{Binding IsTransactionsLoading}">
-                            <StackPanel Margin="16" Spacing="8">
-                                <TextBlock Classes="proxima-body" Text="Загрузка транзакций..." />
-                                <TextBlock Classes="proxima-caption" Text="Подготавливаем список операций" />
-                            </StackPanel>
-                        </Border>
-
-                        <Border Classes="proxima-datagrid" IsVisible="{Binding IsTransactionsEmpty}">
-                            <StackPanel Margin="16" Spacing="6">
-                                <TextBlock Classes="proxima-card-title" Text="Нет транзакций" />
-                                <TextBlock Classes="proxima-caption" Text="Измените фильтр или добавьте операции в портфель." />
-                            </StackPanel>
-                        </Border>
-
-                        <Grid IsVisible="{Binding HasTransactions}" RowDefinitions="Auto,*">
-                            <Border Classes="proxima-datagrid-header">
-                                <Grid ColumnDefinitions="2*,*,*,*,*" ColumnSpacing="8">
-                                    <Button Classes="proxima-table-sort-button" Command="{Binding SortByAssetCommand}" Content="Актив" />
-                                    <Button Grid.Column="1" Classes="proxima-table-sort-button" Command="{Binding SortByTypeCommand}" Content="Тип" />
-                                    <Button Grid.Column="2" Classes="proxima-table-sort-button" Command="{Binding SortByDateCommand}" Content="Дата" />
-                                    <Button Grid.Column="3" Classes="proxima-table-sort-button" Command="{Binding SortByAmountCommand}" Content="Сумма" />
-                                    <Button Grid.Column="4" Classes="proxima-table-sort-button" Command="{Binding SortByPriceCommand}" Content="Цена" />
-                                </Grid>
+            <Grid Grid.Row="4" ColumnDefinitions="2.08*,24,*">
+                <Border Classes="card-muted" MinHeight="432" Padding="32,32,32,30">
+                    <Grid RowDefinitions="Auto,*">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Classes="section-title" Text="История цены" />
+                            <Border Grid.Column="1" Background="#F7F8F9" CornerRadius="8" Padding="4">
+                                <ItemsControl ItemsSource="{Binding Timeframes}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="dashboard:DashboardTimeframeViewModel">
+                                            <Button Classes="timeframe-chip" Classes.active="{Binding IsSelected}" Command="{Binding DataContext.SelectTimeframeCommand, RelativeSource={RelativeSource AncestorType=dashboard:DashboardView}}" CommandParameter="{Binding .}" Content="{Binding Label}" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </Border>
-
-                            <ItemsControl Grid.Row="1" ItemsSource="{Binding VisibleTransactions}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="dashboard:TransactionRowItemViewModel">
-                                        <Border Classes="proxima-datagrid-cell">
-                                            <Grid ColumnDefinitions="2*,*,*,*,*" ColumnSpacing="8">
-                                                <TextBlock Classes="proxima-datagrid-cell-text" Text="{Binding AssetLabel}" />
-                                                <TextBlock Grid.Column="1" Classes="proxima-datagrid-cell-text" Text="{Binding TypeLabel}" />
-                                                <TextBlock Grid.Column="2" Classes="proxima-datagrid-cell-text" Text="{Binding DateText}" />
-                                                <TextBlock Grid.Column="3" Classes="proxima-datagrid-cell-text" Text="{Binding AmountText}" />
-                                                <TextBlock Grid.Column="4" Classes="proxima-datagrid-cell-text" Text="{Binding PriceText}" />
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
                         </Grid>
-                    </StackPanel>
-                </controls:BentoCard>
-            </StackPanel>
+
+                        <ItemsControl Grid.Row="1" Margin="0,36,0,0" ItemsSource="{Binding Bars}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="dashboard:DashboardBarViewModel">
+                                    <Grid Width="58" Height="286" Margin="0,0,10,0" RowDefinitions="*,24">
+                                        <Grid Grid.Row="0" VerticalAlignment="Bottom">
+                                            <Border Classes="bar" Classes.active="{Binding IsActive}" Height="{Binding Height}" VerticalAlignment="Bottom" />
+                                            <Border IsVisible="{Binding IsTooltipVisible}" Background="#001629" CornerRadius="4" Padding="7,5" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,-6,0">
+                                                <TextBlock FontFamily="{StaticResource ProximaFont.Family}" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Text="{Binding TooltipText}" />
+                                            </Border>
+                                        </Grid>
+                                        <TextBlock Grid.Row="1" Classes="bar-label" Classes.active="{Binding IsActive}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Text="{Binding Label}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="2" Classes="card" MinHeight="432" Padding="32,34,32,30">
+                    <Grid RowDefinitions="Auto,*,Auto">
+                        <TextBlock Classes="section-title" Text="Распределенность" />
+                        <controls:ProximaDonutChart Grid.Row="1" Width="216" Height="216" HorizontalAlignment="Center" VerticalAlignment="Center" Values="{Binding AllocationValues}" EmptyStateText="Нет активов" />
+                        <ItemsControl Grid.Row="2" ItemsSource="{Binding AllocationRows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="dashboard:DashboardAllocationRowViewModel">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,14">
+                                        <Ellipse Width="12" Height="12" Fill="{Binding MarkerBrush}" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1" Margin="12,0,0,0" Classes="legend-label" Text="{Binding Label}" />
+                                        <TextBlock Grid.Column="2" Classes="legend-percent" Text="{Binding PercentText}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="6" Classes="card-muted" MinHeight="446" Padding="32,32,32,28">
+                <Grid RowDefinitions="Auto,30,Auto,18,*">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Classes="table-title" Text="Последние транзакции" />
+                        <Grid Grid.Column="1" Width="288" Height="36">
+                            <TextBox Classes="search-box" Text="{Binding SearchQuery, Mode=TwoWay}" Watermark="Искать транзакции..." />
+                            <Canvas Width="18" Height="18" Margin="14,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False">
+                                <Path Data="M8,14 A6,6 0 1,0 8,2 A6,6 0 0,0 8,14 M12.5,12.5 L16,16" Fill="Transparent" Stroke="#9AAABD" StrokeThickness="1.8" StrokeLineCap="Round" />
+                            </Canvas>
+                        </Grid>
+                    </Grid>
+
+                    <Grid Grid.Row="2" ColumnDefinitions="2.5*,1.75*,1.75*,1.75*,52" Margin="16,0,16,0">
+                        <TextBlock Classes="table-header" Text="АКТИВ" />
+                        <TextBlock Grid.Column="1" Classes="table-header" Text="ДАТА" />
+                        <TextBlock Grid.Column="2" Classes="table-header" Text="ТИП" />
+                        <TextBlock Grid.Column="3" Classes="table-header" HorizontalAlignment="Right" Text="СУММА" />
+                    </Grid>
+
+                    <ItemsControl Grid.Row="4" ItemsSource="{Binding VisibleTransactions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="dashboard:DashboardTransactionRowViewModel">
+                                <Border Classes="transaction-row" Margin="0,0,0,12">
+                                    <Grid ColumnDefinitions="2.5*,1.75*,1.75*,1.75*,52" Margin="16,0,18,0">
+                                        <StackPanel Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                                            <Border Classes="asset-icon" Classes.bitcoin="{Binding IsBitcoin}" Classes.sp="{Binding IsSp}">
+                                                <TextBlock Classes="asset-icon-text" Classes.bitcoin="{Binding IsBitcoin}" Classes.sp="{Binding IsSp}" HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding IconText}" />
+                                            </Border>
+                                            <TextBlock Classes="transaction-name" VerticalAlignment="Center" Text="{Binding AssetName}" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Classes="transaction-cell" VerticalAlignment="Center" Text="{Binding DateText}" />
+                                        <Border Grid.Column="2" Classes="badge" Classes.buy="{Binding IsBuy}" Classes.dividend="{Binding IsDividend}" Classes.sell="{Binding IsSell}" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <TextBlock Classes="badge-text" Classes.sell="{Binding IsSell}" Text="{Binding TypeText}" />
+                                        </Border>
+                                        <TextBlock Grid.Column="3" Classes="transaction-amount" Classes.positive="{Binding IsPositiveAmount}" HorizontalAlignment="Right" VerticalAlignment="Center" Text="{Binding AmountText}" />
+                                        <Button Grid.Column="4" Classes="more-button" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Button.Flyout>
+                                                <MenuFlyout>
+                                                    <MenuItem Header="Открыть актив" />
+                                                    <MenuItem Header="Редактировать" />
+                                                    <MenuItem Header="Архивировать" />
+                                                </MenuFlyout>
+                                            </Button.Flyout>
+                                            <TextBlock Text="•••" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Button Grid.Row="4" Classes="more-transactions" Command="{Binding MoreTransactionsCommand}" Content="Больше транзакций⌄" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
+                </Grid>
+            </Border>
+        </Grid>
     </ScrollViewer>
 </UserControl>

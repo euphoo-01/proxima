@@ -1,0 +1,67 @@
+<UserControl
+    x:Class="Proxima.App.Views.Support.SupportView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:support="using:Proxima.App.Views.Support"
+    x:DataType="support:SupportViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.page-title">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="36" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Padding" Value="28" />
+            <Setter Property="BoxShadow" Value="0 12 36 0 #08001629" />
+        </Style>
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+        <Style Selector="TextBlock.body">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="#4E5966" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="LineHeight" Value="21" />
+        </Style>
+        <Style Selector="Expander.faq">
+            <Setter Property="Margin" Value="0,0,0,10" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer Background="#F7F8F9">
+        <StackPanel Margin="0,29,34,60" Spacing="24">
+            <TextBlock Classes="page-title" Text="Поддержка" />
+
+            <Border Classes="card">
+                <StackPanel Spacing="16">
+                    <TextBlock Classes="section-title" Text="Частые вопросы" />
+                    <ItemsControl ItemsSource="{Binding Items}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="support:SupportFaqItem">
+                                <Expander Classes="faq" Header="{Binding Question}">
+                                    <TextBlock Classes="body" Text="{Binding Answer}" />
+                                </Expander>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Classes="card">
+                <StackPanel Spacing="10">
+                    <TextBlock Classes="section-title" Text="Контакты и информация" />
+                    <TextBlock Classes="body" Text="{Binding ProductInfo}" />
+                    <TextBlock Classes="body" Text="Почта для связи: stas.lavshuk@yandex.com" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

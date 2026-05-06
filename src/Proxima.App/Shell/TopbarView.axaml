@@ -3,18 +3,120 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:shell="using:Proxima.App.Shell"
+    xmlns:vm="using:Proxima.App.ViewModels"
     x:DataType="shell:TopbarViewModel">
-    <Border Classes="proxima-topbar-root">
-        <Grid ColumnDefinitions="*,Auto">
-            <StackPanel Spacing="4">
-                <TextBlock Classes="proxima-breadcrumb" Text="{Binding Breadcrumb}" />
-                <TextBlock Classes="proxima-card-title" Text="{Binding Title}" />
+
+    <UserControl.Styles>
+        <Style Selector="Border.topbar-root">
+            <Setter Property="Background" Value="#F7F8F9" />
+            <Setter Property="Padding" Value="0,0,34,0" />
+        </Style>
+
+        <Style Selector="TextBlock.breadcrumb-active">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.breadcrumb-muted">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="#8A99AB" />
+        </Style>
+
+        <Style Selector="ComboBox.portfolio-selector">
+            <Setter Property="MinWidth" Value="190" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="#8A99AB" />
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+
+        <Style Selector="Button.icon-button">
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.icon-button:pointerover">
+            <Setter Property="Background" Value="#FFFFFF" />
+        </Style>
+
+        <Style Selector="Button.create-portfolio-button">
+            <Setter Property="Width" Value="190" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="BorderBrush" Value="#E2E8F0" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.create-portfolio-button:pointerover">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#CBD5E1" />
+        </Style>
+    </UserControl.Styles>
+
+    <Border Classes="topbar-root">
+        <Grid ColumnDefinitions="*,Auto,20,Auto" VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="7">
+                <StackPanel Spacing="2">
+                    <TextBlock Classes="breadcrumb-active" Text="{Binding Title}" />
+                    <Border Height="2" Background="#001629" CornerRadius="1" />
+                </StackPanel>
+
+                <TextBlock Classes="breadcrumb-muted" Text="›" />
+
+                <TextBlock Classes="breadcrumb-muted" IsVisible="{Binding ShowPortfolioText}" Text="{Binding CurrentPortfolio}" />
+
+                <ComboBox
+                    Classes="portfolio-selector"
+                    IsVisible="{Binding ShowPortfolioSelector}"
+                    ItemsSource="{Binding Portfolios}"
+                    SelectedItem="{Binding SelectedPortfolio, Mode=TwoWay}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PortfolioOption">
+                            <TextBlock Text="{Binding Name}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
             </StackPanel>
 
-            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                <TextBlock Classes="proxima-caption" Text="Portfolio" />
-                <TextBlock Classes="proxima-body" Text="{Binding CurrentPortfolio}" />
-            </StackPanel>
+            <Button Grid.Column="1" Classes="icon-button" Command="{Binding NotificationsCommand}">
+                <Canvas Width="22" Height="24">
+                    <Path
+                        Data="M11,21 C12.1,21 13,20.1 13,19 H9 C9,20.1 9.9,21 11,21 Z M5,17 H17 L15.5,15.2 V10 C15.5,7.2 13.6,5.1 11,5.1 C8.4,5.1 6.5,7.2 6.5,10 V15.2 Z"
+                        Fill="Transparent"
+                        Stroke="#001629"
+                        StrokeThickness="1.8"
+                        StrokeJoin="Round" />
+                    <Ellipse Canvas.Left="15" Canvas.Top="0" Width="7" Height="7" Fill="#D71920" />
+                </Canvas>
+            </Button>
+
+            <Button
+                Grid.Column="3"
+                Classes="create-portfolio-button"
+                Command="{Binding CreatePortfolioCommand}"
+                Content="Создать портфель"
+                IsVisible="{Binding CanCreatePortfolio}" />
         </Grid>
     </Border>
 </UserControl>

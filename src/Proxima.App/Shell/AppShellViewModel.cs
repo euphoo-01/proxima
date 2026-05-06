@@ -6,7 +6,10 @@ using Proxima.App.Views.AssetDetails;
 using Proxima.App.Views.Dashboard;
 using Proxima.App.Views.Goals;
 using Proxima.App.Views.Import;
+using Proxima.App.Views.Notifications;
+using Proxima.App.Views.Profile;
 using Proxima.App.Views.Settings;
+using Proxima.App.Views.Support;
 using Proxima.App.Views.Taxes;
 
 namespace Proxima.App.Shell;
@@ -23,6 +26,10 @@ public sealed class AppShellViewModel : ViewModelBase
     private readonly GoalsViewModel _goalsViewModel;
     private readonly TaxesViewModel _taxesViewModel;
     private readonly SettingsViewModel _settingsViewModel;
+    private readonly SupportViewModel _supportViewModel;
+    private readonly NotificationsViewModel _notificationsViewModel;
+    private readonly ProfileViewModel _profileViewModel;
+    private object? _currentContent;
 
     public AppShellViewModel(
         IAppNavigationService navigation,
@@ -36,7 +43,10 @@ public sealed class AppShellViewModel : ViewModelBase
         ManualImportViewModel manualImportViewModel,
         GoalsViewModel goalsViewModel,
         TaxesViewModel taxesViewModel,
-        SettingsViewModel settingsViewModel)
+        SettingsViewModel settingsViewModel,
+        SupportViewModel supportViewModel,
+        NotificationsViewModel notificationsViewModel,
+        ProfileViewModel profileViewModel)
     {
         _navigation = navigation;
         _shellState = shellState;
@@ -48,12 +58,18 @@ public sealed class AppShellViewModel : ViewModelBase
         _goalsViewModel = goalsViewModel;
         _taxesViewModel = taxesViewModel;
         _settingsViewModel = settingsViewModel;
+        _supportViewModel = supportViewModel;
+        _notificationsViewModel = notificationsViewModel;
+        _profileViewModel = profileViewModel;
+
         Sidebar = sidebar;
         Topbar = topbar;
 
         RegisterRoutes();
+
         _navigation.RouteChanged += HandleRouteChanged;
         _shellState.PortfolioChanged += HandlePortfolioChanged;
+
         _navigation.Navigate(AppRoutes.Dashboard);
     }
 
@@ -61,7 +77,6 @@ public sealed class AppShellViewModel : ViewModelBase
 
     public TopbarViewModel Topbar { get; }
 
-    private object? _currentContent;
     public object? CurrentContent
     {
         get => _currentContent;
@@ -70,19 +85,23 @@ public sealed class AppShellViewModel : ViewModelBase
 
     private void RegisterRoutes()
     {
-        _navigation.Register(new AppRoute(AppRoutes.Dashboard, "Dashboard", "Dashboard"));
+        _navigation.Register(new AppRoute(AppRoutes.Dashboard, "Дешборд", "Дешборд"));
         _navigation.Register(new AppRoute(AppRoutes.Assets, "Все активы", "Все активы"));
         _navigation.Register(new AppRoute(AppRoutes.ImportPreview, "Импорт активов", "Все активы / Импорт активов"));
         _navigation.Register(new AppRoute(AppRoutes.ManualImport, "Ручной импорт", "Все активы / Ручной импорт"));
-        _navigation.Register(new AppRoute(AppRoutes.AssetDetails, "Asset Details", "Все активы / Asset"));
+        _navigation.Register(new AppRoute(AppRoutes.AssetDetails, "Детальная информация", "Все активы / Актив"));
         _navigation.Register(new AppRoute(AppRoutes.Goals, "Цели", "Цели"));
         _navigation.Register(new AppRoute(AppRoutes.Taxes, "Налоги", "Налоги"));
         _navigation.Register(new AppRoute(AppRoutes.Settings, "Настройки", "Настройки"));
+        _navigation.Register(new AppRoute(AppRoutes.Notifications, "Уведомления", "Уведомления"));
+        _navigation.Register(new AppRoute(AppRoutes.Support, "Поддержка", "Поддержка"));
+        _navigation.Register(new AppRoute(AppRoutes.Profile, "Профиль", "Профиль"));
     }
 
     private void HandleRouteChanged(AppRoute route)
     {
         Topbar.Update(route.Title, route.Breadcrumb, _shellState.CurrentPortfolioName);
+
         CurrentContent = route.Key switch
         {
             AppRoutes.Dashboard => _dashboardViewModel,
@@ -93,6 +112,9 @@ public sealed class AppShellViewModel : ViewModelBase
             AppRoutes.Goals => _goalsViewModel,
             AppRoutes.Taxes => _taxesViewModel,
             AppRoutes.Settings => _settingsViewModel,
+            AppRoutes.Notifications => _notificationsViewModel,
+            AppRoutes.Support => _supportViewModel,
+            AppRoutes.Profile => _profileViewModel,
             _ => new PlaceholderViewModel(route.Title, "Screen is not migrated yet. PlaceholderView is shown by runtime shell.")
         };
     }

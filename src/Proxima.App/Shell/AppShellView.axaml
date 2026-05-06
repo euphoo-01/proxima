@@ -13,47 +13,38 @@
     xmlns:goalsViews="using:Proxima.App.Views.Goals"
     xmlns:import="using:Proxima.App.Views.Import"
     xmlns:importViews="using:Proxima.App.Views.Import"
+    xmlns:notifications="using:Proxima.App.Views.Notifications"
+    xmlns:notificationsViews="using:Proxima.App.Views.Notifications"
     xmlns:placeholder="using:Proxima.App.ViewModels.Placeholder"
     xmlns:placeholderViews="using:Proxima.App.Views.Placeholder"
+    xmlns:profile="using:Proxima.App.Views.Profile"
+    xmlns:profileViews="using:Proxima.App.Views.Profile"
     xmlns:settings="using:Proxima.App.Views.Settings"
     xmlns:settingsViews="using:Proxima.App.Views.Settings"
+    xmlns:support="using:Proxima.App.Views.Support"
+    xmlns:supportViews="using:Proxima.App.Views.Support"
     xmlns:taxes="using:Proxima.App.Views.Taxes"
     xmlns:taxesViews="using:Proxima.App.Views.Taxes"
     x:DataType="shell:AppShellViewModel">
+
     <UserControl.DataTemplates>
-        <DataTemplate x:DataType="dashboard:DashboardViewModel">
-            <dashboardViews:DashboardView />
-        </DataTemplate>
-        <DataTemplate x:DataType="assets:AssetsViewModel">
-            <assetsViews:AssetsView />
-        </DataTemplate>
-        <DataTemplate x:DataType="import:ImportDialogViewModel">
-            <importViews:ImportDialogView />
-        </DataTemplate>
-        <DataTemplate x:DataType="assetDetails:AssetDetailsViewModel">
-            <assetDetailsViews:AssetDetailsView />
-        </DataTemplate>
-        <DataTemplate x:DataType="import:ManualImportViewModel">
-            <importViews:ManualImportView />
-        </DataTemplate>
-        <DataTemplate x:DataType="goals:GoalsViewModel">
-            <goalsViews:GoalsView />
-        </DataTemplate>
-        <DataTemplate x:DataType="taxes:TaxesViewModel">
-            <taxesViews:TaxesView />
-        </DataTemplate>
-        <DataTemplate x:DataType="settings:SettingsViewModel">
-            <settingsViews:SettingsView />
-        </DataTemplate>
-        <DataTemplate x:DataType="placeholder:PlaceholderViewModel">
-            <placeholderViews:PlaceholderView />
-        </DataTemplate>
+        <DataTemplate x:DataType="dashboard:DashboardViewModel"><dashboardViews:DashboardView /></DataTemplate>
+        <DataTemplate x:DataType="assets:AssetsViewModel"><assetsViews:AssetsView /></DataTemplate>
+        <DataTemplate x:DataType="import:ImportDialogViewModel"><importViews:ImportDialogView /></DataTemplate>
+        <DataTemplate x:DataType="assetDetails:AssetDetailsViewModel"><assetDetailsViews:AssetDetailsView /></DataTemplate>
+        <DataTemplate x:DataType="import:ManualImportViewModel"><importViews:ManualImportView /></DataTemplate>
+        <DataTemplate x:DataType="goals:GoalsViewModel"><goalsViews:GoalsView /></DataTemplate>
+        <DataTemplate x:DataType="taxes:TaxesViewModel"><taxesViews:TaxesView /></DataTemplate>
+        <DataTemplate x:DataType="settings:SettingsViewModel"><settingsViews:SettingsView /></DataTemplate>
+        <DataTemplate x:DataType="notifications:NotificationsViewModel"><notificationsViews:NotificationsView /></DataTemplate>
+        <DataTemplate x:DataType="support:SupportViewModel"><supportViews:SupportView /></DataTemplate>
+        <DataTemplate x:DataType="profile:ProfileViewModel"><profileViews:ProfileView /></DataTemplate>
+        <DataTemplate x:DataType="placeholder:PlaceholderViewModel"><placeholderViews:PlaceholderView /></DataTemplate>
     </UserControl.DataTemplates>
 
-    <Grid Background="{StaticResource ProximaBrush.ContentBackground}" ColumnDefinitions="272,*">
+    <Grid Background="#F7F8F9" ColumnDefinitions="260,*">
         <shell:SidebarView DataContext="{Binding Sidebar}" />
-
-        <Grid Grid.Column="1" RowDefinitions="Auto,*">
+        <Grid Grid.Column="1" RowDefinitions="80,*">
             <shell:TopbarView DataContext="{Binding Topbar}" />
             <ContentControl Grid.Row="1" Content="{Binding CurrentContent}" />
         </Grid>

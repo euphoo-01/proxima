@@ -10,4 +10,7 @@ public static class AppRoutes
     public const string Goals = "goals";
     public const string Taxes = "taxes";
     public const string Settings = "settings";
+    public const string Notifications = "notifications";
+    public const string Support = "support";
+    public const string Profile = "profile";
 }
