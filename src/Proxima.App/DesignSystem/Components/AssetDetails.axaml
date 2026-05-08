@@ -1,0 +1,310 @@
+<Styles xmlns="https://github.com/avaloniaui">
+    <Style Selector="ScrollViewer.proxima-asset-details-page">
+        <Setter Property="Background" Value="#F7F8F9" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-headline-title">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="36" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LineHeight" Value="40" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextPrimary}" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-headline-muted">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="36" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LineHeight" Value="40" />
+        <Setter Property="Foreground" Value="#C7CCD4" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-price-primary">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="30" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LineHeight" Value="34" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextPrimary}" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-delta-text">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Danger}" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-delta-text.positive">
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Success}" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-section-title">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LineHeight" Value="24" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextPrimary}" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-kicker">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LineHeight" Value="14" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextMuted}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-value">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LineHeight" Value="22" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextPrimary}" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-value-large">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="30" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LineHeight" Value="34" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextPrimary}" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-context-value">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LineHeight" Value="32" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextPrimary}" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-context-label">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LineHeight" Value="13" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextMuted}" />
+        <Setter Property="TextAlignment" Value="Center" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-hint">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="LineHeight" Value="16" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextMuted}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-hint-strong">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextPrimary}" />
+    </Style>
+
+    <Style Selector="Border.asset-logo-box">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.TextPrimary}" />
+        <Setter Property="CornerRadius" Value="12" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-logo-text">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Surface}" />
+    </Style>
+
+    <Style Selector="Border.asset-card">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Large}" />
+        <Setter Property="BoxShadow" Value="{StaticResource ProximaShadow.Card}" />
+        <Setter Property="Padding" Value="24" />
+    </Style>
+
+    <Style Selector="Border.asset-card-plain">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.SurfaceSubtle}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Large}" />
+        <Setter Property="Padding" Value="24" />
+    </Style>
+
+    <Style Selector="Border.asset-chart-surface">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Large}" />
+        <Setter Property="BoxShadow" Value="{StaticResource ProximaShadow.Card}" />
+        <Setter Property="Padding" Value="24" />
+    </Style>
+
+    <Style Selector="Border.asset-chart-inner">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Card}" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+
+    <Style Selector="Button.asset-primary-action">
+        <Setter Property="MinWidth" Value="226" />
+        <Setter Property="MinHeight" Value="48" />
+        <Setter Property="Padding" Value="24,12" />
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.TextPrimary}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.TextPrimary}" />
+        <Setter Property="CornerRadius" Value="12" />
+    </Style>
+
+    <Style Selector="Button.asset-primary-action:pointerover">
+        <Setter Property="Background" Value="#06243C" />
+        <Setter Property="BorderBrush" Value="#06243C" />
+    </Style>
+
+    <Style Selector="Button.asset-timeframe-button">
+        <Setter Property="MinWidth" Value="46" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.SurfaceSubtle}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextSecondary}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.SurfaceSubtle}" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <Style Selector="Button.asset-timeframe-button.active">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextPrimary}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+    </Style>
+
+    <Style Selector="Border.asset-metric-tile">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.SurfaceSubtle}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="14" />
+        <Setter Property="MinHeight" Value="92" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-metric-value">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="LineHeight" Value="22" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style Selector="Border.asset-metric-tile.good">
+        <Setter Property="Background" Value="#EAF8EA" />
+    </Style>
+
+    <Style Selector="Border.asset-metric-tile.warning">
+        <Setter Property="Background" Value="#FFF4D8" />
+    </Style>
+
+    <Style Selector="Border.asset-metric-tile.danger">
+        <Setter Property="Background" Value="#FBE8EA" />
+    </Style>
+
+    <Style Selector="Border.asset-black-swan-card">
+        <Setter Property="Background" Value="#FFF7F6" />
+        <Setter Property="BorderBrush" Value="#F4E1DF" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Large}" />
+        <Setter Property="Padding" Value="24" />
+        <Setter Property="BoxShadow" Value="{StaticResource ProximaShadow.Card}" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-danger-value">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="34" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextPrimary}" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-danger-kicker">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Danger}" />
+    </Style>
+
+    <Style Selector="Border.asset-risk-card">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.TextPrimary}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.TextPrimary}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Large}" />
+        <Setter Property="Padding" Value="24" />
+        <Setter Property="BoxShadow" Value="0 18 32 0 #28001629" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-risk-title">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="#7F91A8" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-risk-kicker">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="#7F91A8" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-risk-value">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Surface}" />
+    </Style>
+
+    <Style Selector="Border.asset-table-card">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Large}" />
+        <Setter Property="Padding" Value="24" />
+        <Setter Property="BoxShadow" Value="{StaticResource ProximaShadow.Card}" />
+    </Style>
+
+    <Style Selector="Border.asset-table-row">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="BorderThickness" Value="0,1,0,0" />
+        <Setter Property="MinHeight" Value="58" />
+        <Setter Property="Padding" Value="0,0" />
+    </Style>
+
+    <Style Selector="Border.asset-transaction-badge">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.SurfaceSubtle}" />
+        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="Padding" Value="10,5" />
+    </Style>
+
+    <Style Selector="Border.asset-transaction-badge.buy">
+        <Setter Property="Background" Value="#D7F9D4" />
+    </Style>
+
+    <Style Selector="Border.asset-transaction-badge.sell">
+        <Setter Property="Background" Value="#F4D8DC" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-transaction-badge-text">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextSecondary}" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-transaction-badge-text.buy">
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Success}" />
+    </Style>
+
+    <Style Selector="TextBlock.asset-transaction-badge-text.sell">
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Danger}" />
+    </Style>
+</Styles>

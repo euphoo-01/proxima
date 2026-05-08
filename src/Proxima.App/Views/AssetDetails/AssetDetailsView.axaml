@@ -10,362 +10,80 @@
     d:DataContext="{x:Static details:AssetDetailsDesignData.Sample}"
     mc:Ignorable="d">
 
-    <UserControl.Styles>
-        <Style Selector="ScrollViewer.asset-page">
-            <Setter Property="Background" Value="#F7F8F9" />
-        </Style>
+    <ScrollViewer Classes="proxima-asset-details-page" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <Grid Margin="0,24,34,64" RowDefinitions="Auto,24,Auto,24,Auto,24,Auto,24,Auto" HorizontalAlignment="Stretch">
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto" IsVisible="{Binding HasData}">
+                <Grid RowDefinitions="Auto,8,Auto" ColumnDefinitions="56,16,*">
+                    <Border Grid.RowSpan="3" Classes="asset-logo-box" Width="48" Height="48" VerticalAlignment="Top">
+                        <TextBlock Classes="asset-logo-text" HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding LogoText}" />
+                    </Border>
 
-        <Style Selector="TextBlock.asset-title">
-            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-            <Setter Property="FontSize" Value="34" />
-            <Setter Property="FontWeight" Value="ExtraBold" />
-            <Setter Property="Foreground" Value="#001629" />
-        </Style>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                        <TextBlock Classes="asset-headline-title" Text="{Binding AssetName}" />
+                        <TextBlock Classes="asset-headline-muted" Text="{Binding AssetTickerMutedText}" />
+                    </StackPanel>
 
-        <Style Selector="TextBlock.asset-subtitle">
-            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Foreground" Value="#738197" />
-        </Style>
+                    <StackPanel Grid.Row="2" Grid.Column="2" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                        <TextBlock Classes="asset-price-primary" Text="{Binding PriceText}" />
+                        <TextBlock Classes="asset-delta-text" Classes.positive="{Binding IsDeltaPositive}" VerticalAlignment="Center" Text="{Binding DeltaText}" />
+                    </StackPanel>
+                </Grid>
 
-        <Style Selector="Border.card">
-            <Setter Property="Background" Value="#FFFFFF" />
-            <Setter Property="CornerRadius" Value="16" />
-            <Setter Property="Padding" Value="24" />
-            <Setter Property="BoxShadow" Value="0 12 36 0 #08001629" />
-        </Style>
-
-        <Style Selector="Border.muted-card">
-            <Setter Property="Background" Value="#EEF2F5" />
-            <Setter Property="CornerRadius" Value="16" />
-            <Setter Property="Padding" Value="24" />
-        </Style>
-
-        <Style Selector="Border.logo">
-            <Setter Property="Width" Value="64" />
-            <Setter Property="Height" Value="64" />
-            <Setter Property="CornerRadius" Value="18" />
-            <Setter Property="Background" Value="#001629" />
-        </Style>
-
-        <Style Selector="TextBlock.logo-text">
-            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-            <Setter Property="FontSize" Value="20" />
-            <Setter Property="FontWeight" Value="ExtraBold" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-        </Style>
-
-        <Style Selector="TextBlock.price">
-            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-            <Setter Property="FontSize" Value="30" />
-            <Setter Property="FontWeight" Value="ExtraBold" />
-            <Setter Property="Foreground" Value="#001629" />
-        </Style>
-
-        <Style Selector="Border.delta">
-            <Setter Property="CornerRadius" Value="999" />
-            <Setter Property="Padding" Value="12,6" />
-            <Setter Property="Background" Value="#F3D4D8" />
-        </Style>
-
-        <Style Selector="Border.delta.positive">
-            <Setter Property="Background" Value="#CBF7C5" />
-        </Style>
-
-        <Style Selector="TextBlock.delta-text">
-            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="Foreground" Value="#7B1B22" />
-        </Style>
-
-        <Style Selector="TextBlock.delta-text.positive">
-            <Setter Property="Foreground" Value="#1B6D24" />
-        </Style>
-
-        <Style Selector="TextBlock.section-title">
-            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-            <Setter Property="FontSize" Value="20" />
-            <Setter Property="FontWeight" Value="ExtraBold" />
-            <Setter Property="Foreground" Value="#001629" />
-        </Style>
-
-        <Style Selector="TextBlock.kicker">
-            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="Foreground" Value="#8A99AB" />
-        </Style>
-
-        <Style Selector="TextBlock.metric-value">
-            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-            <Setter Property="FontSize" Value="18" />
-            <Setter Property="FontWeight" Value="ExtraBold" />
-            <Setter Property="Foreground" Value="#001629" />
-        </Style>
-
-        <Style Selector="TextBlock.metric-hint">
-            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="Foreground" Value="#77869A" />
-            <Setter Property="TextWrapping" Value="Wrap" />
-        </Style>
-
-        <Style Selector="Border.metric-card">
-            <Setter Property="Background" Value="#F7F8F9" />
-            <Setter Property="CornerRadius" Value="12" />
-            <Setter Property="Padding" Value="14" />
-            <Setter Property="MinHeight" Value="96" />
-        </Style>
-
-        <Style Selector="Border.metric-card.good">
-            <Setter Property="Background" Value="#EAF8EA" />
-        </Style>
-
-        <Style Selector="Border.metric-card.warning">
-            <Setter Property="Background" Value="#FFF4D8" />
-        </Style>
-
-        <Style Selector="Border.metric-card.danger">
-            <Setter Property="Background" Value="#FBE8EA" />
-        </Style>
-
-        <Style Selector="Button.time-button">
-            <Setter Property="MinWidth" Value="54" />
-            <Setter Property="Height" Value="32" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Background" Value="#F3F6F8" />
-            <Setter Property="Foreground" Value="#6F7E92" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="HorizontalContentAlignment" Value="Center" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-        </Style>
-
-        <Style Selector="Button.time-button:pointerover">
-            <Setter Property="Background" Value="#E6ECF1" />
-        </Style>
-
-        <Style Selector="TextBlock.table-header">
-            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-            <Setter Property="FontSize" Value="10" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="Foreground" Value="#9AAABD" />
-        </Style>
-
-        <Style Selector="Border.transaction-row">
-            <Setter Property="Height" Value="58" />
-            <Setter Property="Background" Value="#FFFFFF" />
-            <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="Padding" Value="16,0" />
-        </Style>
-
-        <Style Selector="TextBlock.cell">
-            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="Foreground" Value="#2F3A46" />
-        </Style>
-
-        <Style Selector="Border.badge">
-            <Setter Property="CornerRadius" Value="999" />
-            <Setter Property="Padding" Value="10,5" />
-            <Setter Property="Background" Value="#DADCDD" />
-        </Style>
-
-        <Style Selector="Border.badge.buy">
-            <Setter Property="Background" Value="#CBF7C5" />
-        </Style>
-
-        <Style Selector="Border.badge.sell">
-            <Setter Property="Background" Value="#F1D6DA" />
-        </Style>
-
-        <Style Selector="TextBlock.badge-text">
-            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="Foreground" Value="#3D4248" />
-        </Style>
-
-        <Style Selector="TextBlock.badge-text.buy">
-            <Setter Property="Foreground" Value="#1B6D24" />
-        </Style>
-
-        <Style Selector="TextBlock.badge-text.sell">
-            <Setter Property="Foreground" Value="#7B1B22" />
-        </Style>
-    </UserControl.Styles>
-
-    <ScrollViewer Classes="asset-page" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="0,29,34,60" Spacing="24">
-            <Grid ColumnDefinitions="*,Auto">
-                <StackPanel Spacing="6">
-                    <TextBlock Classes="asset-title" Text="{Binding AssetName}" />
-                    <TextBlock Classes="asset-subtitle" Text="{Binding MarketDataSource}" />
-                </StackPanel>
-
-                <Button
-                    Grid.Column="1"
-                    Classes="time-button"
-                    Command="{Binding ReloadCommand}"
-                    Content="Обновить"
-                    Width="112" />
+                <Button Grid.Column="1" Classes="asset-primary-action" Command="{Binding StartTransactionCommand}" Content="Провести транзакцию" VerticalAlignment="Center" />
             </Grid>
 
-            <Border Classes="card" IsVisible="{Binding IsLoading}">
+            <Border Grid.Row="0" Classes="asset-card" IsVisible="{Binding IsLoading}">
                 <StackPanel Spacing="8">
-                    <TextBlock Classes="section-title" Text="Загрузка данных актива..." />
-                    <TextBlock Classes="asset-subtitle" Text="Подготавливаем график, метрики и транзакции." />
+                    <TextBlock Classes="asset-section-title" Text="Загрузка данных актива..." />
+                    <TextBlock Classes="proxima-caption" Text="Подготавливаем график, метрики и транзакции." />
                 </StackPanel>
             </Border>
 
-            <Border Classes="card" IsVisible="{Binding IsNotFound}">
+            <Border Grid.Row="0" Classes="asset-card" IsVisible="{Binding IsNotFound}">
                 <StackPanel Spacing="8">
-                    <TextBlock Classes="section-title" Text="Актив не найден" />
-                    <TextBlock Classes="asset-subtitle" Text="Проверьте переход из списка активов и корректность asset id." />
+                    <TextBlock Classes="asset-section-title" Text="Актив не найден" />
+                    <TextBlock Classes="proxima-caption" Text="Проверьте переход из списка активов и корректность asset id." />
                 </StackPanel>
             </Border>
 
-            <Border Classes="card" IsVisible="{Binding HasError}">
+            <Border Grid.Row="0" Classes="asset-card" IsVisible="{Binding HasError}">
                 <StackPanel Spacing="8">
-                    <TextBlock Classes="section-title" Text="Ошибка загрузки" />
-                    <TextBlock Classes="asset-subtitle" Text="{Binding ErrorText}" />
+                    <TextBlock Classes="asset-section-title" Text="Ошибка загрузки" />
+                    <TextBlock Classes="proxima-caption" Text="{Binding ErrorText}" />
                 </StackPanel>
             </Border>
 
-            <Grid IsVisible="{Binding HasData}" ColumnDefinitions="1.35*,24,1*" RowDefinitions="Auto,24,Auto">
-                <Border Classes="card">
-                    <Grid RowDefinitions="Auto,28,Auto,24,Auto">
-                        <Grid ColumnDefinitions="64,18,*">
-                            <Border Classes="logo">
-                                <TextBlock
-                                    Classes="logo-text"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Text="{Binding LogoText}" />
-                            </Border>
-
-                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="6">
-                                <TextBlock Classes="asset-title" FontSize="28" Text="{Binding AssetTicker}" />
-                                <TextBlock Classes="asset-subtitle" Text="{Binding AssetName}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
-                            <TextBlock Classes="price" Text="{Binding PriceText}" />
-
-                            <Border Grid.Column="1" Classes="delta" Classes.positive="{Binding IsDeltaPositive}" VerticalAlignment="Center">
-                                <TextBlock Classes="delta-text" Classes.positive="{Binding IsDeltaPositive}" Text="{Binding DeltaText}" />
-                            </Border>
-                        </Grid>
-
-                        <Grid Grid.Row="4" ColumnDefinitions="*,*,*" ColumnSpacing="12">
-                            <Border Classes="metric-card">
-                                <StackPanel Spacing="5">
-                                    <TextBlock Classes="kicker" Text="MARKET CAP" />
-                                    <TextBlock Classes="metric-value" Text="{Binding MarketCapText}" />
-                                    <TextBlock Classes="metric-hint" Text="Размер актива" />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Grid.Column="1" Classes="metric-card">
-                                <StackPanel Spacing="5">
-                                    <TextBlock Classes="kicker" Text="P/E" />
-                                    <TextBlock Classes="metric-value" Text="{Binding PeText}" />
-                                    <TextBlock Classes="metric-hint" Text="Мультипликатор оценки" />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Grid.Column="2" Classes="metric-card">
-                                <StackPanel Spacing="5">
-                                    <TextBlock Classes="kicker" Text="24H VOLUME" />
-                                    <TextBlock Classes="metric-value" Text="{Binding Volume24hText}" />
-                                    <TextBlock Classes="metric-hint" Text="Ликвидность" />
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-                    </Grid>
-                </Border>
-
-                <Border Grid.Column="2" Classes="card">
-                    <StackPanel Spacing="16">
+            <Grid Grid.Row="2" IsVisible="{Binding HasData}" ColumnDefinitions="2.08*,24,*" MinHeight="468">
+                <Border Classes="asset-chart-surface">
+                    <Grid RowDefinitions="Auto,18,*">
                         <Grid ColumnDefinitions="*,Auto">
-                            <StackPanel Spacing="4">
-                                <TextBlock Classes="section-title" Text="Оценка и предложение" />
-                                <TextBlock Classes="asset-subtitle" Text="FDV, supply и базовая ликвидность" />
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
-                            <Border Classes="metric-card">
-                                <StackPanel Spacing="5">
-                                    <TextBlock Classes="kicker" Text="FDV" />
-                                    <TextBlock Classes="metric-value" Text="{Binding FdvText}" />
-                                    <TextBlock Classes="metric-hint" Text="Fully Diluted Valuation" />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Grid.Column="1" Classes="metric-card">
-                                <StackPanel Spacing="5">
-                                    <TextBlock Classes="kicker" Text="SUPPLY" />
-                                    <TextBlock Classes="metric-value" Text="{Binding SupplyText}" />
-                                    <TextBlock Classes="metric-hint" Text="Обращение / объем" />
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-                    </StackPanel>
-                </Border>
-
-                <Border Grid.Row="2" Grid.ColumnSpan="3" Classes="card">
-                    <StackPanel Spacing="18">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <StackPanel Spacing="4">
-                                <TextBlock Classes="section-title" Text="История цены" />
-                                <TextBlock Classes="asset-subtitle" Text="Свечной график. Колесо мыши — масштаб, drag — перемещение." />
+                            <StackPanel Spacing="3">
+                                <TextBlock Classes="asset-section-title" Text="↗ Market Performance" />
+                                <TextBlock Classes="proxima-caption" Text="Свечной график. Колесо мыши — масштаб, drag — перемещение." />
                             </StackPanel>
 
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                <ItemsControl ItemsSource="{Binding Timeframes}">
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top">
+                                <ItemsControl ItemsSource="{Binding TimeframeOptions}">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal" Spacing="8" />
+                                            <StackPanel Orientation="Horizontal" Spacing="6" />
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
+                                        <DataTemplate x:DataType="details:TimeframeOptionViewModel">
                                             <Button
-                                                Classes="time-button"
-                                                Command="{Binding DataContext.ReloadCommand, RelativeSource={RelativeSource AncestorType=details:AssetDetailsView}}"
-                                                Content="{Binding}"
-                                                ClickMode="Release">
-                                                <Button.DataContext>
-                                                    <Binding />
-                                                </Button.DataContext>
-                                            </Button>
+                                                Classes="asset-timeframe-button"
+                                                Classes.active="{Binding IsSelected}"
+                                                Command="{Binding DataContext.SelectTimeframeCommand, RelativeSource={RelativeSource AncestorType=details:AssetDetailsView}}"
+                                                CommandParameter="{Binding Label}"
+                                                Content="{Binding Label}" />
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-
-                                <Button
-                                    Classes="time-button"
-                                    Command="{Binding ResetChartZoomCommand}"
-                                    Content="Reset"
-                                    Width="68" />
                             </StackPanel>
                         </Grid>
 
-                        <ComboBox
-                            Width="220"
-                            HorizontalAlignment="Right"
-                            ItemsSource="{Binding Timeframes}"
-                            SelectedItem="{Binding SelectedTimeframe}"
-                            Classes="proxima-input" />
-
-                        <Border Background="#F7F8F9" CornerRadius="14" Height="330" Padding="16">
+                        <Border Grid.Row="2" Classes="asset-chart-inner">
                             <controls:ProximaCandlestickChart
                                 Candles="{Binding Candles}"
                                 CurrencyCode="{Binding AssetCurrency}"
@@ -375,134 +93,219 @@
                                 VisibleEndIndex="{Binding CandlesVisibleEndIndex, Mode=TwoWay}"
                                 VisibleStartIndex="{Binding CandlesVisibleStartIndex, Mode=TwoWay}" />
                         </Border>
-                    </StackPanel>
-                </Border>
-            </Grid>
-
-            <Grid IsVisible="{Binding HasData}" ColumnDefinitions="1*,24,1*" MinHeight="280">
-                <Border Classes="card">
-                    <StackPanel Spacing="16">
-                        <TextBlock Classes="section-title" Text="Базовые показатели" />
-
-                        <ItemsControl ItemsSource="{Binding BasicMetrics}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="details:AssetMetricItemViewModel">
-                                    <Border
-                                        Classes="metric-card"
-                                        Classes.good="{Binding IsGood}"
-                                        Classes.warning="{Binding IsWarning}"
-                                        Classes.danger="{Binding IsDanger}"
-                                        Width="220"
-                                        Margin="0,0,12,12">
-                                        <StackPanel Spacing="5">
-                                            <TextBlock Classes="kicker" Text="{Binding Label}" />
-                                            <TextBlock Classes="metric-value" Text="{Binding Value}" />
-                                            <TextBlock Classes="metric-hint" Text="{Binding Hint}" />
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </Border>
-
-                <Border Grid.Column="2" Classes="card">
-                    <StackPanel Spacing="16">
-                        <TextBlock Classes="section-title" Text="Риск и продвинутая аналитика" />
-
-                        <ItemsControl ItemsSource="{Binding RiskMetrics}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="details:AssetMetricItemViewModel">
-                                    <Border
-                                        Classes="metric-card"
-                                        Classes.good="{Binding IsGood}"
-                                        Classes.warning="{Binding IsWarning}"
-                                        Classes.danger="{Binding IsDanger}"
-                                        Width="220"
-                                        Margin="0,0,12,12">
-                                        <StackPanel Spacing="5">
-                                            <TextBlock Classes="kicker" Text="{Binding Label}" />
-                                            <TextBlock Classes="metric-value" Text="{Binding Value}" />
-                                            <TextBlock Classes="metric-hint" Text="{Binding Hint}" />
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </Border>
-            </Grid>
-
-            <Border IsVisible="{Binding HasData}" Classes="muted-card">
-                <Grid RowDefinitions="Auto,18,Auto,14,*">
-                    <Grid ColumnDefinitions="*,280">
-                        <StackPanel Spacing="4">
-                            <TextBlock Classes="section-title" Text="Транзакции актива" />
-                            <TextBlock Classes="asset-subtitle" Text="История операций только по выбранному инструменту" />
-                        </StackPanel>
-
-                        <TextBox
-                            Grid.Column="1"
-                            Classes="proxima-input"
-                            Height="38"
-                            Text="{Binding SearchQuery}"
-                            Watermark="Поиск по типу, дате, сумме" />
                     </Grid>
+                </Border>
 
-                    <Border Grid.Row="2" Background="Transparent">
-                        <Grid ColumnDefinitions="1.4*,1.2*,1.2*,1.2*,1.2*" Margin="16,0,16,0">
-                            <Button Classes="proxima-table-sort-button" Command="{Binding SortByDateCommand}" Content="ДАТА" />
-                            <Button Grid.Column="1" Classes="proxima-table-sort-button" Command="{Binding SortByTypeCommand}" Content="ТИП" />
-                            <Button Grid.Column="2" Classes="proxima-table-sort-button" Command="{Binding SortByPriceCommand}" Content="ЦЕНА" />
-                            <Button Grid.Column="3" Classes="proxima-table-sort-button" Command="{Binding SortByQuantityCommand}" Content="КОЛ-ВО" />
-                            <Button Grid.Column="4" Classes="proxima-table-sort-button" Command="{Binding SortByAmountCommand}" Content="СУММА" />
-                        </Grid>
+                <Grid Grid.Column="2" RowDefinitions="*,24,*">
+                    <Border Classes="asset-card-plain">
+                        <StackPanel Spacing="20">
+                            <TextBlock Classes="asset-kicker" Text="ОЦЕНКА" />
+                            <Grid RowDefinitions="Auto,24,Auto,24,Auto">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="proxima-caption" Text="Капитализация" />
+                                    <TextBlock Grid.Column="1" Classes="asset-value" Text="{Binding MarketCapText}" />
+                                </Grid>
+                                <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="proxima-caption" Text="FDV" />
+                                    <TextBlock Grid.Column="1" Classes="asset-value" Text="{Binding FdvText}" />
+                                </Grid>
+                                <Grid Grid.Row="4" ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="proxima-caption" Text="P/E коэф." />
+                                    <TextBlock Grid.Column="1" Classes="asset-value" Text="{Binding PeText}" />
+                                </Grid>
+                            </Grid>
+                        </StackPanel>
                     </Border>
 
-                    <Border Grid.Row="4" Classes="transaction-row" IsVisible="{Binding IsTransactionsEmpty}">
-                        <TextBlock
-                            Classes="cell"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Text="Для этого актива пока нет транзакций." />
+                    <Border Grid.Row="2" Classes="asset-card-plain">
+                        <StackPanel Spacing="20">
+                            <TextBlock Classes="asset-kicker" Text="ЛИКВИДНОСТЬ" />
+                            <Grid RowDefinitions="Auto,24,Auto">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="proxima-caption" Text="Объем 24ч" />
+                                    <TextBlock Grid.Column="1" Classes="asset-value" Text="{Binding Volume24hText}" />
+                                </Grid>
+                                <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="proxima-caption" Text="Оборот" />
+                                    <TextBlock Grid.Column="1" Classes="asset-value" Text="{Binding SupplyText}" />
+                                </Grid>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <Grid Grid.Row="4" IsVisible="{Binding HasData}" ColumnDefinitions="*,24,*,24,*" MinHeight="208">
+                <Border Classes="asset-black-swan-card">
+                    <Grid RowDefinitions="Auto,26,Auto,14,Auto">
+                        <TextBlock Classes="asset-danger-kicker" Text="ВЛИЯНИЕ ЧЁРНОГО ЛЕБЕДЯ" />
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <TextBlock Classes="asset-danger-value" Text="{Binding BlackSwanDropText}" />
+                            <TextBlock Classes="asset-hint-strong" VerticalAlignment="Center" Text="может упасть" />
+                        </StackPanel>
+                        <Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="18">
+                            <StackPanel Spacing="4">
+                                <TextBlock Classes="asset-kicker" Text="VAR" />
+                                <TextBlock Classes="asset-value" Text="{Binding VarText}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBlock Classes="asset-kicker" Text="CVAR" />
+                                <TextBlock Classes="asset-value" Text="{Binding CvarText}" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="2" Classes="asset-risk-card">
+                    <Grid RowDefinitions="Auto,22,Auto,16,Auto" ColumnDefinitions="*,*">
+                        <TextBlock Classes="asset-risk-title" Text="РИСК-МЕНЕДЖМЕНТ" />
+
+                        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Spacing="4">
+                            <TextBlock Classes="asset-risk-kicker" Text="КОЭФ-Т ШАРПА" />
+                            <TextBlock Classes="asset-risk-value" Text="{Binding SharpeText}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="4" Spacing="4">
+                            <TextBlock Classes="asset-risk-kicker" Text="КОЭФ-Т СОРТИНО" />
+                            <TextBlock Classes="asset-risk-value" Text="{Binding SortinoText}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="4" Grid.Column="1" Spacing="4">
+                            <TextBlock Classes="asset-risk-kicker" Text="КОЭФ-Т КАЛЬМАРА" />
+                            <TextBlock Classes="asset-risk-value" Text="{Binding CalmarText}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="4" Classes="asset-card">
+                    <Grid RowDefinitions="Auto,22,Auto" ColumnDefinitions="*,*,*" ColumnSpacing="16">
+                        <TextBlock Grid.ColumnSpan="3" Classes="asset-kicker" Text="КОНТЕКСТНАЯ ОЦЕНКА" />
+                        <StackPanel Grid.Row="2" Spacing="5" HorizontalAlignment="Stretch">
+                            <TextBlock Classes="asset-context-value" HorizontalAlignment="Center" Text="{Binding HurstText}" />
+                            <TextBlock Classes="asset-context-label" Text="ПОК-ЛЬ ХЕРСТА" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="1" Spacing="5" HorizontalAlignment="Stretch">
+                            <TextBlock Classes="asset-context-value" HorizontalAlignment="Center" Text="{Binding ZScoreText}" />
+                            <TextBlock Classes="asset-context-label" Text="Z-ОЦЕНКА" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="2" Spacing="5" HorizontalAlignment="Stretch">
+                            <TextBlock Classes="asset-context-value" HorizontalAlignment="Center" Text="{Binding CorrelationText}" />
+                            <TextBlock Classes="asset-context-label" Text="КОРРЕЛЯЦИЯ" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Grid Grid.Row="6" IsVisible="{Binding HasData}" ColumnDefinitions="*,24,*" MinHeight="250">
+                <Border Classes="asset-card-plain">
+                    <StackPanel Spacing="20">
+                        <TextBlock Classes="asset-kicker" Text="ТЕХНИЧЕСКИЕ ИНДИКАТОРЫ" />
+                        <ItemsControl ItemsSource="{Binding TechnicalIndicators}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="details:AssetMetricItemViewModel">
+                                    <Border
+                                        Classes="asset-metric-tile"
+                                        Classes.good="{Binding IsGood}"
+                                        Classes.warning="{Binding IsWarning}"
+                                        Classes.danger="{Binding IsDanger}"
+                                        Width="172"
+                                        Margin="0,0,12,12">
+                                        <StackPanel Spacing="5">
+                                            <TextBlock Classes="asset-kicker" Text="{Binding Label}" TextWrapping="Wrap" />
+                                            <TextBlock Classes="asset-value asset-metric-value" Text="{Binding Value}" TextWrapping="Wrap" />
+                                            <TextBlock Classes="asset-hint" Text="{Binding Hint}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Classes="asset-card-plain">
+                    <StackPanel Spacing="20">
+                        <TextBlock Classes="asset-kicker" Text="ДИНАМИКА РЫНКА" />
+                        <ItemsControl ItemsSource="{Binding MarketDynamicsMetrics}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="details:AssetMetricItemViewModel">
+                                    <Border
+                                        Classes="asset-metric-tile"
+                                        Classes.good="{Binding IsGood}"
+                                        Classes.warning="{Binding IsWarning}"
+                                        Classes.danger="{Binding IsDanger}"
+                                        Width="154"
+                                        Margin="0,0,12,12">
+                                        <StackPanel Spacing="5">
+                                            <TextBlock Classes="asset-kicker" Text="{Binding Label}" TextWrapping="Wrap" />
+                                            <TextBlock Classes="asset-value asset-metric-value" Text="{Binding Value}" TextWrapping="Wrap" />
+                                            <TextBlock Classes="asset-hint" Text="{Binding Hint}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="8" IsVisible="{Binding HasData}" Classes="asset-table-card">
+                <Grid RowDefinitions="Auto,26,Auto,8,*">
+                    <Grid ColumnDefinitions="*,300,24,Auto">
+                        <TextBlock Classes="asset-section-title" Text="История транзакций" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1" Classes="proxima-input" Text="{Binding SearchQuery}" Watermark="Искать активы..." />
+                        <Button Grid.Column="3" Classes="proxima-toolbar" Content="Скачать отчёт" VerticalAlignment="Center" />
+                    </Grid>
+
+                    <Grid Grid.Row="2" ColumnDefinitions="1.25*,1.1*,1.2*,1.2*,1.1*,1.1*" Margin="0,0,0,0">
+                        <Button Classes="proxima-table-sort-button" Command="{Binding SortByDateCommand}" Content="ДАТА" />
+                        <Button Grid.Column="1" Classes="proxima-table-sort-button" Command="{Binding SortByTypeCommand}" Content="ТИП" />
+                        <Button Grid.Column="2" Classes="proxima-table-sort-button" Command="{Binding SortByQuantityCommand}" Content="КОЛИЧЕСТВО" />
+                        <Button Grid.Column="3" Classes="proxima-table-sort-button" Command="{Binding SortByPriceCommand}" Content="ЦЕНА" />
+                        <Button Grid.Column="4" Classes="proxima-table-sort-button" Content="КОМИССИЯ" />
+                        <Button Grid.Column="5" Classes="proxima-table-sort-button" Command="{Binding SortByStatusCommand}" Content="СТАТУС" />
+                    </Grid>
+
+                    <Border Grid.Row="4" Classes="asset-table-row" IsVisible="{Binding IsTransactionsEmpty}">
+                        <TextBlock Classes="proxima-body" HorizontalAlignment="Center" VerticalAlignment="Center" Text="Для этого актива пока нет транзакций." />
                     </Border>
 
                     <ItemsControl Grid.Row="4" ItemsSource="{Binding VisibleTransactions}" IsVisible="{Binding ShowTransactions}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="details:AssetTransactionRowViewModel">
-                                <Border Classes="transaction-row" Margin="0,0,0,10">
-                                    <Grid ColumnDefinitions="1.4*,1.2*,1.2*,1.2*,1.2*">
-                                        <TextBlock Classes="cell" VerticalAlignment="Center" Text="{Binding DateText}" />
+                                <Border Classes="asset-table-row">
+                                    <Grid ColumnDefinitions="1.25*,1.1*,1.2*,1.2*,1.1*,1.1*">
+                                        <TextBlock Classes="proxima-caption" VerticalAlignment="Center" Text="{Binding DateText}" />
 
                                         <Border
                                             Grid.Column="1"
-                                            Classes="badge"
+                                            Classes="asset-transaction-badge"
                                             Classes.buy="{Binding IsBuy}"
                                             Classes.sell="{Binding IsSell}"
                                             HorizontalAlignment="Left"
                                             VerticalAlignment="Center">
                                             <TextBlock
-                                                Classes="badge-text"
+                                                Classes="asset-transaction-badge-text"
                                                 Classes.buy="{Binding IsBuy}"
                                                 Classes.sell="{Binding IsSell}"
                                                 Text="{Binding TypeLabel}" />
                                         </Border>
 
-                                        <TextBlock Grid.Column="2" Classes="cell" VerticalAlignment="Center" Text="{Binding PriceText}" />
-                                        <TextBlock Grid.Column="3" Classes="cell" VerticalAlignment="Center" Text="{Binding QuantityText}" />
-                                        <TextBlock Grid.Column="4" Classes="cell" VerticalAlignment="Center" Text="{Binding AmountText}" />
+                                        <TextBlock Grid.Column="2" Classes="proxima-body" VerticalAlignment="Center" Text="{Binding QuantityText}" />
+                                        <TextBlock Grid.Column="3" Classes="proxima-caption" VerticalAlignment="Center" Text="{Binding PriceText}" />
+                                        <TextBlock Grid.Column="4" Classes="proxima-caption" VerticalAlignment="Center" Text="{Binding FeeText}" />
+                                        <Border Grid.Column="5" Classes="asset-transaction-badge" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <TextBlock Classes="asset-transaction-badge-text" Text="{Binding StatusText}" />
+                                        </Border>
                                     </Grid>
                                 </Border>
                             </DataTemplate>
@@ -510,6 +313,6 @@
                     </ItemsControl>
                 </Grid>
             </Border>
-        </StackPanel>
+        </Grid>
     </ScrollViewer>
 </UserControl>

@@ -79,7 +79,7 @@ public sealed class PostgresTransactionRepository(IProximaUnitOfWorkFactory uowF
             PortfolioId = transaction.PortfolioId,
             AssetId = transaction.AssetId,
             Type = transaction.Type.ToString(),
-            TradeDate = transaction.TradeDate,
+            TradeDate = NormalizeTradeDateForPostgres(transaction.TradeDate),
             Quantity = transaction.Quantity,
             Price = transaction.Price,
             GrossAmount = transaction.GrossAmount,
@@ -106,7 +106,7 @@ public sealed class PostgresTransactionRepository(IProximaUnitOfWorkFactory uowF
 
         entity.AssetId = transaction.AssetId;
         entity.Type = transaction.Type.ToString();
-        entity.TradeDate = transaction.TradeDate;
+        entity.TradeDate = NormalizeTradeDateForPostgres(transaction.TradeDate);
         entity.Quantity = transaction.Quantity;
         entity.Price = transaction.Price;
         entity.GrossAmount = transaction.GrossAmount;
@@ -120,5 +120,15 @@ public sealed class PostgresTransactionRepository(IProximaUnitOfWorkFactory uowF
         entity.UpdatedAt = transaction.UpdatedAt;
 
         await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private static DateTimeOffset NormalizeTradeDateForPostgres(DateTimeOffset value)
+    {
+        if (value.TimeOfDay == TimeSpan.Zero)
+        {
+            return new DateTimeOffset(value.Year, value.Month, value.Day, 12, 0, 0, TimeSpan.Zero);
+        }
+
+        return value.ToUniversalTime();
     }
 }

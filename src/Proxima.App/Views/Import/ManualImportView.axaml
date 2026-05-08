@@ -4,63 +4,421 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:import="using:Proxima.App.Views.Import"
     x:DataType="import:ManualImportViewModel">
-    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="24" Spacing="20">
-            <Border Classes="proxima-card-surface">
-                <StackPanel Spacing="8">
-                    <TextBlock Classes="proxima-page-title" Text="Ручной импорт" />
-                    <TextBlock Classes="proxima-body" Text="Заполните таблицу транзакций. Подозрительные строки подсвечиваются автоматически." />
+
+    <UserControl.Styles>
+        <Style Selector="ScrollViewer.import-scroll">
+            <Setter Property="Background" Value="#F7F8F9" />
+        </Style>
+
+        <Style Selector="TextBlock.page-title">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="34" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+        </Style>
+
+        <Style Selector="TextBlock.section-subtitle">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="#5E6B79" />
+            <Setter Property="LineHeight" Value="19" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style Selector="TextBlock.field-label">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#8792A0" />
+            <Setter Property="LetterSpacing" Value="0.7" />
+        </Style>
+
+        <Style Selector="TextBlock.table-head">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#8EA0B5" />
+            <Setter Property="LetterSpacing" Value="1" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="TextBlock.table-amount">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="TextBlock.table-amount.positive">
+            <Setter Property="Foreground" Value="#1E7C2A" />
+        </Style>
+
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="CornerRadius" Value="13" />
+            <Setter Property="BoxShadow" Value="0 18 42 0 #0E2F4A12" />
+        </Style>
+
+        <Style Selector="Border.card-muted">
+            <Setter Property="Background" Value="#F0F2F4" />
+            <Setter Property="CornerRadius" Value="13" />
+        </Style>
+
+        <Style Selector="Border.dropzone">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="CornerRadius" Value="13" />
+            <Setter Property="BorderBrush" Value="#FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="34" />
+            <Setter Property="MinHeight" Value="390" />
+            <Setter Property="BoxShadow" Value="0 18 42 0 #0E2F4A12" />
+        </Style>
+
+        <Style Selector="Border.dropzone.dragover">
+            <Setter Property="BorderBrush" Value="#7AB58A" />
+            <Setter Property="Background" Value="#F7FFF8" />
+        </Style>
+
+        <Style Selector="Border.dropzone.parsing">
+            <Setter Property="BorderBrush" Value="#E7C56F" />
+            <Setter Property="Background" Value="#FFF9EC" />
+        </Style>
+
+        <Style Selector="Border.dropzone.error">
+            <Setter Property="BorderBrush" Value="#F0A5A0" />
+            <Setter Property="Background" Value="#FFF7F7" />
+        </Style>
+
+        <Style Selector="Border.upload-circle">
+            <Setter Property="Width" Value="158" />
+            <Setter Property="Height" Value="158" />
+            <Setter Property="CornerRadius" Value="79" />
+            <Setter Property="Background" Value="#E8FBE7" />
+            <Setter Property="BorderBrush" Value="#D4F5D2" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style Selector="TextBox.input">
+            <Setter Property="Height" Value="44" />
+            <Setter Property="Padding" Value="13,0" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="9" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="CaretBrush" Value="#001629" />
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="TextBox.input:focus">
+            <Setter Property="BorderBrush" Value="#A9CFF6" />
+        </Style>
+
+        <Style Selector="TextBox.table-input">
+            <Setter Property="Height" Value="42" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#EEF2F6" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="CaretBrush" Value="#001629" />
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="ComboBox.input">
+            <Setter Property="Height" Value="44" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="9" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+
+        <Style Selector="ComboBox.table-combo">
+            <Setter Property="Height" Value="42" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#EEF2F6" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style Selector="Button.primary-dark">
+            <Setter Property="MinHeight" Value="42" />
+            <Setter Property="Padding" Value="24,0" />
+            <Setter Property="Background" Value="#001629" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#001629" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="9" />
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.secondary-light">
+            <Setter Property="MinHeight" Value="42" />
+            <Setter Property="Padding" Value="20,0" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="BorderBrush" Value="#E1E8EF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="9" />
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.segmented-option">
+            <Setter Property="Height" Value="42" />
+            <Setter Property="Padding" Value="24,0" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="BorderBrush" Value="#FFFFFF" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="9" />
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.segmented-option.active">
+            <Setter Property="Background" Value="#001629" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+        </Style>
+
+        <Style Selector="Button.icon-action">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Foreground" Value="#B8C6D4" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Border.row-card">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="CornerRadius" Value="9" />
+            <Setter Property="Padding" Value="16,12" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+            <Setter Property="MinHeight" Value="66" />
+        </Style>
+
+        <Style Selector="Border.row-card.warning">
+            <Setter Property="BorderBrush" Value="#F2C2BC" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="#FFF9F9" />
+        </Style>
+
+        <Style Selector="Border.alert-error">
+            <Setter Property="Background" Value="#FFF4F4" />
+            <Setter Property="BorderBrush" Value="#F0A5A0" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="14,12" />
+        </Style>
+
+        <Style Selector="TextBlock.alert-error-text">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#B31119" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style Selector="Border.status-chip">
+            <Setter Property="Background" Value="#EDF1F5" />
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="Padding" Value="10,5" />
+        </Style>
+
+        <Style Selector="TextBlock.status-chip-text">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#5E6B79" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer Classes="import-scroll" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <Grid Margin="64,18,64,70" RowDefinitions="Auto,28,Auto,28,Auto,28,Auto" HorizontalAlignment="Stretch" MinWidth="900">
+            <TextBlock Classes="page-title" Text="Импорт" />
+
+            <Border Grid.Row="2"
+                    Classes="dropzone"
+                    HorizontalAlignment="Stretch"
+                    Classes.dragover="{Binding IsDragOver}"
+                    Classes.parsing="{Binding IsParsing}"
+                    Classes.error="{Binding HasError}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+                    <Border Classes="upload-circle" HorizontalAlignment="Center">
+                        <Viewbox Width="60" Height="60" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Canvas Width="64" Height="64">
+                                <Path Data="M32,10 V42" Stroke="#1E7C2A" StrokeThickness="4.2" StrokeLineCap="Round" />
+                                <Path Data="M21,22 L32,10 L43,22" Stroke="#1E7C2A" StrokeThickness="4.2" StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent" />
+                                <Path Data="M18,42 V52 H46 V42" Stroke="#1E7C2A" StrokeThickness="4.2" StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent" />
+                            </Canvas>
+                        </Viewbox>
+                    </Border>
+
+                    <StackPanel HorizontalAlignment="Center" Spacing="7">
+                        <TextBlock Classes="page-title" FontSize="34" HorizontalAlignment="Center" Text="Перетащите отчёт" />
+                        <TextBlock Classes="section-subtitle" FontSize="16" TextAlignment="Center" MaxWidth="430" Text="Загрузите файл в формате .csv до 5 МБ для автоматического импорта" />
+                        <TextBlock Classes="section-subtitle" FontSize="12" TextAlignment="Center" MaxWidth="560" Text="Поддерживаются только CSV-файлы. При неверной структуре будет показана ошибка." />
+                    </StackPanel>
+
+                    <Button Classes="secondary-light" Click="ChooseFileButton_Click" Content="Выбрать файл" HorizontalAlignment="Center" />
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" IsVisible="{Binding HasFileSelected}">
+                        <Border Classes="status-chip"><TextBlock Classes="status-chip-text" Text="CSV до 5 МБ" /></Border>
+                        <Border Classes="status-chip"><TextBlock Classes="status-chip-text" Text="Файл выбран" /></Border>
+                        <Border Classes="status-chip"><TextBlock Classes="status-chip-text" Text="{Binding SelectedFileName}" /></Border>
+                    </StackPanel>
                 </StackPanel>
             </Border>
 
-            <Border Classes="proxima-import-validation-summary" IsVisible="{Binding HasWarnings}">
-                <StackPanel Spacing="8">
-                    <TextBlock Classes="proxima-card-title" Text="Есть подозрительные операции" />
-                    <TextBlock Classes="proxima-caption" Text="{Binding SuspiciousCount, StringFormat='Подозрительных строк: {0}'}" />
-                </StackPanel>
-            </Border>
+            <Border Grid.Row="4" Classes="card-muted" Padding="34,30" HorizontalAlignment="Stretch">
+                <Grid RowDefinitions="Auto,22,Auto,26,Auto">
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="section-title" Text="Ручной ввод транзакций" />
+                        <TextBlock Classes="section-subtitle" Text="Оцифруйте физические транзакции при помощи ручного ввода" />
+                    </StackPanel>
 
-            <Border Classes="proxima-manual-grid-surface">
-                <StackPanel Spacing="12">
-                    <Grid Classes="proxima-manual-grid-header" ColumnDefinitions="110,150,130,90,90,100,90,140,Auto" ColumnSpacing="8">
-                        <TextBlock Classes="proxima-datagrid-header-text" Text="Дата" />
-                        <TextBlock Grid.Column="1" Classes="proxima-datagrid-header-text" Text="Тикер/Имя" />
-                        <TextBlock Grid.Column="2" Classes="proxima-datagrid-header-text" Text="Операция" />
-                        <TextBlock Grid.Column="3" Classes="proxima-datagrid-header-text" Text="Кол-во" />
-                        <TextBlock Grid.Column="4" Classes="proxima-datagrid-header-text" Text="Цена" />
-                        <TextBlock Grid.Column="5" Classes="proxima-datagrid-header-text" Text="Комиссия" />
-                        <TextBlock Grid.Column="6" Classes="proxima-datagrid-header-text" Text="Валюта" />
-                        <TextBlock Grid.Column="7" Classes="proxima-datagrid-header-text" Text="Тег/Категория" />
+                    <Grid Grid.Row="2" ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,14,Auto,20,Auto">
+                        <StackPanel Grid.Column="0" Spacing="7">
+                            <TextBlock Classes="field-label" Text="АКТИВ" />
+                            <TextBox Classes="input" Text="{Binding NewAssetName, Mode=TwoWay}" Watermark="Название актива" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" Spacing="7">
+                            <TextBlock Classes="field-label" Text="ТЕГ" />
+                            <ComboBox Classes="input" ItemsSource="{Binding TagOptions}" SelectedItem="{Binding NewTag, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="4" Spacing="7">
+                            <TextBlock Classes="field-label" Text="ТИП" />
+                            <Grid ColumnDefinitions="*,8,*">
+                                <Button Classes="segmented-option" Classes.active="{Binding IsNewBuy}" Command="{Binding SelectBuyCommand}" Content="Купить" />
+                                <Button Grid.Column="2" Classes="segmented-option" Classes.active="{Binding IsNewSell}" Command="{Binding SelectSellCommand}" Content="Продать" />
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.Column="0" Spacing="7">
+                            <TextBlock Classes="field-label" Text="ЦЕНА" />
+                            <TextBox Classes="input" Text="{Binding NewPrice, Mode=TwoWay}" Watermark="0.00" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.Column="2" Spacing="7">
+                            <TextBlock Classes="field-label" Text="КОЛИЧЕСТВО" />
+                            <TextBox Classes="input" Text="{Binding NewQuantity, Mode=TwoWay}" Watermark="1" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.Column="4" Spacing="7">
+                            <TextBlock Classes="field-label" Text="ДАТА" />
+                            <TextBox Classes="input" Text="{Binding NewDate, Mode=TwoWay}" Watermark="ДД / ММ / ГГ" />
+                        </StackPanel>
+
+                        <Button Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="5" Classes="primary-dark" HorizontalAlignment="Center" Command="{Binding AddManualTransactionCommand}" Content="Добавить транзакцию" />
                     </Grid>
 
-                    <ItemsControl ItemsSource="{Binding Rows}">
+                    <StackPanel Grid.Row="4" Spacing="10">
+                        <Border Classes="alert-error" IsVisible="{Binding HasError}">
+                            <TextBlock Classes="alert-error-text" Text="{Binding ErrorMessage}" />
+                        </Border>
+                        <TextBlock Classes="section-subtitle" Text="{Binding StatusMessage}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="6" Classes="card-muted" Padding="34,30" HorizontalAlignment="Stretch">
+                <Grid RowDefinitions="Auto,16,Auto,14,Auto,18,Auto">
+                    <StackPanel Spacing="7">
+                        <TextBlock Classes="section-title" Text="Транзакции" />
+                        <TextBlock Classes="section-subtitle" Text="Распознанные и добавленные вручную транзакции. Строки можно редактировать, удалять и сохранить в систему." />
+                    </StackPanel>
+
+                    <Grid Grid.Row="2" ColumnDefinitions="1.8*,1.05*,1.05*,0.72*,0.9*,1.05*,0.72*" ColumnSpacing="12" Margin="16,0,16,0">
+                        <TextBlock Classes="table-head" Text="АКТИВ" />
+                        <TextBlock Grid.Column="1" Classes="table-head" Text="ДАТА" />
+                        <TextBlock Grid.Column="2" Classes="table-head" Text="ТИП" />
+                        <TextBlock Grid.Column="3" Classes="table-head" Text="КОЛ-ВО" />
+                        <TextBlock Grid.Column="4" Classes="table-head" Text="ЦЕНА" />
+                        <TextBlock Grid.Column="5" Classes="table-head" Text="СУММА" />
+                        <TextBlock Grid.Column="6" Classes="table-head" Text="ДЕЙСТВИЯ" />
+                    </Grid>
+
+                    <ItemsControl Grid.Row="4" ItemsSource="{Binding Rows}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="import:ManualTransactionRowViewModel">
-                                <Border Classes="proxima-manual-grid-row" Classes.proxima-manual-row-suspicious="{Binding IsSuspicious}">
-                                    <Grid ColumnDefinitions="110,150,130,90,90,100,90,140,Auto" ColumnSpacing="8">
-                                        <TextBox Classes="proxima-input" Text="{Binding Date}" />
-                                        <TextBox Grid.Column="1" Classes="proxima-input" Text="{Binding TickerOrName}" />
-                                        <TextBox Grid.Column="2" Classes="proxima-input" Text="{Binding OperationType}" />
-                                        <TextBox Grid.Column="3" Classes="proxima-input" Text="{Binding Quantity}" />
-                                        <TextBox Grid.Column="4" Classes="proxima-input" Text="{Binding Price}" />
-                                        <TextBox Grid.Column="5" Classes="proxima-input" Text="{Binding Commission}" />
-                                        <TextBox Grid.Column="6" Classes="proxima-input" Text="{Binding Currency}" />
-                                        <TextBox Grid.Column="7" Classes="proxima-input" Text="{Binding TagOrCategory}" />
-                                        <Button Grid.Column="8" Classes="proxima-secondary proxima-toolbar" Command="{Binding DataContext.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=import:ManualImportView}}" CommandParameter="{Binding .}" Content="Удалить" />
+                                <Border Classes="row-card" Classes.warning="{Binding IsSuspicious}">
+                                    <Grid RowDefinitions="Auto,Auto" RowSpacing="8">
+                                        <Grid ColumnDefinitions="1.8*,1.05*,1.05*,0.72*,0.9*,1.05*,0.72*" ColumnSpacing="12" VerticalAlignment="Center">
+                                            <TextBox Classes="table-input" Text="{Binding TickerOrName, Mode=TwoWay}" Watermark="Apple Inc." />
+                                            <TextBox Grid.Column="1" Classes="table-input" Text="{Binding Date, Mode=TwoWay}" Watermark="24.03.2026" />
+                                            <ComboBox Grid.Column="2" Classes="table-combo" ItemsSource="{Binding DataContext.OperationTypeLabels, RelativeSource={RelativeSource AncestorType=import:ManualImportView}}" SelectedItem="{Binding OperationTypeLabel, Mode=TwoWay}" />
+                                            <TextBox Grid.Column="3" Classes="table-input" Text="{Binding Quantity, Mode=TwoWay}" Watermark="1" />
+                                            <TextBox Grid.Column="4" Classes="table-input" Text="{Binding Price, Mode=TwoWay}" Watermark="0.00" />
+                                            <TextBlock Grid.Column="5" Classes="table-amount" Classes.positive="{Binding IsPositiveAmount}" Text="{Binding SignedAmountDisplay}" />
+
+                                            <StackPanel Grid.Column="6" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Spacing="4">
+                                                <Button Classes="icon-action" Content="✎" />
+                                                <Button Classes="icon-action" Content="⌫" Command="{Binding DataContext.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=import:ManualImportView}}" CommandParameter="{Binding .}" />
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <TextBlock Grid.Row="1" Classes="alert-error-text" IsVisible="{Binding IsSuspicious}" Text="{Binding SuspiciousReason}" />
                                     </Grid>
                                 </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                </StackPanel>
+
+                    <TextBlock Grid.Row="4" Classes="section-subtitle" IsVisible="{Binding HasNoRows}" Text="Пока нет транзакций. Перетащите CSV-файл или добавьте строку вручную." />
+
+                    <Grid Grid.Row="6" ColumnDefinitions="Auto,12,Auto,*,Auto,12,Auto">
+                        <Button Classes="secondary-light" Command="{Binding AddRowCommand}" Content="Добавить пустую строку" />
+                        <Button Grid.Column="2" Classes="secondary-light" Command="{Binding ClearRowsCommand}" Content="Очистить" />
+
+                        <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <Border Classes="status-chip"><TextBlock Classes="status-chip-text" Text="{Binding TotalCountLabel}" /></Border>
+                            <Border Classes="status-chip"><TextBlock Classes="status-chip-text" Text="{Binding ValidCountLabel}" /></Border>
+                            <Border Classes="status-chip"><TextBlock Classes="status-chip-text" Text="{Binding SuspiciousCountLabel}" /></Border>
+                        </StackPanel>
+
+                        <Button Grid.Column="6" Classes="primary-dark" Command="{Binding SaveCommand}" Content="Сохранить" />
+                    </Grid>
+                </Grid>
             </Border>
-
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding AddRowCommand}" Content="Добавить строку" />
-                <Button Classes="proxima-primary proxima-toolbar" Command="{Binding SaveCommand}" Content="Сохранить импорт" />
-            </StackPanel>
-
-            <TextBlock Classes="proxima-caption" Text="{Binding StatusMessage}" />
-        </StackPanel>
+        </Grid>
     </ScrollViewer>
 </UserControl>

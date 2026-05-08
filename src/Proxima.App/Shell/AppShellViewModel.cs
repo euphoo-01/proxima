@@ -20,7 +20,6 @@ public sealed class AppShellViewModel : ViewModelBase
     private readonly IShellState _shellState;
     private readonly DashboardViewModel _dashboardViewModel;
     private readonly AssetsViewModel _assetsViewModel;
-    private readonly ImportDialogViewModel _importDialogViewModel;
     private readonly AssetDetailsViewModel _assetDetailsViewModel;
     private readonly ManualImportViewModel _manualImportViewModel;
     private readonly GoalsViewModel _goalsViewModel;
@@ -38,7 +37,6 @@ public sealed class AppShellViewModel : ViewModelBase
         IShellState shellState,
         DashboardViewModel dashboardViewModel,
         AssetsViewModel assetsViewModel,
-        ImportDialogViewModel importDialogViewModel,
         AssetDetailsViewModel assetDetailsViewModel,
         ManualImportViewModel manualImportViewModel,
         GoalsViewModel goalsViewModel,
@@ -52,7 +50,6 @@ public sealed class AppShellViewModel : ViewModelBase
         _shellState = shellState;
         _dashboardViewModel = dashboardViewModel;
         _assetsViewModel = assetsViewModel;
-        _importDialogViewModel = importDialogViewModel;
         _assetDetailsViewModel = assetDetailsViewModel;
         _manualImportViewModel = manualImportViewModel;
         _goalsViewModel = goalsViewModel;
@@ -87,8 +84,8 @@ public sealed class AppShellViewModel : ViewModelBase
     {
         _navigation.Register(new AppRoute(AppRoutes.Dashboard, "Дешборд", "Дешборд"));
         _navigation.Register(new AppRoute(AppRoutes.Assets, "Все активы", "Все активы"));
-        _navigation.Register(new AppRoute(AppRoutes.ImportPreview, "Импорт активов", "Все активы / Импорт активов"));
-        _navigation.Register(new AppRoute(AppRoutes.ManualImport, "Ручной импорт", "Все активы / Ручной импорт"));
+        _navigation.Register(new AppRoute(AppRoutes.ImportPreview, "Импорт", "Импорт"));
+        _navigation.Register(new AppRoute(AppRoutes.ManualImport, "Импорт", "Импорт"));
         _navigation.Register(new AppRoute(AppRoutes.AssetDetails, "Детальная информация", "Все активы / Актив"));
         _navigation.Register(new AppRoute(AppRoutes.Goals, "Цели", "Цели"));
         _navigation.Register(new AppRoute(AppRoutes.Taxes, "Налоги", "Налоги"));
@@ -106,7 +103,7 @@ public sealed class AppShellViewModel : ViewModelBase
         {
             AppRoutes.Dashboard => _dashboardViewModel,
             AppRoutes.Assets => _assetsViewModel,
-            AppRoutes.ImportPreview => _importDialogViewModel,
+            AppRoutes.ImportPreview => _manualImportViewModel,
             AppRoutes.AssetDetails => _assetDetailsViewModel,
             AppRoutes.ManualImport => _manualImportViewModel,
             AppRoutes.Goals => _goalsViewModel,

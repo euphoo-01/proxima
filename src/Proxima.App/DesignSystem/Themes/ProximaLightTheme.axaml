@@ -48,5 +48,6 @@
     <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/LanguageSelector.axaml" />
     <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/ThemeSelector.axaml" />
     <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/PageHeader.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/AssetDetails.axaml" />
     <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/StatusPill.axaml" />
 </Styles>

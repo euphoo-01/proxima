@@ -324,8 +324,20 @@ public sealed class AssetsViewModel : ViewModelBase
             IReadOnlyList<Asset> assets = await _assetService.ListActiveAsync(portfolioId, CancellationToken.None).ConfigureAwait(true);
             _transactions = await _transactionService.ListActiveAsync(portfolioId, CancellationToken.None).ConfigureAwait(true);
 
-            decimal totalValue = assets.Sum(static asset => asset.Quantity * asset.CurrentPrice);
-            decimal totalCost = assets.Sum(static asset => asset.Quantity * asset.AverageBuyPrice);
+            IReadOnlyDictionary<Guid, DerivedAssetSnapshot> derivedSnapshots = BuildDerivedAssetSnapshots(assets, _transactions);
+
+            decimal totalValue = assets.Sum(asset =>
+            {
+                DerivedAssetSnapshot snapshot = derivedSnapshots[asset.Id];
+                return snapshot.Quantity * snapshot.CurrentPrice;
+            });
+
+            decimal totalCost = assets.Sum(asset =>
+            {
+                DerivedAssetSnapshot snapshot = derivedSnapshots[asset.Id];
+                return snapshot.Quantity * snapshot.AverageBuyPrice;
+            });
+
             decimal growth = totalCost <= 0m ? 0m : (totalValue - totalCost) / totalCost * 100m;
             decimal taxes = _transactions.Sum(static tx => tx.TaxAmount + (tx.Type == TransactionType.Tax ? tx.GrossAmount : 0m));
 
@@ -334,7 +346,19 @@ public sealed class AssetsViewModel : ViewModelBase
             TaxesMetric = FormatMoney(taxes, "USD");
 
             _allAssets = assets
-                .Select(asset => BuildAssetRow(asset, totalValue))
+                .Select(asset =>
+                {
+                    DerivedAssetSnapshot snapshot = derivedSnapshots[asset.Id];
+                    Asset projected = asset with
+                    {
+                        Quantity = snapshot.Quantity,
+                        AverageBuyPrice = snapshot.AverageBuyPrice,
+                        CurrentPrice = snapshot.CurrentPrice,
+                    };
+
+                    return BuildAssetRow(projected, totalValue);
+                })
+                .Where(static item => item.Quantity > 0m)
                 .ToArray();
 
             ApplyAssetFilterAndSort();
@@ -372,6 +396,77 @@ public sealed class AssetsViewModel : ViewModelBase
             () => OpenAssetDetails(asset.Id, asset.Name),
             () => EditAsset(asset),
             () => _ = DeleteAssetAsync(asset.Id));
+    }
+
+    private static IReadOnlyDictionary<Guid, DerivedAssetSnapshot> BuildDerivedAssetSnapshots(
+        IReadOnlyList<Asset> assets,
+        IReadOnlyList<PortfolioTransaction> transactions)
+    {
+        Dictionary<Guid, List<PortfolioTransaction>> transactionsByAsset = transactions
+            .Where(static tx => tx.AssetId.HasValue)
+            .GroupBy(tx => tx.AssetId!.Value)
+            .ToDictionary(group => group.Key, group => group.OrderBy(tx => tx.TradeDate).ToList());
+
+        Dictionary<Guid, DerivedAssetSnapshot> result = new(assets.Count);
+        foreach (Asset asset in assets)
+        {
+            if (!transactionsByAsset.TryGetValue(asset.Id, out List<PortfolioTransaction>? assetTransactions)
+                || assetTransactions.Count == 0)
+            {
+                result[asset.Id] = new DerivedAssetSnapshot(asset.Quantity, asset.AverageBuyPrice, asset.CurrentPrice);
+                continue;
+            }
+
+            decimal quantity = 0m;
+            decimal averageBuyPrice = 0m;
+            decimal currentPrice = asset.CurrentPrice;
+
+            foreach (PortfolioTransaction tx in assetTransactions)
+            {
+                switch (tx.Type)
+                {
+                    case TransactionType.Buy:
+                    {
+                        decimal newQuantity = quantity + tx.Quantity;
+                        averageBuyPrice = newQuantity <= 0m
+                            ? tx.Price
+                            : ((quantity * averageBuyPrice) + (tx.Quantity * tx.Price)) / newQuantity;
+                        quantity = newQuantity;
+                        break;
+                    }
+
+                    case TransactionType.Sell:
+                    {
+                        quantity = Math.Max(0m, quantity - tx.Quantity);
+                        if (quantity == 0m)
+                        {
+                            averageBuyPrice = 0m;
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            if (quantity <= 0m && asset.Quantity > 0m)
+            {
+                quantity = asset.Quantity;
+            }
+
+            if (averageBuyPrice <= 0m && asset.AverageBuyPrice > 0m)
+            {
+                averageBuyPrice = asset.AverageBuyPrice;
+            }
+
+            if (currentPrice <= 0m)
+            {
+                currentPrice = asset.CurrentPrice;
+            }
+
+            result[asset.Id] = new DerivedAssetSnapshot(quantity, averageBuyPrice, currentPrice);
+        }
+
+        return result;
     }
 
     private void SelectManualTransactionType(TransactionType type)
@@ -898,6 +993,9 @@ public sealed class AssetsViewModel : ViewModelBase
             ? string.Create(CultureInfo.InvariantCulture, $"{arrow}{sign}{value:N1}%")
             : string.Create(CultureInfo.InvariantCulture, $"{sign}{value:N1}%");
     }
+
+
+    private readonly record struct DerivedAssetSnapshot(decimal Quantity, decimal AverageBuyPrice, decimal CurrentPrice);
 
     private enum AssetSortMode
     {

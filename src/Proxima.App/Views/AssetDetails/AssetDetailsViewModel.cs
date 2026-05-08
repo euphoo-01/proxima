@@ -10,6 +10,8 @@ namespace Proxima.App.Views.AssetDetails;
 
 public sealed class AssetDetailsViewModel : ViewModelBase
 {
+    private const string DefaultTimeframe = "1д";
+
     private readonly IAppNavigationService _navigation;
     private readonly IAssetDetailsService _assetDetailsService;
 
@@ -18,8 +20,11 @@ public sealed class AssetDetailsViewModel : ViewModelBase
     private readonly DelegateCommand _sortByPriceCommand;
     private readonly DelegateCommand _sortByQuantityCommand;
     private readonly DelegateCommand _sortByAmountCommand;
+    private readonly DelegateCommand _sortByStatusCommand;
     private readonly DelegateCommand _resetChartZoomCommand;
     private readonly DelegateCommand _reloadCommand;
+    private readonly DelegateCommand _selectTimeframeCommand;
+    private readonly DelegateCommand _startTransactionCommand;
 
     private IReadOnlyList<AssetTransactionRowViewModel> _allTransactions = [];
     private string _searchQuery = string.Empty;
@@ -29,7 +34,7 @@ public sealed class AssetDetailsViewModel : ViewModelBase
     private bool _isNotFound;
     private bool _hasError;
     private string _errorText = string.Empty;
-    private string _selectedTimeframe = "1д";
+    private string _selectedTimeframe = DefaultTimeframe;
     private int _candlesVisibleStartIndex;
     private int _candlesVisibleEndIndex;
 
@@ -42,9 +47,16 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         _assetDetailsService = assetDetailsService;
 
         Timeframes = new ObservableCollection<string> { "1ч", "1д", "7д", "30д", "1г" };
+        TimeframeOptions = new ObservableCollection<TimeframeOptionViewModel>(
+            Timeframes.Select(item => new TimeframeOptionViewModel(item, string.Equals(item, DefaultTimeframe, StringComparison.OrdinalIgnoreCase))));
+
         Candles = new ObservableCollection<CandlestickPointViewModel>();
         BasicMetrics = new ObservableCollection<AssetMetricItemViewModel>();
         RiskMetrics = new ObservableCollection<AssetMetricItemViewModel>();
+        TechnicalIndicators = new ObservableCollection<AssetMetricItemViewModel>();
+        RiskManagementMetrics = new ObservableCollection<AssetMetricItemViewModel>();
+        ContextMetrics = new ObservableCollection<AssetMetricItemViewModel>();
+        MarketDynamicsMetrics = new ObservableCollection<AssetMetricItemViewModel>();
         VisibleTransactions = new ObservableCollection<AssetTransactionRowViewModel>();
 
         _sortByDateCommand = new DelegateCommand(_ => SortBy("date"));
@@ -52,8 +64,11 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         _sortByPriceCommand = new DelegateCommand(_ => SortBy("price"));
         _sortByQuantityCommand = new DelegateCommand(_ => SortBy("quantity"));
         _sortByAmountCommand = new DelegateCommand(_ => SortBy("amount"));
+        _sortByStatusCommand = new DelegateCommand(_ => SortBy("status"));
         _resetChartZoomCommand = new DelegateCommand(_ => ResetCandlesVisibleRange());
         _reloadCommand = new DelegateCommand(_ => _ = LoadByRouteAsync(_navigation.Current));
+        _selectTimeframeCommand = new DelegateCommand(SelectTimeframe);
+        _startTransactionCommand = new DelegateCommand(_ => NavigateToManualTransaction());
 
         _navigation.RouteChanged += route =>
         {
@@ -74,11 +89,21 @@ public sealed class AssetDetailsViewModel : ViewModelBase
 
     public ObservableCollection<string> Timeframes { get; }
 
+    public ObservableCollection<TimeframeOptionViewModel> TimeframeOptions { get; }
+
     public ObservableCollection<CandlestickPointViewModel> Candles { get; }
 
     public ObservableCollection<AssetMetricItemViewModel> BasicMetrics { get; }
 
     public ObservableCollection<AssetMetricItemViewModel> RiskMetrics { get; }
+
+    public ObservableCollection<AssetMetricItemViewModel> TechnicalIndicators { get; }
+
+    public ObservableCollection<AssetMetricItemViewModel> RiskManagementMetrics { get; }
+
+    public ObservableCollection<AssetMetricItemViewModel> ContextMetrics { get; }
+
+    public ObservableCollection<AssetMetricItemViewModel> MarketDynamicsMetrics { get; }
 
     public ObservableCollection<AssetTransactionRowViewModel> VisibleTransactions { get; }
 
@@ -92,13 +117,21 @@ public sealed class AssetDetailsViewModel : ViewModelBase
 
     public ICommand SortByAmountCommand => _sortByAmountCommand;
 
+    public ICommand SortByStatusCommand => _sortByStatusCommand;
+
     public ICommand ResetChartZoomCommand => _resetChartZoomCommand;
 
     public ICommand ReloadCommand => _reloadCommand;
 
+    public ICommand SelectTimeframeCommand => _selectTimeframeCommand;
+
+    public ICommand StartTransactionCommand => _startTransactionCommand;
+
     public string AssetName { get; private set; } = "Актив";
 
     public string AssetTicker { get; private set; } = "---";
+
+    public string AssetTickerMutedText => $"({AssetTicker})";
 
     public string LogoText { get; private set; } = "A";
 
@@ -122,15 +155,48 @@ public sealed class AssetDetailsViewModel : ViewModelBase
 
     public string MarketDataSource { get; private set; } = "Источник: PostgreSQL";
 
+    public string BlackSwanDropText { get; private set; } = "—";
+
+    public string VarText { get; private set; } = "—";
+
+    public string CvarText { get; private set; } = "—";
+
+    public string SharpeText { get; private set; } = "—";
+
+    public string SortinoText { get; private set; } = "—";
+
+    public string CalmarText { get; private set; } = "—";
+
+    public string HurstText { get; private set; } = "—";
+
+    public string ZScoreText { get; private set; } = "—";
+
+    public string CorrelationText { get; private set; } = "—";
+
+    public string BetaText { get; private set; } = "—";
+
+    public string SpreadText { get; private set; } = "—";
+
+    public string HistoricalVolatilityText { get; private set; } = "—";
+
+    public string ImpliedVolatilityText { get; private set; } = "—";
+
+    public string SkewnessText { get; private set; } = "—";
+
+    public string KurtosisText { get; private set; } = "—";
+
+    public string DepthText { get; private set; } = "—";
+
     public string SelectedTimeframe
     {
         get => _selectedTimeframe;
         set
         {
-            string normalized = string.IsNullOrWhiteSpace(value) ? "1д" : value.Trim();
+            string normalized = NormalizeTimeframe(value);
 
             if (SetProperty(ref _selectedTimeframe, normalized))
             {
+                UpdateTimeframeSelection();
                 _ = LoadByRouteAsync(_navigation.Current);
             }
         }
@@ -220,15 +286,16 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         RuntimeDataInvalidation invalidation = new();
         AssetDetailsViewModel viewModel = new(navigation, new DesignAssetDetailsService(), invalidation);
 
-        navigation.Register(new AppRoute(AppRoutes.AssetDetails, "Детальная информация", "Все активы / Apple Inc."));
+        navigation.Register(new AppRoute(AppRoutes.AssetDetails, "Детальная информация", "Все активы / NVIDIA"));
+        navigation.Register(new AppRoute(AppRoutes.ManualImport, "Ручной импорт", "Все активы / Ручной импорт"));
         navigation.Navigate(
             AppRoutes.AssetDetails,
             new Dictionary<string, string>
             {
                 ["assetId"] = DesignAssetDetailsService.PrimaryAssetId.ToString()
             },
-            "Apple Inc.",
-            "Все активы / Apple Inc.");
+            "NVIDIA",
+            "Все активы / Основной портфель / NVIDIA");
 
         return viewModel;
     }
@@ -323,26 +390,88 @@ public sealed class AssetDetailsViewModel : ViewModelBase
             RiskMetrics.Add(AssetMetricItemViewModel.FromMetric(metric));
         }
 
+        RebuildMetricHighlights();
+
         _allTransactions = model.Transactions
             .Select(AssetTransactionRowViewModel.FromTransaction)
             .ToArray();
 
         ApplyTransactionFilters();
-
-        OnPropertyChanged(nameof(AssetName));
-        OnPropertyChanged(nameof(AssetTicker));
-        OnPropertyChanged(nameof(LogoText));
-        OnPropertyChanged(nameof(PriceText));
-        OnPropertyChanged(nameof(DeltaText));
-        OnPropertyChanged(nameof(IsDeltaPositive));
-        OnPropertyChanged(nameof(AssetCurrency));
-        OnPropertyChanged(nameof(MarketCapText));
-        OnPropertyChanged(nameof(FdvText));
-        OnPropertyChanged(nameof(PeText));
-        OnPropertyChanged(nameof(Volume24hText));
-        OnPropertyChanged(nameof(SupplyText));
-        OnPropertyChanged(nameof(MarketDataSource));
+        NotifyAssetPropertiesChanged();
         RefreshStateProperties();
+    }
+
+    private void RebuildMetricHighlights()
+    {
+        TechnicalIndicators.Clear();
+        RiskManagementMetrics.Clear();
+        ContextMetrics.Clear();
+        MarketDynamicsMetrics.Clear();
+
+        AssetMetricItemViewModel sma = FindMetric(BasicMetrics, "SMA", "Скольз")
+            ?? new AssetMetricItemViewModel("SMA 50/200", "—", "Тренд по скользящим средним", "neutral");
+        AssetMetricItemViewModel rsi = FindMetric(BasicMetrics, "RSI")
+            ?? new AssetMetricItemViewModel("RSI", "—", "Перекупленность / перепроданность", "neutral");
+        AssetMetricItemViewModel atr = FindMetric(BasicMetrics, "ATR")
+            ?? new AssetMetricItemViewModel("ATR", "—", "Средний истинный диапазон", "neutral");
+        AssetMetricItemViewModel turnover = FindMetric(BasicMetrics, "Turnover", "Оборач")
+            ?? new AssetMetricItemViewModel("Turnover", "—", "Объем торгов / капитализация", "neutral");
+
+        TechnicalIndicators.Add(sma);
+        TechnicalIndicators.Add(rsi);
+        TechnicalIndicators.Add(atr);
+        TechnicalIndicators.Add(turnover);
+
+        AssetMetricItemViewModel maxDrawdown = FindMetric(RiskMetrics, "Max Drawdown", "MDD")
+            ?? new AssetMetricItemViewModel("Max Drawdown", "—", "Максимальная историческая просадка", "warning");
+        AssetMetricItemViewModel var = FindMetric(RiskMetrics, "VaR")
+            ?? new AssetMetricItemViewModel("VaR 95%", "—", "Ожидаемый дневной убыток", "warning");
+        AssetMetricItemViewModel cvar = FindMetric(RiskMetrics, "CVaR")
+            ?? new AssetMetricItemViewModel("CVaR", "—", "Ожидаемый хвостовой убыток", "warning");
+        AssetMetricItemViewModel sharpe = FindMetric(RiskMetrics, "Sharpe", "Шарп")
+            ?? new AssetMetricItemViewModel("Sharpe", "—", "Доходность на единицу риска", "neutral");
+        AssetMetricItemViewModel sortino = FindMetric(RiskMetrics, "Sortino", "Сортино")
+            ?? new AssetMetricItemViewModel("Sortino", "—", "Доходность на негативную волатильность", "neutral");
+        AssetMetricItemViewModel calmar = FindMetric(RiskMetrics, "Calmar", "Кальмар")
+            ?? new AssetMetricItemViewModel("Calmar", "—", "Доходность относительно максимальной просадки", "neutral");
+        AssetMetricItemViewModel hurst = FindMetric(RiskMetrics, "Hurst", "Херст")
+            ?? new AssetMetricItemViewModel("Hurst", "—", "Оценка трендовости актива", "neutral");
+        AssetMetricItemViewModel zScore = FindMetric(RiskMetrics, "Z-Score", "Z Score")
+            ?? new AssetMetricItemViewModel("Z-Score", "—", "Отклонение цены от средней", "neutral");
+        AssetMetricItemViewModel beta = FindMetric(RiskMetrics, "Beta", "Бета")
+            ?? new AssetMetricItemViewModel("Beta", "—", "Чувствительность к рынку", "neutral");
+        AssetMetricItemViewModel spread = FindMetric(RiskMetrics, "Spread", "Спред")
+            ?? new AssetMetricItemViewModel("Spread", "—", "Оценка торгового спреда", "neutral");
+
+        BlackSwanDropText = ToNegativePercentText(maxDrawdown.Value);
+        VarText = var.Value;
+        CvarText = cvar.Value;
+        SharpeText = sharpe.Value;
+        SortinoText = sortino.Value;
+        CalmarText = calmar.Value;
+        HurstText = hurst.Value;
+        ZScoreText = zScore.Value;
+        BetaText = beta.Value;
+        SpreadText = spread.Value;
+
+        RiskManagementMetrics.Add(maxDrawdown);
+        RiskManagementMetrics.Add(var);
+        RiskManagementMetrics.Add(cvar);
+        RiskManagementMetrics.Add(new AssetMetricItemViewModel("Skew", SkewnessText, "Асимметрия распределения", "neutral"));
+        RiskManagementMetrics.Add(new AssetMetricItemViewModel("Kurtosis", KurtosisText, "Толстые хвосты риска", "neutral"));
+
+        ContextMetrics.Add(hurst);
+        ContextMetrics.Add(zScore);
+        ContextMetrics.Add(new AssetMetricItemViewModel("Корреляция", CorrelationText, "Связь с базовым рынком", "neutral"));
+
+        MarketDynamicsMetrics.Add(new AssetMetricItemViewModel("Оборот", turnover.Value, turnover.Hint, turnover.Severity));
+        MarketDynamicsMetrics.Add(spread);
+        MarketDynamicsMetrics.Add(beta);
+        MarketDynamicsMetrics.Add(new AssetMetricItemViewModel("HV", HistoricalVolatilityText, "Историческая волатильность", "neutral"));
+        MarketDynamicsMetrics.Add(new AssetMetricItemViewModel("IV", ImpliedVolatilityText, "Ожидаемая волатильность", "neutral"));
+        MarketDynamicsMetrics.Add(new AssetMetricItemViewModel("Depth", DepthText, "Глубина рынка", "neutral"));
+
+        NotifyMetricHighlightPropertiesChanged();
     }
 
     private void ClearData()
@@ -350,6 +479,10 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         Candles.Clear();
         BasicMetrics.Clear();
         RiskMetrics.Clear();
+        TechnicalIndicators.Clear();
+        RiskManagementMetrics.Clear();
+        ContextMetrics.Clear();
+        MarketDynamicsMetrics.Clear();
         VisibleTransactions.Clear();
         _allTransactions = [];
 
@@ -366,20 +499,25 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         Volume24hText = "—";
         SupplyText = "—";
         MarketDataSource = "Источник: PostgreSQL";
+        BlackSwanDropText = "—";
+        VarText = "—";
+        CvarText = "—";
+        SharpeText = "—";
+        SortinoText = "—";
+        CalmarText = "—";
+        HurstText = "—";
+        ZScoreText = "—";
+        CorrelationText = "—";
+        BetaText = "—";
+        SpreadText = "—";
+        HistoricalVolatilityText = "—";
+        ImpliedVolatilityText = "—";
+        SkewnessText = "—";
+        KurtosisText = "—";
+        DepthText = "—";
 
-        OnPropertyChanged(nameof(AssetName));
-        OnPropertyChanged(nameof(AssetTicker));
-        OnPropertyChanged(nameof(LogoText));
-        OnPropertyChanged(nameof(PriceText));
-        OnPropertyChanged(nameof(DeltaText));
-        OnPropertyChanged(nameof(IsDeltaPositive));
-        OnPropertyChanged(nameof(AssetCurrency));
-        OnPropertyChanged(nameof(MarketCapText));
-        OnPropertyChanged(nameof(FdvText));
-        OnPropertyChanged(nameof(PeText));
-        OnPropertyChanged(nameof(Volume24hText));
-        OnPropertyChanged(nameof(SupplyText));
-        OnPropertyChanged(nameof(MarketDataSource));
+        NotifyAssetPropertiesChanged();
+        NotifyMetricHighlightPropertiesChanged();
         RefreshStateProperties();
     }
 
@@ -392,8 +530,41 @@ public sealed class AssetDetailsViewModel : ViewModelBase
             return;
         }
 
-        CandlesVisibleStartIndex = Math.Max(0, Candles.Count - 48);
+        CandlesVisibleStartIndex = Math.Max(0, Candles.Count - 72);
         CandlesVisibleEndIndex = Candles.Count - 1;
+    }
+
+    private void SelectTimeframe(object? parameter)
+    {
+        string? value = parameter switch
+        {
+            TimeframeOptionViewModel option => option.Label,
+            string text => text,
+            _ => null
+        };
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        SelectedTimeframe = value;
+    }
+
+    private void UpdateTimeframeSelection()
+    {
+        foreach (TimeframeOptionViewModel option in TimeframeOptions)
+        {
+            option.IsSelected = string.Equals(option.Label, SelectedTimeframe, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    private void NavigateToManualTransaction()
+    {
+        _navigation.Navigate(
+            AppRoutes.ManualImport,
+            titleOverride: "Новая транзакция",
+            breadcrumbOverride: $"Все активы / {AssetName} / Новая транзакция");
     }
 
     private void SortBy(string key)
@@ -445,6 +616,10 @@ public sealed class AssetDetailsViewModel : ViewModelBase
                 ? query.OrderByDescending(item => item.Amount)
                 : query.OrderBy(item => item.Amount),
 
+            "status" => _sortDescending
+                ? query.OrderByDescending(item => item.StatusText, StringComparer.OrdinalIgnoreCase)
+                : query.OrderBy(item => item.StatusText, StringComparer.OrdinalIgnoreCase),
+
             _ => _sortDescending
                 ? query.OrderByDescending(item => item.Date)
                 : query.OrderBy(item => item.Date)
@@ -458,6 +633,83 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         }
 
         RefreshStateProperties();
+    }
+
+    private static AssetMetricItemViewModel? FindMetric(
+        IEnumerable<AssetMetricItemViewModel> metrics,
+        params string[] tokens)
+    {
+        return metrics.FirstOrDefault(metric => tokens.Any(token =>
+            metric.Label.Contains(token, StringComparison.OrdinalIgnoreCase)
+            || metric.Hint.Contains(token, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static string NormalizeTimeframe(string? value)
+    {
+        string normalized = string.IsNullOrWhiteSpace(value) ? DefaultTimeframe : value.Trim();
+        return normalized switch
+        {
+            "1h" or "1H" => "1ч",
+            "1d" or "1D" => "1д",
+            "7d" or "7D" => "7д",
+            "30d" or "30D" => "30д",
+            "1y" or "1Y" => "1г",
+            _ => normalized
+        };
+    }
+
+    private static string ToNegativePercentText(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value == "—")
+        {
+            return "—";
+        }
+
+        string trimmed = value.Trim();
+        if (trimmed.StartsWith("-", StringComparison.Ordinal))
+        {
+            return trimmed;
+        }
+
+        return $"-{trimmed}";
+    }
+
+    private void NotifyAssetPropertiesChanged()
+    {
+        OnPropertyChanged(nameof(AssetName));
+        OnPropertyChanged(nameof(AssetTicker));
+        OnPropertyChanged(nameof(AssetTickerMutedText));
+        OnPropertyChanged(nameof(LogoText));
+        OnPropertyChanged(nameof(PriceText));
+        OnPropertyChanged(nameof(DeltaText));
+        OnPropertyChanged(nameof(IsDeltaPositive));
+        OnPropertyChanged(nameof(AssetCurrency));
+        OnPropertyChanged(nameof(MarketCapText));
+        OnPropertyChanged(nameof(FdvText));
+        OnPropertyChanged(nameof(PeText));
+        OnPropertyChanged(nameof(Volume24hText));
+        OnPropertyChanged(nameof(SupplyText));
+        OnPropertyChanged(nameof(MarketDataSource));
+    }
+
+    private void NotifyMetricHighlightPropertiesChanged()
+    {
+        OnPropertyChanged(nameof(BlackSwanDropText));
+        OnPropertyChanged(nameof(VarText));
+        OnPropertyChanged(nameof(CvarText));
+        OnPropertyChanged(nameof(SharpeText));
+        OnPropertyChanged(nameof(SortinoText));
+        OnPropertyChanged(nameof(CalmarText));
+        OnPropertyChanged(nameof(HurstText));
+        OnPropertyChanged(nameof(ZScoreText));
+        OnPropertyChanged(nameof(CorrelationText));
+        OnPropertyChanged(nameof(BetaText));
+        OnPropertyChanged(nameof(SpreadText));
+        OnPropertyChanged(nameof(HistoricalVolatilityText));
+        OnPropertyChanged(nameof(ImpliedVolatilityText));
+        OnPropertyChanged(nameof(SkewnessText));
+        OnPropertyChanged(nameof(KurtosisText));
+        OnPropertyChanged(nameof(DepthText));
     }
 
     private void RefreshStateProperties()
@@ -494,70 +746,70 @@ public sealed class AssetDetailsViewModel : ViewModelBase
             string timeframe,
             CancellationToken cancellationToken = default)
         {
-            DateTimeOffset start = DateTimeOffset.UtcNow.AddDays(-10);
+            DateTimeOffset start = DateTimeOffset.UtcNow.AddDays(-45);
 
-            AssetDetailsCandle[] candles = Enumerable.Range(0, 48)
+            AssetDetailsCandle[] candles = Enumerable.Range(0, 96)
                 .Select(index =>
                 {
-                    decimal basePrice = 180m + index * 0.18m + (decimal)Math.Sin(index * 0.65d) * 2.1m;
+                    decimal basePrice = 760m + index * 1.05m + (decimal)Math.Sin(index * 0.42d) * 18.5m;
                     decimal open = basePrice;
-                    decimal close = basePrice + (index % 2 == 0 ? 1.15m : -0.82m);
-                    decimal high = Math.Max(open, close) + 1.7m;
-                    decimal low = Math.Min(open, close) - 1.3m;
+                    decimal close = basePrice + (index % 3 == 0 ? 13.6m : -8.2m);
+                    decimal high = Math.Max(open, close) + 15.7m;
+                    decimal low = Math.Min(open, close) - 13.3m;
 
                     return new AssetDetailsCandle(
-                        start.AddHours(index * 5),
+                        start.AddHours(index * 8),
                         open,
                         high,
                         low,
                         close,
-                        25_000m + index * 900m);
+                        25_000_000m + index * 900_000m);
                 })
                 .ToArray();
 
             AssetDetailsMetric[] basic =
             [
-                new("SMA 50/200", "Золотой крест", "Цена выше долгосрочной средней", AssetDetailsMetricSeverity.Good),
-                new("RSI", "57.8", "Нейтральная зона", AssetDetailsMetricSeverity.Good),
-                new("ATR", "3.42", "Умеренная волатильность", AssetDetailsMetricSeverity.Neutral),
-                new("Turnover", "7.4%", "Здоровая ликвидность", AssetDetailsMetricSeverity.Good)
+                new("SMA 50/200", "Золотой крест", "Тренд по скользящим средним", AssetDetailsMetricSeverity.Good),
+                new("RSI", "68.2", "Перекупленность", AssetDetailsMetricSeverity.Warning),
+                new("ATR", "24.15", "Высокая волатильность", AssetDetailsMetricSeverity.Neutral),
+                new("Turnover", "2.4%", "Объем торгов / капитализация", AssetDetailsMetricSeverity.Neutral)
             ];
 
             AssetDetailsMetric[] risk =
             [
-                new("Max Drawdown", "18.3%", "Максимальная историческая просадка", AssetDetailsMetricSeverity.Warning),
-                new("VaR 95%", "3.9%", "Историческая оценка дневного риска", AssetDetailsMetricSeverity.Warning),
-                new("CVaR", "5.8%", "Средний хвостовой убыток", AssetDetailsMetricSeverity.Warning),
-                new("Sharpe", "1.21", "Доходность на единицу риска", AssetDetailsMetricSeverity.Good),
-                new("Sortino", "1.47", "Доходность на негативную волатильность", AssetDetailsMetricSeverity.Good),
-                new("Calmar", "0.93", "Доходность к просадке", AssetDetailsMetricSeverity.Neutral),
-                new("Hurst", "0.58", "Трендовость ряда", AssetDetailsMetricSeverity.Good),
-                new("Z-Score", "+1.07", "Отклонение от средней", AssetDetailsMetricSeverity.Neutral),
-                new("Beta", "1.12", "Чувствительность к рынку", AssetDetailsMetricSeverity.Neutral),
-                new("Spread", "0.12%", "Оценка торгового спреда", AssetDetailsMetricSeverity.Good)
+                new("Max Drawdown", "14.2%", "Максимальная историческая просадка", AssetDetailsMetricSeverity.Warning),
+                new("VaR 95%", "3.14%", "Ожидаемый дневной убыток в нормальных условиях", AssetDetailsMetricSeverity.Warning),
+                new("CVaR", "4.82%", "Ожидаемый убыток в хвостовых сценариях", AssetDetailsMetricSeverity.Warning),
+                new("Sharpe", "2.84", "Доходность на единицу риска", AssetDetailsMetricSeverity.Good),
+                new("Sortino", "3.12", "Доходность на негативную волатильность", AssetDetailsMetricSeverity.Good),
+                new("Calmar", "1.45", "Доходность относительно максимальной просадки", AssetDetailsMetricSeverity.Good),
+                new("Hurst", "0.68", "Оценка трендовости актива", AssetDetailsMetricSeverity.Good),
+                new("Z-Score", "+2.14", "Отклонение цены от средней", AssetDetailsMetricSeverity.Warning),
+                new("Beta", "1.68", "Чувствительность к рынку", AssetDetailsMetricSeverity.Warning),
+                new("Spread", "0.02%", "Оценка торгового спреда", AssetDetailsMetricSeverity.Good)
             ];
 
             AssetDetailsTransaction[] transactions =
             [
-                new(Guid.NewGuid(), DateTimeOffset.UtcNow.AddDays(-2), "Покупка", 186.20m, 2m, 372.40m, 0m, "USD", "Completed"),
-                new(Guid.NewGuid(), DateTimeOffset.UtcNow.AddDays(-5), "Покупка", 184.30m, 1.5m, 276.45m, 0m, "USD", "Completed"),
-                new(Guid.NewGuid(), DateTimeOffset.UtcNow.AddDays(-10), "Продажа", 188.10m, 0.7m, 131.67m, 0m, "USD", "Completed")
+                new(Guid.NewGuid(), new DateTimeOffset(2026, 3, 26, 12, 0, 0, TimeSpan.Zero), "Покупка", 842.10m, 120m, 101_052m, 12.40m, "USD", "Completed"),
+                new(Guid.NewGuid(), new DateTimeOffset(2026, 3, 25, 12, 0, 0, TimeSpan.Zero), "Покупка", 815.45m, 50m, 40_772.50m, 8.20m, "USD", "Completed"),
+                new(Guid.NewGuid(), new DateTimeOffset(2026, 3, 24, 12, 0, 0, TimeSpan.Zero), "Продажа", 732.18m, 45m, 32_948.10m, 14.50m, "USD", "Completed")
             ];
 
             AssetDetailsReadModel model = new(
                 PrimaryAssetId,
-                "Apple Inc.",
-                "AAPL",
-                "AP",
-                "$186.43",
-                "↗ +0.84%",
+                "NVIDIA Corp.",
+                "NVDA",
+                "NV",
+                "$875.28",
+                "↗ +4.21%",
                 true,
                 "USD",
-                "$2.89T",
-                "$2.94T",
-                "28.4",
-                "$81.2B",
-                "15.6B AAPL",
+                "$2.16T",
+                "$2.21T",
+                "74.2",
+                "$42.8B",
+                "2.47B NVDA",
                 "Источник: Finnhub + PostgreSQL",
                 candles,
                 basic,
@@ -566,6 +818,19 @@ public sealed class AssetDetailsViewModel : ViewModelBase
 
             return Task.FromResult<AssetDetailsReadModel?>(model);
         }
+    }
+}
+
+public sealed class TimeframeOptionViewModel(string label, bool isSelected) : ViewModelBase
+{
+    private bool _isSelected = isSelected;
+
+    public string Label { get; } = label;
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => SetProperty(ref _isSelected, value);
     }
 }
 
@@ -606,15 +871,17 @@ public sealed record AssetTransactionRowViewModel(
     string Currency,
     string Status)
 {
-    public string DateText => Date.LocalDateTime.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
+    public string DateText => Date.LocalDateTime.ToString("dd MMM, yyyy", CultureInfo.GetCultureInfo("ru-RU"));
 
-    public string PriceText => $"{Price:N2} {Currency}";
+    public string PriceText => $"${Price:N2}";
 
-    public string QuantityText => $"{Quantity:N4}";
+    public string QuantityText => $"{Quantity:N2} {Currency}";
 
-    public string AmountText => $"{Amount:N2} {Currency}";
+    public string AmountText => $"${Amount:N2}";
 
-    public string FeeText => $"{FeeAmount:N2} {Currency}";
+    public string FeeText => $"${FeeAmount:N2}";
+
+    public string StatusText => string.IsNullOrWhiteSpace(Status) ? "Completed" : Status;
 
     public bool IsBuy => TypeLabel.Contains("покуп", StringComparison.OrdinalIgnoreCase)
         || TypeLabel.Contains("buy", StringComparison.OrdinalIgnoreCase);

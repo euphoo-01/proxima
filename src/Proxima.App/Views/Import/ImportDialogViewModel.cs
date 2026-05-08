@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
 using System.Windows.Input;
 using Proxima.App.Navigation;
 using Proxima.App.ViewModels;
@@ -60,6 +62,7 @@ public sealed class ImportDialogViewModel : ViewModelBase
             if (SetProperty(ref _isDragOver, value))
             {
                 OnPropertyChanged(nameof(CurrentState));
+                RaiseComputedStateProperties();
             }
         }
     }
@@ -73,6 +76,7 @@ public sealed class ImportDialogViewModel : ViewModelBase
             {
                 _parseFileCommand.RaiseCanExecuteChanged();
                 OnPropertyChanged(nameof(CurrentState));
+                RaiseComputedStateProperties();
             }
         }
     }
@@ -91,6 +95,7 @@ public sealed class ImportDialogViewModel : ViewModelBase
                 OnPropertyChanged(nameof(IsCsvFile));
                 OnPropertyChanged(nameof(IsPdfFile));
                 OnPropertyChanged(nameof(IsUnknownFile));
+                RaiseComputedStateProperties();
             }
         }
     }
@@ -109,6 +114,7 @@ public sealed class ImportDialogViewModel : ViewModelBase
             if (SetProperty(ref _parseFailed, value))
             {
                 OnPropertyChanged(nameof(CurrentState));
+                RaiseComputedStateProperties();
             }
         }
     }
@@ -121,6 +127,7 @@ public sealed class ImportDialogViewModel : ViewModelBase
             if (SetProperty(ref _hasValidationWarnings, value))
             {
                 OnPropertyChanged(nameof(CurrentState));
+                RaiseComputedStateProperties();
             }
         }
     }
@@ -141,12 +148,28 @@ public sealed class ImportDialogViewModel : ViewModelBase
                         ? "file_selected"
                         : "idle";
 
+    public string CurrentStateLabel => CurrentState switch
+    {
+        "parsing" => "Идёт проверка файла",
+        "parse_failed" => "Нужен ручной импорт",
+        "validation_warnings" => "Есть строки для проверки",
+        "drag_over" => "Файл готов к загрузке",
+        "file_selected" => "Файл выбран",
+        _ => "Ожидаем файл"
+    };
+
     public string SelectedFileType => Path.GetExtension(FilePath).ToLowerInvariant() switch
     {
         ".pdf" => "PDF",
         ".csv" => "CSV",
         _ => "UNKNOWN"
     };
+
+    public string SelectedFileTypeBadge => HasFileSelected ? $"Формат: {SelectedFileType}" : "Файл не выбран";
+
+    public string SelectedFileName => HasFileSelected ? Path.GetFileName(FilePath) : "Нет выбранного файла";
+
+    public string ParseButtonText => IsParsing ? "Проверяем..." : "Проверить файл";
 
     public bool IsCsvFile => SelectedFileType == "CSV";
 
@@ -243,6 +266,14 @@ public sealed class ImportDialogViewModel : ViewModelBase
         HasValidationWarnings = false;
         WarningItems.Clear();
         StatusMessage = "Перетащите CSV/PDF или укажите путь к файлу.";
+    }
+
+    private void RaiseComputedStateProperties()
+    {
+        OnPropertyChanged(nameof(CurrentStateLabel));
+        OnPropertyChanged(nameof(SelectedFileTypeBadge));
+        OnPropertyChanged(nameof(SelectedFileName));
+        OnPropertyChanged(nameof(ParseButtonText));
     }
 
     private sealed class DelegateCommand(Action<object?> execute) : ICommand
