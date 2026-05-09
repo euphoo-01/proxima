@@ -165,7 +165,7 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
             e.Property(x => x.Language).HasMaxLength(16);
             e.Property(x => x.UiScale).HasPrecision(10, 4);
             e.Property(x => x.QuoteProvider).HasMaxLength(64);
-            e.Property(x => x.FinnhubApiKeyProtected).HasMaxLength(2048);
+            e.Property(x => x.TwelveDataApiKeyProtected).HasMaxLength(2048);
             e.Property(x => x.CurrencyProvider).HasMaxLength(64);
             e.HasOne<UserEntity>().WithMany().HasForeignKey(x => x.OwnerUserId).OnDelete(DeleteBehavior.Cascade);
         });

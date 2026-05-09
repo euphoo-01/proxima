@@ -108,9 +108,9 @@ public sealed class UserSettingsEntity
     public string PreferredCurrency { get; set; } = "USD";
     public string Language { get; set; } = "RU";
     public decimal UiScale { get; set; }
-    public string QuoteProvider { get; set; } = "Mock";
+    public string QuoteProvider { get; set; } = "TwelveData";
     public int QuoteRefreshMinutes { get; set; }
-    public string FinnhubApiKeyProtected { get; set; } = string.Empty;
+    public string TwelveDataApiKeyProtected { get; set; } = string.Empty;
     public string CurrencyProvider { get; set; } = "Mock";
     public bool SyncEnabled { get; set; }
     public DateTimeOffset? LastSnapshotAt { get; set; }

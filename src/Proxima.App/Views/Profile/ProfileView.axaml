@@ -445,8 +445,8 @@
             <Border Grid.Row="10" Classes="surface" IsVisible="{Binding IsApiPanelOpen}">
                 <Grid ColumnDefinitions="*,20,Auto" RowDefinitions="Auto,14,Auto,10,Auto">
                     <StackPanel Spacing="6">
-                        <TextBlock Classes="section-title" Text="Finnhub API key" />
-                        <TextBlock Classes="muted" Text="Ключ хранится локально в настройках и используется провайдером котировок Finnhub." TextWrapping="Wrap" />
+                        <TextBlock Classes="section-title" Text="Twelve Data API key" />
+                        <TextBlock Classes="muted" Text="Ключ хранится локально в настройках и используется провайдером котировок Twelve Data." TextWrapping="Wrap" />
                     </StackPanel>
 
                     <TextBox
@@ -454,17 +454,17 @@
                         Grid.Column="0"
                         Classes="profile-input"
                         PasswordChar="●"
-                        Watermark="Вставьте Finnhub API key"
-                        Text="{Binding FinnhubApiKey, Mode=TwoWay}" />
+                        Watermark="Вставьте Twelve Data API key"
+                        Text="{Binding TwelveDataApiKey, Mode=TwoWay}" />
 
                     <Button
                         Grid.Row="2"
                         Grid.Column="2"
                         Classes="dark-action"
-                        Command="{Binding SaveFinnhubKeyCommand}"
+                        Command="{Binding SaveTwelveDataKeyCommand}"
                         Content="Сохранить ключ" />
 
-                    <TextBlock Grid.Row="4" Classes="muted" Text="{Binding FinnhubKeyStatus}" />
+                    <TextBlock Grid.Row="4" Classes="muted" Text="{Binding TwelveDataKeyStatus}" />
                 </Grid>
             </Border>
 

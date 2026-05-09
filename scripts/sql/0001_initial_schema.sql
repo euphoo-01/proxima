@@ -159,7 +159,7 @@ create table if not exists user_settings (
   ui_scale numeric(10,4) not null,
   quote_provider text not null,
   quote_refresh_minutes int not null,
-  finnhub_api_key_protected text not null,
+  twelve_data_api_key_protected text not null,
   currency_provider text not null,
   sync_enabled boolean not null,
   last_snapshot_at timestamptz null
@@ -170,12 +170,31 @@ alter table user_settings add column if not exists login text not null default '
 alter table user_settings add column if not exists preferred_currency varchar(8) not null default 'USD';
 alter table user_settings add column if not exists language text not null default 'RU';
 alter table user_settings add column if not exists ui_scale numeric(10,4) not null default 1.0;
-alter table user_settings add column if not exists quote_provider text not null default 'Mock';
+alter table user_settings add column if not exists quote_provider text not null default 'TwelveData';
 alter table user_settings add column if not exists quote_refresh_minutes int not null default 15;
-alter table user_settings add column if not exists finnhub_api_key_protected text not null default '';
+alter table user_settings add column if not exists twelve_data_api_key_protected text not null default '';
 alter table user_settings add column if not exists currency_provider text not null default 'Mock';
 alter table user_settings add column if not exists sync_enabled boolean not null default false;
 alter table user_settings add column if not exists last_snapshot_at timestamptz null;
+
+-- Compatibility cleanup for databases created before the Twelve Data provider migration.
+-- The old column had a NOT NULL constraint and can break inserts after the provider switch.
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'user_settings'
+      and column_name = 'finnhub_api_key_protected'
+  ) then
+    alter table user_settings drop column finnhub_api_key_protected;
+  end if;
+end $$;
+
+update user_settings
+set quote_provider = 'TwelveData'
+where quote_provider is null or quote_provider <> 'TwelveData';
 
 create table if not exists sync_snapshots (
   id uuid primary key,

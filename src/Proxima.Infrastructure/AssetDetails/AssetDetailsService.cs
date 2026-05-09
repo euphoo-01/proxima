@@ -15,7 +15,7 @@ public sealed class AssetDetailsService(
     ITransactionRepository transactionRepository,
     IQuoteCacheRepository quoteCacheRepository,
     IQuoteProvider quoteProvider,
-    FinnhubAssetMarketDataProvider marketDataProvider) : IAssetDetailsService
+    TwelveDataAssetMarketDataProvider marketDataProvider) : IAssetDetailsService
 {
     public async Task<AssetDetailsReadModel?> GetAsync(
         Guid assetId,
@@ -60,7 +60,7 @@ public sealed class AssetDetailsService(
             if (cachedQuote is null)
             {
                 throw new InvalidOperationException(string.IsNullOrWhiteSpace(latestQuote.Message)
-                    ? "Не удалось загрузить котировку Finnhub и локального кэша для актива нет."
+                    ? "Не удалось загрузить котировку Twelve Data и локального кэша для актива нет."
                     : latestQuote.Message);
             }
         }
@@ -90,7 +90,7 @@ public sealed class AssetDetailsService(
                 .ConfigureAwait(false);
         }
 
-        FinnhubAssetMarketData? marketData = await marketDataProvider
+        TwelveDataAssetMarketData? marketData = await marketDataProvider
             .TryLoadAsync(asset.Ticker, NormalizeTimeframe(timeframe), cancellationToken)
             .ConfigureAwait(false);
 
@@ -175,7 +175,7 @@ public sealed class AssetDetailsService(
                 : asset.Ticker.ToUpperInvariant();
 
         string source = marketData is not null
-            ? "Источник: Finnhub + PostgreSQL"
+            ? "Источник: Twelve Data + PostgreSQL"
             : cachedQuote is not null
                 ? $"Источник: {cachedQuote.Source} + PostgreSQL"
                 : "Источник: PostgreSQL + локальная оценка";

@@ -23,7 +23,7 @@ public sealed class ConfigurableQuoteProvider(
         {
             return QuoteProviderResult.Failure(
                 QuoteProviderErrorKind.Unauthorized,
-                "Пользователь не авторизован. Невозможно загрузить котировки Finnhub.");
+                "Пользователь не авторизован. Невозможно загрузить котировки Twelve Data.");
         }
 
         UserSettings? settings = await settingsService
@@ -34,26 +34,26 @@ public sealed class ConfigurableQuoteProvider(
         {
             return QuoteProviderResult.Failure(
                 QuoteProviderErrorKind.Unauthorized,
-                "Настройки профиля не инициализированы. Сохраните Finnhub API key в профиле.");
+                "Настройки профиля не инициализированы. Сохраните Twelve Data API key в профиле.");
         }
 
-        if (settings.QuoteProvider != QuoteProviderKind.Finnhub)
+        if (settings.QuoteProvider != QuoteProviderKind.TwelveData)
         {
             return QuoteProviderResult.Failure(
                 QuoteProviderErrorKind.Unauthorized,
-                "Провайдер котировок должен быть Finnhub. Сохраните Finnhub API key в профиле.");
+                "Провайдер котировок должен быть Twelve Data. Сохраните Twelve Data API key в профиле.");
         }
 
-        string apiKey = UnprotectApiKey(settings.FinnhubApiKeyProtected);
+        string apiKey = UnprotectApiKey(settings.TwelveDataApiKeyProtected);
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             return QuoteProviderResult.Failure(
                 QuoteProviderErrorKind.Unauthorized,
-                "Finnhub API key не задан. Откройте профиль, нажмите «API Ключи» и сохраните ключ Finnhub.");
+                "Twelve Data API key не задан. Откройте профиль, нажмите «API Ключи» и сохраните ключ Twelve Data.");
         }
 
-        FinnhubQuoteProvider finnhub = new(httpClient, apiKey);
-        return await finnhub
+        TwelveDataQuoteProvider provider = new(httpClient, apiKey);
+        return await provider
             .GetLatestQuoteAsync(ticker, currency, cancellationToken)
             .ConfigureAwait(false);
     }

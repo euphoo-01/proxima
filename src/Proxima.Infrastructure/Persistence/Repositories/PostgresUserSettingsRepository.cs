@@ -42,7 +42,7 @@ public sealed class PostgresUserSettingsRepository(IProximaUnitOfWorkFactory uow
             existing.UiScale = settings.UiScale;
             existing.QuoteProvider = settings.QuoteProvider.ToString();
             existing.QuoteRefreshMinutes = settings.QuoteRefreshMinutes;
-            existing.FinnhubApiKeyProtected = settings.FinnhubApiKeyProtected;
+            existing.TwelveDataApiKeyProtected = settings.TwelveDataApiKeyProtected;
             existing.CurrencyProvider = settings.CurrencyProvider.ToString();
             existing.SyncEnabled = settings.SyncEnabled;
             existing.LastSnapshotAt = settings.LastSnapshotAt;
@@ -120,12 +120,20 @@ public sealed class PostgresUserSettingsRepository(IProximaUnitOfWorkFactory uow
             x.PreferredCurrency,
             Enum.Parse<AppLanguage>(x.Language, true),
             x.UiScale,
-            Enum.Parse<QuoteProviderKind>(x.QuoteProvider, true),
+            ParseQuoteProvider(x.QuoteProvider),
             x.QuoteRefreshMinutes,
-            x.FinnhubApiKeyProtected,
+            x.TwelveDataApiKeyProtected,
             Enum.Parse<CurrencyProviderKind>(x.CurrencyProvider, true),
             x.SyncEnabled,
             x.LastSnapshotAt);
+    }
+
+    private static QuoteProviderKind ParseQuoteProvider(string value)
+    {
+        return Enum.TryParse(value, ignoreCase: true, out QuoteProviderKind parsed)
+            && Enum.IsDefined(typeof(QuoteProviderKind), parsed)
+            ? parsed
+            : QuoteProviderKind.TwelveData;
     }
 
     private static UserSettingsEntity ToEntity(UserSettings settings)
@@ -141,7 +149,7 @@ public sealed class PostgresUserSettingsRepository(IProximaUnitOfWorkFactory uow
             UiScale = settings.UiScale,
             QuoteProvider = settings.QuoteProvider.ToString(),
             QuoteRefreshMinutes = settings.QuoteRefreshMinutes,
-            FinnhubApiKeyProtected = settings.FinnhubApiKeyProtected,
+            TwelveDataApiKeyProtected = settings.TwelveDataApiKeyProtected,
             CurrencyProvider = settings.CurrencyProvider.ToString(),
             SyncEnabled = settings.SyncEnabled,
             LastSnapshotAt = settings.LastSnapshotAt,

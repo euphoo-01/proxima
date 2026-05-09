@@ -30,7 +30,7 @@ public sealed class ProfileViewModel : ViewModelBase
     private readonly AsyncCommand _addPortfolioCommand;
     private readonly AsyncCommand _archivePortfolioCommand;
     private readonly AsyncParameterCommand _savePortfolioCommand;
-    private readonly AsyncCommand _saveFinnhubKeyCommand;
+    private readonly AsyncCommand _saveTwelveDataKeyCommand;
     private readonly AsyncCommand _deleteAccountCommand;
 
     private string _displayName = string.Empty;
@@ -44,8 +44,8 @@ public sealed class ProfileViewModel : ViewModelBase
     private bool _isSaving;
     private bool _isApiPanelOpen;
     private bool _deleteConfirmationPending;
-    private string _finnhubApiKey = string.Empty;
-    private string _finnhubKeyStatus = "Ключ Finnhub не задан.";
+    private string _twelveDataApiKey = string.Empty;
+    private string _twelveDataKeyStatus = "Ключ Twelve Data не задан.";
     private string _statusMessage = string.Empty;
     private string _errorMessage = string.Empty;
 
@@ -73,7 +73,7 @@ public sealed class ProfileViewModel : ViewModelBase
         _addPortfolioCommand = new AsyncCommand(AddPortfolioAsync, () => IsFinancialConsultant && !IsBusy);
         _archivePortfolioCommand = new AsyncCommand(ArchivePortfolioAsync, () => IsFinancialConsultant && !IsBusy);
         _savePortfolioCommand = new AsyncParameterCommand(SavePortfolioAsync, parameter => parameter is ProfilePortfolioItem && !IsBusy);
-        _saveFinnhubKeyCommand = new AsyncCommand(SaveFinnhubKeyAsync, () => !IsBusy);
+        _saveTwelveDataKeyCommand = new AsyncCommand(SaveTwelveDataKeyAsync, () => !IsBusy);
         _deleteAccountCommand = new AsyncCommand(DeleteAccountAsync, () => !IsBusy);
 
         SelectPrivateInvestorCommand = new DelegateCommand(_ => SelectedRole = UserRole.PrivateInvestor);
@@ -114,7 +114,7 @@ public sealed class ProfileViewModel : ViewModelBase
 
     public ICommand SavePortfolioCommand => _savePortfolioCommand;
 
-    public ICommand SaveFinnhubKeyCommand => _saveFinnhubKeyCommand;
+    public ICommand SaveTwelveDataKeyCommand => _saveTwelveDataKeyCommand;
 
     public ICommand DeleteAccountCommand => _deleteAccountCommand;
 
@@ -253,16 +253,16 @@ public sealed class ProfileViewModel : ViewModelBase
         set => SetProperty(ref _isApiPanelOpen, value);
     }
 
-    public string FinnhubApiKey
+    public string TwelveDataApiKey
     {
-        get => _finnhubApiKey;
-        set => SetProperty(ref _finnhubApiKey, value);
+        get => _twelveDataApiKey;
+        set => SetProperty(ref _twelveDataApiKey, value);
     }
 
-    public string FinnhubKeyStatus
+    public string TwelveDataKeyStatus
     {
-        get => _finnhubKeyStatus;
-        private set => SetProperty(ref _finnhubKeyStatus, value);
+        get => _twelveDataKeyStatus;
+        private set => SetProperty(ref _twelveDataKeyStatus, value);
     }
 
     public string StatusMessage
@@ -397,9 +397,9 @@ public sealed class ProfileViewModel : ViewModelBase
             SelectedRole = settings.Role;
             LoadProfileExtrasFromDisk();
             LoadAvatarFromDisk();
-            FinnhubKeyStatus = string.IsNullOrWhiteSpace(settings.FinnhubApiKeyProtected)
-                ? "Ключ Finnhub не задан."
-                : "Ключ Finnhub сохранен.";
+            TwelveDataKeyStatus = string.IsNullOrWhiteSpace(settings.TwelveDataApiKeyProtected)
+                ? "Ключ Twelve Data не задан."
+                : "Ключ Twelve Data сохранен.";
 
             _userContext.UpdateRuntimeProfile(DisplayName, SelectedRole);
 
@@ -466,9 +466,9 @@ public sealed class ProfileViewModel : ViewModelBase
             DisplayName = result.Settings.DisplayName;
             PreferredCurrency = ForcedBaseCurrency;
             SelectedRole = result.Settings.Role;
-            FinnhubKeyStatus = string.IsNullOrWhiteSpace(result.Settings.FinnhubApiKeyProtected)
-                ? "Ключ Finnhub не задан."
-                : "Ключ Finnhub сохранен.";
+            TwelveDataKeyStatus = string.IsNullOrWhiteSpace(result.Settings.TwelveDataApiKeyProtected)
+                ? "Ключ Twelve Data не задан."
+                : "Ключ Twelve Data сохранен.";
 
             _userContext.UpdateRuntimeProfile(DisplayName, SelectedRole);
 
@@ -487,7 +487,7 @@ public sealed class ProfileViewModel : ViewModelBase
         }
     }
 
-    private async Task SaveFinnhubKeyAsync()
+    private async Task SaveTwelveDataKeyAsync()
     {
         IsSaving = true;
         ErrorMessage = string.Empty;
@@ -495,9 +495,9 @@ public sealed class ProfileViewModel : ViewModelBase
 
         try
         {
-            if (string.IsNullOrWhiteSpace(FinnhubApiKey))
+            if (string.IsNullOrWhiteSpace(TwelveDataApiKey))
             {
-                ErrorMessage = "Вставьте Finnhub API key.";
+                ErrorMessage = "Вставьте Twelve Data API key.";
                 return;
             }
 
@@ -515,24 +515,24 @@ public sealed class ProfileViewModel : ViewModelBase
                 ForcedBaseCurrency,
                 current.Language,
                 current.UiScale,
-                QuoteProviderKind.Finnhub,
+                QuoteProviderKind.TwelveData,
                 current.QuoteRefreshMinutes,
-                FinnhubApiKey,
+                TwelveDataApiKey,
                 current.CurrencyProvider,
                 current.SyncEnabled)).ConfigureAwait(true);
 
             if (!result.Succeeded || result.Settings is null)
             {
                 ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
-                    ? "Не удалось сохранить Finnhub API key."
+                    ? "Не удалось сохранить Twelve Data API key."
                     : result.Message;
 
                 return;
             }
 
-            FinnhubApiKey = string.Empty;
-            FinnhubKeyStatus = "Ключ Finnhub сохранен. Провайдер котировок переключен на Finnhub.";
-            _runtimeDataInvalidation.Invalidate("finnhub-api-key-saved");
+            TwelveDataApiKey = string.Empty;
+            TwelveDataKeyStatus = "Ключ Twelve Data сохранен. Провайдер котировок переключен на Twelve Data.";
+            _runtimeDataInvalidation.Invalidate("twelve-data-api-key-saved");
             StatusMessage = "API ключ сохранен.";
         }
         catch (Exception ex)
@@ -955,7 +955,7 @@ public sealed class ProfileViewModel : ViewModelBase
         _addPortfolioCommand.RaiseCanExecuteChanged();
         _archivePortfolioCommand.RaiseCanExecuteChanged();
         _savePortfolioCommand.RaiseCanExecuteChanged();
-        _saveFinnhubKeyCommand.RaiseCanExecuteChanged();
+        _saveTwelveDataKeyCommand.RaiseCanExecuteChanged();
         _deleteAccountCommand.RaiseCanExecuteChanged();
     }
 

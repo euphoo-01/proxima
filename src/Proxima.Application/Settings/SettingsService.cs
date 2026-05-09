@@ -20,7 +20,7 @@ public sealed class SettingsService(IUserSettingsRepository repository) : ISetti
             NormalizeCurrency(request.PreferredCurrency),
             AppLanguage.RU,
             1m,
-            QuoteProviderKind.Finnhub,
+            QuoteProviderKind.TwelveData,
             15,
             string.Empty,
             CurrencyProviderKind.Mock,
@@ -50,10 +50,10 @@ public sealed class SettingsService(IUserSettingsRepository repository) : ISetti
             return SettingsOperationResult.Failure("Настройки не инициализированы.");
         }
 
-        string protectedKey = current.FinnhubApiKeyProtected;
-        if (request.FinnhubApiKeyRaw is not null)
+        string protectedKey = current.TwelveDataApiKeyProtected;
+        if (request.TwelveDataApiKeyRaw is not null)
         {
-            protectedKey = Protect(request.FinnhubApiKeyRaw);
+            protectedKey = Protect(request.TwelveDataApiKeyRaw);
         }
 
         UserSettings updated = current with
@@ -65,7 +65,7 @@ public sealed class SettingsService(IUserSettingsRepository repository) : ISetti
             UiScale = request.UiScale,
             QuoteProvider = request.QuoteProvider,
             QuoteRefreshMinutes = request.QuoteRefreshMinutes,
-            FinnhubApiKeyProtected = protectedKey,
+            TwelveDataApiKeyProtected = protectedKey,
             CurrencyProvider = request.CurrencyProvider,
             SyncEnabled = request.SyncEnabled,
         };

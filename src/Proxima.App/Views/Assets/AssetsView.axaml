@@ -3,6 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:assets="using:Proxima.App.Views.Assets"
+    xmlns:market="using:Proxima.Application.MarketData"
     x:DataType="assets:AssetsViewModel">
 
     <UserControl.Styles>
@@ -120,6 +121,47 @@
         <Style Selector="TextBox.manual-input:focus">
             <Setter Property="BorderBrush" Value="#9FC7F5" />
             <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style Selector="ComboBox.manual-input">
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="#001629" />
+            <Setter Property="BorderBrush" Value="#FFFFFF" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="7" />
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="ComboBox.manual-input:focus">
+            <Setter Property="BorderBrush" Value="#9FC7F5" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style Selector="Border.symbol-suggestions">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#DCE5EE" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="4" />
+        </Style>
+
+        <Style Selector="Button.symbol-suggestion">
+            <Setter Property="MinHeight" Value="36" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.symbol-suggestion:pointerover">
+            <Setter Property="Background" Value="#F0F4F8" />
         </Style>
 
         <Style Selector="Button.manual-type-chip">
@@ -394,12 +436,30 @@
                         <Grid ColumnDefinitions="1.15*,1*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="10">
                             <StackPanel Grid.Column="0" Spacing="7">
                                 <TextBlock Classes="field-label" Text="АКТИВ" />
-                                <TextBox Classes="manual-input" Text="{Binding ManualAssetName, Mode=TwoWay}" Watermark="Название актива" />
+                                <TextBox Classes="manual-input" Text="{Binding ManualAssetName, Mode=TwoWay}" Watermark="AAPL, Apple, BTC..." />
+                                <Border Classes="symbol-suggestions" IsVisible="{Binding HasManualSymbolSuggestions}">
+                                    <ItemsControl ItemsSource="{Binding ManualSymbolSuggestions}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="market:MarketSymbolCandidate">
+                                                <Button
+                                                    Classes="symbol-suggestion"
+                                                    Command="{Binding DataContext.SelectManualSymbolCommand, RelativeSource={RelativeSource AncestorType=assets:AssetsView}}"
+                                                    CommandParameter="{Binding .}">
+                                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                                        <TextBlock Classes="asset-name" Text="{Binding PrimaryText}" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding SecondaryText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                                    </Grid>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Border>
+                                <TextBlock Classes="form-message" Classes.error="True" IsVisible="{Binding HasSymbolSearchMessage}" Text="{Binding SymbolSearchMessage}" TextWrapping="Wrap" />
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Spacing="7">
                                 <TextBlock Classes="field-label" Text="ТЕГ" />
-                                <TextBox Classes="manual-input" Text="{Binding ManualTagText, Mode=TwoWay}" Watermark="Акции" />
+                                <ComboBox Classes="manual-input" ItemsSource="{Binding ManualTagOptions}" SelectedItem="{Binding ManualTagText, Mode=TwoWay}" />
                             </StackPanel>
 
                             <StackPanel Grid.Row="1" Grid.Column="0" Spacing="7">

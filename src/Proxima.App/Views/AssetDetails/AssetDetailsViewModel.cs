@@ -810,7 +810,7 @@ public sealed class AssetDetailsViewModel : ViewModelBase
                 "74.2",
                 "$42.8B",
                 "2.47B NVDA",
-                "Источник: Finnhub + PostgreSQL",
+                "Источник: Twelve Data + PostgreSQL",
                 candles,
                 basic,
                 risk,

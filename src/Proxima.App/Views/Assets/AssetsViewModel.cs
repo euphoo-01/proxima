@@ -1,13 +1,11 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Windows.Input;
-using Avalonia.Media;
 using Proxima.App.Navigation;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
 using Proxima.Application.Assets;
+using Proxima.Application.MarketData;
 using Proxima.Application.Quotes;
 using Proxima.Application.Transactions;
 using Proxima.Domain.Assets;
@@ -26,6 +24,7 @@ public sealed class AssetsViewModel : ViewModelBase
     private readonly IQuoteRefreshService _quoteRefreshService;
     private readonly IShellState _shellState;
     private readonly IRuntimeDataInvalidation _dataInvalidation;
+    private readonly IMarketSymbolSearchService _symbolSearchService;
     private readonly AsyncCommand _loadCommand;
     private readonly AsyncCommand _addManualTransactionCommand;
     private readonly AsyncCommand _refreshQuotesCommand;
@@ -37,7 +36,10 @@ public sealed class AssetsViewModel : ViewModelBase
     private readonly DelegateCommand _sortByChangeCommand;
     private readonly DelegateCommand _selectManualBuyCommand;
     private readonly DelegateCommand _selectManualSellCommand;
+    private readonly DelegateCommand _selectManualSymbolCommand;
     private IReadOnlyList<AssetListItemViewModel> _allAssets = [];
+    private CancellationTokenSource? _manualSymbolSearchCts;
+    private MarketSymbolCandidate? _selectedManualSymbol;
     private IReadOnlyList<PortfolioTransaction> _transactions = [];
     private bool _isLoading;
     private bool _isBusy;
@@ -51,7 +53,9 @@ public sealed class AssetsViewModel : ViewModelBase
     private string _manualDateText = DateTimeOffset.Now.ToString("dd.MM.yyyy", RuCulture);
     private string _formMessage = string.Empty;
     private bool _hasFormError;
-    private string _manualTagText = "Акция";
+    private string _symbolSearchMessage = string.Empty;
+    private bool _isApplyingManualSymbolSelection;
+    private string _manualTagText = "Акции";
     private ManualTransactionTypeOption _selectedManualTransactionType;
     private AssetSortMode _sortMode = AssetSortMode.Value;
     private bool _sortDescending = true;
@@ -62,7 +66,8 @@ public sealed class AssetsViewModel : ViewModelBase
         ITransactionService transactionService,
         IQuoteRefreshService quoteRefreshService,
         IShellState shellState,
-        IRuntimeDataInvalidation dataInvalidation)
+        IRuntimeDataInvalidation dataInvalidation,
+        IMarketSymbolSearchService symbolSearchService)
     {
         _navigation = navigation;
         _assetService = assetService;
@@ -70,6 +75,7 @@ public sealed class AssetsViewModel : ViewModelBase
         _quoteRefreshService = quoteRefreshService;
         _shellState = shellState;
         _dataInvalidation = dataInvalidation;
+        _symbolSearchService = symbolSearchService;
 
         ManualTransactionTypeOptions =
         [
@@ -78,6 +84,8 @@ public sealed class AssetsViewModel : ViewModelBase
         ];
         _selectedManualTransactionType = ManualTransactionTypeOptions[0];
 
+        ManualTagOptions = ["Акции", "ETF", "Криптовалюта", "Облигации", "Валюта", "Наличность"];
+        ManualSymbolSuggestions = [];
         VisibleAssets = [];
 
         _loadCommand = new AsyncCommand(LoadAsync, () => !IsBusy);
@@ -91,6 +99,7 @@ public sealed class AssetsViewModel : ViewModelBase
         _sortByChangeCommand = new DelegateCommand(_ => SetSort(AssetSortMode.Change24H));
         _selectManualBuyCommand = new DelegateCommand(_ => SelectManualTransactionType(TransactionType.Buy));
         _selectManualSellCommand = new DelegateCommand(_ => SelectManualTransactionType(TransactionType.Sell));
+        _selectManualSymbolCommand = new DelegateCommand(SelectManualSymbol);
 
         _shellState.PortfolioChanged += (_, _) => _ = LoadAsync();
         _dataInvalidation.DataInvalidated += (_, _) => _ = LoadAsync();
@@ -100,11 +109,17 @@ public sealed class AssetsViewModel : ViewModelBase
 
     public ObservableCollection<AssetListItemViewModel> VisibleAssets { get; }
 
+    public ObservableCollection<MarketSymbolCandidate> ManualSymbolSuggestions { get; }
+
     public ObservableCollection<ManualTransactionTypeOption> ManualTransactionTypeOptions { get; }
+
+    public IReadOnlyList<string> ManualTagOptions { get; }
 
     public ICommand SelectManualBuyCommand => _selectManualBuyCommand;
 
     public ICommand SelectManualSellCommand => _selectManualSellCommand;
+
+    public ICommand SelectManualSymbolCommand => _selectManualSymbolCommand;
 
     public bool IsManualBuySelected => SelectedManualTransactionType.Type == TransactionType.Buy;
 
@@ -195,6 +210,18 @@ public sealed class AssetsViewModel : ViewModelBase
             if (SetProperty(ref _manualAssetName, value))
             {
                 ClearFormMessage();
+
+                if (!_isApplyingManualSymbolSelection)
+                {
+                    if (_selectedManualSymbol is not null
+                        && !string.Equals(value.Trim(), _selectedManualSymbol.Symbol, StringComparison.OrdinalIgnoreCase)
+                        && !string.Equals(value.Trim(), _selectedManualSymbol.DisplaySymbol, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _selectedManualSymbol = null;
+                    }
+
+                    _ = SearchManualSymbolsAsync(value);
+                }
             }
         }
     }
@@ -274,6 +301,22 @@ public sealed class AssetsViewModel : ViewModelBase
     }
 
     public bool HasFormMessage => !string.IsNullOrWhiteSpace(FormMessage);
+
+    public string SymbolSearchMessage
+    {
+        get => _symbolSearchMessage;
+        private set
+        {
+            if (SetProperty(ref _symbolSearchMessage, value))
+            {
+                OnPropertyChanged(nameof(HasSymbolSearchMessage));
+            }
+        }
+    }
+
+    public bool HasSymbolSearchMessage => !string.IsNullOrWhiteSpace(SymbolSearchMessage);
+
+    public bool HasManualSymbolSuggestions => ManualSymbolSuggestions.Count > 0;
 
     public bool HasFormError
     {
@@ -469,6 +512,199 @@ public sealed class AssetsViewModel : ViewModelBase
         return result;
     }
 
+    private async Task SearchManualSymbolsAsync(string query)
+    {
+        _manualSymbolSearchCts?.Cancel();
+        _manualSymbolSearchCts?.Dispose();
+
+        string trimmed = query.Trim();
+        if (trimmed.Length == 0)
+        {
+            ManualSymbolSuggestions.Clear();
+            SymbolSearchMessage = string.Empty;
+            OnPropertyChanged(nameof(HasManualSymbolSuggestions));
+            return;
+        }
+
+        CancellationTokenSource cts = new();
+        _manualSymbolSearchCts = cts;
+
+        try
+        {
+            await Task.Delay(250, cts.Token).ConfigureAwait(true);
+            MarketSymbolSearchResult result = await _symbolSearchService
+                .SearchAsync(trimmed, 8, cts.Token)
+                .ConfigureAwait(true);
+
+            if (cts.IsCancellationRequested || !ReferenceEquals(_manualSymbolSearchCts, cts))
+            {
+                return;
+            }
+
+            ManualSymbolSuggestions.Clear();
+            if (!result.Succeeded)
+            {
+                SymbolSearchMessage = result.Message;
+                OnPropertyChanged(nameof(HasManualSymbolSuggestions));
+                return;
+            }
+
+            foreach (MarketSymbolCandidate item in result.Symbols)
+            {
+                ManualSymbolSuggestions.Add(item);
+            }
+
+            SymbolSearchMessage = result.Symbols.Count == 0 && trimmed.Length >= 2
+                ? "Twelve Data не нашёл инструмент. Проверьте тикер или название."
+                : string.Empty;
+            OnPropertyChanged(nameof(HasManualSymbolSuggestions));
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            SymbolSearchMessage = $"Ошибка поиска Twelve Data: {ex.Message}";
+        }
+    }
+
+    private void SelectManualSymbol(object? parameter)
+    {
+        if (parameter is not MarketSymbolCandidate candidate)
+        {
+            return;
+        }
+
+        _selectedManualSymbol = candidate;
+        _isApplyingManualSymbolSelection = true;
+        try
+        {
+            ManualAssetName = candidate.Symbol;
+            ManualTagText = candidate.AssetType switch
+            {
+                AssetType.Crypto => "Криптовалюта",
+                AssetType.Etf => "ETF",
+                AssetType.Bond => "Облигации",
+                AssetType.Cash => "Наличность",
+                AssetType.Currency => "Валюта",
+                _ => "Акции",
+            };
+        }
+        finally
+        {
+            _isApplyingManualSymbolSelection = false;
+        }
+
+        ManualSymbolSuggestions.Clear();
+        SymbolSearchMessage = $"Выбран Twelve Data symbol: {candidate.Symbol}";
+        OnPropertyChanged(nameof(HasManualSymbolSuggestions));
+    }
+
+    private async Task<MarketSymbolCandidate?> ResolveManualSymbolAsync(string input)
+    {
+        if (_selectedManualSymbol is not null
+            && (string.Equals(input.Trim(), _selectedManualSymbol.Symbol, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(input.Trim(), _selectedManualSymbol.DisplaySymbol, StringComparison.OrdinalIgnoreCase)))
+        {
+            return _selectedManualSymbol;
+        }
+
+        MarketSymbolSearchResult result = await _symbolSearchService
+            .ResolveAsync(input, CancellationToken.None)
+            .ConfigureAwait(true);
+
+        if (!result.Succeeded || result.Symbols.Count == 0)
+        {
+            SetFormError(string.IsNullOrWhiteSpace(result.Message)
+                ? "Выберите актив из подсказок Twelve Data."
+                : result.Message);
+            return null;
+        }
+
+        _selectedManualSymbol = result.Symbols[0];
+        return _selectedManualSymbol;
+    }
+
+    private static AssetType ResolveManualAssetType(MarketSymbolCandidate symbol, string tag)
+    {
+        if (symbol.AssetType is AssetType.Cash || IsCashTag(tag))
+        {
+            return AssetType.Cash;
+        }
+
+        if (IsCurrencyTag(tag))
+        {
+            return AssetType.Currency;
+        }
+
+        return symbol.AssetType;
+    }
+
+    private static string ResolveManualTicker(MarketSymbolCandidate symbol, string rawInput, AssetType assetType)
+    {
+        string candidate = string.IsNullOrWhiteSpace(symbol.Symbol) ? rawInput : symbol.Symbol;
+        candidate = MarketSymbolNormalizer.NormalizeForTwelveData(candidate);
+
+        if (assetType is AssetType.Cash && candidate.Contains('/', StringComparison.Ordinal))
+        {
+            candidate = candidate.Split('/')[0];
+        }
+
+        return candidate.Trim().ToUpperInvariant();
+    }
+
+    private static string ResolveManualCurrency(MarketSymbolCandidate symbol, string ticker, AssetType assetType)
+    {
+        // Base currency of every portfolio is USD.
+        // Cash positions keep the foreign currency in Ticker/Quantity, but their price and total value are stored in USD.
+        if (assetType is AssetType.Cash)
+        {
+            return "USD";
+        }
+
+        if (!string.IsNullOrWhiteSpace(symbol.Currency))
+        {
+            return symbol.Currency.Trim().ToUpperInvariant();
+        }
+
+        int slash = ticker.IndexOf('/', StringComparison.Ordinal);
+        return slash >= 0 && slash + 1 < ticker.Length ? ticker[(slash + 1)..] : "USD";
+    }
+
+    private static string ResolveManualAssetName(MarketSymbolCandidate symbol, string ticker, AssetType assetType)
+    {
+        if (assetType is AssetType.Cash)
+        {
+            return $"{ticker} Cash";
+        }
+
+        return string.IsNullOrWhiteSpace(symbol.Description) ? symbol.PrimaryText : symbol.Description;
+    }
+
+    private static decimal ResolveManualStoragePrice(string ticker, AssetType assetType, decimal enteredPrice)
+    {
+        if (assetType is AssetType.Cash && ticker.Equals("USD", StringComparison.OrdinalIgnoreCase))
+        {
+            return 1m;
+        }
+
+        return enteredPrice;
+    }
+
+    private static bool IsCashTag(string tag)
+    {
+        string normalized = tag.Trim();
+        return normalized.Equals("Наличность", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("Cash", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsCurrencyTag(string tag)
+    {
+        string normalized = tag.Trim();
+        return normalized.Equals("Валюта", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("Currency", StringComparison.OrdinalIgnoreCase);
+    }
+
     private void SelectManualTransactionType(TransactionType type)
     {
         ManualTransactionTypeOption? option = ManualTransactionTypeOptions.FirstOrDefault(item => item.Type == type);
@@ -529,12 +765,21 @@ public sealed class AssetsViewModel : ViewModelBase
         try
         {
             TransactionType transactionType = SelectedManualTransactionType.Type;
+            MarketSymbolCandidate? symbol = await ResolveManualSymbolAsync(assetName).ConfigureAwait(true);
+            if (symbol is null)
+            {
+                return;
+            }
+
             IReadOnlyList<Asset> assets = await _assetService.ListActiveAsync(_shellState.CurrentPortfolioId, CancellationToken.None).ConfigureAwait(true);
-            AssetType assetType = InferAssetType(assetName, tag);
-            string ticker = BuildTicker(assetName, assetType);
+            AssetType assetType = ResolveManualAssetType(symbol, tag);
+            string ticker = ResolveManualTicker(symbol, assetName, assetType);
+            string currency = ResolveManualCurrency(symbol, ticker, assetType);
+            string resolvedAssetName = ResolveManualAssetName(symbol, ticker, assetType);
+            decimal storagePrice = ResolveManualStoragePrice(ticker, assetType, price);
             Asset? existing = assets.FirstOrDefault(asset =>
                 string.Equals(asset.Ticker, ticker, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(asset.Name, assetName, StringComparison.OrdinalIgnoreCase));
+                || string.Equals(asset.Name, resolvedAssetName, StringComparison.OrdinalIgnoreCase));
 
             if (transactionType == TransactionType.Sell && existing is null)
             {
@@ -548,16 +793,16 @@ public sealed class AssetsViewModel : ViewModelBase
                 assetResult = await _assetService.CreateAsync(new CreateAssetRequest(
                     _shellState.CurrentPortfolioId,
                     ticker,
-                    assetName,
+                    resolvedAssetName,
                     assetType,
-                    "USD",
-                    null,
+                    currency,
+                    symbol.Exchange,
                     null,
                     [tag],
                     null,
                     quantity,
-                    price,
-                    price), CancellationToken.None).ConfigureAwait(true);
+                    storagePrice,
+                    storagePrice), CancellationToken.None).ConfigureAwait(true);
             }
             else
             {
@@ -568,8 +813,8 @@ public sealed class AssetsViewModel : ViewModelBase
                 {
                     newQuantity = existing.Quantity + quantity;
                     newAverage = newQuantity <= 0m
-                        ? price
-                        : ((existing.Quantity * existing.AverageBuyPrice) + (quantity * price)) / newQuantity;
+                        ? storagePrice
+                        : ((existing.Quantity * existing.AverageBuyPrice) + (quantity * storagePrice)) / newQuantity;
                 }
                 else
                 {
@@ -603,7 +848,7 @@ public sealed class AssetsViewModel : ViewModelBase
                     null,
                     newQuantity,
                     newAverage,
-                    price), CancellationToken.None).ConfigureAwait(true);
+                    storagePrice), CancellationToken.None).ConfigureAwait(true);
             }
 
             if (!assetResult.Succeeded || assetResult.Asset is null)
@@ -612,14 +857,14 @@ public sealed class AssetsViewModel : ViewModelBase
                 return;
             }
 
-            decimal grossAmount = quantity * price;
+            decimal grossAmount = quantity * storagePrice;
             TransactionOperationResult txResult = await _transactionService.CreateAsync(new CreateTransactionRequest(
                 _shellState.CurrentPortfolioId,
                 assetResult.Asset.Id,
                 transactionType,
                 tradeDate,
                 quantity,
-                price,
+                storagePrice,
                 grossAmount,
                 0m,
                 0m,
@@ -634,6 +879,9 @@ public sealed class AssetsViewModel : ViewModelBase
                 return;
             }
 
+            _selectedManualSymbol = null;
+            ManualSymbolSuggestions.Clear();
+            OnPropertyChanged(nameof(HasManualSymbolSuggestions));
             ManualAssetName = string.Empty;
             ManualPriceText = string.Empty;
             ManualQuantityText = "1";
@@ -696,7 +944,8 @@ public sealed class AssetsViewModel : ViewModelBase
 
     private void EditAsset(Asset asset)
     {
-        ManualAssetName = asset.Name;
+        _selectedManualSymbol = null;
+        ManualAssetName = asset.Ticker;
         ManualPriceText = asset.CurrentPrice.ToString(CultureInfo.InvariantCulture);
         ManualQuantityText = asset.Quantity.ToString(CultureInfo.InvariantCulture);
         ManualTagText = asset.Tags.FirstOrDefault() ?? asset.Type switch
@@ -875,107 +1124,6 @@ public sealed class AssetsViewModel : ViewModelBase
 
         result = default;
         return false;
-    }
-
-    private static AssetType InferAssetType(string assetName, string tag)
-    {
-        string source = $"{assetName} {tag}".ToLowerInvariant();
-
-        if (source.Contains("крип", StringComparison.Ordinal)
-            || source.Contains("crypto", StringComparison.Ordinal)
-            || source.Contains("bitcoin", StringComparison.Ordinal)
-            || source.Contains("btc", StringComparison.Ordinal)
-            || source.Contains("ethereum", StringComparison.Ordinal)
-            || source.Contains("eth", StringComparison.Ordinal))
-        {
-            return AssetType.Crypto;
-        }
-
-        if (source.Contains("etf", StringComparison.Ordinal)
-            || source.Contains("s&p", StringComparison.Ordinal)
-            || source.Contains("spy", StringComparison.Ordinal))
-        {
-            return AssetType.Etf;
-        }
-
-        if (source.Contains("облиг", StringComparison.Ordinal) || source.Contains("bond", StringComparison.Ordinal))
-        {
-            return AssetType.Bond;
-        }
-
-        if (source.Contains("валют", StringComparison.Ordinal)
-            || source.Contains("cash", StringComparison.Ordinal)
-            || source.Contains("кэш", StringComparison.Ordinal)
-            || source.Contains("налич", StringComparison.Ordinal)
-            || source.Contains("usd", StringComparison.Ordinal)
-            || source.Contains("eur", StringComparison.Ordinal)
-            || source.Contains("byn", StringComparison.Ordinal))
-        {
-            return AssetType.Currency;
-        }
-
-        return AssetType.Stock;
-    }
-
-    private static string BuildTicker(string assetName, AssetType type)
-    {
-        string normalized = assetName.Trim();
-        string lower = normalized.ToLowerInvariant();
-
-        if (lower.Contains("bitcoin", StringComparison.Ordinal) || lower is "btc")
-        {
-            return "BTC";
-        }
-
-        if (lower.Contains("ethereum", StringComparison.Ordinal) || lower is "eth")
-        {
-            return "ETH";
-        }
-
-        if (lower.Contains("apple", StringComparison.Ordinal))
-        {
-            return "AAPL";
-        }
-
-        if (lower.Contains("s&p", StringComparison.Ordinal) || lower.Contains("sp500", StringComparison.Ordinal))
-        {
-            return "SPY";
-        }
-
-        if (lower.Contains("золото", StringComparison.Ordinal) || lower.Contains("gold", StringComparison.Ordinal))
-        {
-            return "GOLD";
-        }
-
-        if ((type is AssetType.Currency or AssetType.Cash) && normalized.Length <= 4)
-        {
-            return normalized.ToUpperInvariant();
-        }
-
-        string ascii = Regex.Replace(RemoveDiacritics(normalized), "[^A-Za-z0-9]", string.Empty, RegexOptions.None, TimeSpan.FromMilliseconds(100));
-        if (ascii.Length > 0)
-        {
-            return ascii[..Math.Min(8, ascii.Length)].ToUpperInvariant();
-        }
-
-        int hash = Math.Abs(StringComparer.OrdinalIgnoreCase.GetHashCode(normalized));
-        return $"A{hash % 100000:00000}";
-    }
-
-    private static string RemoveDiacritics(string text)
-    {
-        string normalized = text.Normalize(NormalizationForm.FormD);
-        StringBuilder builder = new(normalized.Length);
-        foreach (char c in normalized)
-        {
-            UnicodeCategory category = CharUnicodeInfo.GetUnicodeCategory(c);
-            if (category != UnicodeCategory.NonSpacingMark)
-            {
-                builder.Append(c);
-            }
-        }
-
-        return builder.ToString().Normalize(NormalizationForm.FormC);
     }
 
     private static string FormatMoney(decimal value, string currency)
@@ -1161,18 +1309,36 @@ public sealed class AssetListItemViewModel : ViewModelBase
 
     public double ShareBarWidth => Math.Clamp((double)Share * 2.2, Share > 0m ? 8 : 0, 126);
 
-    public string CurrentPriceText => FormatMoney(CurrentPrice, Currency);
+    public string CurrentPriceText => FormatMoney(CurrentPrice, PriceCurrency);
 
     public string QuantityText => Type switch
     {
         AssetType.Crypto => string.Create(CultureInfo.InvariantCulture, $"{Quantity:N4} {Ticker}"),
         AssetType.Stock or AssetType.Etf => string.Create(CultureInfo.InvariantCulture, $"{Quantity:N2} Shares"),
         AssetType.Bond => string.Create(CultureInfo.InvariantCulture, $"{Quantity:N2} Units"),
-        AssetType.Currency or AssetType.Cash => string.Create(CultureInfo.InvariantCulture, $"{Quantity:N2} {Currency}"),
+        AssetType.Cash => string.Create(CultureInfo.InvariantCulture, $"{Quantity:N2} {CashQuantitySymbol}"),
+        AssetType.Currency => string.Create(CultureInfo.InvariantCulture, $"{Quantity:N2} {CashQuantitySymbol}"),
         _ => string.Create(CultureInfo.InvariantCulture, $"{Quantity:N2}"),
     };
 
-    public string ValueText => FormatMoney(Value, Currency);
+    public string ValueText => FormatMoney(Value, PriceCurrency);
+
+    private string PriceCurrency => IsCash ? "USD" : Currency;
+
+    private string CashQuantitySymbol
+    {
+        get
+        {
+            string ticker = Ticker.Trim().ToUpperInvariant();
+            int slash = ticker.IndexOf('/', StringComparison.Ordinal);
+            if (slash > 0)
+            {
+                return ticker[..slash];
+            }
+
+            return string.IsNullOrWhiteSpace(ticker) ? Currency : ticker;
+        }
+    }
 
     public string Change24HText
     {

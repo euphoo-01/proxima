@@ -3,6 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:import="using:Proxima.App.Views.Import"
+    xmlns:market="using:Proxima.Application.MarketData"
     x:DataType="import:ManualImportViewModel">
 
     <UserControl.Styles>
@@ -162,6 +163,29 @@
             <Setter Property="FontSize" Value="12" />
         </Style>
 
+        <Style Selector="Border.symbol-suggestions">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#DCE5EE" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="4" />
+        </Style>
+
+        <Style Selector="Button.symbol-suggestion">
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Button.symbol-suggestion:pointerover">
+            <Setter Property="Background" Value="#F0F4F8" />
+        </Style>
+
         <Style Selector="Button.primary-dark">
             <Setter Property="MinHeight" Value="42" />
             <Setter Property="Padding" Value="24,0" />
@@ -317,7 +341,25 @@
                     <Grid Grid.Row="2" ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,14,Auto,20,Auto">
                         <StackPanel Grid.Column="0" Spacing="7">
                             <TextBlock Classes="field-label" Text="АКТИВ" />
-                            <TextBox Classes="input" Text="{Binding NewAssetName, Mode=TwoWay}" Watermark="Название актива" />
+                            <TextBox Classes="input" Text="{Binding NewAssetName, Mode=TwoWay}" Watermark="AAPL, Apple, BTC..." />
+                            <Border Classes="symbol-suggestions" IsVisible="{Binding HasNewSymbolSuggestions}">
+                                <ItemsControl ItemsSource="{Binding NewSymbolSuggestions}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="market:MarketSymbolCandidate">
+                                            <Button
+                                                Classes="symbol-suggestion"
+                                                Command="{Binding DataContext.SelectNewSymbolCommand, RelativeSource={RelativeSource AncestorType=import:ManualImportView}}"
+                                                CommandParameter="{Binding .}">
+                                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                                    <TextBlock FontFamily="{StaticResource ProximaFont.Family}" FontSize="13" FontWeight="ExtraBold" Foreground="#001629" Text="{Binding PrimaryText}" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding SecondaryText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Border>
+                            <TextBlock Classes="alert-error-text" IsVisible="{Binding HasNewSymbolSearchMessage}" Text="{Binding NewSymbolSearchMessage}" TextWrapping="Wrap" />
                         </StackPanel>
 
                         <StackPanel Grid.Column="2" Spacing="7">
@@ -367,14 +409,15 @@
                         <TextBlock Classes="section-subtitle" Text="Распознанные и добавленные вручную транзакции. Строки можно редактировать, удалять и сохранить в систему." />
                     </StackPanel>
 
-                    <Grid Grid.Row="2" ColumnDefinitions="1.8*,1.05*,1.05*,0.72*,0.9*,1.05*,0.72*" ColumnSpacing="12" Margin="16,0,16,0">
+                    <Grid Grid.Row="2" ColumnDefinitions="1.7*,1*,1*,0.68*,0.84*,0.92*,1*,0.68*" ColumnSpacing="12" Margin="16,0,16,0">
                         <TextBlock Classes="table-head" Text="АКТИВ" />
                         <TextBlock Grid.Column="1" Classes="table-head" Text="ДАТА" />
                         <TextBlock Grid.Column="2" Classes="table-head" Text="ТИП" />
                         <TextBlock Grid.Column="3" Classes="table-head" Text="КОЛ-ВО" />
                         <TextBlock Grid.Column="4" Classes="table-head" Text="ЦЕНА" />
-                        <TextBlock Grid.Column="5" Classes="table-head" Text="СУММА" />
-                        <TextBlock Grid.Column="6" Classes="table-head" Text="ДЕЙСТВИЯ" />
+                        <TextBlock Grid.Column="5" Classes="table-head" Text="ТЕГ" />
+                        <TextBlock Grid.Column="6" Classes="table-head" Text="СУММА" />
+                        <TextBlock Grid.Column="7" Classes="table-head" Text="ДЕЙСТВИЯ" />
                     </Grid>
 
                     <ItemsControl Grid.Row="4" ItemsSource="{Binding Rows}">
@@ -382,15 +425,16 @@
                             <DataTemplate x:DataType="import:ManualTransactionRowViewModel">
                                 <Border Classes="row-card" Classes.warning="{Binding IsSuspicious}">
                                     <Grid RowDefinitions="Auto,Auto" RowSpacing="8">
-                                        <Grid ColumnDefinitions="1.8*,1.05*,1.05*,0.72*,0.9*,1.05*,0.72*" ColumnSpacing="12" VerticalAlignment="Center">
+                                        <Grid ColumnDefinitions="1.7*,1*,1*,0.68*,0.84*,0.92*,1*,0.68*" ColumnSpacing="12" VerticalAlignment="Center">
                                             <TextBox Classes="table-input" Text="{Binding TickerOrName, Mode=TwoWay}" Watermark="Apple Inc." />
                                             <TextBox Grid.Column="1" Classes="table-input" Text="{Binding Date, Mode=TwoWay}" Watermark="24.03.2026" />
                                             <ComboBox Grid.Column="2" Classes="table-combo" ItemsSource="{Binding DataContext.OperationTypeLabels, RelativeSource={RelativeSource AncestorType=import:ManualImportView}}" SelectedItem="{Binding OperationTypeLabel, Mode=TwoWay}" />
                                             <TextBox Grid.Column="3" Classes="table-input" Text="{Binding Quantity, Mode=TwoWay}" Watermark="1" />
                                             <TextBox Grid.Column="4" Classes="table-input" Text="{Binding Price, Mode=TwoWay}" Watermark="0.00" />
-                                            <TextBlock Grid.Column="5" Classes="table-amount" Classes.positive="{Binding IsPositiveAmount}" Text="{Binding SignedAmountDisplay}" />
+                                            <ComboBox Grid.Column="5" Classes="table-combo" ItemsSource="{Binding DataContext.TagOptions, RelativeSource={RelativeSource AncestorType=import:ManualImportView}}" SelectedItem="{Binding TagOrCategory, Mode=TwoWay}" />
+                                            <TextBlock Grid.Column="6" Classes="table-amount" Classes.positive="{Binding IsPositiveAmount}" Text="{Binding SignedAmountDisplay}" />
 
-                                            <StackPanel Grid.Column="6" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Spacing="4">
+                                            <StackPanel Grid.Column="7" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Spacing="4">
                                                 <Button Classes="icon-action" Content="✎" />
                                                 <Button Classes="icon-action" Content="⌫" Command="{Binding DataContext.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=import:ManualImportView}}" CommandParameter="{Binding .}" />
                                             </StackPanel>

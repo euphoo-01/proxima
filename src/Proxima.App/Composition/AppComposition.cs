@@ -16,6 +16,7 @@ using Proxima.Application.AssetDetails;
 using Proxima.Application.Assets;
 using Proxima.Application.Auth;
 using Proxima.Application.Goals;
+using Proxima.Application.MarketData;
 using Proxima.Application.Observability;
 using Proxima.Application.Portfolios;
 using Proxima.Application.Quotes;
@@ -27,6 +28,7 @@ using Proxima.Infrastructure.Auth;
 using Proxima.Infrastructure.Persistence;
 using Proxima.Infrastructure.Persistence.Repositories;
 using Proxima.Infrastructure.Quotes;
+using Proxima.Infrastructure.MarketData;
 using Proxima.Infrastructure.Settings;
 using Proxima.Infrastructure.Taxes;
 using Proxima.Importing;
@@ -89,6 +91,7 @@ public static class AppComposition
             new LocalSettingsReader(ProximaSettingsComposition.GetDefaultSettingsStorePath()));
 
         services.AddSingleton<IQuoteProvider, ConfigurableQuoteProvider>();
+        services.AddSingleton<IMarketSymbolSearchService, TwelveDataSymbolSearchService>();
         services.AddSingleton<IQuoteRefreshService, QuoteRefreshService>();
 
         services.AddSingleton<RuntimeShellState>();
@@ -103,7 +106,7 @@ public static class AppComposition
 
         services.AddSingleton<IDashboardDataProvider, RuntimeDashboardDataProvider>();
 
-        services.AddSingleton<FinnhubAssetMarketDataProvider>();
+        services.AddSingleton<TwelveDataAssetMarketDataProvider>();
         services.AddSingleton<IAssetDetailsService, AssetDetailsService>();
 
         services.AddSingleton<ITaxCalculator>(_ =>

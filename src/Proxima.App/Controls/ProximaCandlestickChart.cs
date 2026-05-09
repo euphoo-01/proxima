@@ -30,6 +30,11 @@ public sealed class ProximaCandlestickChart : Control
     public static readonly StyledProperty<string> CurrencyCodeProperty =
         AvaloniaProperty.Register<ProximaCandlestickChart, string>(nameof(CurrencyCode), "USD");
 
+    private const double ChartLeftPad = 92;
+    private const double ChartRightPad = 22;
+    private const double ChartTopPad = 30;
+    private const double ChartBottomPad = 56;
+
     private int _hoverIndex = -1;
     private bool _isPanning;
     private Point _panStartPointer;
@@ -138,8 +143,8 @@ public sealed class ProximaCandlestickChart : Control
 
         (int visibleStart, int visibleEnd) = NormalizeVisibleRange(candles.Count);
         int visibleCount = visibleEnd - visibleStart + 1;
-        const double leftPad = 56;
-        const double rightPad = 14;
+        const double leftPad = ChartLeftPad;
+        const double rightPad = ChartRightPad;
         double plotWidth = Math.Max(8, Bounds.Width - leftPad - rightPad);
         double x = e.GetPosition(this).X - leftPad;
         double slot = plotWidth / Math.Max(1, visibleCount);
@@ -218,10 +223,10 @@ public sealed class ProximaCandlestickChart : Control
         IBrush borderBrush = ProximaChartTheme.ResolveBrush(this, "ProximaBrush.Border");
         IBrush tooltipBackground = ProximaChartTheme.ResolveBrush(this, "ProximaBrush.Surface");
 
-        const double leftPad = 56;
-        const double rightPad = 14;
-        const double topPad = 18;
-        const double bottomPad = 42;
+        const double leftPad = ChartLeftPad;
+        const double rightPad = ChartRightPad;
+        const double topPad = ChartTopPad;
+        const double bottomPad = ChartBottomPad;
 
         double width = Bounds.Width;
         double height = Bounds.Height;
@@ -273,7 +278,7 @@ public sealed class ProximaCandlestickChart : Control
         }
 
         DrawXAxisLabels(context, labelBrush, originX, topPad, plotWidth, plotHeight, candles, visibleStart, visibleEnd);
-        DrawText(context, "Период", labelBrush, originX + plotWidth - 54, originY + 15, ProximaChartTheme.AxisLabelFontSize);
+        DrawTextRightAligned(context, "Период", labelBrush, originX + plotWidth, originY + 30, ProximaChartTheme.AxisLabelFontSize);
     }
 
     private void DrawGridAndAxes(DrawingContext context, IBrush gridBrush, IBrush axisBrush, IBrush labelBrush, double originX, double topPad, double plotWidth, double plotHeight, decimal min, decimal range)
@@ -289,12 +294,18 @@ public sealed class ProximaCandlestickChart : Control
             context.DrawLine(gridPen, new Point(originX, y), new Point(originX + plotWidth, y));
 
             decimal value = min + range * (decimal)(1d - t);
-            DrawText(context, FormatMoney(value), labelBrush, 4, y - 8, ProximaChartTheme.AxisLabelFontSize);
+            DrawTextRightAligned(
+                context,
+                FormatMoney(value),
+                labelBrush,
+                originX - 10,
+                Math.Clamp(y - 8, topPad + 2, topPad + plotHeight - 14),
+                ProximaChartTheme.AxisLabelFontSize);
         }
 
         context.DrawLine(axisPen, new Point(originX, topPad), new Point(originX, topPad + plotHeight));
         context.DrawLine(axisPen, new Point(originX, topPad + plotHeight), new Point(originX + plotWidth, topPad + plotHeight));
-        DrawText(context, "Цена", labelBrush, 6, topPad - 14, ProximaChartTheme.AxisLabelFontSize);
+        DrawTextRightAligned(context, "Цена", labelBrush, originX - 10, topPad - 22, ProximaChartTheme.AxisLabelFontSize);
     }
 
     private static void DrawStateText(DrawingContext context, string text)
@@ -319,14 +330,31 @@ public sealed class ProximaCandlestickChart : Control
 
     private static void DrawText(DrawingContext context, string text, IBrush brush, double x, double y, double size)
     {
-        FormattedText formatted = new(
+        FormattedText formatted = CreateFormattedText(text, brush, size);
+        context.DrawText(formatted, new Point(x, y));
+    }
+
+    private static void DrawTextRightAligned(DrawingContext context, string text, IBrush brush, double rightX, double y, double size)
+    {
+        FormattedText formatted = CreateFormattedText(text, brush, size);
+        context.DrawText(formatted, new Point(rightX - formatted.Width, y));
+    }
+
+    private static void DrawTextCentered(DrawingContext context, string text, IBrush brush, double centerX, double y, double size)
+    {
+        FormattedText formatted = CreateFormattedText(text, brush, size);
+        context.DrawText(formatted, new Point(centerX - formatted.Width / 2d, y));
+    }
+
+    private static FormattedText CreateFormattedText(string text, IBrush brush, double size)
+    {
+        return new FormattedText(
             text,
             System.Globalization.CultureInfo.CurrentCulture,
             FlowDirection.LeftToRight,
             Typeface.Default,
             size,
             brush);
-        context.DrawText(formatted, new Point(x, y));
     }
 
     private static double Map(decimal value, decimal min, decimal range, double topPad, double plotHeight)
@@ -359,8 +387,8 @@ public sealed class ProximaCandlestickChart : Control
             int index = visibleStart + (int)Math.Round((visibleCount - 1) * t);
             index = Math.Clamp(index, visibleStart, visibleEnd);
             string label = ProximaChartAxisFactory.FormatDateLabel(candles[index].Timestamp, candles[visibleStart].Timestamp, candles[visibleEnd].Timestamp);
-            double x = originX + plotWidth * t - 24;
-            DrawText(context, label, labelBrush, x, topPad + plotHeight + 8, ProximaChartTheme.AxisLabelFontSize);
+            double x = originX + plotWidth * t;
+            DrawTextCentered(context, label, labelBrush, x, topPad + plotHeight + 12, ProximaChartTheme.AxisLabelFontSize);
         }
     }
 
@@ -424,8 +452,8 @@ public sealed class ProximaCandlestickChart : Control
     private int ToVisibleIndex(double pointerX, int start, int end)
     {
         int visibleCount = end - start + 1;
-        const double leftPad = 56;
-        const double rightPad = 14;
+        const double leftPad = ChartLeftPad;
+        const double rightPad = ChartRightPad;
         double plotWidth = Math.Max(8, Bounds.Width - leftPad - rightPad);
         double localX = pointerX - leftPad;
         double slot = plotWidth / Math.Max(1, visibleCount);

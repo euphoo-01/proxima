@@ -132,8 +132,8 @@ Module 01 used the custom `mcp__figma__` server for final inspection and capture
 ## External APIs
 
 - Currency rates: Belarusbank developer API (`docs/api-providers.md`).
-- Market quotes: Finnhub API (`docs/api-providers.md`).
+- Market quotes: Twelve Data API (`docs/api-providers.md`).
 
-Current settings module includes provider selection and masked Finnhub API key input for local configuration.
+Current settings module includes provider selection and masked Twelve Data API key input for local configuration.
 Current sync module supports encrypted local snapshot export/import (`.pxsnap`) with AES-GCM and conflict preview. Google Drive adapter is present as a stub.
 Current reporting module supports portfolio and tax draft PDF export to the local reports directory.

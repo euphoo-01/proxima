@@ -38,15 +38,29 @@ public sealed class DatabaseBootstrapService(DatabaseOptions options)
     private static async Task ApplySqlScriptsAsync(NpgsqlConnection conn, CancellationToken cancellationToken)
     {
         string root = FindRepoRoot();
-        string script = Path.Combine(root, "scripts", "sql", "0001_initial_schema.sql");
-        if (!File.Exists(script))
+        string sqlDirectory = Path.Combine(root, "scripts", "sql");
+        if (!Directory.Exists(sqlDirectory))
         {
             return;
         }
 
-        string sql = await File.ReadAllTextAsync(script, cancellationToken).ConfigureAwait(false);
-        await using NpgsqlCommand cmd = new(sql, conn);
-        await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        string[] migrationScripts = Directory
+            .EnumerateFiles(sqlDirectory, "*.sql", SearchOption.TopDirectoryOnly)
+            .Where(path => !Path.GetFileName(path).Contains("seed", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        foreach (string script in migrationScripts)
+        {
+            string sql = await File.ReadAllTextAsync(script, cancellationToken).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(sql))
+            {
+                continue;
+            }
+
+            await using NpgsqlCommand cmd = new(sql, conn);
+            await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
     }
 
     private static async Task ApplySeedAsync(NpgsqlConnection conn, CancellationToken cancellationToken)

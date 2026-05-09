@@ -2,6 +2,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Proxima.Application.Transactions;
+using Proxima.Application.MarketData;
 using Proxima.Domain.Assets;
 using Proxima.Domain.Transactions;
 
@@ -32,9 +33,9 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
                     .ConfigureAwait(false);
 
                 Dictionary<string, AssetEntity> assetByTicker = assets
-                    .GroupBy(x => NormalizeTicker(x.Ticker), StringComparer.OrdinalIgnoreCase)
+                    .GroupBy(x => NormalizeTicker(x.Ticker, ParseAssetType(x.Type)), StringComparer.OrdinalIgnoreCase)
                     .Select(group => group.First())
-                    .ToDictionary(x => NormalizeTicker(x.Ticker), StringComparer.OrdinalIgnoreCase);
+                    .ToDictionary(x => NormalizeTicker(x.Ticker, ParseAssetType(x.Type)), StringComparer.OrdinalIgnoreCase);
 
                 DateTimeOffset now = DateTimeOffset.UtcNow;
                 int savedRows = 0;
@@ -42,11 +43,14 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
                 foreach (ImportTransactionDraft row in rows)
                 {
                     string displayText = row.AssetTicker.Trim();
-                    string normalizedTicker = NormalizeTicker(displayText);
+                    AssetType inferredType = InferAssetType(displayText, row.Notes);
+                    string normalizedTicker = NormalizeTicker(displayText, inferredType);
                     if (string.IsNullOrWhiteSpace(normalizedTicker))
                     {
                         continue;
                     }
+
+                    string storageCurrency = ResolveStorageCurrency(inferredType, row.Currency);
 
                     AssetEntity asset;
                     if (!assetByTicker.TryGetValue(normalizedTicker, out asset!))
@@ -56,9 +60,9 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
                             Id = Guid.NewGuid(),
                             PortfolioId = portfolioId,
                             Ticker = normalizedTicker,
-                            Name = displayText,
-                            Type = InferAssetType(displayText).ToString(),
-                            Currency = NormalizeCurrency(row.Currency),
+                            Name = ResolveAssetName(displayText, normalizedTicker, inferredType),
+                            Type = inferredType.ToString(),
+                            Currency = storageCurrency,
                             Quantity = 0m,
                             AverageBuyPrice = 0m,
                             CurrentPrice = row.Price > 0m ? row.Price : 0m,
@@ -95,7 +99,7 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
                         GrossAmount = gross,
                         FeeAmount = row.FeeAmount,
                         TaxAmount = 0m,
-                        Currency = NormalizeCurrency(row.Currency),
+                        Currency = storageCurrency,
                         EncryptedNotes = string.IsNullOrWhiteSpace(row.Notes) ? null : row.Notes,
                         IsArchived = false,
                         CreatedAt = now,
@@ -136,7 +140,7 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
             asset.CurrentPrice = row.Price;
         }
 
-        asset.Currency = NormalizeCurrency(row.Currency);
+        asset.Currency = ResolveStorageCurrency(ParseAssetType(asset.Type), row.Currency);
         asset.UpdatedAt = DateTimeOffset.UtcNow;
 
         switch (row.Type)
@@ -165,12 +169,33 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
         }
     }
 
-    private static string NormalizeTicker(string value)
+    private static string NormalizeTicker(string value, AssetType assetType)
     {
-        string cleaned = Regex.Replace(value.Trim().ToUpperInvariant(), "[^A-Z0-9]", string.Empty, RegexOptions.None, TimeSpan.FromMilliseconds(50));
-        return string.IsNullOrWhiteSpace(cleaned)
-            ? value.Trim().ToUpperInvariant()
-            : cleaned;
+        string normalized = MarketSymbolNormalizer.NormalizeForTwelveData(value);
+        string cleaned = Regex.Replace(normalized, "[^A-Z0-9./]", string.Empty, RegexOptions.None, TimeSpan.FromMilliseconds(50));
+        string ticker = string.IsNullOrWhiteSpace(cleaned) ? normalized : cleaned;
+
+        if (assetType is AssetType.Cash && ticker.Contains('/', StringComparison.Ordinal))
+        {
+            ticker = ticker.Split('/')[0];
+        }
+
+        return ticker;
+    }
+
+    private static string ResolveAssetName(string displayText, string ticker, AssetType assetType)
+    {
+        return assetType is AssetType.Cash ? $"{ticker} Cash" : displayText;
+    }
+
+    private static AssetType ParseAssetType(string value)
+    {
+        return Enum.TryParse(value, true, out AssetType parsed) ? parsed : AssetType.Stock;
+    }
+
+    private static string ResolveStorageCurrency(AssetType assetType, string value)
+    {
+        return assetType is AssetType.Cash ? "USD" : NormalizeCurrency(value);
     }
 
     private static string NormalizeCurrency(string value)
@@ -180,11 +205,14 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
             : value.Trim().ToUpperInvariant();
     }
 
-    private static AssetType InferAssetType(string value)
+    private static AssetType InferAssetType(string value, string? tagOrNotes = null)
     {
-        string source = value.ToLowerInvariant();
+        string source = $"{value} {tagOrNotes}".ToLowerInvariant();
 
-        if (source.Contains("btc", StringComparison.Ordinal)
+        if (source.Contains("binance:", StringComparison.Ordinal)
+            || source.Contains("coinbase:", StringComparison.Ordinal)
+            || source.Contains("kraken:", StringComparison.Ordinal)
+            || source.Contains("btc", StringComparison.Ordinal)
             || source.Contains("bitcoin", StringComparison.Ordinal)
             || source.Contains("eth", StringComparison.Ordinal)
             || source.Contains("ethereum", StringComparison.Ordinal)
@@ -204,10 +232,16 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
             return AssetType.Etf;
         }
 
-        if (source.Contains("cash", StringComparison.Ordinal)
-            || source.Contains("валют", StringComparison.Ordinal)
-            || source.Contains("налич", StringComparison.Ordinal)
-            || source is "usd" or "eur" or "byn" or "rub")
+        if (source.Contains("cash", StringComparison.Ordinal) || source.Contains("налич", StringComparison.Ordinal))
+        {
+            return AssetType.Cash;
+        }
+
+        if (source.Contains("валют", StringComparison.Ordinal)
+            || value.Trim().Equals("USD", StringComparison.OrdinalIgnoreCase)
+            || value.Trim().Equals("EUR", StringComparison.OrdinalIgnoreCase)
+            || value.Trim().Equals("BYN", StringComparison.OrdinalIgnoreCase)
+            || value.Trim().Equals("RUB", StringComparison.OrdinalIgnoreCase))
         {
             return AssetType.Currency;
         }

@@ -42,7 +42,7 @@ internal static class Program
         await JsonQuoteCacheRepository_UpsertsByAsset().ConfigureAwait(false);
         await JsonGoalRepository_StoresAndArchives().ConfigureAwait(false);
         await JsonSettingsRepository_StoresByOwner().ConfigureAwait(false);
-        await FinnhubQuoteProvider_ParsesQuotePayload().ConfigureAwait(false);
+        await TwelveDataQuoteProvider_ParsesQuotePayload().ConfigureAwait(false);
         await BelarusbankExchangeRateProvider_ParsesRatesPayload().ConfigureAwait(false);
         await DatabaseBootstrap_ReturnsGracefulMessage_WhenUnavailable().ConfigureAwait(false);
         await JsonAuditLogRepository_AppendsEvents().ConfigureAwait(false);
@@ -158,22 +158,22 @@ internal static class Program
         Assert(loaded is not null && loaded.PreferredCurrency == "BYN", "Settings should reload from JSON by owner.");
     }
 
-    private static async Task FinnhubQuoteProvider_ParsesQuotePayload()
+    private static async Task TwelveDataQuoteProvider_ParsesQuotePayload()
     {
-        const string payload = """{"c":123.45,"h":126.0,"l":120.5,"o":121.0,"t":1714500000}""";
+        const string payload = """{"symbol":"AAPL","currency":"USD","open":"121.0","high":"126.0","low":"120.5","close":"123.45","volume":"1000","timestamp":1714500000}""";
         using HttpClient client = new(new StubHttpMessageHandler(payload))
         {
-            BaseAddress = new Uri("https://finnhub.io"),
+            BaseAddress = new Uri("https://api.twelvedata.com"),
         };
 
-        FinnhubQuoteProvider provider = new(client, "demo-key");
+        TwelveDataQuoteProvider provider = new(client, "demo-key");
         QuoteProviderResult result = await provider.GetLatestQuoteAsync("AAPL", "USD").ConfigureAwait(false);
 
-        Assert(result.Succeeded, "Finnhub provider should parse valid payload.");
+        Assert(result.Succeeded, "Twelve Data provider should parse valid payload.");
         Assert(result.Quote is not null, "Quote should be present.");
         Assert(result.Quote!.Price == 123.45m, "Quote price should match response.");
         Assert(result.Quote.Ohlc is not null && result.Quote.Ohlc.Close == 123.45m, "OHLC close should map from current price.");
-        Assert(result.Quote.Source == "finnhub", "Quote source should be finnhub.");
+        Assert(result.Quote.Source == "twelvedata", "Quote source should be twelvedata.");
     }
 
     private static async Task BelarusbankExchangeRateProvider_ParsesRatesPayload()

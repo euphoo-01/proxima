@@ -23,7 +23,7 @@ public sealed class SettingsViewModel : ViewModelBase
     private string _login = "local";
     private string _preferredCurrency = "USD";
     private decimal _uiScale = 1m;
-    private QuoteProviderKind _selectedQuoteProvider = QuoteProviderKind.Finnhub;
+    private QuoteProviderKind _selectedQuoteProvider = QuoteProviderKind.TwelveData;
     private int _quoteRefreshMinutes = 15;
     private CurrencyProviderKind _selectedCurrencyProvider = CurrencyProviderKind.Mock;
     private bool _syncEnabled;
@@ -46,7 +46,7 @@ public sealed class SettingsViewModel : ViewModelBase
         CurrencyOptions = ["USD"];
         LanguageOptions = Enum.GetValues<AppLanguage>();
         RoleOptions = Enum.GetValues<UserRole>();
-        QuoteProviderOptions = [QuoteProviderKind.Finnhub];
+        QuoteProviderOptions = [QuoteProviderKind.TwelveData];
         CurrencyProviderOptions = Enum.GetValues<CurrencyProviderKind>();
         ThemeOptions = ["Светлая"];
         SyncModeOptions = ["Выключена", "Включена"];
@@ -347,7 +347,7 @@ public sealed class SettingsViewModel : ViewModelBase
         PreferredCurrency = "USD";
         SelectedLanguage = settings.Language;
         UiScale = settings.UiScale;
-        SelectedQuoteProvider = QuoteProviderKind.Finnhub;
+        SelectedQuoteProvider = QuoteProviderKind.TwelveData;
         QuoteRefreshMinutes = settings.QuoteRefreshMinutes;
         SelectedCurrencyProvider = settings.CurrencyProvider;
         SyncEnabled = settings.SyncEnabled;
@@ -383,7 +383,7 @@ public sealed class SettingsViewModel : ViewModelBase
                 "USD",
                 AppLanguage.RU,
                 1m,
-                QuoteProviderKind.Finnhub,
+                QuoteProviderKind.TwelveData,
                 15,
                 string.Empty,
                 CurrencyProviderKind.Mock,

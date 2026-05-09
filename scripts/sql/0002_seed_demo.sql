@@ -30,8 +30,8 @@ insert into goals(id, portfolio_id, title, target_amount, currency, monthly_cont
 values ('66666666-6666-6666-6666-666666666661', '22222222-2222-2222-2222-222222222222', 'Retire', 100000, 'USD', 1000, 8, now() + interval '5 years', false, now(), now())
 on conflict (id) do nothing;
 
-insert into user_settings(owner_user_id, display_name, role, login, preferred_currency, language, ui_scale, quote_provider, quote_refresh_minutes, finnhub_api_key_protected, currency_provider, sync_enabled, last_snapshot_at)
-values ('11111111-1111-1111-1111-111111111111', 'Demo Investor', 'PrivateInvestor', 'demo', 'USD', 'RU', 1.0, 'Mock', 15, '', 'Mock', false, null)
+insert into user_settings(owner_user_id, display_name, role, login, preferred_currency, language, ui_scale, quote_provider, quote_refresh_minutes, twelve_data_api_key_protected, currency_provider, sync_enabled, last_snapshot_at)
+values ('11111111-1111-1111-1111-111111111111', 'Demo Investor', 'PrivateInvestor', 'demo', 'USD', 'RU', 1.0, 'TwelveData', 15, '', 'Mock', false, null)
 on conflict (owner_user_id) do nothing;
 
 insert into tax_profiles(id, user_id, profile_kind, updated_at)

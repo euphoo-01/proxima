@@ -177,19 +177,10 @@
                 </StackPanel>
 
                 <StackPanel Margin="0,23,0,0" Spacing="10">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            Grid.Column="0"
-                            Margin="4,0,0,0"
-                            Classes="auth-label"
-                            Text="ПАРОЛЬ" />
-
-                        <Button
-                            Grid.Column="1"
-                            Classes="auth-forgot-link"
-                            Command="{Binding ForgotPasswordCommand}"
-                            Content="ЗАБЫЛИ ПАРОЛЬ?" />
-                    </Grid>
+                    <TextBlock
+                        Margin="4,0,0,0"
+                        Classes="auth-label"
+                        Text="ПАРОЛЬ" />
 
                     <Grid Height="60">
                         <TextBox

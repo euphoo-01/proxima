@@ -18,6 +18,6 @@ public sealed record UpdateSettingsRequest(
     decimal UiScale,
     QuoteProviderKind QuoteProvider,
     int QuoteRefreshMinutes,
-    string? FinnhubApiKeyRaw,
+    string? TwelveDataApiKeyRaw,
     CurrencyProviderKind CurrencyProvider,
     bool SyncEnabled);

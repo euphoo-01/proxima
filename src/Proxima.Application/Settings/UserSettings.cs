@@ -12,7 +12,7 @@ public sealed record UserSettings(
     decimal UiScale,
     QuoteProviderKind QuoteProvider,
     int QuoteRefreshMinutes,
-    string FinnhubApiKeyProtected,
+    string TwelveDataApiKeyProtected,
     CurrencyProviderKind CurrencyProvider,
     bool SyncEnabled,
     DateTimeOffset? LastSnapshotAt);

@@ -192,7 +192,7 @@ public sealed class DashboardViewModel : ViewModelBase
         {
             decimal value = source[i];
             double normalized = (double)((value - min) / range);
-            double height = 96 + normalized * 148;
+            double height = 72 + normalized * 134;
             bool isActive = i == source.Count - 1;
             DateTimeOffset day = start.AddDays(i);
 

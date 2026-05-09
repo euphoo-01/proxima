@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows.Input;
 using Proxima.App.Shell;
 using Proxima.Application.Transactions;
+using Proxima.Application.MarketData;
 using Proxima.App.ViewModels;
 using Proxima.Domain.Transactions;
 using Proxima.Importing;
@@ -20,13 +21,15 @@ public sealed class ManualImportViewModel : ViewModelBase
     private readonly IShellState? _shellState;
     private readonly IRuntimeDataInvalidation? _runtimeDataInvalidation;
     private readonly IImportPreviewGateway? _importPreviewGateway;
+    private readonly IMarketSymbolSearchService? _symbolSearchService;
 
     private readonly DelegateCommand _addRowCommand;
     private readonly DelegateCommand _removeRowCommand;
     private readonly DelegateCommand _clearRowsCommand;
     private readonly DelegateCommand _selectBuyCommand;
     private readonly DelegateCommand _selectSellCommand;
-    private readonly DelegateCommand _addManualTransactionCommand;
+    private readonly AsyncCommand _addManualTransactionCommand;
+    private readonly DelegateCommand _selectNewSymbolCommand;
     private readonly DelegateCommand _clearFileCommand;
     private readonly DelegateCommand _markDragOverCommand;
     private readonly DelegateCommand _clearDragOverCommand;
@@ -41,6 +44,10 @@ public sealed class ManualImportViewModel : ViewModelBase
     private string _filePath = string.Empty;
 
     private string _newAssetName = string.Empty;
+    private string _newSymbolSearchMessage = string.Empty;
+    private bool _isApplyingNewSymbolSelection;
+    private CancellationTokenSource? _newSymbolSearchCts;
+    private MarketSymbolCandidate? _selectedNewSymbol;
     private string _newTag = "Акция";
     private TransactionType _newTransactionType = TransactionType.Buy;
     private string _newPrice = "0.00";
@@ -48,7 +55,7 @@ public sealed class ManualImportViewModel : ViewModelBase
     private string _newDate = DateTimeOffset.Now.ToString("dd.MM.yy", CultureInfo.CurrentCulture);
 
     public ManualImportViewModel()
-        : this(null, null, null, null)
+        : this(null, null, null, null, null)
     {
     }
 
@@ -56,24 +63,28 @@ public sealed class ManualImportViewModel : ViewModelBase
         IImportCommitService? importCommitService,
         IShellState? shellState,
         IRuntimeDataInvalidation? runtimeDataInvalidation,
-        IImportPreviewGateway? importPreviewGateway)
+        IImportPreviewGateway? importPreviewGateway,
+        IMarketSymbolSearchService? symbolSearchService = null)
     {
         _importCommitService = importCommitService;
         _shellState = shellState;
         _runtimeDataInvalidation = runtimeDataInvalidation;
         _importPreviewGateway = importPreviewGateway;
+        _symbolSearchService = symbolSearchService;
 
         Rows = [];
+        NewSymbolSuggestions = [];
         OperationTypes = Enum.GetNames<TransactionType>();
         OperationTypeLabels = ["Купить", "Продать"];
-        TagOptions = ["Акция", "ETF", "Криптовалюта", "Облигация", "Валюта", "Дивиденды"];
+        TagOptions = ["Акция", "ETF", "Криптовалюта", "Облигация", "Валюта", "Наличность", "Дивиденды"];
 
         _addRowCommand = new DelegateCommand(_ => AddEmptyRow());
         _removeRowCommand = new DelegateCommand(row => RemoveRow(row as ManualTransactionRowViewModel));
         _clearRowsCommand = new DelegateCommand(_ => ClearRows());
         _selectBuyCommand = new DelegateCommand(_ => NewTransactionType = TransactionType.Buy);
         _selectSellCommand = new DelegateCommand(_ => NewTransactionType = TransactionType.Sell);
-        _addManualTransactionCommand = new DelegateCommand(_ => AddManualTransaction());
+        _addManualTransactionCommand = new AsyncCommand(AddManualTransactionAsync, () => !IsParsing);
+        _selectNewSymbolCommand = new DelegateCommand(SelectNewSymbol);
         _clearFileCommand = new DelegateCommand(_ => ClearFile());
         _markDragOverCommand = new DelegateCommand(_ => IsDragOver = true);
         _clearDragOverCommand = new DelegateCommand(_ => IsDragOver = false);
@@ -82,6 +93,8 @@ public sealed class ManualImportViewModel : ViewModelBase
     }
 
     public ObservableCollection<ManualTransactionRowViewModel> Rows { get; }
+
+    public ObservableCollection<MarketSymbolCandidate> NewSymbolSuggestions { get; }
 
     public IReadOnlyList<string> OperationTypes { get; }
 
@@ -102,6 +115,8 @@ public sealed class ManualImportViewModel : ViewModelBase
     public ICommand SelectSellCommand => _selectSellCommand;
 
     public ICommand AddManualTransactionCommand => _addManualTransactionCommand;
+
+    public ICommand SelectNewSymbolCommand => _selectNewSymbolCommand;
 
     public ICommand ParseFileCommand => _parseFileCommand;
 
@@ -159,6 +174,7 @@ public sealed class ManualImportViewModel : ViewModelBase
             {
                 _parseFileCommand.RaiseCanExecuteChanged();
                 _saveCommand.RaiseCanExecuteChanged();
+                _addManualTransactionCommand.RaiseCanExecuteChanged();
                 OnPropertyChanged(nameof(CurrentDropStateLabel));
                 OnPropertyChanged(nameof(ImportButtonText));
             }
@@ -202,8 +218,40 @@ public sealed class ManualImportViewModel : ViewModelBase
     public string NewAssetName
     {
         get => _newAssetName;
-        set => SetProperty(ref _newAssetName, value);
+        set
+        {
+            if (SetProperty(ref _newAssetName, value))
+            {
+                if (!_isApplyingNewSymbolSelection)
+                {
+                    if (_selectedNewSymbol is not null
+                        && !string.Equals(value.Trim(), _selectedNewSymbol.Symbol, StringComparison.OrdinalIgnoreCase)
+                        && !string.Equals(value.Trim(), _selectedNewSymbol.DisplaySymbol, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _selectedNewSymbol = null;
+                    }
+
+                    _ = SearchNewSymbolsAsync(value);
+                }
+            }
+        }
     }
+
+    public string NewSymbolSearchMessage
+    {
+        get => _newSymbolSearchMessage;
+        private set
+        {
+            if (SetProperty(ref _newSymbolSearchMessage, value))
+            {
+                OnPropertyChanged(nameof(HasNewSymbolSearchMessage));
+            }
+        }
+    }
+
+    public bool HasNewSymbolSearchMessage => !string.IsNullOrWhiteSpace(NewSymbolSearchMessage);
+
+    public bool HasNewSymbolSuggestions => NewSymbolSuggestions.Count > 0;
 
     public string NewTag
     {
@@ -383,13 +431,19 @@ public sealed class ManualImportViewModel : ViewModelBase
         }
     }
 
-    private void AddManualTransaction()
+    private async Task AddManualTransactionAsync()
     {
         ErrorMessage = string.Empty;
 
         if (string.IsNullOrWhiteSpace(NewAssetName))
         {
             ShowError("Укажите название актива или тикер.");
+            return;
+        }
+
+        MarketSymbolCandidate? symbol = await ResolveNewSymbolAsync(NewAssetName, CancellationToken.None).ConfigureAwait(true);
+        if (symbol is null)
+        {
             return;
         }
 
@@ -414,25 +468,149 @@ public sealed class ManualImportViewModel : ViewModelBase
         ManualTransactionRowViewModel row = new()
         {
             Date = tradeDate.ToString("dd.MM.yyyy", CultureInfo.CurrentCulture),
-            TickerOrName = NewAssetName.Trim(),
+            TickerOrName = symbol.Symbol,
             OperationType = NewTransactionType.ToString(),
             Quantity = quantity.ToString("0.####", CultureInfo.InvariantCulture),
             Price = price.ToString("0.####", CultureInfo.InvariantCulture),
             Commission = "0",
-            Currency = "USD",
-            TagOrCategory = string.IsNullOrWhiteSpace(NewTag) ? "Акция" : NewTag.Trim(),
+            Currency = symbol.AssetType is Proxima.Domain.Assets.AssetType.Cash
+                ? "USD"
+                : string.IsNullOrWhiteSpace(symbol.Currency) ? "USD" : symbol.Currency,
+            TagOrCategory = string.IsNullOrWhiteSpace(NewTag) ? DefaultTagFor(symbol) : NewTag.Trim(),
         };
 
         AttachRow(row);
         Rows.Add(row);
         RecalculateWarnings();
         RefreshCollectionState();
-        StatusMessage = "Транзакция добавлена в таблицу. Проверьте строку и сохраните импорт.";
+        StatusMessage = $"Транзакция по {symbol.PrimaryText} добавлена в таблицу. Проверьте строку и сохраните импорт.";
 
+        _selectedNewSymbol = null;
+        NewSymbolSuggestions.Clear();
+        OnPropertyChanged(nameof(HasNewSymbolSuggestions));
         NewAssetName = string.Empty;
+        NewSymbolSearchMessage = string.Empty;
         NewPrice = "0.00";
         NewQuantity = "1";
         NewDate = DateTimeOffset.Now.ToString("dd.MM.yy", CultureInfo.CurrentCulture);
+    }
+
+    private async Task SearchNewSymbolsAsync(string query)
+    {
+        NewSymbolSearchMessage = string.Empty;
+        _newSymbolSearchCts?.Cancel();
+
+        if (_symbolSearchService is null || string.IsNullOrWhiteSpace(query) || query.Trim().Length == 0)
+        {
+            NewSymbolSuggestions.Clear();
+            OnPropertyChanged(nameof(HasNewSymbolSuggestions));
+            return;
+        }
+
+        CancellationTokenSource cts = new();
+        _newSymbolSearchCts = cts;
+
+        try
+        {
+            await Task.Delay(250, cts.Token).ConfigureAwait(true);
+            MarketSymbolSearchResult result = await _symbolSearchService.SearchAsync(query, 8, cts.Token).ConfigureAwait(true);
+            if (_newSymbolSearchCts != cts)
+            {
+                return;
+            }
+
+            NewSymbolSuggestions.Clear();
+            foreach (MarketSymbolCandidate item in result.Symbols)
+            {
+                NewSymbolSuggestions.Add(item);
+            }
+
+            NewSymbolSearchMessage = result.Succeeded
+                ? result.Symbols.Count == 0 ? "Twelve Data не нашёл инструмент по этому запросу." : string.Empty
+                : result.Message;
+            OnPropertyChanged(nameof(HasNewSymbolSuggestions));
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private void SelectNewSymbol(object? parameter)
+    {
+        if (parameter is not MarketSymbolCandidate symbol)
+        {
+            return;
+        }
+
+        _selectedNewSymbol = symbol;
+        _isApplyingNewSymbolSelection = true;
+        NewAssetName = symbol.Symbol;
+        _isApplyingNewSymbolSelection = false;
+        if (string.IsNullOrWhiteSpace(NewTag))
+        {
+            NewTag = DefaultTagFor(symbol);
+        }
+
+        NewSymbolSearchMessage = string.Empty;
+        NewSymbolSuggestions.Clear();
+        OnPropertyChanged(nameof(HasNewSymbolSuggestions));
+    }
+
+    private async Task<MarketSymbolCandidate?> ResolveNewSymbolAsync(string query, CancellationToken cancellationToken)
+    {
+        if (_selectedNewSymbol is not null
+            && (string.Equals(query.Trim(), _selectedNewSymbol.Symbol, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(query.Trim(), _selectedNewSymbol.DisplaySymbol, StringComparison.OrdinalIgnoreCase)))
+        {
+            return _selectedNewSymbol;
+        }
+
+        if (_symbolSearchService is null)
+        {
+            return new MarketSymbolCandidate(query.Trim().ToUpperInvariant(), query.Trim().ToUpperInvariant(), query.Trim(), "Manual", "USD", string.Empty, null, Proxima.Domain.Assets.AssetType.Stock);
+        }
+
+        MarketSymbolSearchResult result = await _symbolSearchService.ResolveAsync(query, cancellationToken).ConfigureAwait(true);
+        if (!result.Succeeded || result.Symbols.Count == 0)
+        {
+            ShowError(string.IsNullOrWhiteSpace(result.Message)
+                ? "Twelve Data не нашёл инструмент. Выберите тикер из подсказок."
+                : result.Message);
+            return null;
+        }
+
+        return result.Symbols[0];
+    }
+
+    private async Task<string?> ResolveImportSymbolAsync(string query, CancellationToken cancellationToken)
+    {
+        string value = query.Trim();
+        if (_symbolSearchService is null)
+        {
+            return value.ToUpperInvariant();
+        }
+
+        MarketSymbolSearchResult result = await _symbolSearchService.ResolveAsync(value, cancellationToken).ConfigureAwait(true);
+        if (!result.Succeeded || result.Symbols.Count == 0)
+        {
+            ShowError($"Twelve Data не подтвердил тикер «{value}». Исправьте строку или выберите инструмент через подсказки. {result.Message}".Trim());
+            return null;
+        }
+
+        return result.Symbols[0].Symbol;
+    }
+
+    private static string DefaultTagFor(MarketSymbolCandidate symbol)
+    {
+        return symbol.AssetType switch
+        {
+            Proxima.Domain.Assets.AssetType.Crypto => "Криптовалюта",
+            Proxima.Domain.Assets.AssetType.Etf => "ETF",
+            Proxima.Domain.Assets.AssetType.Bond => "Облигация",
+            Proxima.Domain.Assets.AssetType.Currency => "Валюта",
+            Proxima.Domain.Assets.AssetType.Cash => "Наличность",
+            _ => "Акция",
+        };
     }
 
     private void AddEmptyRow()
@@ -534,9 +712,15 @@ public sealed class ManualImportViewModel : ViewModelBase
                 return;
             }
 
+            string? resolvedSymbol = await ResolveImportSymbolAsync(row.TickerOrName, CancellationToken.None).ConfigureAwait(true);
+            if (string.IsNullOrWhiteSpace(resolvedSymbol))
+            {
+                return;
+            }
+
             drafts.Add(new ImportTransactionDraft(
                 NormalizeTradeDateForStorage(tradeDate),
-                row.TickerOrName.Trim().ToUpperInvariant(),
+                resolvedSymbol,
                 type,
                 quantity,
                 price,
