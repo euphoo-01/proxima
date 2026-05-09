@@ -7,7 +7,7 @@
 
     <UserControl.Styles>
         <Style Selector="Border.sidebar-root">
-            <Setter Property="Background" Value="#F3F6F8" />
+            <Setter Property="Background" Value="{StaticResource ProximaBrush.Sidebar}" />
             <Setter Property="Padding" Value="24,30,24,28" />
         </Style>
 

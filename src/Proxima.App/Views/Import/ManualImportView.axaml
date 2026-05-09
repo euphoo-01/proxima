@@ -8,7 +8,7 @@
 
     <UserControl.Styles>
         <Style Selector="ScrollViewer.import-scroll">
-            <Setter Property="Background" Value="#F7F8F9" />
+            <Setter Property="Background" Value="{StaticResource ProximaBrush.Sidebar}" />
         </Style>
 
         <Style Selector="TextBlock.page-title">
@@ -295,7 +295,7 @@
     </UserControl.Styles>
 
     <ScrollViewer Classes="import-scroll" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <Grid Margin="64,18,64,70" RowDefinitions="Auto,28,Auto,28,Auto,28,Auto" HorizontalAlignment="Stretch" MinWidth="900">
+        <Grid Margin="24,24,34,70" RowDefinitions="Auto,28,Auto,28,Auto,28,Auto" HorizontalAlignment="Stretch" MinWidth="900">
             <TextBlock Classes="page-title" Text="Импорт" />
 
             <Border Grid.Row="2"

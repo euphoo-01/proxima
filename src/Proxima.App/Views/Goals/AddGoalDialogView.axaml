@@ -5,43 +5,46 @@
     xmlns:goals="using:Proxima.App.Views.Goals"
     x:DataType="goals:AddGoalDialogViewModel">
     <Border Classes="proxima-modal-overlay" IsVisible="{Binding IsOpen}">
-        <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Width="720">
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Width="560">
             <Border Classes="proxima-modal-surface">
-                <StackPanel Spacing="16">
-                    <TextBlock Classes="proxima-card-title" Text="{Binding Title}" />
+                <StackPanel Spacing="18">
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="proxima-card-title" FontSize="24" LineHeight="30" Text="{Binding Title}" />
+                        <TextBlock Classes="proxima-caption" Text="Укажите название и целевую сумму. Прогноз пересчитается автоматически." />
+                    </StackPanel>
 
                     <StackPanel Spacing="8">
                         <TextBlock Classes="proxima-caption" Text="Название цели" />
-                        <TextBox Classes="proxima-input" Text="{Binding Name}" Watermark="Например, Финансовая подушка" />
+                        <TextBox Classes="proxima-input" Text="{Binding Name}" Watermark="Например, Дворец" />
                     </StackPanel>
 
-                    <StackPanel Spacing="8">
-                        <TextBlock Classes="proxima-caption" Text="Целевая сумма" />
-                        <TextBox Classes="proxima-input" Text="{Binding TargetAmount}" Watermark="0" />
-                    </StackPanel>
-
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Grid ColumnDefinitions="*,116" ColumnSpacing="12">
                         <StackPanel Spacing="8">
+                            <TextBlock Classes="proxima-caption" Text="Целевая сумма" />
+                            <TextBox Classes="proxima-input" Text="{Binding TargetAmount}" Watermark="2250000" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="8">
                             <TextBlock Classes="proxima-caption" Text="Валюта" />
                             <TextBox Classes="proxima-input" Text="{Binding Currency}" Watermark="USD" />
                         </StackPanel>
-                        <StackPanel Grid.Column="1" Spacing="8">
-                            <TextBlock Classes="proxima-caption" Text="Взнос в месяц" />
-                            <TextBox Classes="proxima-input" Text="{Binding MonthlyContribution}" Watermark="0" />
-                        </StackPanel>
                     </Grid>
 
-                    <StackPanel Spacing="8">
-                        <TextBlock Classes="proxima-caption" Text="Ожидаемая доходность %/год" />
-                        <TextBox Classes="proxima-input" Text="{Binding ExpectedAnnualReturnPercent}" Watermark="8" />
-                    </StackPanel>
+                    <Border Classes="proxima-goals-dialog-note">
+                        <TextBlock Classes="proxima-caption" TextWrapping="Wrap">
+                            <Run Text="Ежемесячный взнос берется из карточки на странице целей: " />
+                            <Run Text="{Binding MonthlyContribution, StringFormat={}{0:N0}}" />
+                            <Run Text=". Ожидаемая доходность: " />
+                            <Run Text="{Binding ExpectedAnnualReturnPercent, StringFormat={}{0:0.#}%/год}" />
+                            <Run Text="." />
+                        </TextBlock>
+                    </Border>
 
-                    <TextBlock Classes="proxima-caption" Text="{Binding ValidationMessage}" />
+                    <TextBlock Classes="proxima-caption proxima-danger-text" Text="{Binding ValidationMessage}" TextWrapping="Wrap" />
 
                     <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
                         <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding CancelCommand}" Content="Отмена" />
                         <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding ArchiveCommand}" Content="Архивировать" IsVisible="{Binding IsEditMode}" />
-                        <Button Classes="proxima-primary proxima-toolbar" Command="{Binding SaveCommand}" Content="Сохранить" />
+                        <Button Classes="proxima-primary proxima-toolbar" Command="{Binding SaveCommand}" Content="{Binding ActionText}" />
                     </StackPanel>
                 </StackPanel>
             </Border>

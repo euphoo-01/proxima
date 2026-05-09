@@ -8,7 +8,7 @@
 
     <UserControl.Styles>
         <Style Selector="ScrollViewer.assets-scroll">
-            <Setter Property="Background" Value="#F7F8F9" />
+            <Setter Property="Background" Value="{StaticResource ProximaBrush.Sidebar}" />
         </Style>
 
         <Style Selector="TextBlock.page-title">
@@ -372,7 +372,7 @@
     </UserControl.Styles>
 
     <ScrollViewer Classes="assets-scroll" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <Grid Margin="0,0,34,70" RowDefinitions="Auto,12,Auto,32,Auto,32,Auto,32,Auto">
+        <Grid Margin="24,24,34,70" RowDefinitions="Auto,12,Auto,32,Auto,32,Auto,32,Auto">
             <TextBlock Classes="page-title" Text="{Binding PageTitle}" />
 
             <TextBlock

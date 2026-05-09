@@ -50,6 +50,8 @@ public sealed class AddGoalDialogViewModel : ViewModelBase
 
     public string Title => IsEditMode ? "Редактировать цель" : "Добавить цель";
 
+    public string ActionText => IsEditMode ? "Сохранить" : "Добавить";
+
     public string Name
     {
         get => _name;
@@ -71,13 +73,13 @@ public sealed class AddGoalDialogViewModel : ViewModelBase
     public decimal MonthlyContribution
     {
         get => _monthlyContribution;
-        set => SetProperty(ref _monthlyContribution, value);
+        private set => SetProperty(ref _monthlyContribution, value);
     }
 
     public decimal? ExpectedAnnualReturnPercent
     {
         get => _expectedAnnualReturnPercent;
-        set => SetProperty(ref _expectedAnnualReturnPercent, value);
+        private set => SetProperty(ref _expectedAnnualReturnPercent, value);
     }
 
     public string ValidationMessage
@@ -86,31 +88,33 @@ public sealed class AddGoalDialogViewModel : ViewModelBase
         set => SetProperty(ref _validationMessage, value);
     }
 
-    public void OpenForCreate()
+    public void OpenForCreate(decimal monthlyContribution, decimal? expectedAnnualReturnPercent)
     {
         _goalId = null;
         IsEditMode = false;
         Name = string.Empty;
         TargetAmount = 0m;
         Currency = "USD";
-        MonthlyContribution = 0m;
-        ExpectedAnnualReturnPercent = 8m;
+        MonthlyContribution = monthlyContribution;
+        ExpectedAnnualReturnPercent = expectedAnnualReturnPercent;
         ValidationMessage = string.Empty;
         OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(ActionText));
         IsOpen = true;
     }
 
-    public void OpenForEdit(GoalListItemViewModel goal)
+    public void OpenForEdit(GoalListItemViewModel goal, decimal monthlyContribution, decimal? expectedAnnualReturnPercent)
     {
         _goalId = goal.Id;
         IsEditMode = true;
         Name = goal.Name;
         TargetAmount = goal.TargetAmount;
         Currency = goal.Currency;
-        MonthlyContribution = goal.MonthlyContribution;
-        ExpectedAnnualReturnPercent = goal.ExpectedAnnualReturnPercent;
+        MonthlyContribution = monthlyContribution;
+        ExpectedAnnualReturnPercent = expectedAnnualReturnPercent;
         ValidationMessage = string.Empty;
         OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(ActionText));
         IsOpen = true;
     }
 
@@ -134,12 +138,6 @@ public sealed class AddGoalDialogViewModel : ViewModelBase
             return;
         }
 
-        if (MonthlyContribution < 0m)
-        {
-            ValidationMessage = "Ежемесячный взнос не может быть отрицательным.";
-            return;
-        }
-
         if (string.IsNullOrWhiteSpace(Currency))
         {
             ValidationMessage = "Укажите валюту.";
@@ -147,7 +145,13 @@ public sealed class AddGoalDialogViewModel : ViewModelBase
         }
 
         ValidationMessage = string.Empty;
-        SaveRequested?.Invoke(this, new GoalDialogSaveRequest(_goalId, Name.Trim(), TargetAmount, Currency.Trim().ToUpperInvariant(), MonthlyContribution, ExpectedAnnualReturnPercent));
+        SaveRequested?.Invoke(this, new GoalDialogSaveRequest(
+            _goalId,
+            Name.Trim(),
+            TargetAmount,
+            Currency.Trim().ToUpperInvariant(),
+            MonthlyContribution,
+            ExpectedAnnualReturnPercent));
     }
 
     private void Archive()

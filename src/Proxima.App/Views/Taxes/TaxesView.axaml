@@ -176,8 +176,8 @@
         </Style>
     </UserControl.Styles>
 
-    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <Grid Margin="28,22,32,28" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="24">
+    <ScrollViewer Background="{StaticResource ProximaBrush.Sidebar}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <Grid Margin="24,24,34,64" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="24">
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
                 <StackPanel Spacing="6">
                     <TextBlock Classes="tax-page-title" Text="Налоги" />

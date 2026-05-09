@@ -1,11 +1,11 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Styles.Resources>
-        <Color x:Key="ProximaColor.Page">#FFFFFF</Color>
-        <Color x:Key="ProximaColor.Sidebar">#EEF3F9</Color>
+        <Color x:Key="ProximaColor.Page">#F3F6F8</Color>
+        <Color x:Key="ProximaColor.Sidebar">#F3F6F8</Color>
         <Color x:Key="ProximaColor.Surface">#FFFFFF</Color>
         <Color x:Key="ProximaColor.SurfaceSubtle">#F2F4F5</Color>
-        <Color x:Key="ProximaColor.ContentBackground">#FFFFFF</Color>
+        <Color x:Key="ProximaColor.ContentBackground">#F3F6F8</Color>
 
         <Color x:Key="ProximaColor.TextPrimary">#001629</Color>
         <Color x:Key="ProximaColor.Brand">#0F4C81</Color>

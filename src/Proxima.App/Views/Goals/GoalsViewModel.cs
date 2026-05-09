@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows.Input;
+using Proxima.App.Controls;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
 using Proxima.Application.Goals;
@@ -9,6 +11,9 @@ namespace Proxima.App.Views.Goals;
 
 public sealed class GoalsViewModel : ViewModelBase
 {
+    private const decimal DefaultMonthlyContribution = 2500m;
+    private const decimal DefaultExpectedAnnualReturnPercent = 8m;
+
     private readonly IGoalService _goalService;
     private readonly IShellState _shellState;
     private readonly IGoalProjectionService _projectionService;
@@ -16,18 +21,28 @@ public sealed class GoalsViewModel : ViewModelBase
     private readonly DelegateCommand _openAddGoalCommand;
     private readonly DelegateCommand _openEditGoalCommand;
     private readonly DelegateCommand _archiveGoalCommand;
-    private readonly DelegateCommand _selectGoalCommand;
+    private readonly DelegateCommand _selectHorizonCommand;
 
     private bool _isLoading;
     private bool _hasError;
     private string _errorText = string.Empty;
-    private GoalListItemViewModel? _selectedGoal;
-    private decimal _monthlyContribution;
-    private decimal? _expectedAnnualReturnPercent;
+    private decimal _monthlyContribution = DefaultMonthlyContribution;
+    private decimal? _expectedAnnualReturnPercent = DefaultExpectedAnnualReturnPercent;
+    private decimal _currentPortfolioValue;
     private decimal _projectedAmount;
-    private string _selectedGoalSummary = "Выберите цель для прогноза.";
     private bool _isProjectionChartLoading;
     private string? _projectionChartErrorText;
+    private int _selectedHorizonYears = 25;
+    private int _currentYear = DateTimeOffset.Now.Year;
+    private IReadOnlyList<GoalForecastChartPoint> _forecastPoints = [];
+    private IReadOnlyList<GoalForecastMilestone> _forecastMilestones = [];
+    private string _financialIndependenceYearsText = "—";
+    private decimal _financialIndependenceProgressPercent;
+    private string _financialIndependenceProgressText = "Прогресс: 0%";
+    private string _riskLevelText = "—";
+    private string _riskPillText = "Недостаточно данных";
+    private string _forecastCaption = "Добавьте цель для построения прогноза.";
+    private bool _monthlyContributionInitialized;
 
     public GoalsViewModel(
         IGoalService goalService,
@@ -42,13 +57,12 @@ public sealed class GoalsViewModel : ViewModelBase
         _baselineService = baselineService;
 
         Goals = [];
-        ProjectionSeries = [];
         AddGoalDialog = new AddGoalDialogViewModel();
 
         _openAddGoalCommand = new DelegateCommand(_ => OpenAddDialog());
         _openEditGoalCommand = new DelegateCommand(OpenEditDialog);
         _archiveGoalCommand = new DelegateCommand(ArchiveGoal);
-        _selectGoalCommand = new DelegateCommand(SelectGoal);
+        _selectHorizonCommand = new DelegateCommand(SelectHorizon);
 
         AddGoalDialog.SaveRequested += HandleSaveRequested;
         AddGoalDialog.ArchiveRequested += HandleArchiveRequested;
@@ -60,11 +74,7 @@ public sealed class GoalsViewModel : ViewModelBase
 
     public string PageTitle => "Цели";
 
-    public string PageDescription => "Управляйте финансовыми целями и прогнозом накоплений.";
-
     public ObservableCollection<GoalListItemViewModel> Goals { get; }
-
-    public ObservableCollection<decimal> ProjectionSeries { get; }
 
     public AddGoalDialogViewModel AddGoalDialog { get; }
 
@@ -74,14 +84,15 @@ public sealed class GoalsViewModel : ViewModelBase
 
     public ICommand ArchiveGoalCommand => _archiveGoalCommand;
 
-    public ICommand SelectGoalCommand => _selectGoalCommand;
+    public ICommand SelectHorizonCommand => _selectHorizonCommand;
 
     public decimal MonthlyContribution
     {
         get => _monthlyContribution;
         set
         {
-            if (SetProperty(ref _monthlyContribution, value))
+            decimal normalized = Math.Max(0m, value);
+            if (SetProperty(ref _monthlyContribution, normalized))
             {
                 RecalculateProjection();
             }
@@ -106,29 +117,6 @@ public sealed class GoalsViewModel : ViewModelBase
         private set => SetProperty(ref _projectedAmount, value);
     }
 
-    public GoalListItemViewModel? SelectedGoal
-    {
-        get => _selectedGoal;
-        private set
-        {
-            if (SetProperty(ref _selectedGoal, value))
-            {
-                OnPropertyChanged(nameof(HasSelectedGoal));
-                MonthlyContribution = value?.MonthlyContribution ?? 0m;
-                ExpectedAnnualReturnPercent = value?.ExpectedAnnualReturnPercent;
-                RecalculateProjection();
-            }
-        }
-    }
-
-    public string SelectedGoalSummary
-    {
-        get => _selectedGoalSummary;
-        private set => SetProperty(ref _selectedGoalSummary, value);
-    }
-
-    public bool HasSelectedGoal => SelectedGoal is not null;
-
     public bool IsProjectionChartLoading
     {
         get => _isProjectionChartLoading;
@@ -139,6 +127,81 @@ public sealed class GoalsViewModel : ViewModelBase
     {
         get => _projectionChartErrorText;
         private set => SetProperty(ref _projectionChartErrorText, value);
+    }
+
+    public IReadOnlyList<GoalForecastChartPoint> ForecastPoints
+    {
+        get => _forecastPoints;
+        private set => SetProperty(ref _forecastPoints, value);
+    }
+
+    public IReadOnlyList<GoalForecastMilestone> ForecastMilestones
+    {
+        get => _forecastMilestones;
+        private set => SetProperty(ref _forecastMilestones, value);
+    }
+
+    public int SelectedHorizonYears
+    {
+        get => _selectedHorizonYears;
+        private set
+        {
+            if (SetProperty(ref _selectedHorizonYears, value))
+            {
+                OnPropertyChanged(nameof(IsTwentyFiveYearsSelected));
+                OnPropertyChanged(nameof(IsFortyYearsSelected));
+                OnPropertyChanged(nameof(IsFiftyYearsSelected));
+                RecalculateProjection();
+            }
+        }
+    }
+
+    public int CurrentYear
+    {
+        get => _currentYear;
+        private set => SetProperty(ref _currentYear, value);
+    }
+
+    public bool IsTwentyFiveYearsSelected => SelectedHorizonYears == 25;
+
+    public bool IsFortyYearsSelected => SelectedHorizonYears == 40;
+
+    public bool IsFiftyYearsSelected => SelectedHorizonYears == 50;
+
+    public string FinancialIndependenceYearsText
+    {
+        get => _financialIndependenceYearsText;
+        private set => SetProperty(ref _financialIndependenceYearsText, value);
+    }
+
+    public decimal FinancialIndependenceProgressPercent
+    {
+        get => _financialIndependenceProgressPercent;
+        private set => SetProperty(ref _financialIndependenceProgressPercent, Math.Clamp(value, 0m, 100m));
+    }
+
+    public string FinancialIndependenceProgressText
+    {
+        get => _financialIndependenceProgressText;
+        private set => SetProperty(ref _financialIndependenceProgressText, value);
+    }
+
+    public string RiskLevelText
+    {
+        get => _riskLevelText;
+        private set => SetProperty(ref _riskLevelText, value);
+    }
+
+    public string RiskPillText
+    {
+        get => _riskPillText;
+        private set => SetProperty(ref _riskPillText, value);
+    }
+
+    public string ForecastCaption
+    {
+        get => _forecastCaption;
+        private set => SetProperty(ref _forecastCaption, value);
     }
 
     public bool IsLoading
@@ -187,6 +250,7 @@ public sealed class GoalsViewModel : ViewModelBase
         IsLoading = true;
         HasError = false;
         ErrorText = string.Empty;
+        CurrentYear = DateTimeOffset.Now.Year;
 
         try
         {
@@ -194,14 +258,23 @@ public sealed class GoalsViewModel : ViewModelBase
             Goals.Clear();
 
             IReadOnlyDictionary<Guid, decimal> baselineByGoal = _baselineService.CalculateCurrentAmounts(_shellState.CurrentPortfolioId, items);
+            _currentPortfolioValue = ResolveCurrentPortfolioValue(baselineByGoal);
+            InitializeMonthlyContribution(items);
 
-            foreach (Goal goal in items)
+            foreach (Goal goal in items.OrderBy(item => item.TargetAmount).ThenBy(item => item.Title, StringComparer.CurrentCultureIgnoreCase))
             {
-                decimal currentAmount = baselineByGoal.TryGetValue(goal.Id, out decimal allocated) ? allocated : 0m;
-                GoalForecast forecast = _goalService.Forecast(goal, currentAmount);
+                decimal currentAmount = Math.Min(goal.TargetAmount, Math.Max(0m, _currentPortfolioValue));
                 decimal progressPercent = goal.TargetAmount <= 0m
                     ? 0m
                     : Math.Clamp(currentAmount / goal.TargetAmount * 100m, 0m, 100m);
+
+                GoalMilestoneEstimate estimate = _projectionService.EstimateGoalReach(new GoalReachEstimateRequest(
+                    _currentPortfolioValue,
+                    MonthlyContribution,
+                    ExpectedAnnualReturnPercent,
+                    goal.TargetAmount,
+                    SelectedHorizonYears,
+                    CurrentYear));
 
                 Goals.Add(new GoalListItemViewModel(
                     goal.Id,
@@ -212,17 +285,19 @@ public sealed class GoalsViewModel : ViewModelBase
                     progressPercent,
                     goal.MonthlyContribution,
                     goal.ExpectedAnnualReturnPercent,
-                    forecast));
+                    estimate));
             }
 
             OnPropertyChanged(nameof(IsEmpty));
             OnPropertyChanged(nameof(HasContent));
-            SelectedGoal = Goals.FirstOrDefault();
+            RecalculateProjection();
         }
         catch (Exception ex)
         {
             HasError = true;
             ErrorText = ex.Message;
+            ForecastPoints = [];
+            ForecastMilestones = [];
         }
         finally
         {
@@ -230,16 +305,53 @@ public sealed class GoalsViewModel : ViewModelBase
         }
     }
 
+    private decimal ResolveCurrentPortfolioValue(IReadOnlyDictionary<Guid, decimal> baselineByGoal)
+    {
+        decimal derived = baselineByGoal.Values.Sum();
+        if (derived > 0m)
+        {
+            return derived;
+        }
+
+        return Math.Max(0m, _shellState.CurrentPortfolioValue);
+    }
+
+    private void InitializeMonthlyContribution(IReadOnlyList<Goal> goals)
+    {
+        if (_monthlyContributionInitialized)
+        {
+            return;
+        }
+
+        decimal storedMonthlyContribution = goals
+            .Select(goal => Math.Max(0m, goal.MonthlyContribution))
+            .DefaultIfEmpty(0m)
+            .Max();
+
+        _monthlyContribution = storedMonthlyContribution > 0m
+            ? storedMonthlyContribution
+            : DefaultMonthlyContribution;
+
+        decimal? storedExpectedReturn = goals
+            .Select(goal => goal.ExpectedAnnualReturnPercent)
+            .FirstOrDefault(value => value is not null);
+        _expectedAnnualReturnPercent = storedExpectedReturn ?? DefaultExpectedAnnualReturnPercent;
+
+        _monthlyContributionInitialized = true;
+        OnPropertyChanged(nameof(MonthlyContribution));
+        OnPropertyChanged(nameof(ExpectedAnnualReturnPercent));
+    }
+
     private void OpenAddDialog()
     {
-        AddGoalDialog.OpenForCreate();
+        AddGoalDialog.OpenForCreate(MonthlyContribution, ExpectedAnnualReturnPercent);
     }
 
     private void OpenEditDialog(object? parameter)
     {
         if (parameter is GoalListItemViewModel goal)
         {
-            AddGoalDialog.OpenForEdit(goal);
+            AddGoalDialog.OpenForEdit(goal, MonthlyContribution, ExpectedAnnualReturnPercent);
         }
     }
 
@@ -251,11 +363,17 @@ public sealed class GoalsViewModel : ViewModelBase
         }
     }
 
-    private void SelectGoal(object? parameter)
+    private void SelectHorizon(object? parameter)
     {
-        if (parameter is GoalListItemViewModel goal)
+        if (parameter is int years)
         {
-            SelectedGoal = goal;
+            SelectedHorizonYears = years;
+            return;
+        }
+
+        if (parameter is string raw && int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed))
+        {
+            SelectedHorizonYears = parsed;
         }
     }
 
@@ -269,8 +387,8 @@ public sealed class GoalsViewModel : ViewModelBase
                     request.Name,
                     request.TargetAmount,
                     request.Currency,
-                    request.MonthlyContribution,
-                    request.ExpectedAnnualReturnPercent,
+                    MonthlyContribution,
+                    ExpectedAnnualReturnPercent,
                     null)).ConfigureAwait(true)
                 : await _goalService.UpdateAsync(new UpdateGoalRequest(
                     _shellState.CurrentPortfolioId,
@@ -278,8 +396,8 @@ public sealed class GoalsViewModel : ViewModelBase
                     request.Name,
                     request.TargetAmount,
                     request.Currency,
-                    request.MonthlyContribution,
-                    request.ExpectedAnnualReturnPercent,
+                    MonthlyContribution,
+                    ExpectedAnnualReturnPercent,
                     null)).ConfigureAwait(true);
 
             if (!result.Succeeded)
@@ -319,42 +437,101 @@ public sealed class GoalsViewModel : ViewModelBase
     {
         IsProjectionChartLoading = true;
         ProjectionChartErrorText = null;
-        ProjectionSeries.Clear();
 
         try
         {
-            if (SelectedGoal is null)
+            if (Goals.Count == 0)
             {
-                SelectedGoalSummary = "Выберите цель для прогноза.";
+                ForecastPoints = [];
+                ForecastMilestones = [];
                 ProjectedAmount = 0m;
+                FinancialIndependenceYearsText = "—";
+                FinancialIndependenceProgressPercent = 0m;
+                FinancialIndependenceProgressText = "Прогресс: 0%";
+                RiskLevelText = "—";
+                RiskPillText = "Нет целей";
+                ForecastCaption = "Добавьте цель, чтобы увидеть точки достижения на графике.";
                 return;
             }
 
             GoalProjection projection = _projectionService.BuildProjection(new GoalProjectionRequest(
-                SelectedGoal.Name,
-                SelectedGoal.TargetAmount,
-                SelectedGoal.CurrentAmount,
+                _currentPortfolioValue,
                 MonthlyContribution,
-                ExpectedAnnualReturnPercent));
+                ExpectedAnnualReturnPercent,
+                SelectedHorizonYears,
+                CurrentYear,
+                Goals.Select(goal => new GoalProjectionTarget(goal.Id, goal.Name, goal.Currency, goal.TargetAmount)).ToArray()));
 
-            foreach (decimal point in projection.Series)
-            {
-                ProjectionSeries.Add(point);
-            }
-
+            ForecastPoints = projection.Points;
+            ForecastMilestones = projection.Milestones;
             ProjectedAmount = projection.ProjectedAmount;
-            SelectedGoalSummary = projection.Summary;
+
+            UpdateGoalReachEstimates(projection);
+            UpdateSummaryCards(projection);
         }
         catch (Exception ex)
         {
-            ProjectionSeries.Clear();
+            ForecastPoints = [];
+            ForecastMilestones = [];
             ProjectedAmount = 0m;
             ProjectionChartErrorText = ex.Message;
+            RiskLevelText = "Ошибка";
+            RiskPillText = "Проверьте параметры";
         }
         finally
         {
             IsProjectionChartLoading = false;
         }
+    }
+
+    private void UpdateGoalReachEstimates(GoalProjection projection)
+    {
+        Dictionary<Guid, GoalForecastMilestone> milestoneByGoal = projection.Milestones.ToDictionary(item => item.GoalId);
+        for (int i = 0; i < Goals.Count; i++)
+        {
+            GoalListItemViewModel goal = Goals[i];
+            GoalMilestoneEstimate estimate = milestoneByGoal.TryGetValue(goal.Id, out GoalForecastMilestone? milestone)
+                ? GoalMilestoneEstimate.Reachable(milestone.MonthIndex, milestone.EstimatedYear)
+                : GoalMilestoneEstimate.Unreachable(SelectedHorizonYears);
+
+            Goals[i] = goal with { Estimate = estimate };
+        }
+    }
+
+    private void UpdateSummaryCards(GoalProjection projection)
+    {
+        decimal maxTarget = Goals.Max(goal => goal.TargetAmount);
+        decimal progress = maxTarget <= 0m ? 0m : _currentPortfolioValue / maxTarget * 100m;
+        FinancialIndependenceProgressPercent = progress;
+        FinancialIndependenceProgressText = $"Прогресс: {Math.Clamp(progress, 0m, 100m):0.#}%";
+
+        int totalGoals = Goals.Count;
+        int reachedGoals = projection.Milestones.Count;
+        GoalForecastMilestone? farthestMilestone = projection.Milestones.OrderByDescending(item => item.MonthIndex).FirstOrDefault();
+
+        FinancialIndependenceYearsText = farthestMilestone is null
+            ? $"> {SelectedHorizonYears} лет"
+            : $"{Math.Max(1, (int)Math.Ceiling(farthestMilestone.MonthIndex / 12d))} лет";
+
+        if (reachedGoals == totalGoals)
+        {
+            RiskLevelText = "Низкий";
+            RiskPillText = "Сбалансирован";
+        }
+        else if (reachedGoals > 0)
+        {
+            RiskLevelText = "Средний";
+            RiskPillText = "Требует взноса";
+        }
+        else
+        {
+            RiskLevelText = "Высокий";
+            RiskPillText = "Цели вне горизонта";
+        }
+
+        ForecastCaption = reachedGoals == 0
+            ? $"При текущем взносе цели не достигаются за {SelectedHorizonYears} лет."
+            : $"{reachedGoals} из {totalGoals} целей достигаются в выбранном горизонте.";
     }
 
     private sealed class DelegateCommand(Action<object?> execute) : ICommand
@@ -380,65 +557,148 @@ public sealed record GoalListItemViewModel(
     decimal ProgressPercent,
     decimal MonthlyContribution,
     decimal? ExpectedAnnualReturnPercent,
-    GoalForecast Forecast)
+    GoalMilestoneEstimate Estimate)
 {
-    public string TargetText => $"{TargetAmount:N2} {Currency}";
+    public string TargetText => FormatMoney(TargetAmount, Currency);
 
-    public string CurrentText => $"{CurrentAmount:N2} {Currency}";
+    public string CurrentText => FormatMoney(CurrentAmount, Currency);
 
     public string ProgressText => $"{ProgressPercent:0.#}%";
 
-    public string ForecastText => Forecast.Reachable
-        ? $"~ {Forecast.MonthsToGoal} мес до цели"
-        : Forecast.Message;
+    public string ForecastText => Estimate.IsReachable
+        ? $"Достигнете в {Estimate.EstimatedYear}"
+        : $"> {Estimate.HorizonYears} лет";
+
+    public string ThumbnailText => string.IsNullOrWhiteSpace(Name)
+        ? "Ц"
+        : Name.Trim()[0].ToString().ToUpper(CultureInfo.CurrentCulture);
+
+    private static string FormatMoney(decimal value, string currency)
+    {
+        string prefix = string.Equals(currency, "USD", StringComparison.OrdinalIgnoreCase) ? "$" : string.Empty;
+        string suffix = string.Equals(currency, "USD", StringComparison.OrdinalIgnoreCase) ? string.Empty : $" {currency}";
+        return $"{prefix}{value:N0}{suffix}";
+    }
 }
 
 public interface IGoalProjectionService
 {
     GoalProjection BuildProjection(GoalProjectionRequest request);
+
+    GoalMilestoneEstimate EstimateGoalReach(GoalReachEstimateRequest request);
 }
 
 public sealed class GoalProjectionService : IGoalProjectionService
 {
+    private const decimal DefaultExpectedAnnualReturnPercent = 8m;
+
     public GoalProjection BuildProjection(GoalProjectionRequest request)
     {
         decimal monthlyContribution = Math.Max(0m, request.MonthlyContribution);
-        decimal monthlyRate = (request.ExpectedAnnualReturnPercent ?? 0m) / 100m / 12m;
+        decimal monthlyRate = NormalizeMonthlyRate(request.ExpectedAnnualReturnPercent);
         decimal value = Math.Max(0m, request.CurrentAmount);
+        int totalMonths = Math.Max(1, request.HorizonYears * 12);
 
-        List<decimal> series = [value];
-        int monthsToGoal = 0;
+        List<GoalForecastChartPoint> points = new(totalMonths + 1);
+        List<GoalForecastMilestone> milestones = [];
+        HashSet<Guid> reachedGoalIds = [];
 
-        for (int month = 1; month <= 120; month++)
+        for (int month = 0; month <= totalMonths; month++)
         {
-            value = monthlyRate == 0m
-                ? value + monthlyContribution
-                : value * (1m + monthlyRate) + monthlyContribution;
-
-            series.Add(value);
-
-            if (monthsToGoal == 0 && value >= request.TargetAmount)
+            if (month > 0)
             {
-                monthsToGoal = month;
+                value = value * (1m + monthlyRate) + monthlyContribution;
+            }
+
+            points.Add(new GoalForecastChartPoint(month, value));
+
+            foreach (GoalProjectionTarget target in request.Targets.OrderBy(item => item.TargetAmount))
+            {
+                if (reachedGoalIds.Contains(target.GoalId) || value < target.TargetAmount)
+                {
+                    continue;
+                }
+
+                reachedGoalIds.Add(target.GoalId);
+                milestones.Add(new GoalForecastMilestone(
+                    target.GoalId,
+                    target.Title,
+                    target.Currency,
+                    target.TargetAmount,
+                    month,
+                    DateTimeOffset.Now.AddMonths(month).Year));
             }
         }
 
-        string summary = monthsToGoal > 0
-            ? $"Ориентировочно {monthsToGoal} мес до \"{request.GoalName}\"."
-            : "При текущих параметрах цель не достигается за 10 лет.";
+        return new GoalProjection(points, milestones.OrderBy(item => item.MonthIndex).ToArray(), value);
+    }
 
-        return new GoalProjection(series, value, summary);
+    public GoalMilestoneEstimate EstimateGoalReach(GoalReachEstimateRequest request)
+    {
+        decimal monthlyContribution = Math.Max(0m, request.MonthlyContribution);
+        decimal monthlyRate = NormalizeMonthlyRate(request.ExpectedAnnualReturnPercent);
+        decimal value = Math.Max(0m, request.CurrentAmount);
+        int totalMonths = Math.Max(1, request.HorizonYears * 12);
+
+        if (value >= request.TargetAmount)
+        {
+            return GoalMilestoneEstimate.Reachable(0, request.StartYear);
+        }
+
+        for (int month = 1; month <= totalMonths; month++)
+        {
+            value = value * (1m + monthlyRate) + monthlyContribution;
+            if (value >= request.TargetAmount)
+            {
+                return GoalMilestoneEstimate.Reachable(month, DateTimeOffset.Now.AddMonths(month).Year);
+            }
+        }
+
+        return GoalMilestoneEstimate.Unreachable(request.HorizonYears);
+    }
+
+    private static decimal NormalizeMonthlyRate(decimal? expectedAnnualReturnPercent)
+    {
+        decimal annualPercent = Math.Clamp(expectedAnnualReturnPercent ?? DefaultExpectedAnnualReturnPercent, -50m, 100m);
+        return annualPercent / 100m / 12m;
     }
 }
 
 public sealed record GoalProjectionRequest(
-    string GoalName,
-    decimal TargetAmount,
     decimal CurrentAmount,
     decimal MonthlyContribution,
-    decimal? ExpectedAnnualReturnPercent);
+    decimal? ExpectedAnnualReturnPercent,
+    int HorizonYears,
+    int StartYear,
+    IReadOnlyList<GoalProjectionTarget> Targets);
 
-public sealed record GoalProjection(IReadOnlyList<decimal> Series, decimal ProjectedAmount, string Summary);
+public sealed record GoalProjectionTarget(Guid GoalId, string Title, string Currency, decimal TargetAmount);
+
+public sealed record GoalProjection(
+    IReadOnlyList<GoalForecastChartPoint> Points,
+    IReadOnlyList<GoalForecastMilestone> Milestones,
+    decimal ProjectedAmount);
+
+public sealed record GoalReachEstimateRequest(
+    decimal CurrentAmount,
+    decimal MonthlyContribution,
+    decimal? ExpectedAnnualReturnPercent,
+    decimal TargetAmount,
+    int HorizonYears,
+    int StartYear);
+
+public sealed record GoalMilestoneEstimate(bool IsReachable, int MonthsToGoal, int? EstimatedYear, int HorizonYears)
+{
+    public static GoalMilestoneEstimate Reachable(int monthsToGoal, int estimatedYear)
+    {
+        return new GoalMilestoneEstimate(true, monthsToGoal, estimatedYear, 0);
+    }
+
+    public static GoalMilestoneEstimate Unreachable(int horizonYears)
+    {
+        return new GoalMilestoneEstimate(false, 0, null, horizonYears);
+    }
+}
 
 file sealed class DesignShellState : IShellState
 {
@@ -450,9 +710,9 @@ file sealed class DesignShellState : IShellState
 
     public Guid CurrentPortfolioId { get; } = Guid.Parse("1df177b8-b3f6-4d80-9f0d-3027d4f4a149");
 
-    public string CurrentPortfolioName => "Growth Portfolio";
+    public string CurrentPortfolioName => "Основной портфель";
 
-    public decimal CurrentPortfolioValue => 25000m;
+    public decimal CurrentPortfolioValue => 955000m;
 }
 
 file sealed class DesignGoalService : IGoalService
@@ -461,9 +721,7 @@ file sealed class DesignGoalService : IGoalService
     {
         IReadOnlyList<Goal> goals =
         [
-            new Goal(Guid.NewGuid(), portfolioId, "Финансовая подушка", 12000m, "USD", 350m, 6m, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
-            new Goal(Guid.NewGuid(), portfolioId, "Первый взнос на жильё", 50000m, "USD", 700m, 8m, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
-            new Goal(Guid.NewGuid(), portfolioId, "Обучение", 18000m, "USD", 250m, 5m, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+            new Goal(Guid.Parse("9a3f6f95-cd82-4901-9d98-211f5bd7b7da"), portfolioId, "Дворец", 2_250_000m, "USD", 2500m, 8m, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
         ];
 
         return Task.FromResult(goals);
@@ -489,7 +747,7 @@ file sealed class DesignGoalService : IGoalService
 
     public GoalForecast Forecast(Goal goal, decimal currentPortfolioValue)
     {
-        return new GoalForecast(true, 18, DateTimeOffset.UtcNow.AddMonths(18), goal.TargetAmount, "OK");
+        return new GoalForecast(true, 168, DateTimeOffset.UtcNow.AddYears(14), goal.TargetAmount, "OK");
     }
 }
 
@@ -497,20 +755,6 @@ file sealed class DesignGoalProgressBaselineService : IGoalProgressBaselineServi
 {
     public IReadOnlyDictionary<Guid, decimal> CalculateCurrentAmounts(Guid portfolioId, IReadOnlyList<Goal> goals)
     {
-        if (goals.Count == 0)
-        {
-            return new Dictionary<Guid, decimal>();
-        }
-
-        decimal total = goals.Sum(goal => goal.TargetAmount);
-        if (total <= 0m)
-        {
-            return goals.ToDictionary(goal => goal.Id, _ => 0m);
-        }
-
-        const decimal designPortfolioValue = 25000m;
-        return goals.ToDictionary(
-            goal => goal.Id,
-            goal => Math.Round(designPortfolioValue * (goal.TargetAmount / total), 2, MidpointRounding.AwayFromZero));
+        return goals.ToDictionary(goal => goal.Id, _ => 955000m);
     }
 }

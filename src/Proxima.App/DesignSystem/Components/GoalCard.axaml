@@ -1,19 +1,234 @@
 <Styles xmlns="https://github.com/avaloniaui">
-    <Style Selector="Border.proxima-goal-list-card">
-        <Setter Property="Background" Value="{StaticResource ProximaBrush.Surface}" />
-        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+    <Style Selector="Border.proxima-goals-hero-card">
+        <Setter Property="Background" Value="#F1F3F4" />
+        <Setter Property="BorderBrush" Value="#EEF2F6" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Large}" />
-        <Setter Property="Padding" Value="{StaticResource ProximaSpace.24}" />
-        <Setter Property="BoxShadow" Value="{StaticResource ProximaShadow.Card}" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="30,32,30,24" />
+    </Style>
+
+    <Style Selector="TextBlock.proxima-goals-section-title">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="21" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LineHeight" Value="27" />
+        <Setter Property="Foreground" Value="#001629" />
+    </Style>
+
+    <Style Selector="TextBlock.proxima-goals-section-subtitle">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="LineHeight" Value="17" />
+        <Setter Property="Foreground" Value="#42474D" />
+    </Style>
+
+    <Style Selector="Button.proxima-goals-horizon-button">
+        <Setter Property="MinWidth" Value="52" />
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="15" />
+        <Setter Property="Foreground" Value="#42474D" />
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="Button.proxima-goals-horizon-button:pointerover">
+        <Setter Property="Background" Value="#FFFFFF" />
+    </Style>
+
+    <Style Selector="Button.proxima-goals-horizon-button.active">
+        <Setter Property="Background" Value="#001629" />
+        <Setter Property="Foreground" Value="#FFFFFF" />
+    </Style>
+
+    <Style Selector="Border.proxima-goals-independence-card">
+        <Setter Property="Background" Value="#FFFFFF" />
+        <Setter Property="BorderBrush" Value="#EDF1F5" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="24,25,24,20" />
+        <Setter Property="MinHeight" Value="144" />
+    </Style>
+
+    <Style Selector="Border.proxima-goals-risk-card">
+        <Setter Property="Background" Value="#F1F3F4" />
+        <Setter Property="BorderBrush" Value="#EEF2F6" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="24,25,20,22" />
+        <Setter Property="MinHeight" Value="96" />
+    </Style>
+
+    <Style Selector="TextBlock.proxima-goals-eyebrow">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LetterSpacing" Value="1.1" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="Foreground" Value="#575E66" />
+    </Style>
+
+    <Style Selector="TextBlock.proxima-goals-metric-value">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="29" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LineHeight" Value="34" />
+        <Setter Property="Foreground" Value="#001629" />
+    </Style>
+
+    <Style Selector="TextBlock.proxima-goals-risk-value">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LineHeight" Value="30" />
+        <Setter Property="Foreground" Value="#001629" />
+    </Style>
+
+    <Style Selector="TextBlock.proxima-goals-small-caption">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="LineHeight" Value="14" />
+        <Setter Property="Foreground" Value="#64748B" />
+    </Style>
+
+    <Style Selector="ProgressBar.proxima-goals-progress">
+        <Setter Property="Height" Value="6" />
+        <Setter Property="Foreground" Value="#1B6D24" />
+        <Setter Property="Background" Value="#E9EDF0" />
+    </Style>
+
+    <Style Selector="Border.proxima-goals-risk-pill">
+        <Setter Property="Background" Value="#A3F69C" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="8,3" />
+        <Setter Property="MaxWidth" Value="118" />
+    </Style>
+
+    <Style Selector="TextBlock.proxima-goals-risk-pill-text">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="9" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="#1B6D24" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style Selector="Border.proxima-goal-list-card">
+        <Setter Property="Background" Value="#FFFFFF" />
+        <Setter Property="BorderBrush" Value="#EDF1F5" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="30,31,30,22" />
+    </Style>
+
+    <Style Selector="Button.proxima-goals-add-button">
+        <Setter Property="Height" Value="36" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Background" Value="#FFFFFF" />
+        <Setter Property="BorderBrush" Value="#EDF1F5" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Foreground" Value="#001629" />
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="Button.proxima-goals-add-button:pointerover">
+        <Setter Property="BorderBrush" Value="#CBD5E1" />
+    </Style>
+
+    <Style Selector="Border.proxima-goals-empty-list">
+        <Setter Property="Height" Value="74" />
+        <Setter Property="Background" Value="#FFFFFF" />
+        <Setter Property="BorderBrush" Value="#EDF1F5" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="20" />
     </Style>
 
     <Style Selector="Border.proxima-goal-card">
-        <Setter Property="Background" Value="{StaticResource ProximaBrush.SurfaceSubtle}" />
-        <Setter Property="BorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="Background" Value="#FFFFFF" />
+        <Setter Property="BorderBrush" Value="#EDF1F5" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Card}" />
-        <Setter Property="Padding" Value="{StaticResource ProximaSpace.16}" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="18,18,16,18" />
+        <Setter Property="MinHeight" Value="74" />
+    </Style>
+
+    <Style Selector="Border.proxima-goal-thumbnail">
+        <Setter Property="Width" Value="55" />
+        <Setter Property="Height" Value="44" />
+        <Setter Property="CornerRadius" Value="7" />
+        <Setter Property="Background" Value="#E7F0F8" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="TextBlock.proxima-goal-thumbnail-text">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="#0F4C81" />
+    </Style>
+
+    <Style Selector="TextBlock.proxima-goal-title">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LineHeight" Value="21" />
+        <Setter Property="Foreground" Value="#001629" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style Selector="TextBlock.proxima-goal-amount">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="LineHeight" Value="18" />
+        <Setter Property="Foreground" Value="#42474D" />
+    </Style>
+
+    <Style Selector="Button.proxima-goal-menu-button">
+        <Setter Property="Width" Value="38" />
+        <Setter Property="Height" Value="38" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Foreground" Value="#CBD5E1" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="Button.proxima-goal-menu-button:pointerover">
+        <Setter Property="Background" Value="#F4F7FA" />
+        <Setter Property="Foreground" Value="#64748B" />
+    </Style>
+
+    <Style Selector="Border.proxima-goals-dialog-note">
+        <Setter Property="Background" Value="#F6F9FC" />
+        <Setter Property="BorderBrush" Value="#E2E8F0" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="14" />
+    </Style>
+
+    <Style Selector="TextBlock.proxima-danger-text">
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Danger}" />
     </Style>
 
     <Style Selector="ProgressBar.proxima-goal-progress">

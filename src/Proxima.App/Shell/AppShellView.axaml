@@ -42,7 +42,7 @@
         <DataTemplate x:DataType="placeholder:PlaceholderViewModel"><placeholderViews:PlaceholderView /></DataTemplate>
     </UserControl.DataTemplates>
 
-    <Grid Background="#F3F6F8" ColumnDefinitions="260,*">
+    <Grid Background="{StaticResource ProximaBrush.Sidebar}" ColumnDefinitions="260,*">
         <shell:SidebarView DataContext="{Binding Sidebar}" />
         <Grid Grid.Column="1" RowDefinitions="80,*">
             <shell:TopbarView DataContext="{Binding Topbar}" />

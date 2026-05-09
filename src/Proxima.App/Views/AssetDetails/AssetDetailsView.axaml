@@ -10,8 +10,8 @@
     d:DataContext="{x:Static details:AssetDetailsDesignData.Sample}"
     mc:Ignorable="d">
 
-    <ScrollViewer Classes="proxima-asset-details-page" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <Grid Margin="0,24,34,64" RowDefinitions="Auto,24,Auto,24,Auto,24,Auto,24,Auto" HorizontalAlignment="Stretch">
+    <ScrollViewer Classes="proxima-asset-details-page" Background="{StaticResource ProximaBrush.Sidebar}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <Grid Margin="24,24,34,64" RowDefinitions="Auto,24,Auto,24,Auto,24,Auto,24,Auto" HorizontalAlignment="Stretch">
             <Grid Grid.Row="0" ColumnDefinitions="*,Auto" IsVisible="{Binding HasData}">
                 <Grid RowDefinitions="Auto,8,Auto" ColumnDefinitions="56,16,*">
                     <Border Grid.RowSpan="3" Classes="asset-logo-box" Width="48" Height="48" VerticalAlignment="Top">

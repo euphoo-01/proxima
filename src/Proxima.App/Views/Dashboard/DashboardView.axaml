@@ -12,7 +12,7 @@
 
     <UserControl.Styles>
         <Style Selector="ScrollViewer.dashboard-scroll">
-            <Setter Property="Background" Value="#F7F8F9" />
+            <Setter Property="Background" Value="{StaticResource ProximaBrush.Sidebar}" />
         </Style>
 
         <Style Selector="TextBlock.page-title">
@@ -317,7 +317,7 @@
     </UserControl.Styles>
 
     <ScrollViewer Classes="dashboard-scroll" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <Grid Margin="0,29,34,60" RowDefinitions="Auto,32,Auto,44,Auto,46,Auto">
+        <Grid Margin="24,24,34,60" RowDefinitions="Auto,32,Auto,44,Auto,46,Auto">
             <TextBlock Classes="page-title" Text="Дешборд" />
 
             <Grid Grid.Row="2" ColumnDefinitions="2.08*,24,*">

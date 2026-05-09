@@ -210,8 +210,8 @@
         </Style>
     </UserControl.Styles>
 
-    <ScrollViewer Background="#F3F6F8">
-        <Grid Margin="0,26,34,70" RowDefinitions="Auto,12,Auto,24,Auto,14,Auto,14,Auto,14,Auto,22,Auto">
+    <ScrollViewer Background="{StaticResource ProximaBrush.Sidebar}">
+        <Grid Margin="24,24,34,70" RowDefinitions="Auto,12,Auto,24,Auto,14,Auto,14,Auto,14,Auto,22,Auto">
             <TextBlock Classes="page-title" Text="Аккаунт" />
 
             <StackPanel Grid.Row="2" Spacing="6">
