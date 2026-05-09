@@ -43,7 +43,6 @@ public sealed class SimplePdfReportService : IReportService
             "Summary cards",
             "Taxpayer profile",
             "Calculation breakdown",
-            "Tax formula breakdown",
             "Exchange rate notes",
             "Legal disclaimer",
         ];
@@ -410,19 +409,6 @@ public sealed class SimplePdfReportService : IReportService
             _y += height + 18d;
         }
 
-        public void DrawTaxFormula(TaxReportRequest request)
-        {
-            DrawSectionTitle("Как получилась сумма к уплате");
-            EnsureSpace(92d);
-            double cardWidth = PageWidth - Margin * 2d;
-            DrawRoundedRect(Margin, _y, cardWidth, 76d, ReportPalette.GrayTint, ReportPalette.Border);
-            string formula = $"({FormatMoney(request.RealizedGains + request.Dividends, request.Currency)} - {FormatMoney(request.Fees + Math.Abs(request.Losses), request.Currency)}) -> база {FormatMoney(request.TaxableBase, request.Currency)}";
-            string tax = $"Налог до зачета: {FormatMoney(request.TotalTaxDue + request.TaxSaved, request.Currency)}; зачет: {FormatMoney(request.TaxSaved, request.Currency)}; к уплате: {FormatMoney(request.TotalTaxDue, request.Currency)}.";
-            DrawText(formula, _bodyBoldFont, ReportPalette.Navy, new XRect(Margin + 14d, _y + 14d, cardWidth - 28d, 18d));
-            DrawText(tax, _bodyFont, ReportPalette.Text, new XRect(Margin + 14d, _y + 38d, cardWidth - 28d, 28d));
-            _y += 94d;
-        }
-
         public void DrawTaxRows(string title, IReadOnlyList<TaxReportLine>? rows, string currency)
         {
             DrawSectionTitle(title);
@@ -693,7 +679,6 @@ public sealed class SimplePdfReportService : IReportService
             ]);
 
             canvas.DrawCallout("Налоговый профиль", request.TaxProfileDescription, ReportRgb.BlueTint);
-            canvas.DrawFormula(request);
             canvas.DrawTaxRows("Детализация расчета", request.CalculationBreakdown, request.Currency);
             canvas.DrawTaxRows("Разбор налога", request.TaxBreakdown, request.Currency);
             canvas.DrawCallout("Курсы валют", request.ExchangeRateNotes, ReportRgb.BlueTint);
@@ -773,51 +758,64 @@ public sealed class SimplePdfReportService : IReportService
         {
             double gap = 10d;
             double colWidth = (PageWidth - Margin * 2d - gap) / 2d;
-            double rowHeight = 40d;
-            for (int i = 0; i < cells.Count; i++)
+
+            for (int rowStart = 0; rowStart < cells.Count; rowStart += 2)
             {
-                if (i % 2 == 0)
+                InfoCell left = cells[rowStart];
+                InfoCell? right = rowStart + 1 < cells.Count ? cells[rowStart + 1] : null;
+                double rowHeight = Math.Max(EstimateInfoCellHeight(left, colWidth), EstimateInfoCellHeight(right, colWidth));
+
+                EnsureSpace(rowHeight + 8d);
+                DrawInfoCell(left, Margin, _y, colWidth, rowHeight);
+                if (right is not null)
                 {
-                    EnsureSpace(rowHeight + 8d);
+                    DrawInfoCell(right, Margin + colWidth + gap, _y, colWidth, rowHeight);
                 }
 
-                int col = i % 2;
-                double x = Margin + col * (colWidth + gap);
-                double y = _y;
-                DrawRect(x, y, colWidth, rowHeight, ReportRgb.White, ReportRgb.Border);
-                InfoCell cell = cells[i];
-                DrawText(cell.Label, x + 11d, y + 8d, 7.5d, ReportRgb.Muted, colWidth - 22d);
-                DrawWrappedText(cell.Value, x + 11d, y + 21d, colWidth - 22d, 8.8d, ReportRgb.Navy, 1);
-                if (col == 1 || i == cells.Count - 1)
-                {
-                    _y += rowHeight + 8d;
-                }
+                _y += rowHeight + 8d;
             }
 
             _y += 8d;
         }
 
-        public void DrawCallout(string title, string text, ReportRgb background)
+        private void DrawInfoCell(InfoCell cell, double x, double y, double width, double height)
         {
-            EnsureSpace(76d);
-            double height = 62d;
-            DrawRect(Margin, _y, PageWidth - Margin * 2d, height, background, ReportRgb.Border);
-            DrawText(title, Margin + 14d, _y + 11d, 9.5d, ReportRgb.Navy, PageWidth - Margin * 2d - 28d);
-            DrawWrappedText(text, Margin + 14d, _y + 29d, PageWidth - Margin * 2d - 28d, 8.8d, ReportRgb.Text, 2);
-            _y += height + 18d;
+            int valueLines = IsRateInfoCell(cell) ? 4 : 1;
+            DrawRect(x, y, width, height, ReportRgb.White, ReportRgb.Border);
+            DrawText(cell.Label, x + 11d, y + 8d, 7.5d, ReportRgb.Muted, width - 22d);
+            DrawWrappedText(cell.Value, x + 11d, y + 21d, width - 22d, 8.8d, ReportRgb.Navy, valueLines);
         }
 
-        public void DrawFormula(TaxReportRequest request)
+        private static double EstimateInfoCellHeight(InfoCell? cell, double width)
         {
-            DrawSectionTitle("Как получилась сумма к уплате");
-            EnsureSpace(92d);
-            double width = PageWidth - Margin * 2d;
-            DrawRect(Margin, _y, width, 76d, ReportRgb.GrayTint, ReportRgb.Border);
-            string formula = $"({FormatMoney(request.RealizedGains + request.Dividends, request.Currency)} - {FormatMoney(request.Fees + Math.Abs(request.Losses), request.Currency)}) -> база {FormatMoney(request.TaxableBase, request.Currency)}";
-            string tax = $"Налог до зачета: {FormatMoney(request.TotalTaxDue + request.TaxSaved, request.Currency)}; зачет: {FormatMoney(request.TaxSaved, request.Currency)}; к уплате: {FormatMoney(request.TotalTaxDue, request.Currency)}.";
-            DrawWrappedText(formula, Margin + 14d, _y + 14d, width - 28d, 9.4d, ReportRgb.Navy, 1);
-            DrawWrappedText(tax, Margin + 14d, _y + 38d, width - 28d, 8.8d, ReportRgb.Text, 2);
-            _y += 94d;
+            if (cell is null)
+            {
+                return 40d;
+            }
+
+            int valueLines = IsRateInfoCell(cell) ? 4 : 1;
+            double valueHeight = EstimateTextHeight(cell.Value, width - 22d, 8.8d, 1, valueLines);
+            return Math.Max(40d, 26d + valueHeight);
+        }
+
+        private static bool IsRateInfoCell(InfoCell cell)
+        {
+            return string.Equals(cell.Label, "Курсы валют", StringComparison.OrdinalIgnoreCase);
+        }
+
+        public void DrawCallout(string title, string text, ReportRgb background)
+        {
+            bool isRateCallout = string.Equals(title, "Курсы валют", StringComparison.OrdinalIgnoreCase);
+            int maxLines = isRateCallout ? 5 : 3;
+            double textWidth = PageWidth - Margin * 2d - 28d;
+            double textHeight = EstimateTextHeight(text, textWidth, 8.8d, 1, maxLines);
+            double height = Math.Max(62d, 39d + textHeight);
+
+            EnsureSpace(height + 14d);
+            DrawRect(Margin, _y, PageWidth - Margin * 2d, height, background, ReportRgb.Border);
+            DrawText(title, Margin + 14d, _y + 11d, 9.5d, ReportRgb.Navy, textWidth);
+            DrawWrappedText(text, Margin + 14d, _y + 29d, textWidth, 8.8d, ReportRgb.Text, maxLines);
+            _y += height + 18d;
         }
 
         public void DrawTaxRows(string title, IReadOnlyList<TaxReportLine>? rows, string currency)
@@ -1056,7 +1054,13 @@ public sealed class SimplePdfReportService : IReportService
 
         private static double EstimateTextHeight(string? text, double width, double fontSize, int minimumLines)
         {
-            int lines = Math.Max(minimumLines, WrapText(text, width, fontSize).Count);
+            return EstimateTextHeight(text, width, fontSize, minimumLines, int.MaxValue);
+        }
+
+        private static double EstimateTextHeight(string? text, double width, double fontSize, int minimumLines, int maxLines)
+        {
+            int wrappedLines = WrapText(text, width, fontSize).Count;
+            int lines = Math.Max(minimumLines, Math.Min(maxLines, wrappedLines));
             return lines * Math.Max(fontSize + 3d, 9d);
         }
 
@@ -1074,27 +1078,42 @@ public sealed class SimplePdfReportService : IReportService
         private static double EstimateRuneAdvance(Rune rune, double fontSize)
         {
             int value = rune.Value;
+            double emWidth;
+
             if (value == ' ')
             {
-                return fontSize * 0.32d;
+                emWidth = 0.38d;
             }
-
-            if (".,:;!|'`".Contains(char.ConvertFromUtf32(value), StringComparison.Ordinal))
+            else
             {
-                return fontSize * 0.24d;
+                string text = char.ConvertFromUtf32(value);
+                UnicodeCategory category = Rune.GetUnicodeCategory(rune);
+                bool isCyrillic = value >= 0x0400 && value <= 0x052F;
+
+                if (".,:;!|'`".Contains(text, StringComparison.Ordinal))
+                {
+                    emWidth = 0.32d;
+                }
+                else if ("ijlI1|".Contains(text, StringComparison.Ordinal))
+                {
+                    emWidth = 0.38d;
+                }
+                else if ("mwMWШЩЮЖФДЫ".Contains(text, StringComparison.Ordinal))
+                {
+                    emWidth = isCyrillic ? 0.86d : 0.78d;
+                }
+                else if (category == UnicodeCategory.DecimalDigitNumber)
+                {
+                    emWidth = 0.62d;
+                }
+                else
+                {
+                    emWidth = isCyrillic ? 0.68d : 0.60d;
+                }
             }
 
-            if ("ijlI1".Contains(char.ConvertFromUtf32(value), StringComparison.Ordinal))
-            {
-                return fontSize * 0.30d;
-            }
-
-            if ("mwMWШЩЮ".Contains(char.ConvertFromUtf32(value), StringComparison.Ordinal))
-            {
-                return fontSize * 0.72d;
-            }
-
-            return fontSize * 0.54d;
+            double positiveTracking = Math.Clamp(fontSize * 0.035d, 0.22d, 0.55d);
+            return fontSize * emWidth + positiveTracking;
         }
 
         private static string Fmt(double value)

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Proxima.Domain.Transactions;
 
 namespace Proxima.Application.Taxes;
@@ -141,6 +142,8 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
             return EmptyFailure(ex.Message, BuildRuleSet(profile, reportYear));
         }
 
+        (rateSource, rateDate) = await BuildCurrentUsdRateNoteAsync(rateBook, rateSource, rateDate).ConfigureAwait(false);
+
         TaxRuleSet ruleSet = BuildRuleSet(profile, reportYear);
         decimal grossIncome = realizedPositive + dividends + rewards;
         decimal deductions = Math.Min(grossIncome, realizedLosses + standaloneFees);
@@ -190,6 +193,38 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
         return message;
     }
 
+    private static async Task<(string RateSource, DateOnly? RateDate)> BuildCurrentUsdRateNoteAsync(
+        RateBook rateBook,
+        string currentRateSource,
+        DateOnly? currentRateDate)
+    {
+        DateOnly displayDate = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+
+        try
+        {
+            ExchangeRateResult usdRate = await rateBook.GetAsync("USD", Byn, displayDate).ConfigureAwait(false);
+            if (usdRate.Succeeded)
+            {
+                return (BuildRateSourceDetail("USD", usdRate), usdRate.Date);
+            }
+        }
+        catch
+        {
+            // The USD/BYN line is informational and must not invalidate the tax calculation.
+        }
+
+        string fallback = string.IsNullOrWhiteSpace(currentRateSource)
+            ? "USD/BYN: курс недоступен"
+            : ExtractUsdOnlyOrFallback(currentRateSource);
+
+        DateOnly? fallbackDate = fallback.Contains("USD", StringComparison.OrdinalIgnoreCase)
+            && !fallback.Contains("недоступен", StringComparison.OrdinalIgnoreCase)
+                ? currentRateDate
+                : null;
+
+        return (fallback, fallbackDate);
+    }
+
     private static void AppendRateSource(string source, DateOnly date, ref string rateSource, ref DateOnly? rateDate)
     {
         if (string.IsNullOrWhiteSpace(source))
@@ -197,17 +232,37 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
             return;
         }
 
+        string normalizedSource = source.Trim();
+        if (!normalizedSource.Contains("USD", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(rateSource))
         {
-            rateSource = source;
+            rateSource = normalizedSource;
             rateDate = date;
             return;
         }
 
-        if (!rateSource.Contains(source, StringComparison.OrdinalIgnoreCase))
+        if (!rateSource.Contains("USD", StringComparison.OrdinalIgnoreCase))
         {
-            rateSource = $"{rateSource}, {source}";
+            rateSource = normalizedSource;
+            rateDate = date;
         }
+    }
+
+    private static string ExtractUsdOnlyOrFallback(string source)
+    {
+        foreach (string part in source.Split(';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (part.Contains("USD", StringComparison.OrdinalIgnoreCase))
+            {
+                return part;
+            }
+        }
+
+        return "USD/BYN: курс недоступен";
     }
 
     private static TaxRuleSet BuildRuleSet(LegalProfileType profile, int reportYear)
@@ -396,8 +451,24 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
             GetEffectiveGrossAmount(transaction) * rate.Rate,
             Math.Abs(transaction.FeeAmount) * rate.Rate,
             Math.Abs(transaction.TaxAmount) * rate.Rate,
-            rate.Source,
+            BuildRateSourceDetail(transaction.Currency, rate),
             rate.Date);
+    }
+
+    private static string BuildRateSourceDetail(string currency, ExchangeRateResult rate)
+    {
+        string from = NormalizeCurrency(currency);
+        string provider = string.IsNullOrWhiteSpace(rate.Source) ? "unknown" : rate.Source.Trim();
+        decimal effectiveRate = decimal.Round(rate.Rate, 6);
+
+        return $"{provider}: 1 {from} = {effectiveRate.ToString("0.######", CultureInfo.InvariantCulture)} {Byn}";
+    }
+
+    private static string NormalizeCurrency(string currency)
+    {
+        return string.IsNullOrWhiteSpace(currency)
+            ? Byn
+            : currency.Trim().ToUpperInvariant();
     }
 
     private static decimal GetEffectiveGrossAmount(TaxTransactionSnapshot transaction)

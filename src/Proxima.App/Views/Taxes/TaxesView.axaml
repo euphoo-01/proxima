@@ -252,10 +252,14 @@
 
                             <TextBlock Grid.Row="1" Classes="tax-value" HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding TotalTaxDueText}" />
 
-                            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6">
-                                <TextBlock Classes="tax-small" Text="ⓘ" />
-                                <TextBlock Classes="tax-small" Text="{Binding RateSourceText}" />
-                            </StackPanel>
+                            <TextBlock
+                                Grid.Row="2"
+                                Classes="tax-small"
+                                HorizontalAlignment="Center"
+                                MaxWidth="240"
+                                Text="{Binding RateSourceText}"
+                                TextAlignment="Center"
+                                TextWrapping="Wrap" />
                         </Grid>
                     </Border>
 
