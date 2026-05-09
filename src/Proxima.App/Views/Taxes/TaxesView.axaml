@@ -277,77 +277,50 @@
                 </Grid>
 
                 <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="24">
-                    <StackPanel Spacing="24">
-                        <Border Classes="tax-card">
-                            <StackPanel Spacing="20">
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <TextBlock Classes="tax-title" Text="Двойной налог" />
-                                    <TextBlock Grid.Column="1" Classes="tax-caption" Text="W‑8BEN + РБ" />
-                                </Grid>
+                    <Border Classes="tax-card">
+                        <StackPanel Spacing="20">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Classes="tax-title" Text="Двойной налог" />
+                                <TextBlock Grid.Column="1" Classes="tax-caption" Text="W‑8BEN + РБ" />
+                            </Grid>
 
-                                <Grid ColumnDefinitions="2*,*">
-                                    <Border Classes="tax-rate-left">
-                                        <TextBlock Classes="tax-rate-text" Text="{Binding ForeignWithholdingRateText}" />
-                                    </Border>
-                                    <Border Grid.Column="1" Classes="tax-rate-right">
-                                        <TextBlock Classes="tax-rate-text" Text="{Binding LocalTaxRateText}" />
-                                    </Border>
-                                </Grid>
-
-                                <Border Classes="tax-alert">
-                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
-                                        <TextBlock FontSize="22" Foreground="#B91C1C" Text="▲" VerticalAlignment="Top" />
-                                        <StackPanel Grid.Column="1" Spacing="6">
-                                            <TextBlock Classes="tax-title" Foreground="#B91C1C" Text="Форма 1042-S" />
-                                            <TextBlock Classes="tax-caption" Foreground="#B91C1C" Text="Запросите форму у брокера, чтобы подтвердить удержанный налог и корректно зачесть его в расчете." TextWrapping="Wrap" />
-                                        </StackPanel>
-                                    </Grid>
+                            <Grid ColumnDefinitions="2*,*">
+                                <Border Classes="tax-rate-left">
+                                    <TextBlock Classes="tax-rate-text" Text="{Binding ForeignWithholdingRateText}" />
                                 </Border>
-                            </StackPanel>
-                        </Border>
+                                <Border Grid.Column="1" Classes="tax-rate-right">
+                                    <TextBlock Classes="tax-rate-text" Text="{Binding LocalTaxRateText}" />
+                                </Border>
+                            </Grid>
 
-                        <Border Classes="tax-card">
-                            <StackPanel Spacing="16">
-                                <TextBlock Classes="tax-title" Text="Предел дохода" />
-                                <TextBlock Classes="tax-caption" Text="Порог берется из правил выбранного налогового профиля." TextWrapping="Wrap" />
-
-                                <Grid Margin="10,22,10,0" RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
-                                    <TextBlock Classes="tax-value-medium" HorizontalAlignment="Center" Text="{Binding IncomeThresholdProgressText}" />
-                                    <ProgressBar Grid.Row="1" Classes="tax-progress" Minimum="0" Maximum="100" Value="{Binding IncomeThresholdProgress}" />
-                                    <Grid Grid.Row="2" ColumnDefinitions="*,Auto,*">
-                                        <TextBlock Classes="tax-small" Text="0" />
-                                        <Border Grid.Column="1" Background="#E9EEF2" CornerRadius="5" Padding="10,5">
-                                            <TextBlock Classes="tax-small" Foreground="#001629" Text="{Binding IncomeThresholdCaption}" />
-                                        </Border>
-                                        <TextBlock Grid.Column="2" Classes="tax-small" HorizontalAlignment="Right" Text="{Binding IncomeThresholdRightLabel}" />
-                                    </Grid>
+                            <Border Classes="tax-alert">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                                    <TextBlock FontSize="22" Foreground="#B91C1C" Text="▲" VerticalAlignment="Top" />
+                                    <StackPanel Grid.Column="1" Spacing="6">
+                                        <TextBlock Classes="tax-title" Foreground="#B91C1C" Text="Форма 1042-S" />
+                                        <TextBlock Classes="tax-caption" Foreground="#B91C1C" Text="Запросите форму у брокера, чтобы подтвердить удержанный налог и корректно зачесть его в расчете." TextWrapping="Wrap" />
+                                    </StackPanel>
                                 </Grid>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
 
                     <Border Grid.Column="1" Classes="tax-card">
                         <StackPanel Spacing="16">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <TextBlock Classes="tax-title" Text="{Binding TaxBreakdownTitle}" />
-                                <TextBlock Grid.Column="1" Classes="tax-caption" Text="расчет" />
+                            <TextBlock Classes="tax-title" Text="Предел дохода" />
+                            <TextBlock Classes="tax-caption" Text="Порог берется из правил выбранного налогового профиля." TextWrapping="Wrap" />
+
+                            <Grid Margin="10,22,10,0" RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
+                                <TextBlock Classes="tax-value-medium" HorizontalAlignment="Center" Text="{Binding IncomeThresholdProgressText}" />
+                                <ProgressBar Grid.Row="1" Classes="tax-progress" Minimum="0" Maximum="100" Value="{Binding IncomeThresholdProgress}" />
+                                <Grid Grid.Row="2" ColumnDefinitions="*,Auto,*">
+                                    <TextBlock Classes="tax-small" Text="0" />
+                                    <Border Grid.Column="1" Background="#E9EEF2" CornerRadius="5" Padding="10,5">
+                                        <TextBlock Classes="tax-small" Foreground="#001629" Text="{Binding IncomeThresholdCaption}" />
+                                    </Border>
+                                    <TextBlock Grid.Column="2" Classes="tax-small" HorizontalAlignment="Right" Text="{Binding IncomeThresholdRightLabel}" />
+                                </Grid>
                             </Grid>
-
-                            <ItemsControl ItemsSource="{Binding TaxBreakdownRows}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="taxes:TaxBreakdownRowViewModel">
-                                        <Border Classes="tax-table-row">
-                                            <Grid ColumnDefinitions="1.35*,*,1.8*" ColumnSpacing="12">
-                                                <TextBlock Classes="tax-caption" Foreground="#001629" Text="{Binding Name}" />
-                                                <TextBlock Grid.Column="1" Classes="tax-caption" FontWeight="Bold" Foreground="#001629" Text="{Binding ValueText}" />
-                                                <TextBlock Grid.Column="2" Classes="tax-caption" Text="{Binding Note}" TextWrapping="Wrap" />
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-
-                            <TextBlock Classes="tax-caption" Text="{Binding TaxCalculationNote}" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
                 </Grid>
