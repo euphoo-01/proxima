@@ -3,4 +3,8 @@
     <ProjectReference Include="..\Proxima.Application\Proxima.Application.csproj" />
     <ProjectReference Include="..\Proxima.Domain\Proxima.Domain.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PdfSharp" Version="6.2.2" />
+  </ItemGroup>
 </Project>

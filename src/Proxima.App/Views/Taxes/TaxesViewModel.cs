@@ -21,6 +21,7 @@ public sealed class TaxesViewModel : ViewModelBase
 
     private int _selectedYear = DateTime.UtcNow.Year;
     private bool _isLoading;
+    private bool _isExporting;
     private bool _hasError;
     private bool _isEmpty;
     private bool _isOfflineRate;
@@ -58,8 +59,8 @@ public sealed class TaxesViewModel : ViewModelBase
         BreakdownRows = [];
         TaxBreakdownRows = [];
 
-        _recalculateCommand = new DelegateCommand(_ => _ = RecalculateAsync(), _ => !IsLoading);
-        _exportPdfCommand = new DelegateCommand(_ => _ = ExportPdfAsync(), _ => !IsLoading && HasContent);
+        _recalculateCommand = new DelegateCommand(_ => _ = RecalculateAsync(), _ => !IsLoading && !IsExporting);
+        _exportPdfCommand = new DelegateCommand(_ => _ = ExportPdfAsync(), _ => CanExportPdf);
         _shellState.PortfolioChanged += (_, _) => _ = RecalculateAsync();
         dataInvalidation.DataInvalidated += (_, _) => _ = RecalculateAsync();
 
@@ -100,6 +101,21 @@ public sealed class TaxesViewModel : ViewModelBase
         }
     }
 
+    public bool IsExporting
+    {
+        get => _isExporting;
+        private set
+        {
+            if (SetProperty(ref _isExporting, value))
+            {
+                OnPropertyChanged(nameof(CanExportPdf));
+                OnPropertyChanged(nameof(ExportButtonText));
+                _recalculateCommand.RaiseCanExecuteChanged();
+                _exportPdfCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
     public bool HasError
     {
         get => _hasError;
@@ -125,6 +141,10 @@ public sealed class TaxesViewModel : ViewModelBase
     }
 
     public bool HasContent => !IsLoading && !HasError && !IsEmpty;
+
+    public bool CanExportPdf => HasContent && !IsExporting;
+
+    public string ExportButtonText => IsExporting ? "Формирование PDF..." : "Экспортировать отчёт";
 
     public bool IsOfflineRate
     {
@@ -440,19 +460,40 @@ public sealed class TaxesViewModel : ViewModelBase
 
     private async Task ExportPdfAsync()
     {
-        if (IsLoading || !HasContent)
+        if (!CanExportPdf)
         {
+            ExportStatusMessage = HasError
+                ? "Сначала исправьте ошибку расчета налогов."
+                : "Сначала выполните расчет налогов по текущему портфелю.";
             return;
         }
 
-        TaxExportResult result = await _provider.ExportPdfAsync(SelectedYear, CancellationToken.None).ConfigureAwait(true);
-        ExportStatusMessage = result.Message;
-        StatusMessage = result.Message;
+        IsExporting = true;
+        ExportStatusMessage = "Формирую PDF-отчет...";
+        StatusMessage = ExportStatusMessage;
+
+        try
+        {
+            TaxExportResult result = await _provider.ExportPdfAsync(SelectedYear, CancellationToken.None).ConfigureAwait(true);
+            ExportStatusMessage = result.Message;
+            StatusMessage = result.Message;
+        }
+        catch (Exception ex)
+        {
+            string message = $"Не удалось экспортировать PDF: {ex.Message}";
+            ExportStatusMessage = message;
+            StatusMessage = message;
+        }
+        finally
+        {
+            IsExporting = false;
+        }
     }
 
     private void OnContentStateChanged()
     {
         OnPropertyChanged(nameof(HasContent));
+        OnPropertyChanged(nameof(CanExportPdf));
         _exportPdfCommand.RaiseCanExecuteChanged();
     }
 
@@ -593,17 +634,33 @@ public sealed class TaxesViewModel : ViewModelBase
                 return new TaxExportResult(false, model.Message);
             }
 
+            string portfolioName = string.IsNullOrWhiteSpace(_shellState.CurrentPortfolioName)
+                ? "Основной портфель"
+                : _shellState.CurrentPortfolioName;
+
             TaxReportRequest request = new(
-                UserDisplayName: _shellState.CurrentPortfolioName,
+                UserDisplayName: portfolioName,
                 TaxProfile: model.ProfileName,
+                TaxProfileDescription: model.ProfileDescription,
                 Year: year,
                 TaxableBase: model.TaxableBase,
                 TotalTaxDue: model.TotalTaxDue,
-                ExchangeRateNotes: model.RateSourceText,
+                TaxSaved: model.TaxSaved,
                 Dividends: model.Dividends,
+                RealizedGains: model.RealizedGains,
+                Fees: model.Fees,
+                Losses: model.Losses,
+                CurrencyEffect: model.CurrencyEffect,
+                BaseRatePercent: model.BaseRatePercent,
+                DividendRatePercent: model.DividendRatePercent,
+                IncomeThreshold: model.IncomeThreshold,
                 TransactionCount: model.TransactionCount,
+                Currency: model.Currency,
+                ExchangeRateNotes: model.RateSourceText,
                 CalculationVersion: model.CalculationVersion,
                 LegalDisclaimer: model.LegalDisclaimer,
+                CalculationBreakdown: model.Breakdown.Select(ToReportLine).ToList(),
+                TaxBreakdown: model.TaxBreakdown.Select(ToReportLine).ToList(),
                 OutputDirectory: ProximaReportingComposition.GetDefaultReportDirectory());
 
             ReportExportResult export = await _reportService.ExportTaxPdfAsync(request, cancellationToken).ConfigureAwait(false);
@@ -612,6 +669,12 @@ public sealed class TaxesViewModel : ViewModelBase
                 : export.Message;
 
             return new TaxExportResult(export.Succeeded, message);
+        }
+
+
+        private static TaxReportLine ToReportLine(TaxBreakdownRow row)
+        {
+            return new TaxReportLine(row.Name, row.Value, row.Note, row.Kind.ToString());
         }
 
         private static IReadOnlyList<TaxBreakdownRow> BuildBreakdownRows(TaxCalculationResult calculation)

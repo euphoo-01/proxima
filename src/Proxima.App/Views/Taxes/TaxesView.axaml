@@ -192,8 +192,8 @@
                     Height="44"
                     VerticalAlignment="Center"
                     Command="{Binding ExportPdfCommand}"
-                    Content="Экспортировать отчёт"
-                    IsEnabled="{Binding HasContent}" />
+                    Content="{Binding ExportButtonText}"
+                    IsEnabled="{Binding CanExportPdf}" />
             </Grid>
 
             <Border Grid.Row="1" Classes="tax-control-panel">
