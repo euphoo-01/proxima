@@ -11,4 +11,6 @@ public interface ILocalUserRepository
     Task AddAsync(LocalUserProfile profile, CancellationToken cancellationToken);
 
     Task UpdateAsync(LocalUserProfile profile, CancellationToken cancellationToken);
+
+    Task DeleteAsync(Guid profileId, CancellationToken cancellationToken);
 }

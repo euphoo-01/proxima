@@ -239,5 +239,10 @@ public sealed class RegisterViewModel : ViewModelBase
 
             return Task.FromResult(AuthResult.Success(profile));
         }
+
+        public Task DeleteProfileAsync(Guid profileId, CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
     }
 }

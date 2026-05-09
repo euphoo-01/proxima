@@ -395,12 +395,14 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="dashboard:DashboardBarViewModel">
-                                    <Grid Width="58" Height="286" Margin="0,0,10,0" RowDefinitions="*,24">
-                                        <Grid Grid.Row="0" VerticalAlignment="Bottom">
-                                            <Border Classes="bar" Classes.active="{Binding IsActive}" Height="{Binding Height}" VerticalAlignment="Bottom" />
-                                            <Border IsVisible="{Binding IsTooltipVisible}" Background="#001629" CornerRadius="4" Padding="7,5" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,-6,0">
-                                                <TextBlock FontFamily="{StaticResource ProximaFont.Family}" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Text="{Binding TooltipText}" />
-                                            </Border>
+                                    <Grid Width="58" Height="286" Margin="0,0,10,0" RowDefinitions="*,24" ClipToBounds="False">
+                                        <Grid Grid.Row="0" Width="58" ClipToBounds="False">
+                                            <StackPanel Width="58" VerticalAlignment="Bottom" HorizontalAlignment="Center" Spacing="8" ClipToBounds="False">
+                                                <Border IsVisible="{Binding IsTooltipVisible}" Background="#001629" CornerRadius="4" Padding="7,5" HorizontalAlignment="Center">
+                                                    <TextBlock FontFamily="{StaticResource ProximaFont.Family}" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Text="{Binding TooltipText}" />
+                                                </Border>
+                                                <Border Classes="bar" Classes.active="{Binding IsActive}" Height="{Binding Height}" HorizontalAlignment="Center" ToolTip.Tip="{Binding TooltipText}" />
+                                            </StackPanel>
                                         </Grid>
                                         <TextBlock Grid.Row="1" Classes="bar-label" Classes.active="{Binding IsActive}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Text="{Binding Label}" />
                                     </Grid>

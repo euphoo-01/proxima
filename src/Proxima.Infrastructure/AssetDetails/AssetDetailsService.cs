@@ -50,6 +50,21 @@ public sealed class AssetDetailsService(
             .GetLatestQuoteAsync(asset.Ticker, asset.Currency, cancellationToken)
             .ConfigureAwait(false);
 
+        if (!latestQuote.Succeeded)
+        {
+            if (latestQuote.ErrorKind == QuoteProviderErrorKind.Unauthorized)
+            {
+                throw new InvalidOperationException(latestQuote.Message);
+            }
+
+            if (cachedQuote is null)
+            {
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(latestQuote.Message)
+                    ? "Не удалось загрузить котировку Finnhub и локального кэша для актива нет."
+                    : latestQuote.Message);
+            }
+        }
+
         if (latestQuote.Succeeded && latestQuote.Quote is not null)
         {
             cachedQuote = new QuoteCacheEntry(
@@ -88,7 +103,7 @@ public sealed class AssetDetailsService(
 
         IReadOnlyList<AssetDetailsCandle> candles = marketData?.Candles.Count > 0
             ? marketData.Candles
-            : BuildSyntheticCandles(assetTransactions, currentPrice, NormalizeTimeframe(timeframe));
+            : [];
 
         if (candles.Count > 0)
         {
@@ -257,69 +272,6 @@ public sealed class AssetDetailsService(
         return previous?.Price > 0m
             ? previous.Price
             : fallback;
-    }
-
-    private static IReadOnlyList<AssetDetailsCandle> BuildSyntheticCandles(
-        IReadOnlyList<PortfolioTransaction> transactions,
-        decimal fallbackPrice,
-        string timeframe)
-    {
-        List<decimal> anchors = transactions
-            .Where(item => item.Type is TransactionType.Buy or TransactionType.Sell && item.Price > 0m)
-            .OrderBy(item => item.TradeDate)
-            .Select(item => item.Price)
-            .ToList();
-
-        int points = timeframe switch
-        {
-            "1ч" => 36,
-            "7д" => 56,
-            "30д" => 60,
-            "1г" => 80,
-            _ => 48
-        };
-
-        TimeSpan step = timeframe switch
-        {
-            "1ч" => TimeSpan.FromMinutes(2),
-            "7д" => TimeSpan.FromHours(3),
-            "30д" => TimeSpan.FromHours(12),
-            "1г" => TimeSpan.FromDays(5),
-            _ => TimeSpan.FromMinutes(30)
-        };
-
-        if (anchors.Count == 0)
-        {
-            anchors.Add(fallbackPrice > 0m ? fallbackPrice : 1m);
-        }
-
-        DateTimeOffset start = DateTimeOffset.UtcNow - TimeSpan.FromTicks(step.Ticks * points);
-        List<AssetDetailsCandle> result = new(points);
-        decimal last = anchors[0];
-
-        for (int i = 0; i < points; i++)
-        {
-            decimal target = anchors[Math.Min(anchors.Count - 1, i * anchors.Count / Math.Max(1, points))];
-            decimal noise = (decimal)Math.Sin(i * 0.61d) * target * 0.008m;
-
-            decimal open = last;
-            decimal close = Math.Max(0.01m, open * 0.72m + target * 0.28m + noise);
-            decimal high = Math.Max(open, close) * 1.006m;
-            decimal low = Math.Min(open, close) * 0.994m;
-            decimal volume = 1_000m + i * 125m;
-
-            result.Add(new AssetDetailsCandle(
-                start + TimeSpan.FromTicks(step.Ticks * i),
-                open,
-                high,
-                low,
-                close,
-                volume));
-
-            last = close;
-        }
-
-        return result;
     }
 
     private static AssetRiskMetrics CalculateRisk(

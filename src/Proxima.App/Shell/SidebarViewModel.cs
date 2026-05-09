@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Proxima.App.Navigation;
 using Proxima.App.ViewModels;
 using Proxima.App.Views.Auth;
@@ -12,6 +13,7 @@ public sealed class SidebarViewModel : ViewModelBase
 {
     private readonly IAppNavigationService _navigation;
     private readonly IRuntimeUserContext _userContext;
+    private Bitmap? _avatarBitmap;
 
     public SidebarViewModel(IAppNavigationService navigation, IRuntimeUserContext userContext)
     {
@@ -43,6 +45,16 @@ public sealed class SidebarViewModel : ViewModelBase
         ProfileCommand = new DelegateCommand(_ => _navigation.Navigate(AppRoutes.Profile));
 
         _navigation.RouteChanged += OnRouteChanged;
+
+        LoadAvatarFromDisk();
+
+        _userContext.ProfileChanged += (_, _) =>
+        {
+            LoadAvatarFromDisk();
+            OnPropertyChanged(nameof(UserDisplayName));
+            OnPropertyChanged(nameof(UserInitial));
+            OnPropertyChanged(nameof(UserRoleDisplayName));
+        };
     }
 
     public ObservableCollection<SidebarItemViewModel> Items { get; }
@@ -59,9 +71,30 @@ public sealed class SidebarViewModel : ViewModelBase
 
     public string UserInitial => UserDisplayName.Trim()[..1].ToUpperInvariant();
 
-    public string UserRoleDisplayName => _userContext.Role == UserRole.FinancialAnalyst
-        ? "Финансовый аналитик"
-        : "Частный инвестор";
+    public string UserRoleDisplayName => _userContext.Role.ToDisplayName();
+
+    public Bitmap? AvatarBitmap
+    {
+        get => _avatarBitmap;
+        private set
+        {
+            if (ReferenceEquals(_avatarBitmap, value))
+            {
+                return;
+            }
+
+            Bitmap? old = _avatarBitmap;
+            _avatarBitmap = value;
+            old?.Dispose();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasAvatar));
+            OnPropertyChanged(nameof(ShowInitialAvatar));
+        }
+    }
+
+    public bool HasAvatar => AvatarBitmap is not null;
+
+    public bool ShowInitialAvatar => !HasAvatar;
 
     private void ExecuteNavigate(object? parameter)
     {
@@ -84,6 +117,46 @@ public sealed class SidebarViewModel : ViewModelBase
                                     || string.Equals(route.Key, AppRoutes.ManualImport,
                                         StringComparison.OrdinalIgnoreCase)));
         }
+    }
+
+    private void LoadAvatarFromDisk()
+    {
+        AvatarBitmap = null;
+
+        if (!_userContext.IsAuthenticated || _userContext.UserId == Guid.Empty)
+        {
+            return;
+        }
+
+        string path = GetAvatarPath(_userContext.UserId);
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        try
+        {
+            byte[] bytes = File.ReadAllBytes(path);
+            using MemoryStream stream = new(bytes);
+            AvatarBitmap = new Bitmap(stream);
+        }
+        catch
+        {
+            AvatarBitmap = null;
+        }
+    }
+
+    private static string GetProfileExtrasDirectory()
+    {
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Proxima",
+            "Profile");
+    }
+
+    private static string GetAvatarPath(Guid userId)
+    {
+        return Path.Combine(GetProfileExtrasDirectory(), $"{userId:N}.avatar");
     }
 
     private sealed class DelegateCommand(Action<object?> execute) : ICommand

@@ -113,5 +113,15 @@ public sealed class LocalAuthService(
         }
     }
 
+    public async Task DeleteProfileAsync(Guid profileId, CancellationToken cancellationToken = default)
+    {
+        if (profileId == Guid.Empty)
+        {
+            return;
+        }
+
+        await users.DeleteAsync(profileId, cancellationToken).ConfigureAwait(false);
+    }
+
     private static string NormalizeLogin(string login) => login.Trim().ToLowerInvariant();
 }

@@ -20,7 +20,7 @@ public sealed class SettingsService(IUserSettingsRepository repository) : ISetti
             NormalizeCurrency(request.PreferredCurrency),
             AppLanguage.RU,
             1m,
-            QuoteProviderKind.Mock,
+            QuoteProviderKind.Finnhub,
             15,
             string.Empty,
             CurrencyProviderKind.Mock,
@@ -48,13 +48,6 @@ public sealed class SettingsService(IUserSettingsRepository repository) : ISetti
         if (current is null)
         {
             return SettingsOperationResult.Failure("Настройки не инициализированы.");
-        }
-
-        if (request.QuoteProvider == QuoteProviderKind.Finnhub
-            && string.IsNullOrWhiteSpace(request.FinnhubApiKeyRaw)
-            && string.IsNullOrWhiteSpace(current.FinnhubApiKeyProtected))
-        {
-            return SettingsOperationResult.Failure("Для Finnhub укажите API key.");
         }
 
         string protectedKey = current.FinnhubApiKeyProtected;

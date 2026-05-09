@@ -1,4 +1,5 @@
 using Proxima.Application.Auth;
+using Proxima.Application.Settings;
 using Proxima.Domain.Auth;
 
 namespace Proxima.App.Views.Auth;
@@ -15,7 +16,13 @@ public interface IRuntimeUserContext
 
     UserRole Role { get; }
 
+    event EventHandler? ProfileChanged;
+
     void SetAuthenticated(LocalUserProfile profile);
+
+    void UpdateRuntimeProfile(string displayName, UserRole role);
+
+    void ClearAuthentication();
 }
 
 public sealed class RuntimeUserContext : IRuntimeUserContext, ICurrentUserContext
@@ -30,6 +37,8 @@ public sealed class RuntimeUserContext : IRuntimeUserContext, ICurrentUserContex
 
     public UserRole Role { get; private set; } = UserRole.PrivateInvestor;
 
+    public event EventHandler? ProfileChanged;
+
     public void SetAuthenticated(LocalUserProfile profile)
     {
         ArgumentNullException.ThrowIfNull(profile);
@@ -39,6 +48,30 @@ public sealed class RuntimeUserContext : IRuntimeUserContext, ICurrentUserContex
         Login = profile.Login;
         DisplayName = profile.DisplayName;
         Role = profile.Role;
+
+        ProfileChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void UpdateRuntimeProfile(string displayName, UserRole role)
+    {
+        DisplayName = string.IsNullOrWhiteSpace(displayName)
+            ? DisplayName
+            : displayName.Trim();
+
+        Role = role;
+
+        ProfileChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void ClearAuthentication()
+    {
+        IsAuthenticated = false;
+        UserId = Guid.Empty;
+        Login = string.Empty;
+        DisplayName = string.Empty;
+        Role = UserRole.PrivateInvestor;
+
+        ProfileChanged?.Invoke(this, EventArgs.Empty);
     }
 }
 
@@ -92,7 +125,8 @@ public sealed record RuntimeAuthBootstrapResult(bool IsFirstRunRequired)
 
 public sealed class LocalProfileAuthGateService(
     ILocalAuthService localAuthService,
-    IRuntimeUserContext runtimeUserContext)
+    IRuntimeUserContext runtimeUserContext,
+    ISettingsService settingsService)
     : IAuthGateService
 {
     public async Task<AuthGateResult> UnlockAsync(
@@ -113,6 +147,13 @@ public sealed class LocalProfileAuthGateService(
         }
 
         runtimeUserContext.SetAuthenticated(result.Profile);
+        await settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
+            result.Profile.Id,
+            result.Profile.DisplayName,
+            result.Profile.Role,
+            result.Profile.Login,
+            "USD"), cancellationToken).ConfigureAwait(false);
+
         return AuthGateResult.Success();
     }
 }

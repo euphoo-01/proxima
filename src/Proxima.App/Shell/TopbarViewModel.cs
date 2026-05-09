@@ -16,6 +16,7 @@ public sealed class TopbarViewModel : ViewModelBase
     private readonly IShellPortfolioCoordinator _portfolioCoordinator;
     private readonly IShellState _shellState;
     private readonly IAppNavigationService _navigation;
+    private readonly IRuntimeDataInvalidation _runtimeDataInvalidation;
     private readonly AsyncCommand _createPortfolioCommand;
     private readonly DelegateCommand _notificationsCommand;
     private string _title = "Дешборд";
@@ -30,15 +31,35 @@ public sealed class TopbarViewModel : ViewModelBase
         IRuntimeUserContext userContext,
         IShellPortfolioCoordinator portfolioCoordinator,
         IShellState shellState,
-        IAppNavigationService navigation)
+        IAppNavigationService navigation,
+        IRuntimeDataInvalidation runtimeDataInvalidation)
     {
         _portfolioService = portfolioService;
         _userContext = userContext;
         _portfolioCoordinator = portfolioCoordinator;
         _shellState = shellState;
         _navigation = navigation;
+        _runtimeDataInvalidation = runtimeDataInvalidation;
         _createPortfolioCommand = new AsyncCommand(CreatePortfolioAsync, () => CanCreatePortfolio && !IsBusy);
         _notificationsCommand = new DelegateCommand(_ => _navigation.Navigate(AppRoutes.Notifications));
+
+        _userContext.ProfileChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(IsFinancialConsultant));
+            OnPropertyChanged(nameof(ShowPortfolioSelector));
+            OnPropertyChanged(nameof(ShowPortfolioText));
+            OnPropertyChanged(nameof(CanCreatePortfolio));
+            _createPortfolioCommand.RaiseCanExecuteChanged();
+            _ = ReloadPortfoliosAsync(selectCurrent: true);
+        };
+
+        _runtimeDataInvalidation.DataInvalidated += (_, args) =>
+        {
+            if (args.Reason.Contains("portfolio", StringComparison.OrdinalIgnoreCase))
+            {
+                _ = ReloadPortfoliosAsync(selectCurrent: true);
+            }
+        };
 
         Portfolios = [];
         _ = InitializeAsync();
@@ -130,6 +151,14 @@ public sealed class TopbarViewModel : ViewModelBase
 
     private async Task ReloadPortfoliosAsync(bool selectCurrent, CancellationToken cancellationToken = default)
     {
+        if (!_userContext.IsAuthenticated || _userContext.UserId == Guid.Empty)
+        {
+            Portfolios.Clear();
+            SelectedPortfolio = null;
+            CurrentPortfolio = "Основное портфолио";
+            return;
+        }
+
         IsBusy = true;
         try
         {
@@ -193,7 +222,7 @@ public sealed class TopbarViewModel : ViewModelBase
             }
 
             PortfolioOperationResult result = await _portfolioService.CreateAsync(
-                new CreatePortfolioRequest(_userContext.UserId, name, "USD", null, null),
+                new CreatePortfolioRequest(_userContext.UserId, name, "USD", "Клиентский портфель", null),
                 CancellationToken.None).ConfigureAwait(true);
 
             if (!result.Succeeded || result.Portfolio is null)
@@ -206,6 +235,7 @@ public sealed class TopbarViewModel : ViewModelBase
             PortfolioOption option = new(portfolio.Id, portfolio.Name, portfolio.BaseCurrency, portfolio.Description, portfolio.ClientLabel);
             Portfolios.Add(option);
             SelectedPortfolio = option;
+            _runtimeDataInvalidation.Invalidate("portfolio-created");
             StatusMessage = "Портфель создан.";
         }
         finally

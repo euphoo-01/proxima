@@ -112,6 +112,8 @@ public sealed class DashboardViewModel : ViewModelBase
                 }
 
                 BuildBars(_snapshot);
+                MonthlyGrowthText = FormatMoney(CalculatePeriodGrowth(SliceSeries(_snapshot.FallbackSeries, SelectedTimeframe)), _snapshot.Currency, showPlus: true);
+                OnPropertyChanged(nameof(MonthlyGrowthText));
             }
         }
     }
@@ -150,7 +152,7 @@ public sealed class DashboardViewModel : ViewModelBase
 
         Delta24h delta = PortfolioDashboardCalculator.Calculate24hDelta(_snapshot.Assets, _snapshot.PreviousQuotes);
         GrowthPillText = FormatDelta(delta);
-        MonthlyGrowthText = FormatMoney(CalculatePeriodGrowth(_snapshot.FallbackSeries), _snapshot.Currency, showPlus: true);
+        MonthlyGrowthText = FormatMoney(CalculatePeriodGrowth(SliceSeries(_snapshot.FallbackSeries, SelectedTimeframe)), _snapshot.Currency, showPlus: true);
 
         BuildBars(_snapshot);
         BuildAllocation(_snapshot);
@@ -212,8 +214,8 @@ public sealed class DashboardViewModel : ViewModelBase
 
         int take = NormalizeTimeframe(timeframe) switch
         {
-            "1д" => Math.Min(10, series.Count),
-            "7д" => Math.Min(14, series.Count),
+            "1д" => Math.Min(2, series.Count),
+            "7д" => Math.Min(8, series.Count),
             _ => Math.Min(30, series.Count)
         };
 

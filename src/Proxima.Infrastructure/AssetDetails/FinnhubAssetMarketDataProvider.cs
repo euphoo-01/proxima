@@ -44,9 +44,12 @@ public sealed class FinnhubAssetMarketDataProvider(
 
         try
         {
-            string safeTicker = Uri.EscapeDataString(ticker.Trim().ToUpperInvariant());
+            string normalizedTicker = ticker.Trim().ToUpperInvariant();
+            bool isCrypto = FinnhubQuoteProvider.TryMapCryptoSymbol(normalizedTicker, out string cryptoSymbol);
+            string finnhubSymbol = isCrypto ? cryptoSymbol : normalizedTicker;
+            string safeTicker = Uri.EscapeDataString(finnhubSymbol);
 
-            string? name = null;
+            string? name = isCrypto ? normalizedTicker : null;
             string? currency = null;
             decimal? marketCapUsd = null;
             decimal? fdvUsd = null;
@@ -56,51 +59,55 @@ public sealed class FinnhubAssetMarketDataProvider(
             decimal? volumeUsd = null;
             decimal? shareOutstanding = null;
 
-            using JsonDocument? profile = await GetJsonAsync(
-                $"https://finnhub.io/api/v1/stock/profile2?symbol={safeTicker}&token={Uri.EscapeDataString(apiKey)}",
-                cancellationToken).ConfigureAwait(false);
-
-            if (profile is not null)
+            if (!isCrypto)
             {
-                JsonElement root = profile.RootElement;
+                using JsonDocument? profile = await GetJsonAsync(
+                    $"https://finnhub.io/api/v1/stock/profile2?symbol={safeTicker}&token={Uri.EscapeDataString(apiKey)}",
+                    cancellationToken).ConfigureAwait(false);
 
-                name = TryGetString(root, "name");
-                currency = TryGetString(root, "currency");
-
-                decimal marketCapMillions = TryGetDecimal(root, "marketCapitalization");
-                if (marketCapMillions > 0m)
+                if (profile is not null)
                 {
-                    marketCapUsd = marketCapMillions * 1_000_000m;
+                    JsonElement root = profile.RootElement;
+
+                    name = TryGetString(root, "name");
+                    currency = TryGetString(root, "currency");
+
+                    decimal marketCapMillions = TryGetDecimal(root, "marketCapitalization");
+                    if (marketCapMillions > 0m)
+                    {
+                        marketCapUsd = marketCapMillions * 1_000_000m;
+                    }
+
+                    decimal sharesMillions = TryGetDecimal(root, "shareOutstanding");
+                    if (sharesMillions > 0m)
+                    {
+                        shareOutstanding = sharesMillions * 1_000_000m;
+                    }
                 }
 
-                decimal sharesMillions = TryGetDecimal(root, "shareOutstanding");
-                if (sharesMillions > 0m)
+                using JsonDocument? metrics = await GetJsonAsync(
+                    $"https://finnhub.io/api/v1/stock/metric?symbol={safeTicker}&metric=all&token={Uri.EscapeDataString(apiKey)}",
+                    cancellationToken).ConfigureAwait(false);
+
+                if (metrics is not null && metrics.RootElement.TryGetProperty("metric", out JsonElement metric))
                 {
-                    shareOutstanding = sharesMillions * 1_000_000m;
+                    decimal metricMarketCapMillions = TryGetDecimal(metric, "marketCapitalization");
+                    if (metricMarketCapMillions > 0m)
+                    {
+                        marketCapUsd = metricMarketCapMillions * 1_000_000m;
+                    }
+
+                    peRatio = FirstPositive(metric, "peNormalizedAnnual", "peBasicExclExtraTTM", "peTTM");
+                    beta = FirstPositive(metric, "beta");
+                    volumeUnits = FirstPositive(metric, "10DayAverageTradingVolume", "3MonthAverageTradingVolume");
                 }
-            }
-
-            using JsonDocument? metrics = await GetJsonAsync(
-                $"https://finnhub.io/api/v1/stock/metric?symbol={safeTicker}&metric=all&token={Uri.EscapeDataString(apiKey)}",
-                cancellationToken).ConfigureAwait(false);
-
-            if (metrics is not null && metrics.RootElement.TryGetProperty("metric", out JsonElement metric))
-            {
-                decimal metricMarketCapMillions = TryGetDecimal(metric, "marketCapitalization");
-                if (metricMarketCapMillions > 0m)
-                {
-                    marketCapUsd = metricMarketCapMillions * 1_000_000m;
-                }
-
-                peRatio = FirstPositive(metric, "peNormalizedAnnual", "peBasicExclExtraTTM", "peTTM");
-                beta = FirstPositive(metric, "beta");
-                volumeUnits = FirstPositive(metric, "10DayAverageTradingVolume", "3MonthAverageTradingVolume");
             }
 
             IReadOnlyList<AssetDetailsCandle> candles = await TryLoadCandlesAsync(
                 safeTicker,
                 timeframe,
                 apiKey,
+                isCrypto,
                 cancellationToken).ConfigureAwait(false);
 
             if (candles.Count > 0 && volumeUnits.HasValue)
@@ -141,6 +148,7 @@ public sealed class FinnhubAssetMarketDataProvider(
         string safeTicker,
         string timeframe,
         string apiKey,
+        bool isCrypto,
         CancellationToken cancellationToken)
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
@@ -155,8 +163,9 @@ public sealed class FinnhubAssetMarketDataProvider(
             _ => ("15", now.AddDays(-1))
         };
 
+        string endpoint = isCrypto ? "crypto/candle" : "stock/candle";
         string url =
-            $"https://finnhub.io/api/v1/stock/candle?symbol={safeTicker}&resolution={resolution}&from={from.ToUnixTimeSeconds()}&to={now.ToUnixTimeSeconds()}&token={Uri.EscapeDataString(apiKey)}";
+            $"https://finnhub.io/api/v1/{endpoint}?symbol={safeTicker}&resolution={resolution}&from={from.ToUnixTimeSeconds()}&to={now.ToUnixTimeSeconds()}&token={Uri.EscapeDataString(apiKey)}";
 
         using JsonDocument? json = await GetJsonAsync(url, cancellationToken).ConfigureAwait(false);
 

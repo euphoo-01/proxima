@@ -1,18 +1,1113 @@
+using System.Collections.ObjectModel;
+using System.Windows.Input;
+using Avalonia.Media.Imaging;
+using Proxima.App.Shell;
 using Proxima.App.ViewModels;
 using Proxima.App.Views.Auth;
+using Proxima.Application.Auth;
+using Proxima.Application.Portfolios;
+using Proxima.Application.Settings;
 using Proxima.Domain.Auth;
+using Proxima.Domain.Portfolios;
 
 namespace Proxima.App.Views.Profile;
 
-public sealed class ProfileViewModel(IRuntimeUserContext userContext) : ViewModelBase
+public sealed class ProfileViewModel : ViewModelBase
 {
-    public string DisplayName => string.IsNullOrWhiteSpace(userContext.DisplayName) ? "Пользователь" : userContext.DisplayName;
+    private const string ForcedBaseCurrency = "USD";
 
-    public string Login => string.IsNullOrWhiteSpace(userContext.Login) ? "Локальный профиль" : userContext.Login;
+    private readonly IRuntimeUserContext _userContext;
+    private readonly ISettingsService _settingsService;
+    private readonly IPortfolioService _portfolioService;
+    private readonly ILocalAuthService _localAuthService;
+    private readonly IAccountDeletionService _accountDeletionService;
+    private readonly IShellState _shellState;
+    private readonly IShellPortfolioCoordinator _portfolioCoordinator;
+    private readonly IRuntimeDataInvalidation _runtimeDataInvalidation;
 
-    public string RoleDisplayName => userContext.Role == UserRole.FinancialAnalyst ? "Финансовый аналитик" : "Частный инвестор";
+    private readonly AsyncCommand _saveCommand;
+    private readonly AsyncCommand _reloadCommand;
+    private readonly AsyncCommand _addPortfolioCommand;
+    private readonly AsyncCommand _archivePortfolioCommand;
+    private readonly AsyncParameterCommand _savePortfolioCommand;
+    private readonly AsyncCommand _saveFinnhubKeyCommand;
+    private readonly AsyncCommand _deleteAccountCommand;
 
-    public string UserId => userContext.UserId == Guid.Empty ? "—" : userContext.UserId.ToString();
+    private string _displayName = string.Empty;
+    private string _login = string.Empty;
+    private string _location = "Минск, Беларусь";
+    private string _preferredCurrency = ForcedBaseCurrency;
+    private UserRole _selectedRole = UserRole.PrivateInvestor;
+    private LegalProfileKind _selectedLegalProfile = LegalProfileKind.SelfEmployed;
+    private Bitmap? _avatarBitmap;
+    private bool _isLoading;
+    private bool _isSaving;
+    private bool _isApiPanelOpen;
+    private bool _deleteConfirmationPending;
+    private string _finnhubApiKey = string.Empty;
+    private string _finnhubKeyStatus = "Ключ Finnhub не задан.";
+    private string _statusMessage = string.Empty;
+    private string _errorMessage = string.Empty;
 
-    public string Initial => DisplayName.Trim()[..1].ToUpperInvariant();
+    public ProfileViewModel(
+        IRuntimeUserContext userContext,
+        ISettingsService settingsService,
+        IPortfolioService portfolioService,
+        ILocalAuthService localAuthService,
+        IAccountDeletionService accountDeletionService,
+        IShellState shellState,
+        IShellPortfolioCoordinator portfolioCoordinator,
+        IRuntimeDataInvalidation runtimeDataInvalidation)
+    {
+        _userContext = userContext;
+        _settingsService = settingsService;
+        _portfolioService = portfolioService;
+        _localAuthService = localAuthService;
+        _accountDeletionService = accountDeletionService;
+        _shellState = shellState;
+        _portfolioCoordinator = portfolioCoordinator;
+        _runtimeDataInvalidation = runtimeDataInvalidation;
+
+        _saveCommand = new AsyncCommand(SaveAsync, () => !IsBusy);
+        _reloadCommand = new AsyncCommand(LoadAsync, () => !IsBusy);
+        _addPortfolioCommand = new AsyncCommand(AddPortfolioAsync, () => IsFinancialConsultant && !IsBusy);
+        _archivePortfolioCommand = new AsyncCommand(ArchivePortfolioAsync, () => IsFinancialConsultant && !IsBusy);
+        _savePortfolioCommand = new AsyncParameterCommand(SavePortfolioAsync, parameter => parameter is ProfilePortfolioItem && !IsBusy);
+        _saveFinnhubKeyCommand = new AsyncCommand(SaveFinnhubKeyAsync, () => !IsBusy);
+        _deleteAccountCommand = new AsyncCommand(DeleteAccountAsync, () => !IsBusy);
+
+        SelectPrivateInvestorCommand = new DelegateCommand(_ => SelectedRole = UserRole.PrivateInvestor);
+        SelectFinancialConsultantCommand = new DelegateCommand(_ => SelectedRole = UserRole.FinancialAnalyst);
+        SelectUsdCommand = new DelegateCommand(_ => PreferredCurrency = ForcedBaseCurrency);
+        SelectBynCommand = new DelegateCommand(_ => PreferredCurrency = ForcedBaseCurrency);
+        SelectSelfEmployedCommand = new DelegateCommand(_ => SelectedLegalProfile = LegalProfileKind.SelfEmployed);
+        SelectSoleProprietorCommand = new DelegateCommand(_ => SelectedLegalProfile = LegalProfileKind.SoleProprietor);
+        SelectCompanyCommand = new DelegateCommand(_ => SelectedLegalProfile = LegalProfileKind.Company);
+        SelectPortfolioCommand = new DelegateCommand(SelectPortfolioFromCommand, parameter => parameter is ProfilePortfolioItem);
+        ToggleApiPanelCommand = new DelegateCommand(_ => IsApiPanelOpen = !IsApiPanelOpen);
+
+        Portfolios = [];
+
+        _userContext.ProfileChanged += (_, _) => RefreshComputedProfileProperties();
+        _runtimeDataInvalidation.DataInvalidated += (_, args) =>
+        {
+            if (args.Reason.Contains("portfolio", StringComparison.OrdinalIgnoreCase))
+            {
+                _ = ReloadPortfoliosAsync();
+            }
+        };
+
+        _shellState.PortfolioChanged += (_, args) => MarkSelectedPortfolio(args.PortfolioId);
+
+        _ = LoadAsync();
+    }
+
+    public ObservableCollection<ProfilePortfolioItem> Portfolios { get; }
+
+    public ICommand SaveCommand => _saveCommand;
+
+    public ICommand ReloadCommand => _reloadCommand;
+
+    public ICommand AddPortfolioCommand => _addPortfolioCommand;
+
+    public ICommand ArchivePortfolioCommand => _archivePortfolioCommand;
+
+    public ICommand SavePortfolioCommand => _savePortfolioCommand;
+
+    public ICommand SaveFinnhubKeyCommand => _saveFinnhubKeyCommand;
+
+    public ICommand DeleteAccountCommand => _deleteAccountCommand;
+
+    public ICommand SelectPrivateInvestorCommand { get; }
+
+    public ICommand SelectFinancialConsultantCommand { get; }
+
+    public ICommand SelectUsdCommand { get; }
+
+    public ICommand SelectBynCommand { get; }
+
+    public ICommand SelectSelfEmployedCommand { get; }
+
+    public ICommand SelectSoleProprietorCommand { get; }
+
+    public ICommand SelectCompanyCommand { get; }
+
+    public ICommand SelectPortfolioCommand { get; }
+
+    public ICommand ToggleApiPanelCommand { get; }
+
+    public string DisplayName
+    {
+        get => _displayName;
+        set
+        {
+            if (SetProperty(ref _displayName, value))
+            {
+                OnPropertyChanged(nameof(Initial));
+            }
+        }
+    }
+
+    public string Login
+    {
+        get => _login;
+        private set => SetProperty(ref _login, value);
+    }
+
+    public string Location
+    {
+        get => _location;
+        set => SetProperty(ref _location, value);
+    }
+
+    public string PreferredCurrency
+    {
+        get => _preferredCurrency;
+        set
+        {
+            if (SetProperty(ref _preferredCurrency, ForcedBaseCurrency))
+            {
+                OnPropertyChanged(nameof(IsUsdSelected));
+                OnPropertyChanged(nameof(IsBynSelected));
+            }
+        }
+    }
+
+    public UserRole SelectedRole
+    {
+        get => _selectedRole;
+        set
+        {
+            if (SetProperty(ref _selectedRole, value))
+            {
+                _deleteConfirmationPending = false;
+                RefreshRoleVisibility();
+            }
+        }
+    }
+
+    public LegalProfileKind SelectedLegalProfile
+    {
+        get => _selectedLegalProfile;
+        set
+        {
+            if (SetProperty(ref _selectedLegalProfile, value))
+            {
+                OnPropertyChanged(nameof(IsSelfEmployedSelected));
+                OnPropertyChanged(nameof(IsSoleProprietorSelected));
+                OnPropertyChanged(nameof(IsCompanySelected));
+            }
+        }
+    }
+
+    public Bitmap? AvatarBitmap
+    {
+        get => _avatarBitmap;
+        private set
+        {
+            if (ReferenceEquals(_avatarBitmap, value))
+            {
+                return;
+            }
+
+            Bitmap? old = _avatarBitmap;
+            _avatarBitmap = value;
+            old?.Dispose();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasAvatar));
+            OnPropertyChanged(nameof(ShowInitialAvatar));
+        }
+    }
+
+    public bool HasAvatar => AvatarBitmap is not null;
+
+    public bool ShowInitialAvatar => !HasAvatar;
+
+    public bool IsLoading
+    {
+        get => _isLoading;
+        private set
+        {
+            if (SetProperty(ref _isLoading, value))
+            {
+                RefreshBusyState();
+            }
+        }
+    }
+
+    public bool IsSaving
+    {
+        get => _isSaving;
+        private set
+        {
+            if (SetProperty(ref _isSaving, value))
+            {
+                RefreshBusyState();
+            }
+        }
+    }
+
+    public bool IsApiPanelOpen
+    {
+        get => _isApiPanelOpen;
+        set => SetProperty(ref _isApiPanelOpen, value);
+    }
+
+    public string FinnhubApiKey
+    {
+        get => _finnhubApiKey;
+        set => SetProperty(ref _finnhubApiKey, value);
+    }
+
+    public string FinnhubKeyStatus
+    {
+        get => _finnhubKeyStatus;
+        private set => SetProperty(ref _finnhubKeyStatus, value);
+    }
+
+    public string StatusMessage
+    {
+        get => _statusMessage;
+        private set
+        {
+            if (SetProperty(ref _statusMessage, value))
+            {
+                OnPropertyChanged(nameof(HasStatus));
+            }
+        }
+    }
+
+    public string ErrorMessage
+    {
+        get => _errorMessage;
+        private set
+        {
+            if (SetProperty(ref _errorMessage, value))
+            {
+                OnPropertyChanged(nameof(HasError));
+            }
+        }
+    }
+
+    public bool HasStatus => !string.IsNullOrWhiteSpace(StatusMessage);
+
+    public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
+
+    public bool IsBusy => IsLoading || IsSaving;
+
+    public string Initial => string.IsNullOrWhiteSpace(DisplayName)
+        ? "П"
+        : DisplayName.Trim()[..1].ToUpperInvariant();
+
+    public string RoleDisplayName => SelectedRole.ToDisplayName();
+
+    public bool IsPrivateInvestor => SelectedRole == UserRole.PrivateInvestor;
+
+    public bool IsFinancialConsultant => SelectedRole == UserRole.FinancialAnalyst;
+
+    public bool IsPrivateInvestorSelected => IsPrivateInvestor;
+
+    public bool IsFinancialConsultantSelected => IsFinancialConsultant;
+
+    public bool ShowPortfolioManagement => IsFinancialConsultant;
+
+    public bool HidePortfolioManagement => !ShowPortfolioManagement;
+
+    public bool IsUsdSelected => true;
+
+    public bool IsBynSelected => false;
+
+    public bool IsSelfEmployedSelected => SelectedLegalProfile == LegalProfileKind.SelfEmployed;
+
+    public bool IsSoleProprietorSelected => SelectedLegalProfile == LegalProfileKind.SoleProprietor;
+
+    public bool IsCompanySelected => SelectedLegalProfile == LegalProfileKind.Company;
+
+    public string DeleteAccountButtonText => _deleteConfirmationPending
+        ? "Подтвердить удаление"
+        : "Удалить аккаунт";
+
+    public async Task ChangeAvatarAsync(string sourcePath, CancellationToken cancellationToken = default)
+    {
+        ErrorMessage = string.Empty;
+
+        if (!_userContext.IsAuthenticated || _userContext.UserId == Guid.Empty)
+        {
+            ErrorMessage = "Пользователь не авторизован.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath))
+        {
+            ErrorMessage = "Файл аватара не найден.";
+            return;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(GetProfileExtrasDirectory());
+            string targetPath = GetAvatarPath(_userContext.UserId);
+
+            await using (FileStream input = File.OpenRead(sourcePath))
+            await using (FileStream output = File.Create(targetPath))
+            {
+                await input.CopyToAsync(output, cancellationToken).ConfigureAwait(true);
+            }
+
+            LoadAvatarFromDisk();
+            _userContext.UpdateRuntimeProfile(DisplayName, SelectedRole);
+            StatusMessage = "Аватар обновлен.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = BuildErrorMessage(ex);
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        IsLoading = true;
+        ErrorMessage = string.Empty;
+        StatusMessage = "Загрузка профиля...";
+
+        try
+        {
+            if (!_userContext.IsAuthenticated || _userContext.UserId == Guid.Empty)
+            {
+                ErrorMessage = "Пользователь не авторизован.";
+                return;
+            }
+
+            UserSettings settings = await _settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
+                _userContext.UserId,
+                _userContext.DisplayName,
+                _userContext.Role,
+                _userContext.Login,
+                ForcedBaseCurrency)).ConfigureAwait(true);
+
+            DisplayName = string.IsNullOrWhiteSpace(settings.DisplayName)
+                ? _userContext.DisplayName
+                : settings.DisplayName;
+
+            Login = string.IsNullOrWhiteSpace(settings.Login)
+                ? _userContext.Login
+                : settings.Login;
+
+            PreferredCurrency = ForcedBaseCurrency;
+            SelectedRole = settings.Role;
+            LoadProfileExtrasFromDisk();
+            LoadAvatarFromDisk();
+            FinnhubKeyStatus = string.IsNullOrWhiteSpace(settings.FinnhubApiKeyProtected)
+                ? "Ключ Finnhub не задан."
+                : "Ключ Finnhub сохранен.";
+
+            _userContext.UpdateRuntimeProfile(DisplayName, SelectedRole);
+
+            await ReloadPortfoliosAsync().ConfigureAwait(true);
+
+            StatusMessage = "Профиль загружен.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = BuildErrorMessage(ex);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        IsSaving = true;
+        ErrorMessage = string.Empty;
+        StatusMessage = "Сохранение профиля...";
+
+        try
+        {
+            if (!_userContext.IsAuthenticated || _userContext.UserId == Guid.Empty)
+            {
+                ErrorMessage = "Пользователь не авторизован.";
+                return;
+            }
+
+            UserSettings current = await _settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
+                _userContext.UserId,
+                DisplayName,
+                SelectedRole,
+                _userContext.Login,
+                ForcedBaseCurrency)).ConfigureAwait(true);
+
+            SettingsOperationResult result = await _settingsService.UpdateAsync(new UpdateSettingsRequest(
+                _userContext.UserId,
+                DisplayName,
+                SelectedRole,
+                ForcedBaseCurrency,
+                current.Language,
+                current.UiScale,
+                current.QuoteProvider,
+                current.QuoteRefreshMinutes,
+                null,
+                current.CurrencyProvider,
+                current.SyncEnabled)).ConfigureAwait(true);
+
+            if (!result.Succeeded || result.Settings is null)
+            {
+                ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
+                    ? "Не удалось сохранить профиль."
+                    : result.Message;
+
+                return;
+            }
+
+            SaveProfileExtrasToDisk();
+            await SaveDirtyPortfoliosAsync().ConfigureAwait(true);
+
+            DisplayName = result.Settings.DisplayName;
+            PreferredCurrency = ForcedBaseCurrency;
+            SelectedRole = result.Settings.Role;
+            FinnhubKeyStatus = string.IsNullOrWhiteSpace(result.Settings.FinnhubApiKeyProtected)
+                ? "Ключ Finnhub не задан."
+                : "Ключ Finnhub сохранен.";
+
+            _userContext.UpdateRuntimeProfile(DisplayName, SelectedRole);
+
+            await ReloadPortfoliosAsync().ConfigureAwait(true);
+            _runtimeDataInvalidation.Invalidate("profile-saved-portfolio-refresh");
+
+            StatusMessage = "Профиль сохранен.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = BuildErrorMessage(ex);
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task SaveFinnhubKeyAsync()
+    {
+        IsSaving = true;
+        ErrorMessage = string.Empty;
+        StatusMessage = "Сохранение API ключа...";
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(FinnhubApiKey))
+            {
+                ErrorMessage = "Вставьте Finnhub API key.";
+                return;
+            }
+
+            UserSettings current = await _settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
+                _userContext.UserId,
+                DisplayName,
+                SelectedRole,
+                _userContext.Login,
+                ForcedBaseCurrency)).ConfigureAwait(true);
+
+            SettingsOperationResult result = await _settingsService.UpdateAsync(new UpdateSettingsRequest(
+                _userContext.UserId,
+                DisplayName,
+                SelectedRole,
+                ForcedBaseCurrency,
+                current.Language,
+                current.UiScale,
+                QuoteProviderKind.Finnhub,
+                current.QuoteRefreshMinutes,
+                FinnhubApiKey,
+                current.CurrencyProvider,
+                current.SyncEnabled)).ConfigureAwait(true);
+
+            if (!result.Succeeded || result.Settings is null)
+            {
+                ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
+                    ? "Не удалось сохранить Finnhub API key."
+                    : result.Message;
+
+                return;
+            }
+
+            FinnhubApiKey = string.Empty;
+            FinnhubKeyStatus = "Ключ Finnhub сохранен. Провайдер котировок переключен на Finnhub.";
+            _runtimeDataInvalidation.Invalidate("finnhub-api-key-saved");
+            StatusMessage = "API ключ сохранен.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = BuildErrorMessage(ex);
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task DeleteAccountAsync()
+    {
+        if (!_deleteConfirmationPending)
+        {
+            _deleteConfirmationPending = true;
+            StatusMessage = "Нажмите «Подтвердить удаление», чтобы удалить локальный профиль и связанные данные из БД.";
+            OnPropertyChanged(nameof(DeleteAccountButtonText));
+            return;
+        }
+
+        IsSaving = true;
+        ErrorMessage = string.Empty;
+        StatusMessage = "Удаление аккаунта...";
+
+        try
+        {
+            Guid userId = _userContext.UserId;
+            if (userId == Guid.Empty)
+            {
+                ErrorMessage = "Пользователь не авторизован.";
+                return;
+            }
+
+            await _accountDeletionService.DeleteAccountAsync(userId).ConfigureAwait(true);
+            await _localAuthService.DeleteProfileAsync(userId).ConfigureAwait(true);
+            DeleteProfileExtras(userId);
+            _userContext.ClearAuthentication();
+
+            StatusMessage = "Аккаунт удален. Открываю экран регистрации...";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = BuildErrorMessage(ex);
+        }
+        finally
+        {
+            _deleteConfirmationPending = false;
+            OnPropertyChanged(nameof(DeleteAccountButtonText));
+            IsSaving = false;
+        }
+    }
+
+    private async Task ReloadPortfoliosAsync()
+    {
+        Portfolios.Clear();
+
+        if (!IsFinancialConsultant || _userContext.UserId == Guid.Empty)
+        {
+            return;
+        }
+
+        IReadOnlyList<Portfolio> portfolios = await _portfolioService
+            .ListActiveAsync(_userContext.UserId)
+            .ConfigureAwait(true);
+
+        foreach (Portfolio portfolio in portfolios.OrderBy(static x => x.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            ProfilePortfolioItem item = new(
+                portfolio.Id,
+                NormalizePortfolioName(portfolio.Name),
+                string.IsNullOrWhiteSpace(portfolio.Description) ? "Клиентский портфель" : portfolio.Description,
+                ForcedBaseCurrency)
+            {
+                IsSelected = portfolio.Id == _shellState.CurrentPortfolioId,
+            };
+
+            Portfolios.Add(item);
+        }
+
+        bool currentPortfolioFound = Portfolios.Any(x => x.Id == _shellState.CurrentPortfolioId);
+        ProfilePortfolioItem? selected = Portfolios.FirstOrDefault(x => x.IsSelected) ?? Portfolios.FirstOrDefault();
+        if (selected is not null)
+        {
+            SelectPortfolio(selected, updateShell: !currentPortfolioFound);
+        }
+    }
+
+    private async Task AddPortfolioAsync()
+    {
+        if (!IsFinancialConsultant || _userContext.UserId == Guid.Empty)
+        {
+            return;
+        }
+
+        IsSaving = true;
+        ErrorMessage = string.Empty;
+
+        try
+        {
+            await _settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
+                _userContext.UserId,
+                DisplayName,
+                SelectedRole,
+                _userContext.Login,
+                ForcedBaseCurrency)).ConfigureAwait(true);
+
+            int index = Portfolios.Count + 1;
+            string name = $"Портфель {index}";
+
+            while (Portfolios.Any(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)))
+            {
+                index++;
+                name = $"Портфель {index}";
+            }
+
+            PortfolioOperationResult result = await _portfolioService.CreateAsync(new CreatePortfolioRequest(
+                _userContext.UserId,
+                name,
+                ForcedBaseCurrency,
+                "Клиентский портфель",
+                null)).ConfigureAwait(true);
+
+            if (!result.Succeeded || result.Portfolio is null)
+            {
+                ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
+                    ? "Не удалось создать портфель."
+                    : result.Message;
+
+                return;
+            }
+
+            _portfolioCoordinator.SetCurrentPortfolio(result.Portfolio.Id, NormalizePortfolioName(result.Portfolio.Name), _shellState.CurrentPortfolioValue);
+            await ReloadPortfoliosAsync().ConfigureAwait(true);
+            _runtimeDataInvalidation.Invalidate("portfolio-created");
+            StatusMessage = "Портфель создан. Название можно изменить прямо в списке.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = BuildErrorMessage(ex);
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task ArchivePortfolioAsync()
+    {
+        if (!IsFinancialConsultant || _userContext.UserId == Guid.Empty)
+        {
+            return;
+        }
+
+        ProfilePortfolioItem? portfolio = Portfolios.FirstOrDefault(x => x.IsSelected) ?? Portfolios.LastOrDefault();
+        if (portfolio is null)
+        {
+            StatusMessage = "Нет портфеля для удаления.";
+            return;
+        }
+
+        IsSaving = true;
+        ErrorMessage = string.Empty;
+
+        try
+        {
+            PortfolioOperationResult result = await _portfolioService
+                .ArchiveAsync(_userContext.UserId, portfolio.Id)
+                .ConfigureAwait(true);
+
+            if (!result.Succeeded)
+            {
+                ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
+                    ? "Не удалось удалить портфель."
+                    : result.Message;
+
+                return;
+            }
+
+            await ReloadPortfoliosAsync().ConfigureAwait(true);
+            ProfilePortfolioItem? next = Portfolios.FirstOrDefault();
+            if (next is not null)
+            {
+                SelectPortfolio(next, updateShell: true);
+            }
+
+            _runtimeDataInvalidation.Invalidate("portfolio-archived");
+            StatusMessage = "Портфель удален.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = BuildErrorMessage(ex);
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task SavePortfolioAsync(object? parameter)
+    {
+        if (parameter is not ProfilePortfolioItem item)
+        {
+            return;
+        }
+
+        IsSaving = true;
+        ErrorMessage = string.Empty;
+
+        try
+        {
+            bool saved = await SavePortfolioItemAsync(item).ConfigureAwait(true);
+            if (!saved)
+            {
+                return;
+            }
+
+            await ReloadPortfoliosAsync().ConfigureAwait(true);
+            _runtimeDataInvalidation.Invalidate("portfolio-renamed");
+            StatusMessage = "Название портфеля сохранено.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = BuildErrorMessage(ex);
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task SaveDirtyPortfoliosAsync()
+    {
+        foreach (ProfilePortfolioItem item in Portfolios.Where(static x => x.IsDirty).ToArray())
+        {
+            bool saved = await SavePortfolioItemAsync(item).ConfigureAwait(true);
+            if (!saved)
+            {
+                return;
+            }
+        }
+    }
+
+    private async Task<bool> SavePortfolioItemAsync(ProfilePortfolioItem item)
+    {
+        if (_userContext.UserId == Guid.Empty)
+        {
+            ErrorMessage = "Пользователь не авторизован.";
+            return false;
+        }
+
+        string normalizedName = NormalizePortfolioName(item.Name);
+        if (string.IsNullOrWhiteSpace(normalizedName))
+        {
+            ErrorMessage = "Название портфеля обязательно.";
+            return false;
+        }
+
+        PortfolioOperationResult result = await _portfolioService.UpdateAsync(new UpdatePortfolioRequest(
+            _userContext.UserId,
+            item.Id,
+            normalizedName,
+            ForcedBaseCurrency,
+            item.Description,
+            null)).ConfigureAwait(true);
+
+        if (!result.Succeeded || result.Portfolio is null)
+        {
+            ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
+                ? "Не удалось сохранить портфель."
+                : result.Message;
+
+            return false;
+        }
+
+        item.AcceptChanges(NormalizePortfolioName(result.Portfolio.Name), result.Portfolio.Description ?? "Клиентский портфель", ForcedBaseCurrency);
+
+        if (item.IsSelected || result.Portfolio.Id == _shellState.CurrentPortfolioId)
+        {
+            _portfolioCoordinator.SetCurrentPortfolio(result.Portfolio.Id, NormalizePortfolioName(result.Portfolio.Name), _shellState.CurrentPortfolioValue);
+        }
+
+        return true;
+    }
+
+    private void SelectPortfolioFromCommand(object? parameter)
+    {
+        if (parameter is ProfilePortfolioItem item)
+        {
+            SelectPortfolio(item, updateShell: true);
+        }
+    }
+
+    private void SelectPortfolio(ProfilePortfolioItem item, bool updateShell)
+    {
+        MarkSelectedPortfolio(item.Id);
+
+        if (updateShell)
+        {
+            _portfolioCoordinator.SetCurrentPortfolio(item.Id, NormalizePortfolioName(item.Name), _shellState.CurrentPortfolioValue);
+            _runtimeDataInvalidation.Invalidate("portfolio-selected");
+        }
+    }
+
+    private void MarkSelectedPortfolio(Guid portfolioId)
+    {
+        foreach (ProfilePortfolioItem portfolio in Portfolios)
+        {
+            portfolio.IsSelected = portfolio.Id == portfolioId;
+        }
+    }
+
+    private void LoadAvatarFromDisk()
+    {
+        AvatarBitmap = null;
+
+        if (_userContext.UserId == Guid.Empty)
+        {
+            return;
+        }
+
+        string path = GetAvatarPath(_userContext.UserId);
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        try
+        {
+            byte[] bytes = File.ReadAllBytes(path);
+            using MemoryStream stream = new(bytes);
+            AvatarBitmap = new Bitmap(stream);
+        }
+        catch
+        {
+            AvatarBitmap = null;
+        }
+    }
+
+    private void LoadProfileExtrasFromDisk()
+    {
+        if (_userContext.UserId == Guid.Empty)
+        {
+            return;
+        }
+
+        string path = GetLocationPath(_userContext.UserId);
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        string location = File.ReadAllText(path).Trim();
+        if (!string.IsNullOrWhiteSpace(location))
+        {
+            Location = location;
+        }
+    }
+
+    private void SaveProfileExtrasToDisk()
+    {
+        if (_userContext.UserId == Guid.Empty)
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(GetProfileExtrasDirectory());
+        File.WriteAllText(GetLocationPath(_userContext.UserId), string.IsNullOrWhiteSpace(Location) ? "Минск, Беларусь" : Location.Trim());
+    }
+
+    private static void DeleteProfileExtras(Guid userId)
+    {
+        string avatarPath = GetAvatarPath(userId);
+        if (File.Exists(avatarPath))
+        {
+            File.Delete(avatarPath);
+        }
+
+        string locationPath = GetLocationPath(userId);
+        if (File.Exists(locationPath))
+        {
+            File.Delete(locationPath);
+        }
+    }
+
+    private void RefreshRoleVisibility()
+    {
+        OnPropertyChanged(nameof(RoleDisplayName));
+        OnPropertyChanged(nameof(IsPrivateInvestor));
+        OnPropertyChanged(nameof(IsFinancialConsultant));
+        OnPropertyChanged(nameof(IsPrivateInvestorSelected));
+        OnPropertyChanged(nameof(IsFinancialConsultantSelected));
+        OnPropertyChanged(nameof(ShowPortfolioManagement));
+        OnPropertyChanged(nameof(HidePortfolioManagement));
+        OnPropertyChanged(nameof(DeleteAccountButtonText));
+
+        _addPortfolioCommand.RaiseCanExecuteChanged();
+        _archivePortfolioCommand.RaiseCanExecuteChanged();
+        _savePortfolioCommand.RaiseCanExecuteChanged();
+
+        if (IsFinancialConsultant && !IsBusy && Portfolios.Count == 0)
+        {
+            _ = ReloadPortfoliosAsync();
+        }
+    }
+
+    private void RefreshComputedProfileProperties()
+    {
+        OnPropertyChanged(nameof(RoleDisplayName));
+        OnPropertyChanged(nameof(Initial));
+        RefreshRoleVisibility();
+    }
+
+    private void RefreshBusyState()
+    {
+        OnPropertyChanged(nameof(IsBusy));
+        _saveCommand.RaiseCanExecuteChanged();
+        _reloadCommand.RaiseCanExecuteChanged();
+        _addPortfolioCommand.RaiseCanExecuteChanged();
+        _archivePortfolioCommand.RaiseCanExecuteChanged();
+        _savePortfolioCommand.RaiseCanExecuteChanged();
+        _saveFinnhubKeyCommand.RaiseCanExecuteChanged();
+        _deleteAccountCommand.RaiseCanExecuteChanged();
+    }
+
+    private static string NormalizePortfolioName(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+    }
+
+    private static string GetProfileExtrasDirectory()
+    {
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Proxima",
+            "Profile");
+    }
+
+    private static string GetAvatarPath(Guid userId)
+    {
+        return Path.Combine(GetProfileExtrasDirectory(), $"{userId:N}.avatar");
+    }
+
+    private static string GetLocationPath(Guid userId)
+    {
+        return Path.Combine(GetProfileExtrasDirectory(), $"{userId:N}.location");
+    }
+
+    private static string BuildErrorMessage(Exception ex)
+    {
+        Exception root = ex;
+        while (root.InnerException is not null)
+        {
+            root = root.InnerException;
+        }
+
+        return ReferenceEquals(root, ex)
+            ? ex.Message
+            : $"{ex.Message} Внутренняя ошибка: {root.Message}";
+    }
+
+    private sealed class DelegateCommand(Action<object?> execute, Func<object?, bool>? canExecute = null) : ICommand
+    {
+        private readonly Action<object?> _execute = execute;
+        private readonly Func<object?, bool>? _canExecute = canExecute;
+
+        public event EventHandler? CanExecuteChanged;
+
+        public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
+
+        public void Execute(object? parameter) => _execute(parameter);
+
+        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private sealed class AsyncCommand(Func<Task> execute, Func<bool>? canExecute = null) : ICommand
+    {
+        private readonly Func<Task> _execute = execute;
+        private readonly Func<bool>? _canExecute = canExecute;
+
+        public event EventHandler? CanExecuteChanged;
+
+        public bool CanExecute(object? parameter) => _canExecute?.Invoke() ?? true;
+
+        public async void Execute(object? parameter) => await _execute().ConfigureAwait(true);
+
+        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private sealed class AsyncParameterCommand(Func<object?, Task> execute, Func<object?, bool>? canExecute = null) : ICommand
+    {
+        private readonly Func<object?, Task> _execute = execute;
+        private readonly Func<object?, bool>? _canExecute = canExecute;
+
+        public event EventHandler? CanExecuteChanged;
+
+        public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
+
+        public async void Execute(object? parameter) => await _execute(parameter).ConfigureAwait(true);
+
+        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    }
+}
+
+public enum LegalProfileKind
+{
+    SelfEmployed,
+    SoleProprietor,
+    Company,
+}
+
+public sealed class ProfilePortfolioItem : ViewModelBase
+{
+    private bool _isSelected;
+    private bool _isDirty;
+    private string _name;
+    private string _description;
+    private string _baseCurrency;
+
+    public ProfilePortfolioItem(Guid id, string name, string description, string baseCurrency)
+    {
+        Id = id;
+        _name = name;
+        _description = description;
+        _baseCurrency = baseCurrency;
+    }
+
+    public Guid Id { get; }
+
+    public string Name
+    {
+        get => _name;
+        set
+        {
+            if (SetProperty(ref _name, value))
+            {
+                IsDirty = true;
+            }
+        }
+    }
+
+    public string Description
+    {
+        get => _description;
+        private set => SetProperty(ref _description, value);
+    }
+
+    public string BaseCurrency
+    {
+        get => _baseCurrency;
+        private set => SetProperty(ref _baseCurrency, value);
+    }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => SetProperty(ref _isSelected, value);
+    }
+
+    public bool IsDirty
+    {
+        get => _isDirty;
+        private set => SetProperty(ref _isDirty, value);
+    }
+
+    public void AcceptChanges(string name, string description, string baseCurrency)
+    {
+        _name = name;
+        _description = description;
+        _baseCurrency = baseCurrency;
+        _isDirty = false;
+        OnPropertyChanged(nameof(Name));
+        OnPropertyChanged(nameof(Description));
+        OnPropertyChanged(nameof(BaseCurrency));
+        OnPropertyChanged(nameof(IsDirty));
+    }
 }

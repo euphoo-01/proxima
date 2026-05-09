@@ -9,6 +9,8 @@ using Proxima.App.Composition;
 using Proxima.App.Shell;
 using Proxima.App.Views.Auth;
 using Proxima.Application.Auth;
+using Proxima.Application.Settings;
+using Proxima.Domain.Auth;
 using Proxima.Infrastructure.Persistence;
 
 namespace Proxima.App;
@@ -40,6 +42,7 @@ public partial class App : global::Avalonia.Application
 
             IRuntimeAuthBootstrapper authBootstrapper = services.GetRequiredService<IRuntimeAuthBootstrapper>();
             IRuntimeUserContext runtimeUserContext = services.GetRequiredService<IRuntimeUserContext>();
+            RegisterAuthResetNavigation(desktop, services, runtimeUserContext);
 
             RuntimeAuthBootstrapResult bootstrap = authBootstrapper.EnsureRuntimeProfileAsync().GetAwaiter().GetResult();
             if (bootstrap.IsFirstRunRequired)
@@ -55,6 +58,7 @@ public partial class App : global::Avalonia.Application
                 if (autoLogin.Succeeded && autoLogin.Profile is not null)
                 {
                     runtimeUserContext.SetAuthenticated(autoLogin.Profile);
+                    EnsureSettingsForProfile(services, autoLogin.Profile);
                     desktop.MainWindow = CreateAppShellWindow(services);
                 }
                 else
@@ -69,6 +73,47 @@ public partial class App : global::Avalonia.Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static void RegisterAuthResetNavigation(
+        IClassicDesktopStyleApplicationLifetime desktop,
+        ServiceProvider services,
+        IRuntimeUserContext runtimeUserContext)
+    {
+        runtimeUserContext.ProfileChanged += (_, _) =>
+        {
+            if (runtimeUserContext.IsAuthenticated)
+            {
+                return;
+            }
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                Window? currentWindow = desktop.MainWindow;
+                if (currentWindow?.Content is RegisterView or LoginView)
+                {
+                    return;
+                }
+
+                Window registerWindow = CreateRegisterWindow(desktop, services, runtimeUserContext);
+                desktop.MainWindow = registerWindow;
+                registerWindow.Show();
+                currentWindow?.Close();
+            });
+        };
+    }
+
+    private static void EnsureSettingsForProfile(ServiceProvider services, LocalUserProfile profile)
+    {
+        ISettingsService settingsService = services.GetRequiredService<ISettingsService>();
+        settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
+                profile.Id,
+                profile.DisplayName,
+                profile.Role,
+                profile.Login,
+                "USD"))
+            .GetAwaiter()
+            .GetResult();
     }
 
     private static Window CreateAppShellWindow(ServiceProvider services)
@@ -157,6 +202,7 @@ public partial class App : global::Avalonia.Application
             Dispatcher.UIThread.Post(() =>
             {
                 runtimeUserContext.SetAuthenticated(profile);
+                EnsureSettingsForProfile(services, profile);
                 Window appShellWindow = CreateAppShellWindow(services);
                 desktop.MainWindow = appShellWindow;
                 appShellWindow.Show();

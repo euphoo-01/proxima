@@ -9,8 +9,6 @@ public sealed class ConfigurableQuoteProvider(
     ISettingsService settingsService,
     HttpClient httpClient) : IQuoteProvider
 {
-    private readonly MockQuoteProvider _mock = new();
-
     public async Task<QuoteProviderResult> GetLatestQuoteAsync(
         string ticker,
         string currency,
@@ -23,39 +21,40 @@ public sealed class ConfigurableQuoteProvider(
 
         if (!currentUser.IsAuthenticated || currentUser.UserId == Guid.Empty)
         {
-            return await _mock.GetLatestQuoteAsync(ticker, currency, cancellationToken)
-                .ConfigureAwait(false);
+            return QuoteProviderResult.Failure(
+                QuoteProviderErrorKind.Unauthorized,
+                "Пользователь не авторизован. Невозможно загрузить котировки Finnhub.");
         }
 
         UserSettings? settings = await settingsService
             .GetAsync(currentUser.UserId, cancellationToken)
             .ConfigureAwait(false);
 
-        if (settings is null || settings.QuoteProvider == QuoteProviderKind.Mock)
+        if (settings is null)
         {
-            return await _mock.GetLatestQuoteAsync(ticker, currency, cancellationToken)
-                .ConfigureAwait(false);
+            return QuoteProviderResult.Failure(
+                QuoteProviderErrorKind.Unauthorized,
+                "Настройки профиля не инициализированы. Сохраните Finnhub API key в профиле.");
         }
 
-        if (settings.QuoteProvider == QuoteProviderKind.Finnhub)
+        if (settings.QuoteProvider != QuoteProviderKind.Finnhub)
         {
-            string apiKey = UnprotectApiKey(settings.FinnhubApiKeyProtected);
-
-            if (string.IsNullOrWhiteSpace(apiKey))
-            {
-                return QuoteProviderResult.Failure(
-                    QuoteProviderErrorKind.Unauthorized,
-                    "Finnhub API key is not configured.");
-            }
-
-            FinnhubQuoteProvider finnhub = new(httpClient, apiKey);
-
-            return await finnhub
-                .GetLatestQuoteAsync(ticker, currency, cancellationToken)
-                .ConfigureAwait(false);
+            return QuoteProviderResult.Failure(
+                QuoteProviderErrorKind.Unauthorized,
+                "Провайдер котировок должен быть Finnhub. Сохраните Finnhub API key в профиле.");
         }
 
-        return await _mock.GetLatestQuoteAsync(ticker, currency, cancellationToken)
+        string apiKey = UnprotectApiKey(settings.FinnhubApiKeyProtected);
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            return QuoteProviderResult.Failure(
+                QuoteProviderErrorKind.Unauthorized,
+                "Finnhub API key не задан. Откройте профиль, нажмите «API Ключи» и сохраните ключ Finnhub.");
+        }
+
+        FinnhubQuoteProvider finnhub = new(httpClient, apiKey);
+        return await finnhub
+            .GetLatestQuoteAsync(ticker, currency, cancellationToken)
             .ConfigureAwait(false);
     }
 

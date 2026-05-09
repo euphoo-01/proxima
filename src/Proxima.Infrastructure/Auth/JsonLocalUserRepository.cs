@@ -57,6 +57,20 @@ public sealed class JsonLocalUserRepository(string filePath) : ILocalUserReposit
         return Task.CompletedTask;
     }
 
+    public Task DeleteAsync(Guid profileId, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        List<LocalUserProfile> profiles = LoadProfiles();
+        int removed = profiles.RemoveAll(user => user.Id == profileId);
+        if (removed > 0)
+        {
+            SaveProfiles(profiles);
+        }
+
+        return Task.CompletedTask;
+    }
+
     private List<LocalUserProfile> LoadProfiles()
     {
         if (!File.Exists(filePath))

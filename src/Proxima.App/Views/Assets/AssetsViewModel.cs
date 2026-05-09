@@ -666,7 +666,21 @@ public sealed class AssetsViewModel : ViewModelBase
         try
         {
             QuoteRefreshSummary summary = await _quoteRefreshService.RefreshPortfolioAsync(_shellState.CurrentPortfolioId, CancellationToken.None).ConfigureAwait(true);
-            SetFormSuccess(summary.Message);
+            if (summary.UpdatedCount == 0 && summary.CachedCount == 0 && summary.FailedCount > 0)
+            {
+                SetFormError(summary.Message);
+                return;
+            }
+
+            if (summary.FailedCount > 0)
+            {
+                SetFormError(summary.Message);
+            }
+            else
+            {
+                SetFormSuccess(summary.Message);
+            }
+
             _dataInvalidation.Invalidate("quotes-refreshed-from-assets-screen");
             await LoadAsync().ConfigureAwait(true);
         }

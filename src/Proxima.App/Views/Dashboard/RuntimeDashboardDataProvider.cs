@@ -115,26 +115,58 @@ public sealed class RuntimeDashboardDataProvider(
         }
 
         DateTimeOffset today = DateTimeOffset.UtcNow.Date;
-        decimal[] values = new decimal[30];
+        DateTimeOffset start = today.AddDays(-29);
+        PortfolioTransaction[] orderedTransactions = transactions
+            .Where(static tx => tx.AssetId.HasValue)
+            .OrderBy(static tx => tx.TradeDate)
+            .ToArray();
 
-        for (int i = 0; i < values.Length; i++)
+        if (orderedTransactions.Length == 0)
         {
-            DateTimeOffset day = today.AddDays(-(values.Length - 1 - i));
-            decimal netFlowAfterDay = transactions
-                .Where(tx => tx.TradeDate.Date > day.Date)
-                .Sum(ToSignedAmount);
-
-            decimal estimated = currentTotal - netFlowAfterDay;
-            values[i] = Math.Max(0m, estimated);
+            return [currentTotal];
         }
 
-        if (values.All(value => value == values[0]))
+        Dictionary<Guid, decimal> currentPriceByAsset = assets.ToDictionary(
+            static asset => asset.AssetId,
+            static asset => asset.Price > 0m ? asset.Price : 0m);
+
+        decimal[] values = new decimal[30];
+        for (int i = 0; i < values.Length; i++)
         {
-            for (int i = 0; i < values.Length; i++)
+            DateTimeOffset dayEnd = start.AddDays(i + 1).AddTicks(-1);
+            Dictionary<Guid, decimal> quantities = new();
+
+            foreach (PortfolioTransaction tx in orderedTransactions)
             {
-                decimal factor = 0.985m + i * 0.0005m;
-                values[i] = Math.Max(0m, currentTotal * factor);
+                if (tx.TradeDate > dayEnd || tx.AssetId is null)
+                {
+                    continue;
+                }
+
+                Guid assetId = tx.AssetId.Value;
+                decimal currentQuantity = quantities.GetValueOrDefault(assetId);
+                quantities[assetId] = tx.Type switch
+                {
+                    TransactionType.Buy => currentQuantity + tx.Quantity,
+                    TransactionType.Airdrop => currentQuantity + tx.Quantity,
+                    TransactionType.StakingReward => currentQuantity + tx.Quantity,
+                    TransactionType.Sell => Math.Max(0m, currentQuantity - tx.Quantity),
+                    _ => currentQuantity
+                };
             }
+
+            decimal value = 0m;
+            foreach ((Guid assetId, decimal quantity) in quantities)
+            {
+                if (quantity <= 0m || !currentPriceByAsset.TryGetValue(assetId, out decimal price) || price <= 0m)
+                {
+                    continue;
+                }
+
+                value += quantity * price;
+            }
+
+            values[i] = Math.Max(0m, value);
         }
 
         values[^1] = currentTotal;

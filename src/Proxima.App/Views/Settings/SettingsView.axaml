@@ -60,12 +60,6 @@
                                 </Grid>
                             </Border>
 
-                            <Border Classes="proxima-settings-row">
-                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
-                                    <TextBlock Classes="proxima-caption" Text="Базовая валюта" VerticalAlignment="Center" />
-                                    <ComboBox Grid.Column="1" Classes="proxima-input" ItemsSource="{Binding CurrencyOptions}" SelectedItem="{Binding PreferredCurrency}" />
-                                </Grid>
-                            </Border>
                         </StackPanel>
                     </Border>
 

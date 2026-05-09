@@ -125,8 +125,10 @@ public sealed class ProximaDonutChart : Control
         IBrush[] palette =
         [
             ProximaChartTheme.ResolveBrush(this, "ProximaBrush.Brand"),
-            ProximaChartTheme.ResolveBrush(this, "ProximaBrush.Warning"),
             ProximaChartTheme.ResolveBrush(this, "ProximaBrush.Success"),
+            new SolidColorBrush(Color.Parse("#B7D5E4")),
+            ProximaChartTheme.ResolveBrush(this, "ProximaBrush.Warning"),
+            new SolidColorBrush(Color.Parse("#7158E2")),
             ProximaChartTheme.ResolveBrush(this, "ProximaBrush.TextMuted")
         ];
 

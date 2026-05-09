@@ -299,6 +299,15 @@ internal static class Program
             UpdatedProfiles.Add(profile);
             return Task.CompletedTask;
         }
+
+        public Task DeleteAsync(Guid profileId, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            _profiles.RemoveAll(profile => profile.Id == profileId);
+
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class TestPasswordHasher : IPasswordHasher

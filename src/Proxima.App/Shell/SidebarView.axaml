@@ -117,7 +117,21 @@
                 <Button Classes="profile-button" Command="{Binding ProfileCommand}">
                     <Grid ColumnDefinitions="40,*" ColumnSpacing="12">
                         <Border Width="40" Height="40" CornerRadius="20" ClipToBounds="True" Background="#0E7A4B">
-                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="{StaticResource ProximaFont.Family}" FontSize="15" FontWeight="ExtraBold" Foreground="#FFFFFF" Text="{Binding UserInitial}" />
+                            <Grid>
+                                <Image
+                                    IsVisible="{Binding HasAvatar}"
+                                    Source="{Binding AvatarBitmap}"
+                                    Stretch="UniformToFill" />
+                                <TextBlock
+                                    IsVisible="{Binding ShowInitialAvatar}"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource ProximaFont.Family}"
+                                    FontSize="15"
+                                    FontWeight="ExtraBold"
+                                    Foreground="#FFFFFF"
+                                    Text="{Binding UserInitial}" />
+                            </Grid>
                         </Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
                             <TextBlock Classes="profile-name" Text="{Binding UserDisplayName}" />

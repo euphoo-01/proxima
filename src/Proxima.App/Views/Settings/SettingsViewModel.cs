@@ -23,7 +23,7 @@ public sealed class SettingsViewModel : ViewModelBase
     private string _login = "local";
     private string _preferredCurrency = "USD";
     private decimal _uiScale = 1m;
-    private QuoteProviderKind _selectedQuoteProvider = QuoteProviderKind.Mock;
+    private QuoteProviderKind _selectedQuoteProvider = QuoteProviderKind.Finnhub;
     private int _quoteRefreshMinutes = 15;
     private CurrencyProviderKind _selectedCurrencyProvider = CurrencyProviderKind.Mock;
     private bool _syncEnabled;
@@ -43,10 +43,10 @@ public sealed class SettingsViewModel : ViewModelBase
         _settingsService = settingsService;
         _runtimeUserContext = runtimeUserContext;
 
-        CurrencyOptions = ["USD", "EUR", "BYN", "RUB"];
+        CurrencyOptions = ["USD"];
         LanguageOptions = Enum.GetValues<AppLanguage>();
         RoleOptions = Enum.GetValues<UserRole>();
-        QuoteProviderOptions = Enum.GetValues<QuoteProviderKind>();
+        QuoteProviderOptions = [QuoteProviderKind.Finnhub];
         CurrencyProviderOptions = Enum.GetValues<CurrencyProviderKind>();
         ThemeOptions = ["Светлая"];
         SyncModeOptions = ["Выключена", "Включена"];
@@ -108,7 +108,7 @@ public sealed class SettingsViewModel : ViewModelBase
     public string PreferredCurrency
     {
         get => _preferredCurrency;
-        set => SetProperty(ref _preferredCurrency, value);
+        set => SetProperty(ref _preferredCurrency, "USD");
     }
 
     public AppLanguage SelectedLanguage
@@ -293,7 +293,7 @@ public sealed class SettingsViewModel : ViewModelBase
                 _runtimeUserContext.UserId,
                 DisplayName,
                 SelectedRole,
-                PreferredCurrency,
+                "USD",
                 SelectedLanguage,
                 UiScale,
                 SelectedQuoteProvider,
@@ -344,10 +344,10 @@ public sealed class SettingsViewModel : ViewModelBase
         DisplayName = settings.DisplayName;
         Login = settings.Login;
         SelectedRole = settings.Role;
-        PreferredCurrency = settings.PreferredCurrency;
+        PreferredCurrency = "USD";
         SelectedLanguage = settings.Language;
         UiScale = settings.UiScale;
-        SelectedQuoteProvider = settings.QuoteProvider;
+        SelectedQuoteProvider = QuoteProviderKind.Finnhub;
         QuoteRefreshMinutes = settings.QuoteRefreshMinutes;
         SelectedCurrencyProvider = settings.CurrencyProvider;
         SyncEnabled = settings.SyncEnabled;
@@ -383,7 +383,7 @@ public sealed class SettingsViewModel : ViewModelBase
                 "USD",
                 AppLanguage.RU,
                 1m,
-                QuoteProviderKind.Mock,
+                QuoteProviderKind.Finnhub,
                 15,
                 string.Empty,
                 CurrencyProviderKind.Mock,
@@ -403,7 +403,7 @@ public sealed class SettingsViewModel : ViewModelBase
                 request.DisplayName,
                 request.Role,
                 "local",
-                request.PreferredCurrency,
+                "USD",
                 request.Language,
                 request.UiScale,
                 request.QuoteProvider,

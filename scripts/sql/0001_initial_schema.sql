@@ -164,6 +164,18 @@ create table if not exists user_settings (
   sync_enabled boolean not null,
   last_snapshot_at timestamptz null
 );
+alter table user_settings add column if not exists display_name text not null default 'Пользователь';
+alter table user_settings add column if not exists role text not null default 'PrivateInvestor';
+alter table user_settings add column if not exists login text not null default '';
+alter table user_settings add column if not exists preferred_currency varchar(8) not null default 'USD';
+alter table user_settings add column if not exists language text not null default 'RU';
+alter table user_settings add column if not exists ui_scale numeric(10,4) not null default 1.0;
+alter table user_settings add column if not exists quote_provider text not null default 'Mock';
+alter table user_settings add column if not exists quote_refresh_minutes int not null default 15;
+alter table user_settings add column if not exists finnhub_api_key_protected text not null default '';
+alter table user_settings add column if not exists currency_provider text not null default 'Mock';
+alter table user_settings add column if not exists sync_enabled boolean not null default false;
+alter table user_settings add column if not exists last_snapshot_at timestamptz null;
 
 create table if not exists sync_snapshots (
   id uuid primary key,

@@ -69,6 +69,7 @@ public static class AppComposition
         services.AddSingleton<IGoalRepository, PostgresGoalRepository>();
         services.AddSingleton<IUserSettingsRepository, PostgresUserSettingsRepository>();
         services.AddSingleton<IQuoteCacheRepository, PostgresQuoteCacheRepository>();
+        services.AddSingleton<IAccountDeletionService, PostgresAccountDeletionService>();
         services.AddSingleton<IAuditLogRepository, PostgresAuditLogRepository>();
 
         services.AddSingleton<IPortfolioService, PortfolioService>();
