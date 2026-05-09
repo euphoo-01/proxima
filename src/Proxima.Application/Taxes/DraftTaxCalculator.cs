@@ -16,18 +16,21 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
         string baseCurrency,
         CancellationToken cancellationToken = default)
     {
+        _ = baseCurrency;
+
         if (profile == LegalProfileType.Other)
         {
             return EmptyFailure("В профиле пользователя не выбран тип налогоплательщика.", BuildRuleSet(profile, reportYear));
         }
 
-        List<TaxTransactionSnapshot> byYear = transactions
-            .Where(t => t.TradeDate.Year == reportYear)
+        List<TaxTransactionSnapshot> ordered = transactions
+            .Where(t => t.TradeDate.Year <= reportYear)
             .OrderBy(t => t.TradeDate)
-            .ThenBy(t => t.Type)
+            .ThenBy(t => GetTransactionSortRank(t.Type))
             .ToList();
 
-        if (byYear.Count == 0)
+        int yearTransactionCount = ordered.Count(t => t.TradeDate.Year == reportYear);
+        if (yearTransactionCount == 0)
         {
             return EmptyFailure($"За {reportYear} год нет транзакций для расчета налогов.", BuildRuleSet(profile, reportYear));
         }
@@ -40,6 +43,7 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
         decimal standaloneFees = 0m;
         decimal foreignTaxCreditCandidate = 0m;
         decimal currencyEffect = 0m;
+        int missingCostBasisCount = 0;
         string rateSource = string.Empty;
         DateOnly? rateDate = null;
 
@@ -47,22 +51,19 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
 
         try
         {
-            foreach (TaxTransactionSnapshot transaction in byYear)
+            foreach (TaxTransactionSnapshot transaction in ordered)
             {
+                bool belongsToReportYear = transaction.TradeDate.Year == reportYear;
                 MoneyParts money = await ConvertAsync(transaction, rateBook).ConfigureAwait(false);
-                if (string.IsNullOrWhiteSpace(rateSource))
-                {
-                    rateSource = money.Source;
-                    rateDate = money.Date;
-                }
-                else if (!rateSource.Contains(money.Source, StringComparison.OrdinalIgnoreCase))
-                {
-                    rateSource = $"{rateSource}, {money.Source}";
-                }
 
-                if (!transaction.Currency.Equals(Byn, StringComparison.OrdinalIgnoreCase))
+                if (belongsToReportYear)
                 {
-                    currencyEffect += Math.Abs(money.Gross - transaction.GrossAmount);
+                    AppendRateSource(money.Source, money.Date, ref rateSource, ref rateDate);
+                    decimal originalGross = GetEffectiveGrossAmount(transaction);
+                    if (originalGross > 0m && !transaction.Currency.Equals(Byn, StringComparison.OrdinalIgnoreCase))
+                    {
+                        currencyEffect += Math.Abs(money.Gross - originalGross);
+                    }
                 }
 
                 switch (transaction.Type)
@@ -73,7 +74,17 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
 
                     case TransactionType.Sell:
                     {
-                        decimal cost = ConsumeCost(lotsByAsset, transaction, money.Gross);
+                        decimal cost = ConsumeCost(lotsByAsset, transaction, out bool costBasisMissing);
+                        if (costBasisMissing && belongsToReportYear)
+                        {
+                            missingCostBasisCount++;
+                        }
+
+                        if (!belongsToReportYear)
+                        {
+                            break;
+                        }
+
                         decimal proceeds = Math.Max(0m, money.Gross - Math.Abs(money.Fee) - Math.Abs(money.Tax));
                         decimal result = proceeds - cost;
                         if (result >= 0m)
@@ -89,22 +100,38 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
                     }
 
                     case TransactionType.Dividend:
-                        dividends += Math.Max(0m, money.Gross);
-                        foreignTaxCreditCandidate += Math.Max(0m, money.Tax);
+                        if (belongsToReportYear)
+                        {
+                            dividends += Math.Max(0m, money.Gross);
+                            foreignTaxCreditCandidate += Math.Max(0m, money.Tax);
+                        }
+
                         break;
 
                     case TransactionType.Airdrop:
                     case TransactionType.StakingReward:
-                        rewards += Math.Max(0m, money.Gross);
-                        foreignTaxCreditCandidate += Math.Max(0m, money.Tax);
+                        if (belongsToReportYear)
+                        {
+                            rewards += Math.Max(0m, money.Gross);
+                            foreignTaxCreditCandidate += Math.Max(0m, money.Tax);
+                        }
+
                         break;
 
                     case TransactionType.Fee:
-                        standaloneFees += Math.Abs(money.Gross) + Math.Abs(money.Fee);
+                        if (belongsToReportYear)
+                        {
+                            standaloneFees += Math.Abs(money.Gross) + Math.Abs(money.Fee);
+                        }
+
                         break;
 
                     case TransactionType.Tax:
-                        foreignTaxCreditCandidate += Math.Abs(money.Gross) + Math.Abs(money.Tax);
+                        if (belongsToReportYear)
+                        {
+                            foreignTaxCreditCandidate += Math.Abs(money.Gross) + Math.Abs(money.Tax);
+                        }
+
                         break;
                 }
             }
@@ -126,9 +153,7 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
         decimal taxSaved = decimal.Round(foreignTaxCredit + deductions, 2);
         decimal totalFees = decimal.Round(standaloneFees + foreignTaxCreditCandidate, 2);
 
-        string message = taxableBase <= 0m
-            ? "По текущим операциям налоговая база не сформирована."
-            : "Черновик расчета обновлен по текущему портфелю.";
+        string message = BuildResultMessage(taxableBase, missingCostBasisCount);
 
         return new TaxCalculationResult(
             true,
@@ -141,7 +166,7 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
             totalFees,
             decimal.Round(currencyEffect, 2),
             decimal.Round(-realizedLosses, 2),
-            string.IsNullOrWhiteSpace(rateSource) ? "BYN" : rateSource,
+            string.IsNullOrWhiteSpace(rateSource) ? Byn : rateSource,
             rateDate,
             ruleSet);
     }
@@ -149,6 +174,40 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
     private static TaxCalculationResult EmptyFailure(string message, TaxRuleSet ruleSet)
     {
         return new TaxCalculationResult(false, message, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, "unavailable", null, ruleSet);
+    }
+
+    private static string BuildResultMessage(decimal taxableBase, int missingCostBasisCount)
+    {
+        string message = taxableBase <= 0m
+            ? "По текущим операциям налоговая база не сформирована. Если за год были только покупки активов, налог к уплате обычно не возникает до продажи или получения дохода."
+            : "Черновик расчета обновлен по текущему портфелю.";
+
+        if (missingCostBasisCount > 0)
+        {
+            message += $" Для {missingCostBasisCount} продаж не найдена история покупки в портфеле; расходы по ним приняты как 0 BYN, проверьте импорт истории операций.";
+        }
+
+        return message;
+    }
+
+    private static void AppendRateSource(string source, DateOnly date, ref string rateSource, ref DateOnly? rateDate)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(rateSource))
+        {
+            rateSource = source;
+            rateDate = date;
+            return;
+        }
+
+        if (!rateSource.Contains(source, StringComparison.OrdinalIgnoreCase))
+        {
+            rateSource = $"{rateSource}, {source}";
+        }
     }
 
     private static TaxRuleSet BuildRuleSet(LegalProfileType profile, int reportYear)
@@ -239,6 +298,17 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
             + (value - secondThreshold) * thirdRate / 100m;
     }
 
+    private static int GetTransactionSortRank(TransactionType type)
+    {
+        return type switch
+        {
+            TransactionType.Buy => 0,
+            TransactionType.Split => 1,
+            TransactionType.Sell => 2,
+            _ => 3,
+        };
+    }
+
     private static void RegisterBuy(IDictionary<Guid, Queue<TaxLot>> lotsByAsset, TaxTransactionSnapshot transaction, MoneyParts money)
     {
         if (transaction.AssetId is null || transaction.Quantity <= 0m)
@@ -255,20 +325,28 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
 
         decimal quantity = Math.Abs(transaction.Quantity);
         decimal totalCost = Math.Max(0m, money.Gross + Math.Abs(money.Fee) + Math.Abs(money.Tax));
+        if (quantity <= 0m || totalCost <= 0m)
+        {
+            return;
+        }
+
         lots.Enqueue(new TaxLot(quantity, totalCost / quantity));
     }
 
-    private static decimal ConsumeCost(IDictionary<Guid, Queue<TaxLot>> lotsByAsset, TaxTransactionSnapshot transaction, decimal fallbackProceeds)
+    private static decimal ConsumeCost(IDictionary<Guid, Queue<TaxLot>> lotsByAsset, TaxTransactionSnapshot transaction, out bool costBasisMissing)
     {
+        costBasisMissing = false;
         if (transaction.AssetId is null || transaction.Quantity <= 0m)
         {
-            return Math.Max(0m, fallbackProceeds);
+            costBasisMissing = true;
+            return 0m;
         }
 
         Guid assetId = transaction.AssetId.Value;
         if (!lotsByAsset.TryGetValue(assetId, out Queue<TaxLot>? lots) || lots.Count == 0)
         {
-            return Math.Max(0m, fallbackProceeds);
+            costBasisMissing = true;
+            return 0m;
         }
 
         decimal soldQuantity = Math.Abs(transaction.Quantity);
@@ -297,9 +375,9 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
             }
         }
 
-        if (remaining > 0m && soldQuantity > 0m)
+        if (remaining > 0m)
         {
-            cost += remaining * (Math.Max(0m, fallbackProceeds) / soldQuantity);
+            costBasisMissing = true;
         }
 
         return Math.Max(0m, cost);
@@ -315,11 +393,27 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
         }
 
         return new MoneyParts(
-            transaction.GrossAmount * rate.Rate,
-            transaction.FeeAmount * rate.Rate,
-            transaction.TaxAmount * rate.Rate,
+            GetEffectiveGrossAmount(transaction) * rate.Rate,
+            Math.Abs(transaction.FeeAmount) * rate.Rate,
+            Math.Abs(transaction.TaxAmount) * rate.Rate,
             rate.Source,
             rate.Date);
+    }
+
+    private static decimal GetEffectiveGrossAmount(TaxTransactionSnapshot transaction)
+    {
+        decimal gross = Math.Abs(transaction.GrossAmount);
+        if (gross > 0m)
+        {
+            return gross;
+        }
+
+        if (transaction.Type is TransactionType.Buy or TransactionType.Sell && transaction.Quantity > 0m && transaction.Price > 0m)
+        {
+            return Math.Abs(transaction.Quantity * transaction.Price);
+        }
+
+        return 0m;
     }
 
     private sealed class RateBook(IExchangeRateProvider provider, CancellationToken cancellationToken)
