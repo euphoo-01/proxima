@@ -4,13 +4,10 @@ namespace Proxima.Application.Taxes;
 
 public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalculator
 {
-    private static readonly TaxRuleSet RuleSet = new(
-        "BY-DRAFT-2026.04",
-        new DateOnly(2026, 1, 1),
-        13m,
-        13m,
-        2000m,
-        "Черновой/информационный расчёт. Не является юридической консультацией.");
+    private const string Byn = "BYN";
+
+    private static readonly string Disclaimer =
+        "Расчет носит информационный характер и построен по открытым правилам МНС РБ. Он не заменяет декларацию, консультацию налогового консультанта и проверку первичных документов брокера.";
 
     public async Task<TaxCalculationResult> CalculateAsync(
         IReadOnlyList<TaxTransactionSnapshot> transactions,
@@ -21,54 +18,333 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
     {
         if (profile == LegalProfileType.Other)
         {
-            return new TaxCalculationResult(false, "Выберите налоговый профиль перед расчётом.", 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, "mock", null, RuleSet);
+            return EmptyFailure("В профиле пользователя не выбран тип налогоплательщика.", BuildRuleSet(profile, reportYear));
         }
 
-        if (transactions.Count == 0)
-        {
-            return new TaxCalculationResult(false, "Нет транзакций для расчёта.", 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, "mock", null, RuleSet);
-        }
+        List<TaxTransactionSnapshot> byYear = transactions
+            .Where(t => t.TradeDate.Year == reportYear)
+            .OrderBy(t => t.TradeDate)
+            .ThenBy(t => t.Type)
+            .ToList();
 
-        List<TaxTransactionSnapshot> byYear = transactions.Where(t => t.TradeDate.Year == reportYear).ToList();
         if (byYear.Count == 0)
         {
-            return new TaxCalculationResult(false, "За выбранный год нет транзакций.", 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, "mock", null, RuleSet);
+            return EmptyFailure($"За {reportYear} год нет транзакций для расчета налогов.", BuildRuleSet(profile, reportYear));
         }
 
-        decimal realized = byYear.Where(t => t.Type == TransactionType.Sell).Sum(t => t.GrossAmount * 0.15m);
-        decimal dividends = byYear.Where(t => t.Type == TransactionType.Dividend).Sum(t => t.GrossAmount);
-        decimal fees = byYear.Where(t => t.Type == TransactionType.Fee || t.Type == TransactionType.Tax).Sum(t => t.FeeAmount + t.TaxAmount + t.GrossAmount);
-        decimal losses = byYear.Where(t => t.Type == TransactionType.Sell).Sum(t => Math.Min(0m, t.GrossAmount * 0.02m));
-        decimal currencyEffect = byYear.Where(t => !t.Currency.Equals(baseCurrency, StringComparison.OrdinalIgnoreCase)).Sum(t => t.GrossAmount * 0.01m);
+        RateBook rateBook = new(rates, cancellationToken);
+        decimal realizedPositive = 0m;
+        decimal realizedLosses = 0m;
+        decimal dividends = 0m;
+        decimal rewards = 0m;
+        decimal standaloneFees = 0m;
+        decimal foreignTaxCreditCandidate = 0m;
+        decimal currencyEffect = 0m;
+        string rateSource = string.Empty;
+        DateOnly? rateDate = null;
 
-        ExchangeRateResult rate = await rates.GetRateAsync("USD", baseCurrency, DateOnly.FromDateTime(DateTime.UtcNow), cancellationToken).ConfigureAwait(false);
-        if (!rate.Succeeded)
+        Dictionary<Guid, Queue<TaxLot>> lotsByAsset = [];
+
+        try
         {
-            return new TaxCalculationResult(false, rate.Message, 0m, 0m, 0m, realized, dividends, fees, currencyEffect, losses, "mock", null, RuleSet);
-        }
+            foreach (TaxTransactionSnapshot transaction in byYear)
+            {
+                MoneyParts money = await ConvertAsync(transaction, rateBook).ConfigureAwait(false);
+                if (string.IsNullOrWhiteSpace(rateSource))
+                {
+                    rateSource = money.Source;
+                    rateDate = money.Date;
+                }
+                else if (!rateSource.Contains(money.Source, StringComparison.OrdinalIgnoreCase))
+                {
+                    rateSource = $"{rateSource}, {money.Source}";
+                }
 
-        decimal grossBase = realized + dividends + currencyEffect + fees + losses;
-        decimal taxableBase = Math.Max(0m, grossBase - RuleSet.ExemptionAmount);
-        decimal due = taxableBase * RuleSet.BaseRatePercent / 100m;
-        if (profile is LegalProfileType.LLC or LegalProfileType.JSC)
+                if (!transaction.Currency.Equals(Byn, StringComparison.OrdinalIgnoreCase))
+                {
+                    currencyEffect += Math.Abs(money.Gross - transaction.GrossAmount);
+                }
+
+                switch (transaction.Type)
+                {
+                    case TransactionType.Buy:
+                        RegisterBuy(lotsByAsset, transaction, money);
+                        break;
+
+                    case TransactionType.Sell:
+                    {
+                        decimal cost = ConsumeCost(lotsByAsset, transaction, money.Gross);
+                        decimal proceeds = Math.Max(0m, money.Gross - Math.Abs(money.Fee) - Math.Abs(money.Tax));
+                        decimal result = proceeds - cost;
+                        if (result >= 0m)
+                        {
+                            realizedPositive += result;
+                        }
+                        else
+                        {
+                            realizedLosses += Math.Abs(result);
+                        }
+
+                        break;
+                    }
+
+                    case TransactionType.Dividend:
+                        dividends += Math.Max(0m, money.Gross);
+                        foreignTaxCreditCandidate += Math.Max(0m, money.Tax);
+                        break;
+
+                    case TransactionType.Airdrop:
+                    case TransactionType.StakingReward:
+                        rewards += Math.Max(0m, money.Gross);
+                        foreignTaxCreditCandidate += Math.Max(0m, money.Tax);
+                        break;
+
+                    case TransactionType.Fee:
+                        standaloneFees += Math.Abs(money.Gross) + Math.Abs(money.Fee);
+                        break;
+
+                    case TransactionType.Tax:
+                        foreignTaxCreditCandidate += Math.Abs(money.Gross) + Math.Abs(money.Tax);
+                        break;
+                }
+            }
+        }
+        catch (ExchangeRateUnavailableException ex)
         {
-            due *= 1.15m;
+            return EmptyFailure(ex.Message, BuildRuleSet(profile, reportYear));
         }
 
-        decimal saved = Math.Max(0m, RuleSet.ExemptionAmount);
+        TaxRuleSet ruleSet = BuildRuleSet(profile, reportYear);
+        decimal grossIncome = realizedPositive + dividends + rewards;
+        decimal deductions = Math.Min(grossIncome, realizedLosses + standaloneFees);
+        decimal taxableBase = Math.Max(0m, grossIncome - deductions);
+
+        TaxComputation computed = ComputeTax(profile, taxableBase, reportYear);
+        decimal foreignTaxCredit = Math.Min(computed.TotalTax, foreignTaxCreditCandidate);
+        decimal totalDue = Math.Max(0m, computed.TotalTax - foreignTaxCredit);
+
+        decimal taxSaved = decimal.Round(foreignTaxCredit + deductions, 2);
+        decimal totalFees = decimal.Round(standaloneFees + foreignTaxCreditCandidate, 2);
+
+        string message = taxableBase <= 0m
+            ? "По текущим операциям налоговая база не сформирована."
+            : "Черновик расчета обновлен по текущему портфелю.";
+
         return new TaxCalculationResult(
             true,
-            RuleSet.Disclaimer,
-            decimal.Round(due, 2),
+            message,
+            decimal.Round(totalDue, 2),
             decimal.Round(taxableBase, 2),
-            decimal.Round(saved, 2),
-            decimal.Round(realized, 2),
-            decimal.Round(dividends, 2),
-            decimal.Round(fees, 2),
+            taxSaved,
+            decimal.Round(realizedPositive, 2),
+            decimal.Round(dividends + rewards, 2),
+            totalFees,
             decimal.Round(currencyEffect, 2),
-            decimal.Round(losses, 2),
-            rate.Source,
-            rate.Date,
-            RuleSet);
+            decimal.Round(-realizedLosses, 2),
+            string.IsNullOrWhiteSpace(rateSource) ? "BYN" : rateSource,
+            rateDate,
+            ruleSet);
     }
+
+    private static TaxCalculationResult EmptyFailure(string message, TaxRuleSet ruleSet)
+    {
+        return new TaxCalculationResult(false, message, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, "unavailable", null, ruleSet);
+    }
+
+    private static TaxRuleSet BuildRuleSet(LegalProfileType profile, int reportYear)
+    {
+        return profile switch
+        {
+            LegalProfileType.SelfEmployed => new TaxRuleSet(
+                $"BY-NPD-{reportYear}.01",
+                new DateOnly(reportYear, 1, 1),
+                10m,
+                10m,
+                0m,
+                60_000m,
+                0m,
+                Disclaimer),
+
+            LegalProfileType.IndividualEntrepreneur => new TaxRuleSet(
+                $"BY-IP-{reportYear}.01",
+                new DateOnly(reportYear, 1, 1),
+                20m,
+                20m,
+                0m,
+                500_000m,
+                0m,
+                Disclaimer),
+
+            LegalProfileType.LLC or LegalProfileType.JSC => new TaxRuleSet(
+                $"BY-PROFIT-{reportYear}.01",
+                new DateOnly(reportYear, 1, 1),
+                20m,
+                20m,
+                0m,
+                0m,
+                0m,
+                Disclaimer),
+
+            _ => new TaxRuleSet(
+                $"BY-PIT-{reportYear}.01",
+                new DateOnly(reportYear, 1, 1),
+                13m,
+                13m,
+                0m,
+                350_000m,
+                600_000m,
+                Disclaimer),
+        };
+    }
+
+    private static TaxComputation ComputeTax(LegalProfileType profile, decimal taxableBase, int reportYear)
+    {
+        if (taxableBase <= 0m)
+        {
+            return new TaxComputation(0m);
+        }
+
+        return profile switch
+        {
+            LegalProfileType.SelfEmployed => new TaxComputation(ApplyTwoTier(taxableBase, 60_000m, 10m, 20m, reportYear == 2026 ? 270m : 0m)),
+            LegalProfileType.IndividualEntrepreneur => new TaxComputation(ApplyTwoTier(taxableBase, 500_000m, 20m, 30m, 0m)),
+            LegalProfileType.LLC or LegalProfileType.JSC => new TaxComputation(taxableBase * 20m / 100m),
+            _ => new TaxComputation(ApplyThreeTier(taxableBase, 350_000m, 600_000m, 13m, 25m, 30m)),
+        };
+    }
+
+    private static decimal ApplyTwoTier(decimal value, decimal threshold, decimal baseRate, decimal excessRate, decimal minimumTax)
+    {
+        decimal tax = value <= threshold
+            ? value * baseRate / 100m
+            : threshold * baseRate / 100m + (value - threshold) * excessRate / 100m;
+
+        return Math.Max(tax, minimumTax);
+    }
+
+    private static decimal ApplyThreeTier(decimal value, decimal firstThreshold, decimal secondThreshold, decimal firstRate, decimal secondRate, decimal thirdRate)
+    {
+        if (value <= firstThreshold)
+        {
+            return value * firstRate / 100m;
+        }
+
+        if (value <= secondThreshold)
+        {
+            return firstThreshold * firstRate / 100m + (value - firstThreshold) * secondRate / 100m;
+        }
+
+        return firstThreshold * firstRate / 100m
+            + (secondThreshold - firstThreshold) * secondRate / 100m
+            + (value - secondThreshold) * thirdRate / 100m;
+    }
+
+    private static void RegisterBuy(IDictionary<Guid, Queue<TaxLot>> lotsByAsset, TaxTransactionSnapshot transaction, MoneyParts money)
+    {
+        if (transaction.AssetId is null || transaction.Quantity <= 0m)
+        {
+            return;
+        }
+
+        Guid assetId = transaction.AssetId.Value;
+        if (!lotsByAsset.TryGetValue(assetId, out Queue<TaxLot>? lots))
+        {
+            lots = [];
+            lotsByAsset[assetId] = lots;
+        }
+
+        decimal quantity = Math.Abs(transaction.Quantity);
+        decimal totalCost = Math.Max(0m, money.Gross + Math.Abs(money.Fee) + Math.Abs(money.Tax));
+        lots.Enqueue(new TaxLot(quantity, totalCost / quantity));
+    }
+
+    private static decimal ConsumeCost(IDictionary<Guid, Queue<TaxLot>> lotsByAsset, TaxTransactionSnapshot transaction, decimal fallbackProceeds)
+    {
+        if (transaction.AssetId is null || transaction.Quantity <= 0m)
+        {
+            return Math.Max(0m, fallbackProceeds);
+        }
+
+        Guid assetId = transaction.AssetId.Value;
+        if (!lotsByAsset.TryGetValue(assetId, out Queue<TaxLot>? lots) || lots.Count == 0)
+        {
+            return Math.Max(0m, fallbackProceeds);
+        }
+
+        decimal soldQuantity = Math.Abs(transaction.Quantity);
+        decimal remaining = soldQuantity;
+        decimal cost = 0m;
+
+        while (remaining > 0m && lots.Count > 0)
+        {
+            TaxLot lot = lots.Dequeue();
+            decimal used = Math.Min(remaining, lot.Quantity);
+            cost += used * lot.UnitCostByn;
+            remaining -= used;
+
+            decimal left = lot.Quantity - used;
+            if (left > 0m)
+            {
+                Queue<TaxLot> reordered = [];
+                reordered.Enqueue(new TaxLot(left, lot.UnitCostByn));
+                while (lots.Count > 0)
+                {
+                    reordered.Enqueue(lots.Dequeue());
+                }
+
+                lotsByAsset[assetId] = reordered;
+                lots = reordered;
+            }
+        }
+
+        if (remaining > 0m && soldQuantity > 0m)
+        {
+            cost += remaining * (Math.Max(0m, fallbackProceeds) / soldQuantity);
+        }
+
+        return Math.Max(0m, cost);
+    }
+
+    private static async Task<MoneyParts> ConvertAsync(TaxTransactionSnapshot transaction, RateBook rateBook)
+    {
+        DateOnly date = DateOnly.FromDateTime(transaction.TradeDate.UtcDateTime.Date);
+        ExchangeRateResult rate = await rateBook.GetAsync(transaction.Currency, Byn, date).ConfigureAwait(false);
+        if (!rate.Succeeded)
+        {
+            throw new ExchangeRateUnavailableException(rate.Message);
+        }
+
+        return new MoneyParts(
+            transaction.GrossAmount * rate.Rate,
+            transaction.FeeAmount * rate.Rate,
+            transaction.TaxAmount * rate.Rate,
+            rate.Source,
+            rate.Date);
+    }
+
+    private sealed class RateBook(IExchangeRateProvider provider, CancellationToken cancellationToken)
+    {
+        private readonly Dictionary<string, ExchangeRateResult> _cache = new(StringComparer.OrdinalIgnoreCase);
+
+        public async Task<ExchangeRateResult> GetAsync(string from, string to, DateOnly date)
+        {
+            string key = $"{from.Trim().ToUpperInvariant()}:{to.Trim().ToUpperInvariant()}:{date:yyyy-MM-dd}";
+            if (_cache.TryGetValue(key, out ExchangeRateResult? cached))
+            {
+                return cached;
+            }
+
+            ExchangeRateResult result = await provider.GetRateAsync(from, to, date, cancellationToken).ConfigureAwait(false);
+            _cache[key] = result;
+            return result;
+        }
+    }
+
+    private sealed record TaxLot(decimal Quantity, decimal UnitCostByn);
+
+    private sealed record MoneyParts(decimal Gross, decimal Fee, decimal Tax, string Source, DateOnly Date);
+
+    private sealed record TaxComputation(decimal TotalTax);
+
+    private sealed class ExchangeRateUnavailableException(string message) : Exception(message);
 }

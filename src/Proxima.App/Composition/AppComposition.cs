@@ -131,7 +131,8 @@ public static class AppComposition
                 provider.GetRequiredService<ITransactionService>(),
                 provider.GetRequiredService<ITaxCalculator>(),
                 provider.GetRequiredService<IReportService>(),
-                provider.GetRequiredService<IShellState>()));
+                provider.GetRequiredService<IShellState>(),
+                provider.GetRequiredService<IRuntimeUserContext>()));
 
         services.AddSingleton<TaxesViewModel>();
         services.AddSingleton<SettingsViewModel>();

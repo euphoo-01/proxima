@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Windows.Input;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
+using Proxima.App.Views.Auth;
 using Proxima.Application.Taxes;
 using Proxima.Application.Transactions;
 using Proxima.Reporting.Reports;
@@ -12,7 +13,6 @@ namespace Proxima.App.Views.Taxes;
 public sealed class TaxesViewModel : ViewModelBase
 {
     private const string BaseCurrency = "BYN";
-    private const decimal IncomeThreshold = 200_000m;
 
     private readonly ITaxesReadModelProvider _provider;
     private readonly IShellState _shellState;
@@ -20,12 +20,12 @@ public sealed class TaxesViewModel : ViewModelBase
     private readonly DelegateCommand _exportPdfCommand;
 
     private int _selectedYear = DateTime.UtcNow.Year;
-    private TaxProfileOption? _selectedProfile;
     private bool _isLoading;
     private bool _hasError;
     private bool _isEmpty;
     private bool _isOfflineRate;
-    private string _statusMessage = "Выберите период и выполните расчет.";
+    private string _statusMessage = "Расчет еще не выполнен.";
+    private string _exportStatusMessage = string.Empty;
     private string _offlineRateMessage = string.Empty;
 
     private decimal _taxableBase;
@@ -38,12 +38,16 @@ public sealed class TaxesViewModel : ViewModelBase
     private decimal _losses;
     private decimal _baseRatePercent = 13m;
     private decimal _dividendRatePercent = 13m;
-    private decimal _exemptionAmount = 2_000m;
+    private decimal _exemptionAmount;
+    private decimal _incomeThreshold = 350_000m;
     private int _transactionCount;
     private string _currency = BaseCurrency;
     private string _summaryStatus = "Ожидается";
     private string _rateSourceText = "Источник курса не выбран";
     private string _calculationVersion = "tax-draft-v1";
+    private string _currentTaxProfileName = "Физическое лицо";
+    private string _currentTaxProfileDescription = "Подтягивается из профиля пользователя";
+    private string _taxDisclaimer = "Расчет носит информационный характер и не является юридической консультацией.";
 
     public TaxesViewModel(ITaxesReadModelProvider provider, IShellState shellState, IRuntimeDataInvalidation dataInvalidation)
     {
@@ -51,32 +55,26 @@ public sealed class TaxesViewModel : ViewModelBase
         _shellState = shellState;
 
         Years = BuildYears(DateTime.UtcNow.Year);
-        Profiles = BuildProfiles();
-        _selectedProfile = Profiles.FirstOrDefault(static item => item.Profile == LegalProfileType.PhysicalPerson) ?? Profiles.FirstOrDefault();
-
         BreakdownRows = [];
-        DeadlineRows = [];
+        TaxBreakdownRows = [];
 
         _recalculateCommand = new DelegateCommand(_ => _ = RecalculateAsync(), _ => !IsLoading);
         _exportPdfCommand = new DelegateCommand(_ => _ = ExportPdfAsync(), _ => !IsLoading && HasContent);
         _shellState.PortfolioChanged += (_, _) => _ = RecalculateAsync();
         dataInvalidation.DataInvalidated += (_, _) => _ = RecalculateAsync();
 
-        RebuildDeadlines();
         _ = RecalculateAsync();
     }
 
     public string Title => "Налоги";
 
-    public string Subtitle => "Черновой расчет налогов для РБ с учетом курсовых разниц, дивидендов и льгот.";
+    public string Subtitle => "Расчет по текущему портфелю с курсами НБРБ/Belarusbank и налоговым профилем из страницы профиля.";
 
     public IReadOnlyList<int> Years { get; }
 
-    public IReadOnlyList<TaxProfileOption> Profiles { get; }
-
     public ObservableCollection<TaxBreakdownRowViewModel> BreakdownRows { get; }
 
-    public ObservableCollection<TaxDeadlineRowViewModel> DeadlineRows { get; }
+    public ObservableCollection<TaxBreakdownRowViewModel> TaxBreakdownRows { get; }
 
     public ICommand RecalculateCommand => _recalculateCommand;
 
@@ -85,26 +83,7 @@ public sealed class TaxesViewModel : ViewModelBase
     public int SelectedYear
     {
         get => _selectedYear;
-        set
-        {
-            if (SetProperty(ref _selectedYear, value))
-            {
-                RebuildDeadlines();
-                OnPropertyChanged(nameof(DeadlineTitle));
-            }
-        }
-    }
-
-    public TaxProfileOption? SelectedProfile
-    {
-        get => _selectedProfile;
-        set
-        {
-            if (SetProperty(ref _selectedProfile, value))
-            {
-                OnPropertyChanged(nameof(SelectedProfileName));
-            }
-        }
+        set => SetProperty(ref _selectedYear, value);
     }
 
     public bool IsLoading
@@ -157,6 +136,12 @@ public sealed class TaxesViewModel : ViewModelBase
     {
         get => _statusMessage;
         private set => SetProperty(ref _statusMessage, value);
+    }
+
+    public string ExportStatusMessage
+    {
+        get => _exportStatusMessage;
+        private set => SetProperty(ref _exportStatusMessage, value);
     }
 
     public string OfflineRateMessage
@@ -271,6 +256,21 @@ public sealed class TaxesViewModel : ViewModelBase
         }
     }
 
+    public decimal IncomeThreshold
+    {
+        get => _incomeThreshold;
+        private set
+        {
+            if (SetProperty(ref _incomeThreshold, value))
+            {
+                OnPropertyChanged(nameof(IncomeThresholdProgress));
+                OnPropertyChanged(nameof(IncomeThresholdProgressText));
+                OnPropertyChanged(nameof(IncomeThresholdCaption));
+                OnPropertyChanged(nameof(IncomeThresholdRightLabel));
+            }
+        }
+    }
+
     public int TransactionCount
     {
         get => _transactionCount;
@@ -296,6 +296,7 @@ public sealed class TaxesViewModel : ViewModelBase
                 OnPropertyChanged(nameof(TaxSavedText));
                 OnPropertyChanged(nameof(ExemptionAmountText));
                 OnPropertyChanged(nameof(IncomeThresholdCaption));
+                OnPropertyChanged(nameof(IncomeThresholdRightLabel));
             }
         }
     }
@@ -318,7 +319,23 @@ public sealed class TaxesViewModel : ViewModelBase
         private set => SetProperty(ref _calculationVersion, value);
     }
 
-    public string SelectedProfileName => SelectedProfile?.Title ?? "Налоговый профиль";
+    public string CurrentTaxProfileName
+    {
+        get => _currentTaxProfileName;
+        private set => SetProperty(ref _currentTaxProfileName, value);
+    }
+
+    public string CurrentTaxProfileDescription
+    {
+        get => _currentTaxProfileDescription;
+        private set => SetProperty(ref _currentTaxProfileDescription, value);
+    }
+
+    public string TaxDisclaimer
+    {
+        get => _taxDisclaimer;
+        private set => SetProperty(ref _taxDisclaimer, value);
+    }
 
     public string TotalTaxDueText => FormatMoney(TotalTaxDue, Currency);
 
@@ -340,13 +357,17 @@ public sealed class TaxesViewModel : ViewModelBase
 
     public double IncomeThresholdProgress => IncomeThreshold <= 0m ? 0d : Convert.ToDouble(Math.Clamp(TaxableBase / IncomeThreshold * 100m, 0m, 100m));
 
-    public string IncomeThresholdCaption => $"{FormatMoney(TaxableBase, Currency, compact: true)} / {FormatMoney(IncomeThreshold, Currency, compact: true)}";
+    public string IncomeThresholdCaption => IncomeThreshold <= 0m
+        ? "Лимит не применяется"
+        : $"{FormatMoney(TaxableBase, Currency, compact: true)} / {FormatMoney(IncomeThreshold, Currency, compact: true)}";
 
-    public string DeadlineTitle => $"Дедлайны {SelectedYear}";
+    public string IncomeThresholdRightLabel => IncomeThreshold <= 0m ? "без лимита" : FormatMoney(IncomeThreshold, Currency, compact: true);
 
     public string TransactionCountText => TransactionCount == 1 ? "1 операция" : $"{TransactionCount} операций";
 
-    public string TaxDisclaimer => "Расчет носит информационный характер и не является юридической консультацией. Перед подачей декларации проверьте актуальные правила и официальные источники.";
+    public string TaxBreakdownTitle => $"Tax breakdown {SelectedYear}";
+
+    public string TaxCalculationNote => $"Профиль: {CurrentTaxProfileName}. Данные берутся из текущего портфеля: сделки, комиссии, дивиденды и удержанные налоги.";
 
     public static TaxesViewModel CreateDesignData()
     {
@@ -359,17 +380,23 @@ public sealed class TaxesViewModel : ViewModelBase
         HasError = false;
         IsEmpty = false;
         IsOfflineRate = false;
+        ExportStatusMessage = string.Empty;
         OfflineRateMessage = string.Empty;
 
         try
         {
-            LegalProfileType profile = SelectedProfile?.Profile ?? LegalProfileType.PhysicalPerson;
-            TaxScreenReadModel model = await _provider.GetAsync(SelectedYear, profile, CancellationToken.None).ConfigureAwait(true);
+            TaxScreenReadModel model = await _provider.GetAsync(SelectedYear, CancellationToken.None).ConfigureAwait(true);
 
             BreakdownRows.Clear();
             foreach (TaxBreakdownRow row in model.Breakdown)
             {
                 BreakdownRows.Add(new TaxBreakdownRowViewModel(row.Name, FormatMoney(row.Value, model.Currency), row.Note, row.Kind));
+            }
+
+            TaxBreakdownRows.Clear();
+            foreach (TaxBreakdownRow row in model.TaxBreakdown)
+            {
+                TaxBreakdownRows.Add(new TaxBreakdownRowViewModel(row.Name, row.Kind == TaxBreakdownKind.Info ? "—" : FormatMoney(row.Value, model.Currency), row.Note, row.Kind));
             }
 
             Currency = model.Currency;
@@ -384,14 +411,21 @@ public sealed class TaxesViewModel : ViewModelBase
             BaseRatePercent = model.BaseRatePercent;
             DividendRatePercent = model.DividendRatePercent;
             ExemptionAmount = model.ExemptionAmount;
+            IncomeThreshold = model.IncomeThreshold;
             TransactionCount = model.TransactionCount;
             SummaryStatus = model.Status;
             StatusMessage = model.Message;
             RateSourceText = model.RateSourceText;
             CalculationVersion = model.CalculationVersion;
+            CurrentTaxProfileName = model.ProfileName;
+            CurrentTaxProfileDescription = model.ProfileDescription;
+            TaxDisclaimer = model.LegalDisclaimer;
             IsEmpty = model.IsEmpty;
             IsOfflineRate = model.IsOfflineRate;
             OfflineRateMessage = model.OfflineRateMessage;
+
+            OnPropertyChanged(nameof(TaxBreakdownTitle));
+            OnPropertyChanged(nameof(TaxCalculationNote));
         }
         catch (Exception ex)
         {
@@ -411,20 +445,9 @@ public sealed class TaxesViewModel : ViewModelBase
             return;
         }
 
-        LegalProfileType profile = SelectedProfile?.Profile ?? LegalProfileType.PhysicalPerson;
-        TaxExportResult result = await _provider.ExportPdfAsync(SelectedYear, profile, CancellationToken.None).ConfigureAwait(true);
+        TaxExportResult result = await _provider.ExportPdfAsync(SelectedYear, CancellationToken.None).ConfigureAwait(true);
+        ExportStatusMessage = result.Message;
         StatusMessage = result.Message;
-    }
-
-    private void RebuildDeadlines()
-    {
-        DeadlineRows.Clear();
-        DeadlineRows.Add(new TaxDeadlineRowViewModel("МАРТ", "31", "Заполнение декларации", true));
-        DeadlineRows.Add(new TaxDeadlineRowViewModel("ИЮНЬ", "01", "Оплата налогов", false));
-        DeadlineRows.Add(new TaxDeadlineRowViewModel("АВГ", "01", "Дивиденды и купоны", false));
-        DeadlineRows.Add(new TaxDeadlineRowViewModel("СЕНТ", "01", "Крипто и airdrop", false));
-        DeadlineRows.Add(new TaxDeadlineRowViewModel("ОКТ", "01", "Сверка документов", false));
-        DeadlineRows.Add(new TaxDeadlineRowViewModel("НОЯБ", "01", "Финальная проверка", false));
     }
 
     private void OnContentStateChanged()
@@ -436,18 +459,6 @@ public sealed class TaxesViewModel : ViewModelBase
     private static IReadOnlyList<int> BuildYears(int currentYear)
     {
         return [currentYear, currentYear - 1, currentYear - 2, currentYear - 3];
-    }
-
-    private static IReadOnlyList<TaxProfileOption> BuildProfiles()
-    {
-        return
-        [
-            new TaxProfileOption(LegalProfileType.PhysicalPerson, "Физическое лицо", "Стандартный профиль резидента РБ"),
-            new TaxProfileOption(LegalProfileType.SelfEmployed, "Самозанятый", "Для раздельной проверки доходов"),
-            new TaxProfileOption(LegalProfileType.IndividualEntrepreneur, "ИП", "Предпринимательский профиль"),
-            new TaxProfileOption(LegalProfileType.LLC, "ООО", "Корпоративная ставка с надбавкой"),
-            new TaxProfileOption(LegalProfileType.JSC, "ЗАО/ОАО", "Корпоративная ставка с надбавкой")
-        ];
     }
 
     private static string FormatMoney(decimal value, string currency, bool compact = false)
@@ -470,9 +481,9 @@ public sealed class TaxesViewModel : ViewModelBase
 
     public interface ITaxesReadModelProvider
     {
-        Task<TaxScreenReadModel> GetAsync(int year, LegalProfileType profile, CancellationToken cancellationToken);
+        Task<TaxScreenReadModel> GetAsync(int year, CancellationToken cancellationToken);
 
-        Task<TaxExportResult> ExportPdfAsync(int year, LegalProfileType profile, CancellationToken cancellationToken);
+        Task<TaxExportResult> ExportPdfAsync(int year, CancellationToken cancellationToken);
     }
 
     public sealed class AppTaxesReadModelProvider : ITaxesReadModelProvider
@@ -481,38 +492,53 @@ public sealed class TaxesViewModel : ViewModelBase
         private readonly ITaxCalculator _taxCalculator;
         private readonly IReportService _reportService;
         private readonly IShellState _shellState;
+        private readonly IRuntimeUserContext _userContext;
 
         public AppTaxesReadModelProvider(
             ITransactionService transactions,
             ITaxCalculator taxCalculator,
             IReportService reportService,
-            IShellState shellState)
+            IShellState shellState,
+            IRuntimeUserContext userContext)
         {
             _transactions = transactions;
             _taxCalculator = taxCalculator;
             _reportService = reportService;
             _shellState = shellState;
+            _userContext = userContext;
         }
 
-        public async Task<TaxScreenReadModel> GetAsync(int year, LegalProfileType profile, CancellationToken cancellationToken)
+        public async Task<TaxScreenReadModel> GetAsync(int year, CancellationToken cancellationToken)
         {
+            LegalProfileType profile = ResolveProfile(_userContext.UserId);
+            TaxProfileDescriptor descriptor = DescribeProfile(profile);
+
             IReadOnlyList<Proxima.Domain.Transactions.PortfolioTransaction> transactions = await _transactions
                 .ListActiveAsync(_shellState.CurrentPortfolioId, cancellationToken)
                 .ConfigureAwait(false);
 
             if (transactions.Count == 0)
             {
-                return TaxScreenReadModel.Empty("Нет транзакций для расчета налогов. Добавьте сделки, дивиденды или комиссии в портфель.");
+                return TaxScreenReadModel.Empty("Нет транзакций для расчета налогов. Добавьте сделки, дивиденды или комиссии в портфель.", descriptor);
             }
 
             List<TaxTransactionSnapshot> snapshots = transactions
-                .Select(item => new TaxTransactionSnapshot(item.TradeDate, item.Type, item.GrossAmount, item.FeeAmount, item.TaxAmount, item.Currency))
+                .Select(item => new TaxTransactionSnapshot(
+                    item.AssetId,
+                    item.TradeDate,
+                    item.Type,
+                    item.Quantity,
+                    item.Price,
+                    item.GrossAmount,
+                    item.FeeAmount,
+                    item.TaxAmount,
+                    item.Currency))
                 .ToList();
 
             int yearTransactionCount = snapshots.Count(item => item.TradeDate.Year == year);
             if (yearTransactionCount == 0)
             {
-                return TaxScreenReadModel.Empty($"За {year} год нет транзакций для расчета налогов.");
+                return TaxScreenReadModel.Empty($"За {year} год нет транзакций для расчета налогов.", descriptor);
             }
 
             TaxCalculationResult calculation = await _taxCalculator
@@ -521,10 +547,11 @@ public sealed class TaxesViewModel : ViewModelBase
 
             bool offlineRate = !calculation.Succeeded || calculation.RateSource.Contains("mock", StringComparison.OrdinalIgnoreCase);
             string offlineRateMessage = offlineRate
-                ? "Курс валют недоступен или используется fallback-источник. Проверьте интернет и настройки провайдера курсов."
+                ? "НБРБ и Belarusbank не вернули курс для части операций. В расчете использован fallback — перепроверьте суммы перед подачей декларации."
                 : string.Empty;
 
             IReadOnlyList<TaxBreakdownRow> rows = BuildBreakdownRows(calculation);
+            IReadOnlyList<TaxBreakdownRow> taxRows = BuildTaxBreakdownRows(calculation, descriptor);
 
             string status = calculation.Succeeded ? "Ожидается" : "Требуется проверка";
             string rateText = BuildRateSourceText(calculation);
@@ -545,22 +572,30 @@ public sealed class TaxesViewModel : ViewModelBase
                 BaseRatePercent: calculation.RuleSet.BaseRatePercent,
                 DividendRatePercent: calculation.RuleSet.DividendRatePercent,
                 ExemptionAmount: calculation.RuleSet.ExemptionAmount,
+                IncomeThreshold: calculation.RuleSet.FirstThreshold,
                 TransactionCount: yearTransactionCount,
                 RateSourceText: rateText,
                 CalculationVersion: calculation.RuleSet.Version,
+                ProfileName: descriptor.Name,
+                ProfileDescription: descriptor.Description,
                 IsOfflineRate: offlineRate,
                 OfflineRateMessage: offlineRateMessage,
                 Breakdown: rows,
+                TaxBreakdown: taxRows,
                 LegalDisclaimer: calculation.RuleSet.Disclaimer);
         }
 
-        public async Task<TaxExportResult> ExportPdfAsync(int year, LegalProfileType profile, CancellationToken cancellationToken)
+        public async Task<TaxExportResult> ExportPdfAsync(int year, CancellationToken cancellationToken)
         {
-            TaxScreenReadModel model = await GetAsync(year, profile, cancellationToken).ConfigureAwait(false);
+            TaxScreenReadModel model = await GetAsync(year, cancellationToken).ConfigureAwait(false);
+            if (model.IsEmpty)
+            {
+                return new TaxExportResult(false, model.Message);
+            }
 
             TaxReportRequest request = new(
                 UserDisplayName: _shellState.CurrentPortfolioName,
-                TaxProfile: profile.ToString(),
+                TaxProfile: model.ProfileName,
                 Year: year,
                 TaxableBase: model.TaxableBase,
                 TotalTaxDue: model.TotalTaxDue,
@@ -572,19 +607,36 @@ public sealed class TaxesViewModel : ViewModelBase
                 OutputDirectory: ProximaReportingComposition.GetDefaultReportDirectory());
 
             ReportExportResult export = await _reportService.ExportTaxPdfAsync(request, cancellationToken).ConfigureAwait(false);
-            return new TaxExportResult(export.Succeeded, export.Message);
+            string message = export.Succeeded
+                ? $"Отчет сохранен: {export.OutputPath}"
+                : export.Message;
+
+            return new TaxExportResult(export.Succeeded, message);
         }
 
         private static IReadOnlyList<TaxBreakdownRow> BuildBreakdownRows(TaxCalculationResult calculation)
         {
             return
             [
-                new TaxBreakdownRow("Реализованная прибыль", calculation.RealizedGains, "Продажи активов за выбранный год", TaxBreakdownKind.Income),
-                new TaxBreakdownRow("Дивиденды", calculation.Dividends, "Дивидендный доход и купоны", TaxBreakdownKind.Income),
-                new TaxBreakdownRow("Курсовая разница", calculation.CurrencyEffect, "Конвертация операций в BYN", TaxBreakdownKind.Currency),
-                new TaxBreakdownRow("Комиссии и удержания", calculation.Fees, "Комиссии брокера и удержанные налоги", TaxBreakdownKind.Deduction),
-                new TaxBreakdownRow("Льготы", calculation.TaxSaved, "Примененный необлагаемый лимит", TaxBreakdownKind.Benefit),
-                new TaxBreakdownRow("Перенос убытков", calculation.Losses, "Убытки, уменьшающие налоговую базу", TaxBreakdownKind.Deduction)
+                new TaxBreakdownRow("Реализованная прибыль", calculation.RealizedGains, "FIFO-оценка продаж активов за выбранный год", TaxBreakdownKind.Income),
+                new TaxBreakdownRow("Дивиденды и доходы", calculation.Dividends, "Дивиденды, купоны, airdrop и staking reward", TaxBreakdownKind.Income),
+                new TaxBreakdownRow("Курсовая разница", calculation.CurrencyEffect, "Конвертация операций в BYN по курсу на дату операции", TaxBreakdownKind.Currency),
+                new TaxBreakdownRow("Комиссии и удержания", -calculation.Fees, "Комиссии брокера и удержанный за рубежом налог", TaxBreakdownKind.Deduction),
+                new TaxBreakdownRow("Льготы / зачет", calculation.TaxSaved, "Зачет иностранного налога и расходы текущего периода", TaxBreakdownKind.Benefit),
+                new TaxBreakdownRow("Убытки текущего года", calculation.Losses, "Отрицательный результат продаж, уменьшающий базу в черновике", TaxBreakdownKind.Deduction)
+            ];
+        }
+
+        private static IReadOnlyList<TaxBreakdownRow> BuildTaxBreakdownRows(TaxCalculationResult calculation, TaxProfileDescriptor descriptor)
+        {
+            decimal grossTaxBeforeBenefits = calculation.TaxDue + calculation.TaxSaved;
+            return
+            [
+                new TaxBreakdownRow("Профиль", 0m, descriptor.Name, TaxBreakdownKind.Info),
+                new TaxBreakdownRow("База", calculation.TaxableBase, descriptor.TaxBaseNote, TaxBreakdownKind.Income),
+                new TaxBreakdownRow("Налог до зачета", grossTaxBeforeBenefits, "Оценка по ставкам выбранного профиля", TaxBreakdownKind.Income),
+                new TaxBreakdownRow("Зачет / льготы", -calculation.TaxSaved, "Удержанный иностранный налог и допустимые расходы", TaxBreakdownKind.Benefit),
+                new TaxBreakdownRow("К уплате", calculation.TaxDue, "Итоговая оценка налога по текущему портфелю", TaxBreakdownKind.Income)
             ];
         }
 
@@ -598,20 +650,73 @@ public sealed class TaxesViewModel : ViewModelBase
                 ? $"Курс: {source}"
                 : $"Курс: {source}, дата {calculation.RateDate.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture)}";
         }
+
+        private static LegalProfileType ResolveProfile(Guid userId)
+        {
+            if (userId == Guid.Empty)
+            {
+                return LegalProfileType.PhysicalPerson;
+            }
+
+            string path = Path.Combine(GetProfileExtrasDirectory(), $"{userId:N}.legal-profile");
+            if (!File.Exists(path))
+            {
+                return LegalProfileType.PhysicalPerson;
+            }
+
+            string raw = File.ReadAllText(path).Trim();
+            return raw switch
+            {
+                "PhysicalPerson" => LegalProfileType.PhysicalPerson,
+                "SelfEmployed" => LegalProfileType.SelfEmployed,
+                "SoleProprietor" => LegalProfileType.IndividualEntrepreneur,
+                "Company" => LegalProfileType.LLC,
+                _ => LegalProfileType.PhysicalPerson,
+            };
+        }
+
+        private static TaxProfileDescriptor DescribeProfile(LegalProfileType profile)
+        {
+            return profile switch
+            {
+                LegalProfileType.SelfEmployed => new TaxProfileDescriptor("Самозанятый", "Налог на профессиональный доход: 10%, затем 20% после 60 000 BYN.", "Профессиональный доход, рассчитанный по поступлениям портфеля."),
+                LegalProfileType.IndividualEntrepreneur => new TaxProfileDescriptor("Индивидуальный предприниматель", "Подоходный налог ИП: 20%, повышенная зона после 500 000 BYN.", "Предпринимательский доход за вычетом расходов и убытков."),
+                LegalProfileType.LLC or LegalProfileType.JSC => new TaxProfileDescriptor("ООО", "Налог на прибыль организаций: базовая ставка 20%.", "Прибыль организации от операций портфеля."),
+                _ => new TaxProfileDescriptor("Физическое лицо", "Подоходный налог: 13%, 25% после 350 000 BYN, 30% после 600 000 BYN.", "Инвестиционный доход физического лица-резидента РБ."),
+            };
+        }
+
+        private static string GetProfileExtrasDirectory()
+        {
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Proxima",
+                "Profile");
+        }
     }
 
     private sealed class DesignTaxesReadModelProvider : ITaxesReadModelProvider
     {
-        public Task<TaxScreenReadModel> GetAsync(int year, LegalProfileType profile, CancellationToken cancellationToken)
+        public Task<TaxScreenReadModel> GetAsync(int year, CancellationToken cancellationToken)
         {
+            TaxProfileDescriptor descriptor = new("Физическое лицо", "Подоходный налог: 13%, 25% после 350 000 BYN, 30% после 600 000 BYN.", "Инвестиционный доход физического лица-резидента РБ.");
             IReadOnlyList<TaxBreakdownRow> rows =
             [
-                new TaxBreakdownRow("Реализованная прибыль", 97_850m, "Продажи активов за выбранный год", TaxBreakdownKind.Income),
-                new TaxBreakdownRow("Дивиденды", 11_200m, "Дивидендный доход и купоны", TaxBreakdownKind.Income),
+                new TaxBreakdownRow("Реализованная прибыль", 97_850m, "FIFO-оценка продаж активов за выбранный год", TaxBreakdownKind.Income),
+                new TaxBreakdownRow("Дивиденды и доходы", 11_200m, "Дивиденды, купоны, airdrop и staking reward", TaxBreakdownKind.Income),
                 new TaxBreakdownRow("Курсовая разница", 800m, "Конвертация операций в BYN", TaxBreakdownKind.Currency),
                 new TaxBreakdownRow("Комиссии и удержания", -1_420m, "Комиссии брокера и удержанные налоги", TaxBreakdownKind.Deduction),
-                new TaxBreakdownRow("Льготы", 4_215m, "Примененный необлагаемый лимит", TaxBreakdownKind.Benefit),
-                new TaxBreakdownRow("Перенос убытков", -640m, "Убытки, уменьшающие налоговую базу", TaxBreakdownKind.Deduction)
+                new TaxBreakdownRow("Льготы / зачет", 4_215m, "Зачет иностранного налога и расходы", TaxBreakdownKind.Benefit),
+                new TaxBreakdownRow("Убытки текущего года", -640m, "Отрицательный результат продаж", TaxBreakdownKind.Deduction)
+            ];
+
+            IReadOnlyList<TaxBreakdownRow> taxRows =
+            [
+                new TaxBreakdownRow("Профиль", 0m, descriptor.Name, TaxBreakdownKind.Info),
+                new TaxBreakdownRow("База", 109_850m, descriptor.TaxBaseNote, TaxBreakdownKind.Income),
+                new TaxBreakdownRow("Налог до зачета", 18_495.50m, "Оценка по ставкам выбранного профиля", TaxBreakdownKind.Income),
+                new TaxBreakdownRow("Зачет / льготы", -4_215m, "Удержанный иностранный налог и расходы", TaxBreakdownKind.Benefit),
+                new TaxBreakdownRow("К уплате", 14_280.50m, "Итоговая оценка налога", TaxBreakdownKind.Income)
             ];
 
             TaxScreenReadModel model = new(
@@ -624,24 +729,28 @@ public sealed class TaxesViewModel : ViewModelBase
                 TaxSaved: 4_215m,
                 RealizedGains: 97_850m,
                 Dividends: 11_200m,
-                Fees: -1_420m,
+                Fees: 1_420m,
                 CurrencyEffect: 800m,
                 Losses: -640m,
                 BaseRatePercent: 13m,
                 DividendRatePercent: 13m,
-                ExemptionAmount: 4_215m,
+                ExemptionAmount: 0m,
+                IncomeThreshold: 350_000m,
                 TransactionCount: 42,
-                RateSourceText: "Курс: belarusbank, дата 09.05.2026",
-                CalculationVersion: "BY-DRAFT-2026.04",
+                RateSourceText: "Курс: nbrb, дата 09.05.2026",
+                CalculationVersion: "BY-PIT-2026.01",
+                ProfileName: descriptor.Name,
+                ProfileDescription: descriptor.Description,
                 IsOfflineRate: false,
                 OfflineRateMessage: string.Empty,
                 Breakdown: rows,
-                LegalDisclaimer: "Расчет носит информационный характер. Перед подачей декларации проверьте актуальные правила и официальные источники.");
+                TaxBreakdown: taxRows,
+                LegalDisclaimer: "Расчет носит информационный характер и не является юридической консультацией.");
 
             return Task.FromResult(model);
         }
 
-        public Task<TaxExportResult> ExportPdfAsync(int year, LegalProfileType profile, CancellationToken cancellationToken)
+        public Task<TaxExportResult> ExportPdfAsync(int year, CancellationToken cancellationToken)
         {
             return Task.FromResult(new TaxExportResult(true, "PDF-черновик сформирован (design data)."));
         }
@@ -662,18 +771,16 @@ public sealed class TaxesViewModel : ViewModelBase
     }
 }
 
-public sealed record TaxProfileOption(LegalProfileType Profile, string Title, string Description)
-{
-    public override string ToString() => Title;
-}
-
 public enum TaxBreakdownKind
 {
     Income,
     Currency,
     Deduction,
     Benefit,
+    Info,
 }
+
+public sealed record TaxProfileDescriptor(string Name, string Description, string TaxBaseNote);
 
 public sealed record TaxScreenReadModel(
     bool IsEmpty,
@@ -691,15 +798,19 @@ public sealed record TaxScreenReadModel(
     decimal BaseRatePercent,
     decimal DividendRatePercent,
     decimal ExemptionAmount,
+    decimal IncomeThreshold,
     int TransactionCount,
     string RateSourceText,
     string CalculationVersion,
+    string ProfileName,
+    string ProfileDescription,
     bool IsOfflineRate,
     string OfflineRateMessage,
     IReadOnlyList<TaxBreakdownRow> Breakdown,
+    IReadOnlyList<TaxBreakdownRow> TaxBreakdown,
     string LegalDisclaimer)
 {
-    public static TaxScreenReadModel Empty(string message)
+    public static TaxScreenReadModel Empty(string message, TaxProfileDescriptor descriptor)
     {
         return new TaxScreenReadModel(
             true,
@@ -716,21 +827,23 @@ public sealed record TaxScreenReadModel(
             0m,
             13m,
             13m,
-            2_000m,
+            0m,
+            350_000m,
             0,
             "Курс: не требуется",
             "tax-draft-v1",
+            descriptor.Name,
+            descriptor.Description,
             false,
             string.Empty,
             [],
-            "Расчет носит информационный характер. Перед подачей декларации проверьте актуальные правила и официальные источники.");
+            [],
+            "Расчет носит информационный характер и не является юридической консультацией.");
     }
 }
 
 public sealed record TaxBreakdownRow(string Name, decimal Value, string Note, TaxBreakdownKind Kind);
 
 public sealed record TaxBreakdownRowViewModel(string Name, string ValueText, string Note, TaxBreakdownKind Kind);
-
-public sealed record TaxDeadlineRowViewModel(string Month, string Day, string Title, bool IsPrimary);
 
 public sealed record TaxExportResult(bool Succeeded, string Message);

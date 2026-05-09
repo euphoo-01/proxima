@@ -9,7 +9,7 @@ public static class ProximaTaxComposition
     {
         HttpClient client = new()
         {
-            Timeout = TimeSpan.FromSeconds(10),
+            Timeout = TimeSpan.FromSeconds(8),
         };
         return new DraftTaxCalculator(new ConfigurableExchangeRateProvider(new LocalSettingsReader(settingsStorePath), client));
     }

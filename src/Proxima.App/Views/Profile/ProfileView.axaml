@@ -327,13 +327,25 @@
                     <StackPanel Spacing="20">
                         <TextBlock Classes="section-title" Text="Тип налогоплательщика" />
 
+                        <Button Classes="option-button" Command="{Binding SelectPhysicalPersonCommand}">
+                            <Grid ColumnDefinitions="20,12,360" Margin="0,0,0,12">
+                                <Border Classes="option-check" Classes.selected="{Binding IsPhysicalPersonSelected}" VerticalAlignment="Center" />
+                                <Border Grid.Column="2" Classes="option-card" Classes.selected="{Binding IsPhysicalPersonSelected}">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Classes="card-title" Text="Физическое лицо" />
+                                        <TextBlock Classes="muted" Text="Инвестиционные доходы резидента РБ" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Button>
+
                         <Button Classes="option-button" Command="{Binding SelectSelfEmployedCommand}">
                             <Grid ColumnDefinitions="20,12,360" Margin="0,0,0,12">
                                 <Border Classes="option-check" Classes.selected="{Binding IsSelfEmployedSelected}" VerticalAlignment="Center" />
                                 <Border Grid.Column="2" Classes="option-card" Classes.selected="{Binding IsSelfEmployedSelected}">
                                     <StackPanel Spacing="6">
                                         <TextBlock Classes="card-title" Text="Самозанятый" />
-                                        <TextBlock Classes="muted" Text="Стандартные тарифы налогообложения" TextWrapping="Wrap" />
+                                        <TextBlock Classes="muted" Text="Налог на профессиональный доход" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -345,7 +357,7 @@
                                 <Border Grid.Column="2" Classes="option-card" Classes.selected="{Binding IsSoleProprietorSelected}">
                                     <StackPanel Spacing="6">
                                         <TextBlock Classes="card-title" Text="Индивидуальный предприниматель" />
-                                        <TextBlock Classes="muted" Text="Упрощенные тарифы для бизнеса" TextWrapping="Wrap" />
+                                        <TextBlock Classes="muted" Text="Подоходный налог ИП" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -357,7 +369,7 @@
                                 <Border Grid.Column="2" Classes="option-card" Classes.selected="{Binding IsCompanySelected}">
                                     <StackPanel Spacing="6">
                                         <TextBlock Classes="card-title" TextWrapping="Wrap" Text="Общество с ограниченной ответственностью" />
-                                        <TextBlock Classes="muted" Text="Корпоративные тарифы для больших объемов выручки" TextWrapping="Wrap" />
+                                        <TextBlock Classes="muted" Text="Налог на прибыль организаций" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
                             </Grid>

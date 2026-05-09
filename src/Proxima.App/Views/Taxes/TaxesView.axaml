@@ -39,6 +39,13 @@
             <Setter Property="Foreground" Value="#8A99AB" />
         </Style>
 
+        <Style Selector="TextBlock.tax-footer">
+            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#8A99AB" />
+            <Setter Property="LineHeight" Value="18" />
+        </Style>
+
         <Style Selector="TextBlock.tax-value">
             <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
             <Setter Property="FontSize" Value="36" />
@@ -55,20 +62,13 @@
             <Setter Property="LineHeight" Value="38" />
         </Style>
 
-        <Style Selector="TextBlock.tax-currency">
-            <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontWeight" Value="Medium" />
-            <Setter Property="Foreground" Value="#001629" />
-        </Style>
-
         <Style Selector="Border.tax-card">
             <Setter Property="Background" Value="#FFFFFF" />
             <Setter Property="BorderBrush" Value="#EDEEF0" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="12" />
             <Setter Property="Padding" Value="24" />
-            <Setter Property="BoxShadow" Value="0 8 24 0 #120C2038" />
+            <Setter Property="BoxShadow" Value="0 8 24 0 #120C2030" />
         </Style>
 
         <Style Selector="Border.tax-muted-card">
@@ -93,7 +93,7 @@
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="16" />
             <Setter Property="Padding" Value="18" />
-            <Setter Property="BoxShadow" Value="0 8 24 0 #0D0C2038" />
+            <Setter Property="BoxShadow" Value="0 8 24 0 #0D0C2030" />
         </Style>
 
         <Style Selector="Border.tax-pill">
@@ -106,14 +106,6 @@
             <Setter Property="Background" Value="#FFF0F0" />
             <Setter Property="CornerRadius" Value="8" />
             <Setter Property="Padding" Value="16" />
-        </Style>
-
-        <Style Selector="Border.tax-info">
-            <Setter Property="Background" Value="#EEF7FF" />
-            <Setter Property="BorderBrush" Value="#D8EAFB" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="12" />
-            <Setter Property="Padding" Value="18" />
         </Style>
 
         <Style Selector="Border.tax-rate-left">
@@ -133,19 +125,6 @@
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Foreground" Value="#FFFFFF" />
-        </Style>
-
-        <Style Selector="Border.tax-deadline-item">
-            <Setter Property="Background" Value="#F3F4F5" />
-            <Setter Property="CornerRadius" Value="12" />
-            <Setter Property="Padding" Value="12" />
-        </Style>
-
-        <Style Selector="Border.tax-calendar-badge">
-            <Setter Property="Background" Value="#FFFFFF" />
-            <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Width" Value="48" />
-            <Setter Property="Height" Value="48" />
         </Style>
 
         <Style Selector="Border.tax-table-header">
@@ -168,69 +147,81 @@
         </Style>
 
         <Style Selector="ComboBox.tax-combo">
+            <Setter Property="Height" Value="40" />
             <Setter Property="MinHeight" Value="40" />
             <Setter Property="MinWidth" Value="156" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="12,0" />
+        </Style>
+
+        <Style Selector="Button.tax-export-button">
+            <Setter Property="Background" Value="#001629" />
+            <Setter Property="BorderBrush" Value="#001629" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="18,0" />
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+
+        <Style Selector="Button.tax-export-button:pointerover">
+            <Setter Property="Background" Value="#083A5A" />
+            <Setter Property="BorderBrush" Value="#083A5A" />
+        </Style>
+
+        <Style Selector="Button.tax-calc-button">
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="18,0" />
         </Style>
     </UserControl.Styles>
 
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <Grid Margin="28,22,32,28" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="24">
+        <Grid Margin="28,22,32,28" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="24">
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
                 <StackPanel Spacing="6">
                     <TextBlock Classes="tax-page-title" Text="Налоги" />
                     <TextBlock Classes="tax-caption" Text="{Binding Subtitle}" TextWrapping="Wrap" />
+                    <TextBlock Classes="tax-small" Text="{Binding ExportStatusMessage}" TextWrapping="Wrap" />
                 </StackPanel>
 
                 <Button
                     Grid.Column="1"
-                    Classes="proxima-primary proxima-toolbar"
+                    Classes="tax-export-button proxima-toolbar"
                     MinWidth="232"
                     Height="44"
                     VerticalAlignment="Center"
                     Command="{Binding ExportPdfCommand}"
-                    IsEnabled="{Binding HasContent}">
-                    <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
-                        <TextBlock FontSize="16" Text="⇩" />
-                        <TextBlock Text="Экспортировать отчёт" />
-                    </StackPanel>
-                </Button>
+                    Content="Экспортировать отчёт"
+                    IsEnabled="{Binding HasContent}" />
             </Grid>
 
             <Border Grid.Row="1" Classes="tax-control-panel">
-                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="6">
+                <Grid ColumnDefinitions="Auto,Auto,24,*,Auto" ColumnSpacing="12" VerticalAlignment="Center">
                     <TextBlock Classes="tax-small" Text="ПЕРИОД" VerticalAlignment="Center" />
-                    <ComboBox Grid.Column="1" Classes="tax-combo" ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear}" />
+                    <ComboBox Grid.Column="1" Classes="tax-combo" VerticalAlignment="Center" ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear}" />
 
-                    <TextBlock Grid.Column="2" Classes="tax-small" Text="ПРОФИЛЬ" VerticalAlignment="Center" Margin="14,0,0,0" />
-                    <ComboBox Grid.Column="3" Classes="tax-combo" MinWidth="220" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile, Mode=TwoWay}">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate x:DataType="taxes:TaxProfileOption">
-                                <StackPanel Spacing="2">
-                                    <TextBlock Classes="tax-title" FontSize="13" Text="{Binding Title}" />
-                                    <TextBlock Classes="tax-small" FontWeight="Regular" Text="{Binding Description}" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-
-                    <StackPanel Grid.Column="4" VerticalAlignment="Center" Spacing="2">
-                        <TextBlock Classes="tax-caption" Text="{Binding SelectedProfile.Description}" />
+                    <StackPanel Grid.Column="3" VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Classes="tax-title" Text="{Binding CurrentTaxProfileName}" />
+                        <TextBlock Classes="tax-caption" Text="{Binding CurrentTaxProfileDescription}" TextWrapping="Wrap" />
                         <TextBlock Classes="tax-small" Text="{Binding TransactionCountText}" />
                     </StackPanel>
 
                     <Button
-                        Grid.Column="5"
-                        Classes="proxima-secondary proxima-toolbar"
+                        Grid.Column="4"
+                        Classes="proxima-secondary proxima-toolbar tax-calc-button"
                         Command="{Binding RecalculateCommand}"
                         Content="Рассчитать"
-                        MinWidth="132" />
+                        MinWidth="132"
+                        Height="40"
+                        VerticalAlignment="Center" />
                 </Grid>
             </Border>
 
             <Border Grid.Row="2" Classes="tax-card" IsVisible="{Binding IsLoading}">
                 <StackPanel Spacing="8">
                     <TextBlock Classes="tax-title" Text="Расчет выполняется..." />
-                    <TextBlock Classes="tax-caption" Text="Подготавливаем налоговый черновик и сверяем источник курсов." />
+                    <TextBlock Classes="tax-caption" Text="Подготавливаем налоговый черновик, пересчитываем операции в BYN и сверяем источник курсов." />
                 </StackPanel>
             </Border>
 
@@ -248,7 +239,7 @@
                 </StackPanel>
             </Border>
 
-            <Grid Grid.Row="2" RowDefinitions="Auto,Auto,Auto" RowSpacing="24" IsVisible="{Binding HasContent}">
+            <Grid Grid.Row="2" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="24" IsVisible="{Binding HasContent}">
                 <Grid ColumnDefinitions="*,*,*" ColumnSpacing="24">
                     <Border Classes="tax-card" MinHeight="180">
                         <Grid RowDefinitions="Auto,*,Auto">
@@ -259,11 +250,9 @@
                                 </Border>
                             </Grid>
 
-                            <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Bottom" Spacing="6">
-                                <TextBlock Classes="tax-value" Text="{Binding TotalTaxDueText}" />
-                            </StackPanel>
+                            <TextBlock Grid.Row="1" Classes="tax-value" HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding TotalTaxDueText}" />
 
-                            <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6">
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6">
                                 <TextBlock Classes="tax-small" Text="ⓘ" />
                                 <TextBlock Classes="tax-small" Text="{Binding RateSourceText}" />
                             </StackPanel>
@@ -273,16 +262,16 @@
                     <Border Grid.Column="1" Classes="tax-muted-card" MinHeight="180">
                         <Grid RowDefinitions="Auto,*,Auto">
                             <TextBlock Classes="tax-caption" Text="Облагаемая база" />
-                            <TextBlock Grid.Row="1" Classes="tax-value-medium" VerticalAlignment="Bottom" Text="{Binding TaxableBaseText}" />
-                            <TextBlock Grid.Row="2" Classes="tax-small" Text="После льгот и переносимых убытков" />
+                            <TextBlock Grid.Row="1" Classes="tax-value-medium" HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding TaxableBaseText}" />
+                            <TextBlock Grid.Row="2" Classes="tax-small" HorizontalAlignment="Center" Text="После расходов, зачетов и убытков" />
                         </Grid>
                     </Border>
 
                     <Border Grid.Column="2" Classes="tax-green-card" MinHeight="180">
                         <Grid RowDefinitions="Auto,*,Auto">
                             <TextBlock Classes="tax-title" Foreground="#0D4F22" Text="Льготы" />
-                            <TextBlock Grid.Row="1" Classes="tax-value-medium" Foreground="#1B6D24" VerticalAlignment="Bottom" Text="{Binding TaxSavedText}" />
-                            <TextBlock Grid.Row="2" Classes="tax-caption" Foreground="#1B6D24" Text="Примененные вычеты и необлагаемый лимит" />
+                            <TextBlock Grid.Row="1" Classes="tax-value-medium" Foreground="#1B6D24" HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding TaxSavedText}" />
+                            <TextBlock Grid.Row="2" Classes="tax-caption" Foreground="#1B6D24" HorizontalAlignment="Center" Text="Зачеты, удержания и расходы" />
                         </Grid>
                     </Border>
                 </Grid>
@@ -310,7 +299,7 @@
                                         <TextBlock FontSize="22" Foreground="#B91C1C" Text="▲" VerticalAlignment="Top" />
                                         <StackPanel Grid.Column="1" Spacing="6">
                                             <TextBlock Classes="tax-title" Foreground="#B91C1C" Text="Форма 1042-S" />
-                                            <TextBlock Classes="tax-caption" Foreground="#B91C1C" Text="Запросите форму у брокера до 15 апреля, чтобы подтвердить удержанный налог и снизить риск двойной оплаты." TextWrapping="Wrap" />
+                                            <TextBlock Classes="tax-caption" Foreground="#B91C1C" Text="Запросите форму у брокера, чтобы подтвердить удержанный налог и корректно зачесть его в расчете." TextWrapping="Wrap" />
                                         </StackPanel>
                                     </Grid>
                                 </Border>
@@ -320,7 +309,7 @@
                         <Border Classes="tax-card">
                             <StackPanel Spacing="16">
                                 <TextBlock Classes="tax-title" Text="Предел дохода" />
-                                <TextBlock Classes="tax-caption" Text="Динамический коэффициент налоговой нагрузки после 200 тыс. BYN" TextWrapping="Wrap" />
+                                <TextBlock Classes="tax-caption" Text="Порог берется из правил выбранного налогового профиля." TextWrapping="Wrap" />
 
                                 <Grid Margin="10,22,10,0" RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
                                     <TextBlock Classes="tax-value-medium" HorizontalAlignment="Center" Text="{Binding IncomeThresholdProgressText}" />
@@ -330,7 +319,7 @@
                                         <Border Grid.Column="1" Background="#E9EEF2" CornerRadius="5" Padding="10,5">
                                             <TextBlock Classes="tax-small" Foreground="#001629" Text="{Binding IncomeThresholdCaption}" />
                                         </Border>
-                                        <TextBlock Grid.Column="2" Classes="tax-small" HorizontalAlignment="Right" Text="200 тыс." />
+                                        <TextBlock Grid.Column="2" Classes="tax-small" HorizontalAlignment="Right" Text="{Binding IncomeThresholdRightLabel}" />
                                     </Grid>
                                 </Grid>
                             </StackPanel>
@@ -340,52 +329,15 @@
                     <Border Grid.Column="1" Classes="tax-card">
                         <StackPanel Spacing="16">
                             <Grid ColumnDefinitions="*,Auto">
-                                <TextBlock Classes="tax-title" Text="{Binding DeadlineTitle}" />
-                                <TextBlock Grid.Column="1" Classes="tax-caption" Text="контроль" />
+                                <TextBlock Classes="tax-title" Text="{Binding TaxBreakdownTitle}" />
+                                <TextBlock Grid.Column="1" Classes="tax-caption" Text="расчет" />
                             </Grid>
 
-                            <ItemsControl ItemsSource="{Binding DeadlineRows}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="taxes:TaxDeadlineRowViewModel">
-                                        <Border Classes="tax-deadline-item" Margin="0,0,0,10">
-                                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
-                                                <Border Classes="tax-calendar-badge">
-                                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="0">
-                                                        <TextBlock Classes="tax-small" Foreground="#B91C1C" HorizontalAlignment="Center" Text="{Binding Month}" />
-                                                        <TextBlock FontFamily="{StaticResource ProximaFont.Family}" FontSize="22" FontWeight="ExtraBold" Foreground="#001629" HorizontalAlignment="Center" Text="{Binding Day}" />
-                                                    </StackPanel>
-                                                </Border>
-                                                <TextBlock Grid.Column="1" Classes="tax-title" VerticalAlignment="Center" Text="{Binding Title}" TextWrapping="Wrap" />
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-
-                <Grid Grid.Row="2" ColumnDefinitions="2*,*" ColumnSpacing="24">
-                    <Border Classes="tax-card">
-                        <StackPanel Spacing="14">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <TextBlock Classes="tax-title" Text="Детализация расчета" />
-                                <TextBlock Grid.Column="1" Classes="tax-caption" Text="{Binding CalculationVersion}" />
-                            </Grid>
-
-                            <Border Classes="tax-table-header">
-                                <Grid ColumnDefinitions="2*,*,2*" ColumnSpacing="12">
-                                    <TextBlock Classes="tax-small" Foreground="#64748B" Text="ПОКАЗАТЕЛЬ" />
-                                    <TextBlock Grid.Column="1" Classes="tax-small" Foreground="#64748B" Text="ЗНАЧЕНИЕ" />
-                                    <TextBlock Grid.Column="2" Classes="tax-small" Foreground="#64748B" Text="КОММЕНТАРИЙ" />
-                                </Grid>
-                            </Border>
-
-                            <ItemsControl ItemsSource="{Binding BreakdownRows}">
+                            <ItemsControl ItemsSource="{Binding TaxBreakdownRows}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="taxes:TaxBreakdownRowViewModel">
                                         <Border Classes="tax-table-row">
-                                            <Grid ColumnDefinitions="2*,*,2*" ColumnSpacing="12">
+                                            <Grid ColumnDefinitions="1.35*,*,1.8*" ColumnSpacing="12">
                                                 <TextBlock Classes="tax-caption" Foreground="#001629" Text="{Binding Name}" />
                                                 <TextBlock Grid.Column="1" Classes="tax-caption" FontWeight="Bold" Foreground="#001629" Text="{Binding ValueText}" />
                                                 <TextBlock Grid.Column="2" Classes="tax-caption" Text="{Binding Note}" TextWrapping="Wrap" />
@@ -394,45 +346,52 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+
+                            <TextBlock Classes="tax-caption" Text="{Binding TaxCalculationNote}" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
-
-                    <StackPanel Grid.Column="1" Spacing="24">
-                        <Border Classes="tax-info">
-                            <StackPanel Spacing="10">
-                                <TextBlock Classes="tax-title" Text="Параметры расчета" />
-                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
-                                    <TextBlock Classes="tax-caption" Text="Профиль" />
-                                    <TextBlock Grid.Column="1" Classes="tax-caption" FontWeight="Bold" Foreground="#001629" Text="{Binding SelectedProfileName}" />
-
-                                    <TextBlock Grid.Row="1" Classes="tax-caption" Text="Ставка РБ" />
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Classes="tax-caption" FontWeight="Bold" Foreground="#001629" Text="{Binding LocalTaxRateText}" />
-
-                                    <TextBlock Grid.Row="2" Classes="tax-caption" Text="Дивиденды" />
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Classes="tax-caption" FontWeight="Bold" Foreground="#001629" Text="{Binding DividendTaxRateText}" />
-
-                                    <TextBlock Grid.Row="3" Classes="tax-caption" Text="Лимит льгот" />
-                                    <TextBlock Grid.Row="3" Grid.Column="1" Classes="tax-caption" FontWeight="Bold" Foreground="#001629" Text="{Binding ExemptionAmountText}" />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Classes="tax-card">
-                            <StackPanel Spacing="12">
-                                <TextBlock Classes="tax-title" Text="Юридическая оговорка" />
-                                <TextBlock Classes="tax-caption" Text="{Binding TaxDisclaimer}" TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
-
-                        <Border Classes="tax-alert" IsVisible="{Binding IsOfflineRate}">
-                            <StackPanel Spacing="8">
-                                <TextBlock Classes="tax-title" Foreground="#B91C1C" Text="Проверьте курс валют" />
-                                <TextBlock Classes="tax-caption" Foreground="#B91C1C" Text="{Binding OfflineRateMessage}" TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
                 </Grid>
+
+                <Border Grid.Row="2" Classes="tax-card">
+                    <StackPanel Spacing="14">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Classes="tax-title" Text="Детализация расчета" />
+                            <TextBlock Grid.Column="1" Classes="tax-caption" Text="{Binding CalculationVersion}" />
+                        </Grid>
+
+                        <Border Classes="tax-table-header">
+                            <Grid ColumnDefinitions="2*,*,2*" ColumnSpacing="12">
+                                <TextBlock Classes="tax-small" Foreground="#64748B" Text="ПОКАЗАТЕЛЬ" />
+                                <TextBlock Grid.Column="1" Classes="tax-small" Foreground="#64748B" Text="ЗНАЧЕНИЕ" />
+                                <TextBlock Grid.Column="2" Classes="tax-small" Foreground="#64748B" Text="КОММЕНТАРИЙ" />
+                            </Grid>
+                        </Border>
+
+                        <ItemsControl ItemsSource="{Binding BreakdownRows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="taxes:TaxBreakdownRowViewModel">
+                                    <Border Classes="tax-table-row">
+                                        <Grid ColumnDefinitions="2*,*,2*" ColumnSpacing="12">
+                                            <TextBlock Classes="tax-caption" Foreground="#001629" Text="{Binding Name}" />
+                                            <TextBlock Grid.Column="1" Classes="tax-caption" FontWeight="Bold" Foreground="#001629" Text="{Binding ValueText}" />
+                                            <TextBlock Grid.Column="2" Classes="tax-caption" Text="{Binding Note}" TextWrapping="Wrap" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="3" Classes="tax-alert" IsVisible="{Binding IsOfflineRate}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="tax-title" Foreground="#B91C1C" Text="Проверьте курс валют" />
+                        <TextBlock Classes="tax-caption" Foreground="#B91C1C" Text="{Binding OfflineRateMessage}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
             </Grid>
+
+            <TextBlock Grid.Row="3" Classes="tax-footer" Text="{Binding TaxDisclaimer}" TextWrapping="Wrap" />
         </Grid>
     </ScrollViewer>
 </UserControl>

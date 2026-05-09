@@ -38,7 +38,7 @@ public sealed class ProfileViewModel : ViewModelBase
     private string _location = "Минск, Беларусь";
     private string _preferredCurrency = ForcedBaseCurrency;
     private UserRole _selectedRole = UserRole.PrivateInvestor;
-    private LegalProfileKind _selectedLegalProfile = LegalProfileKind.SelfEmployed;
+    private LegalProfileKind _selectedLegalProfile = LegalProfileKind.PhysicalPerson;
     private Bitmap? _avatarBitmap;
     private bool _isLoading;
     private bool _isSaving;
@@ -80,6 +80,7 @@ public sealed class ProfileViewModel : ViewModelBase
         SelectFinancialConsultantCommand = new DelegateCommand(_ => SelectedRole = UserRole.FinancialAnalyst);
         SelectUsdCommand = new DelegateCommand(_ => PreferredCurrency = ForcedBaseCurrency);
         SelectBynCommand = new DelegateCommand(_ => PreferredCurrency = ForcedBaseCurrency);
+        SelectPhysicalPersonCommand = new DelegateCommand(_ => SelectedLegalProfile = LegalProfileKind.PhysicalPerson);
         SelectSelfEmployedCommand = new DelegateCommand(_ => SelectedLegalProfile = LegalProfileKind.SelfEmployed);
         SelectSoleProprietorCommand = new DelegateCommand(_ => SelectedLegalProfile = LegalProfileKind.SoleProprietor);
         SelectCompanyCommand = new DelegateCommand(_ => SelectedLegalProfile = LegalProfileKind.Company);
@@ -125,6 +126,8 @@ public sealed class ProfileViewModel : ViewModelBase
     public ICommand SelectUsdCommand { get; }
 
     public ICommand SelectBynCommand { get; }
+
+    public ICommand SelectPhysicalPersonCommand { get; }
 
     public ICommand SelectSelfEmployedCommand { get; }
 
@@ -193,6 +196,7 @@ public sealed class ProfileViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedLegalProfile, value))
             {
+                OnPropertyChanged(nameof(IsPhysicalPersonSelected));
                 OnPropertyChanged(nameof(IsSelfEmployedSelected));
                 OnPropertyChanged(nameof(IsSoleProprietorSelected));
                 OnPropertyChanged(nameof(IsCompanySelected));
@@ -316,6 +320,8 @@ public sealed class ProfileViewModel : ViewModelBase
     public bool IsUsdSelected => true;
 
     public bool IsBynSelected => false;
+
+    public bool IsPhysicalPersonSelected => SelectedLegalProfile == LegalProfileKind.PhysicalPerson;
 
     public bool IsSelfEmployedSelected => SelectedLegalProfile == LegalProfileKind.SelfEmployed;
 
@@ -881,15 +887,23 @@ public sealed class ProfileViewModel : ViewModelBase
         }
 
         string path = GetLocationPath(_userContext.UserId);
-        if (!File.Exists(path))
+        if (File.Exists(path))
         {
-            return;
+            string location = File.ReadAllText(path).Trim();
+            if (!string.IsNullOrWhiteSpace(location))
+            {
+                Location = location;
+            }
         }
 
-        string location = File.ReadAllText(path).Trim();
-        if (!string.IsNullOrWhiteSpace(location))
+        string legalProfilePath = GetLegalProfilePath(_userContext.UserId);
+        if (File.Exists(legalProfilePath))
         {
-            Location = location;
+            string raw = File.ReadAllText(legalProfilePath).Trim();
+            if (Enum.TryParse(raw, ignoreCase: true, out LegalProfileKind parsed) && Enum.IsDefined(typeof(LegalProfileKind), parsed))
+            {
+                SelectedLegalProfile = parsed;
+            }
         }
     }
 
@@ -902,6 +916,7 @@ public sealed class ProfileViewModel : ViewModelBase
 
         Directory.CreateDirectory(GetProfileExtrasDirectory());
         File.WriteAllText(GetLocationPath(_userContext.UserId), string.IsNullOrWhiteSpace(Location) ? "Минск, Беларусь" : Location.Trim());
+        File.WriteAllText(GetLegalProfilePath(_userContext.UserId), SelectedLegalProfile.ToString());
     }
 
     private static void DeleteProfileExtras(Guid userId)
@@ -916,6 +931,12 @@ public sealed class ProfileViewModel : ViewModelBase
         if (File.Exists(locationPath))
         {
             File.Delete(locationPath);
+        }
+
+        string legalProfilePath = GetLegalProfilePath(userId);
+        if (File.Exists(legalProfilePath))
+        {
+            File.Delete(legalProfilePath);
         }
     }
 
@@ -982,6 +1003,11 @@ public sealed class ProfileViewModel : ViewModelBase
         return Path.Combine(GetProfileExtrasDirectory(), $"{userId:N}.location");
     }
 
+    private static string GetLegalProfilePath(Guid userId)
+    {
+        return Path.Combine(GetProfileExtrasDirectory(), $"{userId:N}.legal-profile");
+    }
+
     private static string BuildErrorMessage(Exception ex)
     {
         Exception root = ex;
@@ -1040,6 +1066,7 @@ public sealed class ProfileViewModel : ViewModelBase
 
 public enum LegalProfileKind
 {
+    PhysicalPerson,
     SelfEmployed,
     SoleProprietor,
     Company,

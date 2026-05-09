@@ -6,4 +6,6 @@ public sealed record TaxRuleSet(
     decimal BaseRatePercent,
     decimal DividendRatePercent,
     decimal ExemptionAmount,
+    decimal FirstThreshold,
+    decimal SecondThreshold,
     string Disclaimer);
