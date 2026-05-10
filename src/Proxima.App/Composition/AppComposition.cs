@@ -1,5 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Proxima.App.Navigation;
+using Proxima.Infrastructure.Notifications;
+using Proxima.Application.Notifications;
+using Proxima.App.Notifications;
 using Proxima.App.Shell;
 using Proxima.App.Views.Assets;
 using Proxima.App.Views.AssetDetails;
@@ -73,6 +76,7 @@ public static class AppComposition
         services.AddSingleton<IQuoteCacheRepository, PostgresQuoteCacheRepository>();
         services.AddSingleton<IAccountDeletionService, PostgresAccountDeletionService>();
         services.AddSingleton<IAuditLogRepository, PostgresAuditLogRepository>();
+        services.AddSingleton<INotificationRepository, PostgresNotificationRepository>();
 
         services.AddSingleton<IPortfolioService, PortfolioService>();
         services.AddSingleton<IAssetService, AssetService>();
@@ -81,6 +85,8 @@ public static class AppComposition
         services.AddSingleton<IGoalService, GoalService>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IAuditService, AuditService>();
+        services.AddSingleton<INotificationService, NotificationService>();
+        services.AddSingleton<IAppNotificationCenter, AppNotificationCenter>();
 
         services.AddSingleton(_ => new HttpClient
         {

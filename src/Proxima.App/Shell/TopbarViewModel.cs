@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Proxima.App.Navigation;
+using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
 using Proxima.App.Views.Auth;
 using Proxima.Application.Portfolios;
@@ -17,6 +18,7 @@ public sealed class TopbarViewModel : ViewModelBase
     private readonly IShellState _shellState;
     private readonly IAppNavigationService _navigation;
     private readonly IRuntimeDataInvalidation _runtimeDataInvalidation;
+    private readonly IAppNotificationCenter _notificationCenter;
     private readonly AsyncCommand _createPortfolioCommand;
     private readonly DelegateCommand _notificationsCommand;
     private string _title = "Дешборд";
@@ -32,7 +34,8 @@ public sealed class TopbarViewModel : ViewModelBase
         IShellPortfolioCoordinator portfolioCoordinator,
         IShellState shellState,
         IAppNavigationService navigation,
-        IRuntimeDataInvalidation runtimeDataInvalidation)
+        IRuntimeDataInvalidation runtimeDataInvalidation,
+        IAppNotificationCenter notificationCenter)
     {
         _portfolioService = portfolioService;
         _userContext = userContext;
@@ -40,6 +43,7 @@ public sealed class TopbarViewModel : ViewModelBase
         _shellState = shellState;
         _navigation = navigation;
         _runtimeDataInvalidation = runtimeDataInvalidation;
+        _notificationCenter = notificationCenter;
         _createPortfolioCommand = new AsyncCommand(CreatePortfolioAsync, () => CanCreatePortfolio && !IsBusy);
         _notificationsCommand = new DelegateCommand(_ => _navigation.Navigate(AppRoutes.Notifications));
 
@@ -228,6 +232,7 @@ public sealed class TopbarViewModel : ViewModelBase
             if (!result.Succeeded || result.Portfolio is null)
             {
                 StatusMessage = string.IsNullOrWhiteSpace(result.Message) ? "Не удалось создать портфель." : result.Message;
+                await _notificationCenter.NotifyAsync(AppNotificationLevel.Error, "Портфель не создан", StatusMessage, "Портфели").ConfigureAwait(true);
                 return;
             }
 
@@ -237,6 +242,7 @@ public sealed class TopbarViewModel : ViewModelBase
             SelectedPortfolio = option;
             _runtimeDataInvalidation.Invalidate("portfolio-created");
             StatusMessage = "Портфель создан.";
+            await _notificationCenter.NotifyAsync(AppNotificationLevel.Success, "Портфель создан", $"Создан портфель «{portfolio.Name}».", "Портфели").ConfigureAwait(true);
         }
         finally
         {

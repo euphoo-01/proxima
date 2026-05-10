@@ -1,4 +1,5 @@
 using Proxima.App.Navigation;
+using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
 using Proxima.App.ViewModels.Placeholder;
 using Proxima.App.Views.Assets;
@@ -44,7 +45,8 @@ public sealed class AppShellViewModel : ViewModelBase
         SettingsViewModel settingsViewModel,
         SupportViewModel supportViewModel,
         NotificationsViewModel notificationsViewModel,
-        ProfileViewModel profileViewModel)
+        ProfileViewModel profileViewModel,
+        IAppNotificationCenter notifications)
     {
         _navigation = navigation;
         _shellState = shellState;
@@ -61,6 +63,7 @@ public sealed class AppShellViewModel : ViewModelBase
 
         Sidebar = sidebar;
         Topbar = topbar;
+        Notifications = notifications;
 
         RegisterRoutes();
 
@@ -73,6 +76,8 @@ public sealed class AppShellViewModel : ViewModelBase
     public SidebarViewModel Sidebar { get; }
 
     public TopbarViewModel Topbar { get; }
+
+    public IAppNotificationCenter Notifications { get; }
 
     public object? CurrentContent
     {

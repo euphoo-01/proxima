@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Input;
 using Proxima.App.Shell;
+using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
 using Proxima.App.Views.Auth;
 using Proxima.Application.Taxes;
@@ -16,6 +17,7 @@ public sealed class TaxesViewModel : ViewModelBase
 
     private readonly ITaxesReadModelProvider _provider;
     private readonly IShellState _shellState;
+    private readonly IAppNotificationCenter _notificationCenter;
     private readonly DelegateCommand _recalculateCommand;
     private readonly DelegateCommand _exportPdfCommand;
 
@@ -50,10 +52,11 @@ public sealed class TaxesViewModel : ViewModelBase
     private string _currentTaxProfileDescription = "Подтягивается из профиля пользователя";
     private string _taxDisclaimer = "Расчет носит информационный характер и не является юридической консультацией.";
 
-    public TaxesViewModel(ITaxesReadModelProvider provider, IShellState shellState, IRuntimeDataInvalidation dataInvalidation)
+    public TaxesViewModel(ITaxesReadModelProvider provider, IShellState shellState, IRuntimeDataInvalidation dataInvalidation, IAppNotificationCenter notificationCenter)
     {
         _provider = provider;
         _shellState = shellState;
+        _notificationCenter = notificationCenter;
 
         Years = BuildYears(DateTime.UtcNow.Year);
         BreakdownRows = [];
@@ -391,7 +394,7 @@ public sealed class TaxesViewModel : ViewModelBase
 
     public static TaxesViewModel CreateDesignData()
     {
-        return new TaxesViewModel(new DesignTaxesReadModelProvider(), new MockShellState(), new RuntimeDataInvalidation());
+        return new TaxesViewModel(new DesignTaxesReadModelProvider(), new MockShellState(), new RuntimeDataInvalidation(), new NoOpAppNotificationCenter());
     }
 
     private async Task RecalculateAsync()
@@ -435,6 +438,14 @@ public sealed class TaxesViewModel : ViewModelBase
             TransactionCount = model.TransactionCount;
             SummaryStatus = model.Status;
             StatusMessage = model.Message;
+            if (!model.IsEmpty && !string.IsNullOrWhiteSpace(model.Message))
+            {
+                await _notificationCenter.NotifyAsync(
+                    model.IsOfflineRate ? AppNotificationLevel.Warning : AppNotificationLevel.Success,
+                    model.IsOfflineRate ? "Налог рассчитан с резервным курсом" : "Налог рассчитан",
+                    model.Message,
+                    "Налоги").ConfigureAwait(true);
+            }
             RateSourceText = model.RateSourceText;
             CalculationVersion = model.CalculationVersion;
             CurrentTaxProfileName = model.ProfileName;
@@ -451,6 +462,7 @@ public sealed class TaxesViewModel : ViewModelBase
         {
             HasError = true;
             StatusMessage = $"Не удалось выполнить расчет: {ex.Message}";
+            await _notificationCenter.NotifyAsync(AppNotificationLevel.Error, "Ошибка расчета налогов", StatusMessage, "Налоги").ConfigureAwait(true);
         }
         finally
         {
@@ -465,6 +477,7 @@ public sealed class TaxesViewModel : ViewModelBase
             ExportStatusMessage = HasError
                 ? "Сначала исправьте ошибку расчета налогов."
                 : "Сначала выполните расчет налогов по текущему портфелю.";
+            await _notificationCenter.NotifyAsync(AppNotificationLevel.Warning, "PDF не сформирован", ExportStatusMessage, "Налоги").ConfigureAwait(true);
             return;
         }
 
@@ -477,12 +490,18 @@ public sealed class TaxesViewModel : ViewModelBase
             TaxExportResult result = await _provider.ExportPdfAsync(SelectedYear, CancellationToken.None).ConfigureAwait(true);
             ExportStatusMessage = result.Message;
             StatusMessage = result.Message;
+            await _notificationCenter.NotifyAsync(
+                result.Succeeded ? AppNotificationLevel.Success : AppNotificationLevel.Error,
+                result.Succeeded ? "PDF-отчет сформирован" : "PDF-отчет не сформирован",
+                result.Message,
+                "Налоги").ConfigureAwait(true);
         }
         catch (Exception ex)
         {
             string message = $"Не удалось экспортировать PDF: {ex.Message}";
             ExportStatusMessage = message;
             StatusMessage = message;
+            await _notificationCenter.NotifyAsync(AppNotificationLevel.Error, "Ошибка экспорта PDF", message, "Налоги").ConfigureAwait(true);
         }
         finally
         {

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Avalonia.Media.Imaging;
 using Proxima.App.Shell;
+using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
 using Proxima.App.Views.Auth;
 using Proxima.Application.Auth;
@@ -24,6 +25,7 @@ public sealed class ProfileViewModel : ViewModelBase
     private readonly IShellState _shellState;
     private readonly IShellPortfolioCoordinator _portfolioCoordinator;
     private readonly IRuntimeDataInvalidation _runtimeDataInvalidation;
+    private readonly IAppNotificationCenter _notificationCenter;
 
     private readonly AsyncCommand _saveCommand;
     private readonly AsyncCommand _reloadCommand;
@@ -57,7 +59,8 @@ public sealed class ProfileViewModel : ViewModelBase
         IAccountDeletionService accountDeletionService,
         IShellState shellState,
         IShellPortfolioCoordinator portfolioCoordinator,
-        IRuntimeDataInvalidation runtimeDataInvalidation)
+        IRuntimeDataInvalidation runtimeDataInvalidation,
+        IAppNotificationCenter notificationCenter)
     {
         _userContext = userContext;
         _settingsService = settingsService;
@@ -67,6 +70,7 @@ public sealed class ProfileViewModel : ViewModelBase
         _shellState = shellState;
         _portfolioCoordinator = portfolioCoordinator;
         _runtimeDataInvalidation = runtimeDataInvalidation;
+        _notificationCenter = notificationCenter;
 
         _saveCommand = new AsyncCommand(SaveAsync, () => !IsBusy);
         _reloadCommand = new AsyncCommand(LoadAsync, () => !IsBusy);
@@ -277,6 +281,7 @@ public sealed class ProfileViewModel : ViewModelBase
             if (SetProperty(ref _statusMessage, value))
             {
                 OnPropertyChanged(nameof(HasStatus));
+                NotifyIfFinalStatus(value);
             }
         }
     }
@@ -289,6 +294,10 @@ public sealed class ProfileViewModel : ViewModelBase
             if (SetProperty(ref _errorMessage, value))
             {
                 OnPropertyChanged(nameof(HasError));
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    _ = _notificationCenter.NotifyAsync(AppNotificationLevel.Error, "Ошибка профиля", value, "Профиль");
+                }
             }
         }
     }
@@ -1006,6 +1015,27 @@ public sealed class ProfileViewModel : ViewModelBase
     private static string GetLegalProfilePath(Guid userId)
     {
         return Path.Combine(GetProfileExtrasDirectory(), $"{userId:N}.legal-profile");
+    }
+
+
+    private void NotifyIfFinalStatus(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.EndsWith("...", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        string normalized = value.ToLowerInvariant();
+        bool isSuccess = normalized.Contains("сохран", StringComparison.Ordinal)
+            || normalized.Contains("создан", StringComparison.Ordinal)
+            || normalized.Contains("удален", StringComparison.Ordinal)
+            || normalized.Contains("обнов", StringComparison.Ordinal)
+            || normalized.Contains("аватар", StringComparison.Ordinal);
+
+        if (isSuccess)
+        {
+            _ = _notificationCenter.NotifyAsync(AppNotificationLevel.Success, "Профиль обновлен", value, "Профиль");
+        }
     }
 
     private static string BuildErrorMessage(Exception ex)

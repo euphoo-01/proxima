@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using Proxima.App.Navigation;
+using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
 using Proxima.Importing;
 
@@ -12,6 +13,7 @@ public sealed class ImportDialogViewModel : ViewModelBase
 {
     private readonly IAppNavigationService _navigation;
     private readonly IImportPreviewGateway _importPreviewGateway;
+    private readonly IAppNotificationCenter _notificationCenter;
     private readonly AsyncCommand _parseFileCommand;
     private readonly DelegateCommand _openManualImportCommand;
     private readonly DelegateCommand _clearSelectionCommand;
@@ -25,10 +27,11 @@ public sealed class ImportDialogViewModel : ViewModelBase
     private bool _parseFailed;
     private bool _hasValidationWarnings;
 
-    public ImportDialogViewModel(IAppNavigationService navigation, IImportPreviewGateway importPreviewGateway, ManualImportViewModel manualImport)
+    public ImportDialogViewModel(IAppNavigationService navigation, IImportPreviewGateway importPreviewGateway, ManualImportViewModel manualImport, IAppNotificationCenter notificationCenter)
     {
         _navigation = navigation;
         _importPreviewGateway = importPreviewGateway;
+        _notificationCenter = notificationCenter;
         ManualImport = manualImport;
         WarningItems = [];
 
@@ -208,6 +211,7 @@ public sealed class ImportDialogViewModel : ViewModelBase
             {
                 ParseFailed = true;
                 StatusMessage = "Не удалось разобрать файл. Попробуйте ручной импорт.";
+                await _notificationCenter.NotifyAsync(AppNotificationLevel.Error, "Импорт не выполнен", StatusMessage, "Импорт").ConfigureAwait(true);
                 ManualImport.LoadFromPreview(preview);
                 return;
             }
@@ -233,15 +237,18 @@ public sealed class ImportDialogViewModel : ViewModelBase
                 }
 
                 StatusMessage = "Есть подозрительные строки. Проверьте их в ручном импорте.";
+                await _notificationCenter.NotifyAsync(AppNotificationLevel.Warning, "Импорт требует проверки", StatusMessage, "Импорт").ConfigureAwait(true);
                 return;
             }
 
             StatusMessage = $"Файл разобран: {preview.Rows.Count} строк готовы к импорту.";
+            await _notificationCenter.NotifyAsync(AppNotificationLevel.Success, "Файл разобран", StatusMessage, "Импорт").ConfigureAwait(true);
         }
         catch
         {
             ParseFailed = true;
             StatusMessage = "Ошибка импорта. Показываем только обезличенную информацию.";
+            await _notificationCenter.NotifyAsync(AppNotificationLevel.Error, "Ошибка импорта", StatusMessage, "Импорт").ConfigureAwait(true);
         }
         finally
         {

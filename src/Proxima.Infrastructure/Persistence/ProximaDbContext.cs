@@ -20,6 +20,7 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
     public DbSet<QuoteCacheEntity> QuoteCache => Set<QuoteCacheEntity>();
     public DbSet<UserSettingsEntity> UserSettings => Set<UserSettingsEntity>();
     public DbSet<SyncSnapshotEntity> SyncSnapshots => Set<SyncSnapshotEntity>();
+    public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
     public DbSet<AuditLogEntity> AuditLog => Set<AuditLogEntity>();
 
     protected override void OnModelCreating(ModelBuilder model)
@@ -175,6 +176,19 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
             e.ToTable("sync_snapshots");
             e.HasKey(x => x.Id);
             e.HasOne<UserEntity>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+
+        model.Entity<NotificationEntity>(e =>
+        {
+            e.ToTable("notifications");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Severity).HasMaxLength(32);
+            e.Property(x => x.Title).HasMaxLength(120);
+            e.Property(x => x.Message).HasMaxLength(2000);
+            e.Property(x => x.Source).HasMaxLength(120);
+            e.HasOne<UserEntity>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.UserId, x.DeletedAtUtc, x.CreatedAtUtc });
         });
 
         model.Entity<AuditLogEntity>(e =>

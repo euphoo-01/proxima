@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Input;
 using Proxima.App.Navigation;
+using Proxima.App.Notifications;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
 using Proxima.Application.Assets;
@@ -25,6 +26,7 @@ public sealed class AssetsViewModel : ViewModelBase
     private readonly IShellState _shellState;
     private readonly IRuntimeDataInvalidation _dataInvalidation;
     private readonly IMarketSymbolSearchService _symbolSearchService;
+    private readonly IAppNotificationCenter _notificationCenter;
     private readonly AsyncCommand _loadCommand;
     private readonly AsyncCommand _addManualTransactionCommand;
     private readonly AsyncCommand _refreshQuotesCommand;
@@ -67,7 +69,8 @@ public sealed class AssetsViewModel : ViewModelBase
         IQuoteRefreshService quoteRefreshService,
         IShellState shellState,
         IRuntimeDataInvalidation dataInvalidation,
-        IMarketSymbolSearchService symbolSearchService)
+        IMarketSymbolSearchService symbolSearchService,
+        IAppNotificationCenter notificationCenter)
     {
         _navigation = navigation;
         _assetService = assetService;
@@ -76,6 +79,7 @@ public sealed class AssetsViewModel : ViewModelBase
         _shellState = shellState;
         _dataInvalidation = dataInvalidation;
         _symbolSearchService = symbolSearchService;
+        _notificationCenter = notificationCenter;
 
         ManualTransactionTypeOptions =
         [
@@ -1081,12 +1085,20 @@ public sealed class AssetsViewModel : ViewModelBase
     {
         HasFormError = true;
         FormMessage = message;
+        if (!string.IsNullOrWhiteSpace(message))
+        {
+            _ = _notificationCenter.NotifyAsync(AppNotificationLevel.Error, "Ошибка активов", message, "Все активы");
+        }
     }
 
     private void SetFormSuccess(string message)
     {
         HasFormError = false;
         FormMessage = message;
+        if (!string.IsNullOrWhiteSpace(message))
+        {
+            _ = _notificationCenter.NotifyAsync(AppNotificationLevel.Success, "Операция выполнена", message, "Все активы");
+        }
     }
 
     private void ClearFormMessage()

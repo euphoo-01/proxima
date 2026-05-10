@@ -8,6 +8,7 @@ using Proxima.App.Shell;
 using Proxima.Application.Transactions;
 using Proxima.Application.MarketData;
 using Proxima.App.ViewModels;
+using Proxima.App.Notifications;
 using Proxima.Domain.Transactions;
 using Proxima.Importing;
 
@@ -22,6 +23,7 @@ public sealed class ManualImportViewModel : ViewModelBase
     private readonly IRuntimeDataInvalidation? _runtimeDataInvalidation;
     private readonly IImportPreviewGateway? _importPreviewGateway;
     private readonly IMarketSymbolSearchService? _symbolSearchService;
+    private readonly IAppNotificationCenter? _notificationCenter;
 
     private readonly DelegateCommand _addRowCommand;
     private readonly DelegateCommand _removeRowCommand;
@@ -55,7 +57,7 @@ public sealed class ManualImportViewModel : ViewModelBase
     private string _newDate = DateTimeOffset.Now.ToString("dd.MM.yy", CultureInfo.CurrentCulture);
 
     public ManualImportViewModel()
-        : this(null, null, null, null, null)
+        : this(null, null, null, null, null, null)
     {
     }
 
@@ -64,13 +66,15 @@ public sealed class ManualImportViewModel : ViewModelBase
         IShellState? shellState,
         IRuntimeDataInvalidation? runtimeDataInvalidation,
         IImportPreviewGateway? importPreviewGateway,
-        IMarketSymbolSearchService? symbolSearchService = null)
+        IMarketSymbolSearchService? symbolSearchService = null,
+        IAppNotificationCenter? notificationCenter = null)
     {
         _importCommitService = importCommitService;
         _shellState = shellState;
         _runtimeDataInvalidation = runtimeDataInvalidation;
         _importPreviewGateway = importPreviewGateway;
         _symbolSearchService = symbolSearchService;
+        _notificationCenter = notificationCenter;
 
         Rows = [];
         NewSymbolSuggestions = [];
@@ -694,6 +698,7 @@ public sealed class ManualImportViewModel : ViewModelBase
         if (_importCommitService is null || _shellState is null)
         {
             StatusMessage = "Импорт сохранён в демо-режиме.";
+            _ = _notificationCenter?.NotifyAsync(AppNotificationLevel.Success, "Импорт сохранен", StatusMessage, "Ручной импорт");
             return;
         }
 
@@ -744,6 +749,7 @@ public sealed class ManualImportViewModel : ViewModelBase
         {
             _runtimeDataInvalidation?.Invalidate("unified-import-commit");
             StatusMessage = $"Сохранено транзакций: {result.SavedRows}. Дашборд, список активов и карточки активов будут пересчитаны.";
+            _ = _notificationCenter?.NotifyAsync(AppNotificationLevel.Success, "Импорт сохранен", StatusMessage, "Ручной импорт");
         }
     }
 
@@ -819,6 +825,10 @@ public sealed class ManualImportViewModel : ViewModelBase
     {
         ErrorMessage = message;
         StatusMessage = message;
+        if (!string.IsNullOrWhiteSpace(message))
+        {
+            _ = _notificationCenter?.NotifyAsync(AppNotificationLevel.Error, "Ошибка импорта", message, "Ручной импорт");
+        }
         OnPropertyChanged(nameof(CurrentDropStateLabel));
     }
 

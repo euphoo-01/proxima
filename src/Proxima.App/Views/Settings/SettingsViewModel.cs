@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Proxima.App.Views.Auth;
+using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
 using Proxima.Application.Settings;
 using Proxima.Domain.Auth;
@@ -11,6 +12,7 @@ public sealed class SettingsViewModel : ViewModelBase
 {
     private readonly ISettingsService _settingsService;
     private readonly IRuntimeUserContext _runtimeUserContext;
+    private readonly IAppNotificationCenter _notificationCenter;
     private readonly DelegateCommand _saveCommand;
     private readonly DelegateCommand _reloadCommand;
     private readonly DelegateCommand _changePasswordCommand;
@@ -38,10 +40,11 @@ public sealed class SettingsViewModel : ViewModelBase
     private string _securityStatus = "Локальный пароль включен.";
     private string _snapshotStatus = "Снапшоты еще не создавались.";
 
-    public SettingsViewModel(ISettingsService settingsService, IRuntimeUserContext runtimeUserContext)
+    public SettingsViewModel(ISettingsService settingsService, IRuntimeUserContext runtimeUserContext, IAppNotificationCenter notificationCenter)
     {
         _settingsService = settingsService;
         _runtimeUserContext = runtimeUserContext;
+        _notificationCenter = notificationCenter;
 
         CurrencyOptions = ["USD"];
         LanguageOptions = Enum.GetValues<AppLanguage>();
@@ -200,13 +203,25 @@ public sealed class SettingsViewModel : ViewModelBase
     public string StatusMessage
     {
         get => _statusMessage;
-        private set => SetProperty(ref _statusMessage, value);
+        private set
+        {
+            if (SetProperty(ref _statusMessage, value) && !string.IsNullOrWhiteSpace(value) && value.Contains("сохран", StringComparison.OrdinalIgnoreCase))
+            {
+                _ = _notificationCenter.NotifyAsync(AppNotificationLevel.Success, "Настройки сохранены", value, "Настройки");
+            }
+        }
     }
 
     public string ErrorMessage
     {
         get => _errorMessage;
-        private set => SetProperty(ref _errorMessage, value);
+        private set
+        {
+            if (SetProperty(ref _errorMessage, value) && !string.IsNullOrWhiteSpace(value))
+            {
+                _ = _notificationCenter.NotifyAsync(AppNotificationLevel.Error, "Ошибка настроек", value, "Настройки");
+            }
+        }
     }
 
     public string SecurityStatus
@@ -233,7 +248,7 @@ public sealed class SettingsViewModel : ViewModelBase
             DateTimeOffset.UtcNow,
             DateTimeOffset.UtcNow,
             0));
-        return new SettingsViewModel(new DesignSettingsService(), context);
+        return new SettingsViewModel(new DesignSettingsService(), context, new NoOpAppNotificationCenter());
     }
 
     private async Task LoadAsync()

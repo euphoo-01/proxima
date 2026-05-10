@@ -1,21 +1,172 @@
 using System.Collections.ObjectModel;
+using System.Windows.Input;
+using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
 
 namespace Proxima.App.Views.Notifications;
 
 public sealed class NotificationsViewModel : ViewModelBase
 {
-    public NotificationsViewModel()
+    private readonly IAppNotificationCenter _notificationCenter;
+    private readonly AsyncCommand _refreshCommand;
+    private readonly AsyncCommand _clearAllCommand;
+    private readonly AsyncParameterCommand _deleteCommand;
+    private bool _isLoading;
+    private string _statusMessage = string.Empty;
+
+    public NotificationsViewModel(IAppNotificationCenter notificationCenter)
     {
-        Items =
-        [
-            new NotificationItem("Котировки", "При наличии интернета приложение обновляет цены через настроенный провайдер котировок.", "Информация"),
-            new NotificationItem("Импорт", "После импорта транзакций дашборд автоматически пересчитывает баланс, риск и распределение.", "Подсказка"),
-            new NotificationItem("Безопасность", "Финансовые данные остаются локально на устройстве.", "Важно")
-        ];
+        _notificationCenter = notificationCenter;
+        Items = [];
+
+        _refreshCommand = new AsyncCommand(LoadAsync, () => !IsLoading);
+        _clearAllCommand = new AsyncCommand(ClearAllAsync, () => !IsLoading && Items.Count > 0);
+        _deleteCommand = new AsyncParameterCommand(DeleteAsync, _ => !IsLoading);
+
+        _notificationCenter.NotificationsChanged += (_, _) => _ = LoadAsync();
+        _ = LoadAsync();
     }
 
-    public ObservableCollection<NotificationItem> Items { get; }
-}
+    public ObservableCollection<AppNotificationViewModel> Items { get; }
 
-public sealed record NotificationItem(string Title, string Message, string Kind);
+    public ICommand RefreshCommand => _refreshCommand;
+
+    public ICommand ClearAllCommand => _clearAllCommand;
+
+    public ICommand DeleteCommand => _deleteCommand;
+
+    public bool IsLoading
+    {
+        get => _isLoading;
+        private set
+        {
+            if (SetProperty(ref _isLoading, value))
+            {
+                OnPropertyChanged(nameof(HasItems));
+                OnPropertyChanged(nameof(IsEmpty));
+                _refreshCommand.RaiseCanExecuteChanged();
+                _clearAllCommand.RaiseCanExecuteChanged();
+                _deleteCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public string StatusMessage
+    {
+        get => _statusMessage;
+        private set => SetProperty(ref _statusMessage, value);
+    }
+
+    public bool HasItems => !IsLoading && Items.Count > 0;
+
+    public bool IsEmpty => !IsLoading && Items.Count == 0;
+
+    public string CountText => Items.Count switch
+    {
+        0 => "Нет активных уведомлений",
+        1 => "1 активное уведомление",
+        int count when count is >= 2 and <= 4 => $"{count} активных уведомления",
+        int count => $"{count} активных уведомлений",
+    };
+
+    public async Task LoadAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            IReadOnlyList<AppNotificationViewModel> notifications = await _notificationCenter.ListAsync().ConfigureAwait(true);
+            Items.Clear();
+            foreach (AppNotificationViewModel notification in notifications)
+            {
+                Items.Add(notification);
+            }
+
+            StatusMessage = Items.Count == 0
+                ? "Все чисто. Новые ошибки, предупреждения и успешные действия появятся здесь автоматически."
+                : "Уведомления хранятся здесь, пока вы не удалите их вручную.";
+            RaiseCollectionComputedProperties();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Не удалось загрузить уведомления: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task DeleteAsync(object? parameter)
+    {
+        Guid id = parameter switch
+        {
+            AppNotificationViewModel notification => notification.Id,
+            Guid value => value,
+            _ => Guid.Empty,
+        };
+
+        if (id == Guid.Empty)
+        {
+            return;
+        }
+
+        await _notificationCenter.DeleteAsync(id).ConfigureAwait(true);
+        AppNotificationViewModel? existing = Items.FirstOrDefault(item => item.Id == id);
+        if (existing is not null)
+        {
+            Items.Remove(existing);
+        }
+
+        RaiseCollectionComputedProperties();
+    }
+
+    private async Task ClearAllAsync()
+    {
+        await _notificationCenter.ClearAsync().ConfigureAwait(true);
+        Items.Clear();
+        StatusMessage = "Все уведомления удалены.";
+        RaiseCollectionComputedProperties();
+    }
+
+    private void RaiseCollectionComputedProperties()
+    {
+        OnPropertyChanged(nameof(HasItems));
+        OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(CountText));
+        _clearAllCommand.RaiseCanExecuteChanged();
+    }
+
+    private sealed class AsyncCommand(Func<Task> execute, Func<bool> canExecute) : ICommand
+    {
+        private readonly Func<Task> _execute = execute;
+        private readonly Func<bool> _canExecute = canExecute;
+
+        public event EventHandler? CanExecuteChanged;
+
+        public bool CanExecute(object? parameter) => _canExecute();
+
+        public async void Execute(object? parameter)
+        {
+            await _execute().ConfigureAwait(true);
+        }
+
+        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private sealed class AsyncParameterCommand(Func<object?, Task> execute, Func<object?, bool> canExecute) : ICommand
+    {
+        private readonly Func<object?, Task> _execute = execute;
+        private readonly Func<object?, bool> _canExecute = canExecute;
+
+        public event EventHandler? CanExecuteChanged;
+
+        public bool CanExecute(object? parameter) => _canExecute(parameter);
+
+        public async void Execute(object? parameter)
+        {
+            await _execute(parameter).ConfigureAwait(true);
+        }
+
+        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    }
+}

@@ -25,6 +25,7 @@
     xmlns:supportViews="using:Proxima.App.Views.Support"
     xmlns:taxes="using:Proxima.App.Views.Taxes"
     xmlns:taxesViews="using:Proxima.App.Views.Taxes"
+    xmlns:vm="using:Proxima.App.ViewModels"
     x:DataType="shell:AppShellViewModel">
 
     <UserControl.DataTemplates>
@@ -42,11 +43,96 @@
         <DataTemplate x:DataType="placeholder:PlaceholderViewModel"><placeholderViews:PlaceholderView /></DataTemplate>
     </UserControl.DataTemplates>
 
-    <Grid Background="{StaticResource ProximaBrush.Sidebar}" ColumnDefinitions="260,*">
-        <shell:SidebarView DataContext="{Binding Sidebar}" />
-        <Grid Grid.Column="1" RowDefinitions="80,*">
-            <shell:TopbarView DataContext="{Binding Topbar}" />
-            <ContentControl Grid.Row="1" Content="{Binding CurrentContent}" />
+    <Grid Background="{StaticResource ProximaBrush.Sidebar}">
+        <Grid ColumnDefinitions="260,*">
+            <shell:SidebarView DataContext="{Binding Sidebar}" />
+            <Grid Grid.Column="1" RowDefinitions="80,*">
+                <shell:TopbarView DataContext="{Binding Topbar}" />
+                <ContentControl Grid.Row="1" Content="{Binding CurrentContent}" />
+            </Grid>
         </Grid>
+
+        <ItemsControl
+            Margin="0,96,32,0"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            IsHitTestVisible="False"
+            ItemsSource="{Binding Notifications.Toasts}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Spacing="12" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:AppNotificationViewModel">
+                    <Border
+                        Width="360"
+                        Padding="16"
+                        Background="#FBFCFF"
+                        BorderBrush="#DDE7F3"
+                        BorderThickness="1"
+                        BoxShadow="0 18 46 0 #1A001629"
+                        CornerRadius="22">
+                        <Grid ColumnDefinitions="44,*" RowDefinitions="Auto,Auto,Auto">
+                            <Border
+                                Grid.RowSpan="3"
+                                Width="34"
+                                Height="34"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Top"
+                                Background="{Binding SoftBackground}"
+                                CornerRadius="17">
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource ProximaFont.Family}"
+                                    FontSize="18"
+                                    FontWeight="ExtraBold"
+                                    Foreground="{Binding AccentBrushKey}"
+                                    Text="{Binding Icon}" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                <TextBlock
+                                    FontFamily="{StaticResource ProximaFont.Family}"
+                                    FontSize="12"
+                                    FontWeight="ExtraBold"
+                                    Foreground="{Binding AccentBrushKey}"
+                                    Text="{Binding LevelText}" />
+                                <TextBlock
+                                    FontFamily="{StaticResource ProximaFont.Family}"
+                                    FontSize="12"
+                                    Foreground="#8A99AB"
+                                    Text="{Binding SourceText}" />
+                            </StackPanel>
+
+                            <TextBlock
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                Margin="0,4,0,0"
+                                FontFamily="{StaticResource ProximaFont.Family}"
+                                FontSize="15"
+                                FontWeight="ExtraBold"
+                                Foreground="#001629"
+                                Text="{Binding Title}"
+                                TextWrapping="Wrap" />
+
+                            <TextBlock
+                                Grid.Row="2"
+                                Grid.Column="1"
+                                Margin="0,6,0,0"
+                                FontFamily="{StaticResource ProximaFont.Family}"
+                                FontSize="13"
+                                Foreground="#4E5966"
+                                LineHeight="18"
+                                MaxHeight="72"
+                                Text="{Binding Message}"
+                                TextTrimming="CharacterEllipsis"
+                                TextWrapping="Wrap" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
     </Grid>
 </UserControl>

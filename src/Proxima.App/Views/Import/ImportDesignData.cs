@@ -15,6 +15,6 @@ public static class ImportDesignData
             new Proxima.Importing.ImportFileValidator(Proxima.Importing.ImportFileValidator.DefaultMaxBytes),
             [new Proxima.Importing.CsvImportParser(), new Proxima.Importing.PdfStubImportParser()]);
 
-        return new ImportDialogViewModel(navigation, new ImportPreviewGateway(importService), ManualImportViewModel);
+        return new ImportDialogViewModel(navigation, new ImportPreviewGateway(importService), ManualImportViewModel, new Proxima.App.Notifications.NoOpAppNotificationCenter());
     }
 }
