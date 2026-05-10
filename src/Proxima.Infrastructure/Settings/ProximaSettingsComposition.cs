@@ -1,17 +1,15 @@
 using Proxima.Application.Settings;
+using Proxima.Infrastructure.Persistence;
+using Proxima.Infrastructure.Persistence.Repositories;
 
 namespace Proxima.Infrastructure.Settings;
 
 public static class ProximaSettingsComposition
 {
-    public static ISettingsService CreateSettingsService(string storePath)
+    public static ISettingsService CreateSettingsService(
+        IProximaUnitOfWorkFactory uowFactory,
+        IProximaUnitOfWorkAccessor uowAccessor)
     {
-        return new SettingsService(new JsonUserSettingsRepository(storePath));
-    }
-
-    public static string GetDefaultSettingsStorePath()
-    {
-        string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        return Path.Combine(appData, "Proxima", "settings.json");
+        return new SettingsService(new PostgresUserSettingsRepository(uowFactory, uowAccessor));
     }
 }

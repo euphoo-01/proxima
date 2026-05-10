@@ -134,41 +134,13 @@ public sealed class LocalEncryptedSnapshotService : ISnapshotService
             SnapshotPayload payload = JsonSerializer.Deserialize<SnapshotPayload>(payloadJson, JsonOptions)
                 ?? throw new JsonException("Invalid payload.");
 
-            string tempDir = Path.Combine(_appDataDir, ".snapshot-import-temp");
-            if (Directory.Exists(tempDir))
+            if (!string.Equals(payload.StorageKind, "database", StringComparison.OrdinalIgnoreCase))
             {
-                Directory.Delete(tempDir, recursive: true);
-            }
-            Directory.CreateDirectory(tempDir);
-
-            foreach (SnapshotEntry entry in payload.Entries)
-            {
-                string safe = Path.GetFileName(entry.RelativePath);
-                if (string.IsNullOrWhiteSpace(safe))
-                {
-                    continue;
-                }
-
-                string target = Path.Combine(tempDir, safe);
-                await File.WriteAllTextAsync(target, entry.Content, cancellationToken).ConfigureAwait(false);
-            }
-
-            foreach (SnapshotEntry entry in payload.Entries)
-            {
-                string safe = Path.GetFileName(entry.RelativePath);
-                if (string.IsNullOrWhiteSpace(safe))
-                {
-                    continue;
-                }
-
-                string source = Path.Combine(tempDir, safe);
-                string target = Path.Combine(_appDataDir, safe);
-                File.Copy(source, target, overwrite: true);
+                return new SnapshotImportResult(false, "Unsupported snapshot storage kind.", SnapshotConflictKind.SchemaMismatch);
             }
 
             await SaveStateAsync(new SnapshotState(file.CreatedAtUtc, file.SourceDeviceId), cancellationToken).ConfigureAwait(false);
-            Directory.Delete(tempDir, recursive: true);
-            return new SnapshotImportResult(true, "Snapshot imported.", preview.ConflictKind);
+            return new SnapshotImportResult(true, "Snapshot metadata imported. Database data remains managed by PostgreSQL.", preview.ConflictKind);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or CryptographicException)
         {
@@ -178,31 +150,16 @@ public sealed class LocalEncryptedSnapshotService : ISnapshotService
 
     private string BuildPayloadJson(CancellationToken cancellationToken)
     {
-        List<SnapshotEntry> entries = [];
-        foreach (string file in EnumerateDataFiles())
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (!File.Exists(file))
-            {
-                continue;
-            }
+        cancellationToken.ThrowIfCancellationRequested();
+        SnapshotPayload payload = new(
+            CurrentSchemaVersion,
+            _appVersion,
+            DateTimeOffset.UtcNow,
+            _sourceDeviceId,
+            StorageKind: "database",
+            Entries: []);
 
-            entries.Add(new SnapshotEntry(Path.GetFileName(file), File.ReadAllText(file)));
-        }
-
-        SnapshotPayload payload = new(CurrentSchemaVersion, _appVersion, DateTimeOffset.UtcNow, _sourceDeviceId, entries);
         return JsonSerializer.Serialize(payload, JsonOptions);
-    }
-
-    private IEnumerable<string> EnumerateDataFiles()
-    {
-        yield return Path.Combine(_appDataDir, "profiles.json");
-        yield return Path.Combine(_appDataDir, "portfolios.json");
-        yield return Path.Combine(_appDataDir, "assets.json");
-        yield return Path.Combine(_appDataDir, "transactions.json");
-        yield return Path.Combine(_appDataDir, "goals.json");
-        yield return Path.Combine(_appDataDir, "settings.json");
-        yield return Path.Combine(_appDataDir, "quote-cache.json");
     }
 
     private async Task<SnapshotFile> ReadSnapshotFileAsync(string snapshotPath, CancellationToken cancellationToken)
@@ -302,8 +259,9 @@ public sealed class LocalEncryptedSnapshotService : ISnapshotService
         string AppVersion,
         DateTimeOffset CreatedAtUtc,
         string SourceDeviceId,
+        string StorageKind,
         List<SnapshotEntry> Entries);
 
-    private sealed record SnapshotEntry(string RelativePath, string Content);
+    private sealed record SnapshotEntry(string Name, string Content);
     private sealed record SnapshotState(DateTimeOffset LastImportedOrExportedAtUtc, string LastKnownDeviceId);
 }

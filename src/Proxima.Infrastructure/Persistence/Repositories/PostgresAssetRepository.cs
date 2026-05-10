@@ -45,22 +45,15 @@ public sealed class PostgresAssetRepository(IProximaUnitOfWorkFactory uowFactory
     {
         await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
         ProximaDbContext ctx = lease.Context;
-        await using var tx = await ctx.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-
         ctx.Assets.Add(ToEntity(asset));
+        await ReplaceAssetTagsAsync(ctx, asset.Id, asset.Tags, cancellationToken).ConfigureAwait(false);
         await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        await UpsertAssetTagsAsync(ctx, asset.Id, asset.Tags, cancellationToken).ConfigureAwait(false);
-        await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-
-        await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task UpdateAsync(Asset asset, CancellationToken cancellationToken)
     {
         await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
         ProximaDbContext ctx = lease.Context;
-        await using var tx = await ctx.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-
         AssetEntity entity = await ctx.Assets.FirstAsync(x => x.PortfolioId == asset.PortfolioId && x.Id == asset.Id, cancellationToken).ConfigureAwait(false);
         entity.Ticker = asset.Ticker;
         entity.Name = asset.Name;
@@ -75,14 +68,8 @@ public sealed class PostgresAssetRepository(IProximaUnitOfWorkFactory uowFactory
         entity.IsArchived = asset.IsArchived;
         entity.UpdatedAt = asset.UpdatedAt;
 
+        await ReplaceAssetTagsAsync(ctx, asset.Id, asset.Tags, cancellationToken).ConfigureAwait(false);
         await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-
-        List<AssetTagEntity> existing = await ctx.AssetTags.Where(x => x.AssetId == asset.Id).ToListAsync(cancellationToken).ConfigureAwait(false);
-        ctx.AssetTags.RemoveRange(existing);
-        await UpsertAssetTagsAsync(ctx, asset.Id, asset.Tags, cancellationToken).ConfigureAwait(false);
-
-        await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static Asset ToDomain(AssetEntity x, IReadOnlyList<string> tags)
@@ -148,18 +135,53 @@ public sealed class PostgresAssetRepository(IProximaUnitOfWorkFactory uowFactory
             .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)g.Select(x => x.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToArray());
     }
 
-    private static async Task UpsertAssetTagsAsync(ProximaDbContext ctx, Guid assetId, IReadOnlyList<string> tags, CancellationToken cancellationToken)
+    private static async Task ReplaceAssetTagsAsync(
+        ProximaDbContext ctx,
+        Guid assetId,
+        IReadOnlyList<string> tags,
+        CancellationToken cancellationToken)
     {
-        foreach (string tagName in tags.Where(static x => !string.IsNullOrWhiteSpace(x)).Select(static x => x.Trim()).Distinct(StringComparer.OrdinalIgnoreCase))
+        string[] normalizedTags = tags
+            .Where(static x => !string.IsNullOrWhiteSpace(x))
+            .Select(static x => x.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        var existingRows = await (
+                from at in ctx.AssetTags
+                join t in ctx.Tags on at.TagId equals t.Id
+                where at.AssetId == assetId
+                select new { Link = at, t.Id, t.Name })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        Dictionary<string, Guid> desiredTagIds = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string tagName in normalizedTags)
         {
-            TagEntity? tag = await ctx.Tags.FirstOrDefaultAsync(x => x.Name == tagName, cancellationToken).ConfigureAwait(false);
+            TagEntity? tag = await ctx.Tags
+                .FirstOrDefaultAsync(x => x.Name == tagName, cancellationToken)
+                .ConfigureAwait(false);
+
             if (tag is null)
             {
                 tag = new TagEntity { Id = Guid.NewGuid(), Name = tagName };
                 ctx.Tags.Add(tag);
             }
 
-            ctx.AssetTags.Add(new AssetTagEntity { AssetId = assetId, TagId = tag.Id });
+            desiredTagIds[tagName] = tag.Id;
+        }
+
+        HashSet<Guid> desiredIds = desiredTagIds.Values.ToHashSet();
+        AssetTagEntity[] linksToRemove = existingRows
+            .Where(row => !desiredIds.Contains(row.Id))
+            .Select(row => row.Link)
+            .ToArray();
+        ctx.AssetTags.RemoveRange(linksToRemove);
+
+        HashSet<Guid> existingIds = existingRows.Select(row => row.Id).ToHashSet();
+        foreach (Guid tagId in desiredIds.Where(tagId => !existingIds.Contains(tagId)))
+        {
+            ctx.AssetTags.Add(new AssetTagEntity { AssetId = assetId, TagId = tagId });
         }
     }
 }

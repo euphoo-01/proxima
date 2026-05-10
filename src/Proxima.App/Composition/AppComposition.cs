@@ -32,11 +32,9 @@ using Proxima.Infrastructure.Persistence;
 using Proxima.Infrastructure.Persistence.Repositories;
 using Proxima.Infrastructure.Quotes;
 using Proxima.Infrastructure.MarketData;
-using Proxima.Infrastructure.Settings;
 using Proxima.Infrastructure.Taxes;
 using Proxima.Importing;
 using Proxima.Reporting.Reports;
-using Proxima.Sync.Snapshots;
 
 namespace Proxima.App.Composition;
 
@@ -46,7 +44,6 @@ public static class AppComposition
     {
         ServiceCollection services = new();
 
-        string profileStorePath = ProximaAuthComposition.GetDefaultProfileStorePath();
         DatabaseOptions databaseOptions = DatabaseConnectionStringProvider.Resolve();
         DatabaseBootstrapService db = new(databaseOptions);
 
@@ -56,8 +53,10 @@ public static class AppComposition
         services.AddSingleton<IRuntimeUserContext>(provider => provider.GetRequiredService<RuntimeUserContext>());
         services.AddSingleton<ICurrentUserContext>(provider => provider.GetRequiredService<RuntimeUserContext>());
 
-        services.AddSingleton<ILocalAuthService>(_ =>
-            ProximaAuthComposition.CreateLocalAuthService(profileStorePath));
+        services.AddSingleton<ILocalUserRepository, PostgresLocalUserRepository>();
+        services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
+        services.AddSingleton<PasswordPolicyValidator>();
+        services.AddSingleton<ILocalAuthService, LocalAuthService>();
 
         services.AddSingleton<IAuthGateService, LocalProfileAuthGateService>();
         services.AddSingleton<IRuntimeAuthBootstrapper, RuntimeAuthBootstrapper>();
@@ -93,9 +92,6 @@ public static class AppComposition
             Timeout = TimeSpan.FromSeconds(12),
         });
 
-        services.AddSingleton(_ =>
-            new LocalSettingsReader(ProximaSettingsComposition.GetDefaultSettingsStorePath()));
-
         services.AddSingleton<IQuoteProvider, ConfigurableQuoteProvider>();
         services.AddSingleton<IMarketSymbolSearchService, TwelveDataSymbolSearchService>();
         services.AddSingleton<IQuoteRefreshService, QuoteRefreshService>();
@@ -115,9 +111,8 @@ public static class AppComposition
         services.AddSingleton<TwelveDataAssetMarketDataProvider>();
         services.AddSingleton<IAssetDetailsService, AssetDetailsService>();
 
-        services.AddSingleton<ITaxCalculator>(_ =>
-            ProximaTaxComposition.CreateTaxCalculator(
-                Proxima.Infrastructure.Settings.ProximaSettingsComposition.GetDefaultSettingsStorePath()));
+        services.AddSingleton<IExchangeRateProvider, ConfigurableExchangeRateProvider>();
+        services.AddSingleton<ITaxCalculator, DraftTaxCalculator>();
 
         services.AddSingleton<IReportService>(_ => ProximaReportingComposition.CreateReportService());
         services.AddSingleton<IGoalProjectionService, GoalProjectionService>();

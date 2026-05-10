@@ -1,16 +1,16 @@
+using Proxima.Application.Auth;
+using Proxima.Application.Settings;
 using Proxima.Application.Taxes;
-using Proxima.Infrastructure.Settings;
 
 namespace Proxima.Infrastructure.Taxes;
 
 public static class ProximaTaxComposition
 {
-    public static ITaxCalculator CreateTaxCalculator(string settingsStorePath)
+    public static ITaxCalculator CreateTaxCalculator(
+        ICurrentUserContext currentUser,
+        ISettingsService settingsService,
+        HttpClient httpClient)
     {
-        HttpClient client = new()
-        {
-            Timeout = TimeSpan.FromSeconds(8),
-        };
-        return new DraftTaxCalculator(new ConfigurableExchangeRateProvider(new LocalSettingsReader(settingsStorePath), client));
+        return new DraftTaxCalculator(new ConfigurableExchangeRateProvider(currentUser, settingsService, httpClient));
     }
 }

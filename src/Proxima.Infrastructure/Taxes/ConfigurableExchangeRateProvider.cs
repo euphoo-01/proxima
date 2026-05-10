@@ -1,30 +1,33 @@
+using Proxima.Application.Auth;
 using Proxima.Application.Settings;
 using Proxima.Application.Taxes;
-using Proxima.Infrastructure.Settings;
 
 namespace Proxima.Infrastructure.Taxes;
 
-public sealed class ConfigurableExchangeRateProvider(LocalSettingsReader settingsReader, HttpClient httpClient) : IExchangeRateProvider
+public sealed class ConfigurableExchangeRateProvider(
+    ICurrentUserContext currentUser,
+    ISettingsService settingsService,
+    HttpClient httpClient) : IExchangeRateProvider
 {
-    private readonly LocalSettingsReader _settingsReader = settingsReader;
     private readonly NbrbExchangeRateProvider _nbrb = new(httpClient);
     private readonly BelarusbankExchangeRateProvider _belarusbank = new(httpClient);
     private readonly MockNbrbExchangeRateProvider _mock = new();
 
-    public async Task<ExchangeRateResult> GetRateAsync(string fromCurrency, string toCurrency, DateOnly date, CancellationToken cancellationToken = default)
+    public async Task<ExchangeRateResult> GetRateAsync(
+        string fromCurrency,
+        string toCurrency,
+        DateOnly date,
+        CancellationToken cancellationToken = default)
     {
         string from = Normalize(fromCurrency);
         string to = Normalize(toCurrency);
         if (string.Equals(from, to, StringComparison.OrdinalIgnoreCase))
         {
-            return ExchangeRateResult.Success(1m, "BYN", date);
+            return ExchangeRateResult.Success(1m, to, date);
         }
 
-        UserSettings? settings = await _settingsReader.TryReadPrimaryAsync(cancellationToken).ConfigureAwait(false);
-
-        // В налоговом модуле Mock больше не является рабочим провайдером.
-        // Старое значение настроек "Mock" трактуется как Auto: НБРБ -> Belarusbank -> аварийный fallback.
-        bool preferBelarusbank = settings?.CurrencyProvider == CurrencyProviderKind.Belarusbank;
+        CurrencyProviderKind providerKind = await ResolveProviderKindAsync(cancellationToken).ConfigureAwait(false);
+        bool preferBelarusbank = providerKind == CurrencyProviderKind.Belarusbank;
 
         ExchangeRateResult first = preferBelarusbank
             ? await _belarusbank.GetRateAsync(from, to, date, cancellationToken).ConfigureAwait(false)
@@ -52,7 +55,28 @@ public sealed class ConfigurableExchangeRateProvider(LocalSettingsReader setting
         };
     }
 
-    private static string Normalize(string currency) => string.IsNullOrWhiteSpace(currency)
-        ? "BYN"
-        : currency.Trim().ToUpperInvariant();
+    private async Task<CurrencyProviderKind> ResolveProviderKindAsync(CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsAuthenticated || currentUser.UserId == Guid.Empty)
+        {
+            return CurrencyProviderKind.Mock;
+        }
+
+        UserSettings? settings = await settingsService
+            .GetAsync(currentUser.UserId, cancellationToken)
+            .ConfigureAwait(false);
+
+        // Старое значение Mock больше не выбирает mock-провайдер напрямую.
+        // Оно трактуется как Auto: НБРБ -> Belarusbank -> аварийный fallback.
+        return settings?.CurrencyProvider == CurrencyProviderKind.Belarusbank
+            ? CurrencyProviderKind.Belarusbank
+            : CurrencyProviderKind.Mock;
+    }
+
+    private static string Normalize(string currency)
+    {
+        return string.IsNullOrWhiteSpace(currency)
+            ? "BYN"
+            : currency.Trim().ToUpperInvariant();
+    }
 }

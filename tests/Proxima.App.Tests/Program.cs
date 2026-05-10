@@ -76,6 +76,7 @@ internal static class Program
         string composition = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "Composition", "AppComposition.cs"));
         string appCode = File.ReadAllText(Path.Combine(root, "src", "Proxima.App", "App.axaml.cs"));
 
+        Assert(composition.Contains("PostgresLocalUserRepository", StringComparison.Ordinal), "Runtime composition should bind local auth repository to PostgreSQL.");
         Assert(composition.Contains("PostgresPortfolioRepository", StringComparison.Ordinal), "Runtime composition should bind portfolio repository to PostgreSQL.");
         Assert(composition.Contains("PostgresAssetRepository", StringComparison.Ordinal), "Runtime composition should bind asset repository to PostgreSQL.");
         Assert(composition.Contains("PostgresTransactionRepository", StringComparison.Ordinal), "Runtime composition should bind transaction repository to PostgreSQL.");
@@ -102,8 +103,7 @@ internal static class Program
 
         Assert(composition.Contains("RuntimeShellState", StringComparison.Ordinal), "Runtime composition should register mutable runtime shell state.");
         Assert(composition.Contains("IRuntimeDataInvalidation", StringComparison.Ordinal), "Runtime composition should register shared data invalidation service.");
-        Assert(composition.Contains("AppAssetDetailsReadModelProvider", StringComparison.Ordinal), "Runtime composition should use app-backed asset details read-model provider.");
-        Assert(!composition.Contains("IAssetDetailsReadModelProvider, MockAssetDetailsReadModelProvider", StringComparison.Ordinal), "Runtime composition should not bind asset details provider to mock.");
+        Assert(composition.Contains("IAssetDetailsService, AssetDetailsService", StringComparison.Ordinal), "Runtime composition should use app-backed asset details service.");
         Assert(composition.Contains("IGoalProgressBaselineService", StringComparison.Ordinal), "Runtime composition should register goal progress baseline service.");
         Assert(shellState.Contains("SetCurrentPortfolio", StringComparison.Ordinal), "Runtime shell state should expose current portfolio switch method.");
         Assert(shellState.Contains("PortfolioChanged?.Invoke", StringComparison.Ordinal), "Runtime shell state should emit portfolio changed events.");
@@ -180,7 +180,6 @@ internal static class Program
     {
         string root = Path.Combine(Path.GetTempPath(), "proxima-sync-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
-        await File.WriteAllTextAsync(Path.Combine(root, "portfolios.json"), "[{\"id\":\"demo\"}]").ConfigureAwait(false);
         LocalEncryptedSnapshotService service = new(root, "1.0.0", "device-a");
 
         SnapshotExportResult exported = await service.ExportAsync("Password123!").ConfigureAwait(false);

@@ -1,20 +1,18 @@
 using Proxima.Application.Auth;
+using Proxima.Infrastructure.Persistence;
+using Proxima.Infrastructure.Persistence.Repositories;
 
 namespace Proxima.Infrastructure.Auth;
 
 public static class ProximaAuthComposition
 {
-    public static ILocalAuthService CreateLocalAuthService(string profileStorePath)
+    public static ILocalAuthService CreateLocalAuthService(
+        IProximaUnitOfWorkFactory uowFactory,
+        IProximaUnitOfWorkAccessor uowAccessor)
     {
         return new LocalAuthService(
-            new JsonLocalUserRepository(profileStorePath),
+            new PostgresLocalUserRepository(uowFactory, uowAccessor),
             new Pbkdf2PasswordHasher(),
             new PasswordPolicyValidator());
-    }
-
-    public static string GetDefaultProfileStorePath()
-    {
-        string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return Path.Combine(appData, "Proxima", "profile-store.json");
     }
 }

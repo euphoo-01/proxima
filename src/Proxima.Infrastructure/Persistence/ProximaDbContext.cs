@@ -33,6 +33,10 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
             e.HasKey(x => x.Id);
             e.Property(x => x.DisplayName).HasMaxLength(128);
             e.Property(x => x.Login).HasMaxLength(128);
+            e.Property(x => x.Role).HasMaxLength(64);
+            e.Property(x => x.PasswordAlgorithm).HasMaxLength(64);
+            e.Property(x => x.PasswordSalt).HasColumnType("bytea");
+            e.Property(x => x.PasswordHash).HasColumnType("bytea");
             e.HasIndex(x => x.Login).IsUnique();
         });
 

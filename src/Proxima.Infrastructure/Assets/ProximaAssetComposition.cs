@@ -1,17 +1,15 @@
 using Proxima.Application.Assets;
+using Proxima.Infrastructure.Persistence;
+using Proxima.Infrastructure.Persistence.Repositories;
 
 namespace Proxima.Infrastructure.Assets;
 
 public static class ProximaAssetComposition
 {
-    public static IAssetService CreateAssetService(string assetStorePath)
+    public static IAssetService CreateAssetService(
+        IProximaUnitOfWorkFactory uowFactory,
+        IProximaUnitOfWorkAccessor uowAccessor)
     {
-        return new AssetService(new JsonAssetRepository(assetStorePath));
-    }
-
-    public static string GetDefaultAssetStorePath()
-    {
-        string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return Path.Combine(appData, "Proxima", "asset-store.json");
+        return new AssetService(new PostgresAssetRepository(uowFactory, uowAccessor));
     }
 }

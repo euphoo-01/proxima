@@ -3,9 +3,21 @@ create table if not exists users (
   display_name text not null,
   login text not null unique,
   role text not null,
+  password_algorithm varchar(64) not null default '',
+  password_salt bytea not null default decode('', 'hex'),
+  password_hash bytea not null default decode('', 'hex'),
+  password_iterations int not null default 0,
+  password_version int not null default 0,
+  failed_unlock_attempts int not null default 0,
   created_at timestamptz not null,
   updated_at timestamptz not null
 );
+alter table users add column if not exists password_algorithm varchar(64) not null default '';
+alter table users add column if not exists password_salt bytea not null default decode('', 'hex');
+alter table users add column if not exists password_hash bytea not null default decode('', 'hex');
+alter table users add column if not exists password_iterations int not null default 0;
+alter table users add column if not exists password_version int not null default 0;
+alter table users add column if not exists failed_unlock_attempts int not null default 0;
 
 create table if not exists portfolios (
   id uuid primary key,
@@ -202,6 +214,19 @@ create table if not exists sync_snapshots (
   file_name text not null,
   created_at timestamptz not null
 );
+
+
+create table if not exists notifications (
+  id uuid primary key,
+  user_id uuid not null references users(id) on delete cascade,
+  severity varchar(32) not null,
+  title varchar(120) not null,
+  message varchar(2000) not null,
+  source varchar(120) not null,
+  created_at_utc timestamptz not null,
+  deleted_at_utc timestamptz null
+);
+create index if not exists ix_notifications_user_deleted_created on notifications(user_id, deleted_at_utc, created_at_utc desc);
 
 create table if not exists audit_log (
   id uuid primary key,
