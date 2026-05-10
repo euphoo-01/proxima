@@ -57,6 +57,24 @@
         <Setter Property="MinHeight" Value="144" />
     </Style>
 
+
+    <Style Selector="Border.proxima-goals-return-card">
+        <Setter Property="Background" Value="#FFFFFF" />
+        <Setter Property="BorderBrush" Value="#EDF1F5" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="24,22,24,20" />
+        <Setter Property="MinHeight" Value="118" />
+    </Style>
+
+    <Style Selector="TextBlock.proxima-goals-return-value">
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="26" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="LineHeight" Value="32" />
+        <Setter Property="Foreground" Value="#0F4C81" />
+    </Style>
+
     <Style Selector="Border.proxima-goals-risk-card">
         <Setter Property="Background" Value="#F1F3F4" />
         <Setter Property="BorderBrush" Value="#EEF2F6" />

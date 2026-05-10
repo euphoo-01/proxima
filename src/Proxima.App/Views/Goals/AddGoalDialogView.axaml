@@ -33,7 +33,7 @@
                         <TextBlock Classes="proxima-caption" TextWrapping="Wrap">
                             <Run Text="Ежемесячный взнос берется из карточки на странице целей: " />
                             <Run Text="{Binding MonthlyContribution, StringFormat={}{0:N0}}" />
-                            <Run Text=". Ожидаемая доходность: " />
+                            <Run Text=". Историческая доходность профиля: " />
                             <Run Text="{Binding ExpectedAnnualReturnPercent, StringFormat={}{0:0.#}%/год}" />
                             <Run Text="." />
                         </TextBlock>

@@ -12,12 +12,13 @@ namespace Proxima.App.Views.Goals;
 public sealed class GoalsViewModel : ViewModelBase
 {
     private const decimal DefaultMonthlyContribution = 2500m;
-    private const decimal DefaultExpectedAnnualReturnPercent = 8m;
+    private const decimal DefaultExpectedAnnualReturnPercent = HistoricalPortfolioReturnService.DefaultFallbackAnnualReturnPercent;
 
     private readonly IGoalService _goalService;
     private readonly IShellState _shellState;
     private readonly IGoalProjectionService _projectionService;
     private readonly IGoalProgressBaselineService _baselineService;
+    private readonly IHistoricalPortfolioReturnService _historicalReturnService;
     private readonly DelegateCommand _openAddGoalCommand;
     private readonly DelegateCommand _openEditGoalCommand;
     private readonly DelegateCommand _archiveGoalCommand;
@@ -42,6 +43,8 @@ public sealed class GoalsViewModel : ViewModelBase
     private string _riskLevelText = "—";
     private string _riskPillText = "Недостаточно данных";
     private string _forecastCaption = "Добавьте цель для построения прогноза.";
+    private string _historicalAnnualReturnText = "—";
+    private string _historicalReturnSourceText = "Доходность профиля будет рассчитана после появления истории портфеля.";
     private bool _monthlyContributionInitialized;
 
     public GoalsViewModel(
@@ -49,12 +52,14 @@ public sealed class GoalsViewModel : ViewModelBase
         IShellState shellState,
         IGoalProjectionService projectionService,
         IGoalProgressBaselineService baselineService,
+        IHistoricalPortfolioReturnService historicalReturnService,
         IRuntimeDataInvalidation dataInvalidation)
     {
         _goalService = goalService;
         _shellState = shellState;
         _projectionService = projectionService;
         _baselineService = baselineService;
+        _historicalReturnService = historicalReturnService;
 
         Goals = [];
         AddGoalDialog = new AddGoalDialogViewModel();
@@ -204,6 +209,18 @@ public sealed class GoalsViewModel : ViewModelBase
         private set => SetProperty(ref _forecastCaption, value);
     }
 
+    public string HistoricalAnnualReturnText
+    {
+        get => _historicalAnnualReturnText;
+        private set => SetProperty(ref _historicalAnnualReturnText, value);
+    }
+
+    public string HistoricalReturnSourceText
+    {
+        get => _historicalReturnSourceText;
+        private set => SetProperty(ref _historicalReturnSourceText, value);
+    }
+
     public bool IsLoading
     {
         get => _isLoading;
@@ -242,7 +259,7 @@ public sealed class GoalsViewModel : ViewModelBase
 
     public static GoalsViewModel CreateDesignData()
     {
-        return new GoalsViewModel(new DesignGoalService(), new DesignShellState(), new GoalProjectionService(), new DesignGoalProgressBaselineService(), new RuntimeDataInvalidation());
+        return new GoalsViewModel(new DesignGoalService(), new DesignShellState(), new GoalProjectionService(), new DesignGoalProgressBaselineService(), new DesignHistoricalPortfolioReturnService(), new RuntimeDataInvalidation());
     }
 
     private async Task LoadAsync()
@@ -255,7 +272,12 @@ public sealed class GoalsViewModel : ViewModelBase
         try
         {
             IReadOnlyList<Goal> items = await _goalService.ListActiveAsync(_shellState.CurrentPortfolioId).ConfigureAwait(false);
+            HistoricalPortfolioReturn historicalReturn = await _historicalReturnService
+                .CalculateAsync(_shellState.CurrentPortfolioId)
+                .ConfigureAwait(false);
+
             Goals.Clear();
+            ApplyHistoricalReturn(historicalReturn);
 
             IReadOnlyDictionary<Guid, decimal> baselineByGoal = _baselineService.CalculateCurrentAmounts(_shellState.CurrentPortfolioId, items);
             _currentPortfolioValue = ResolveCurrentPortfolioValue(baselineByGoal);
@@ -332,14 +354,31 @@ public sealed class GoalsViewModel : ViewModelBase
             ? storedMonthlyContribution
             : DefaultMonthlyContribution;
 
-        decimal? storedExpectedReturn = goals
-            .Select(goal => goal.ExpectedAnnualReturnPercent)
-            .FirstOrDefault(value => value is not null);
-        _expectedAnnualReturnPercent = storedExpectedReturn ?? DefaultExpectedAnnualReturnPercent;
-
         _monthlyContributionInitialized = true;
         OnPropertyChanged(nameof(MonthlyContribution));
+    }
+
+    private void ApplyHistoricalReturn(HistoricalPortfolioReturn historicalReturn)
+    {
+        _expectedAnnualReturnPercent = historicalReturn.AnnualizedReturnPercent ?? DefaultExpectedAnnualReturnPercent;
+        HistoricalAnnualReturnText = FormatAnnualReturn(_expectedAnnualReturnPercent, historicalReturn.IsFallback);
+        HistoricalReturnSourceText = historicalReturn.Message;
         OnPropertyChanged(nameof(ExpectedAnnualReturnPercent));
+    }
+
+    private static string FormatAnnualReturn(decimal? annualReturnPercent, bool isFallback)
+    {
+        if (annualReturnPercent is not decimal value)
+        {
+            return "—";
+        }
+
+        string suffix = isFallback ? " / год" : "% / год";
+        string prefix = value > 0m ? "+" : string.Empty;
+
+        return isFallback
+            ? $"{prefix}{value:0.#}% / год"
+            : $"{prefix}{value:0.#}{suffix}";
     }
 
     private void OpenAddDialog()
@@ -606,7 +645,7 @@ public interface IGoalProjectionService
 
 public sealed class GoalProjectionService : IGoalProjectionService
 {
-    private const decimal DefaultExpectedAnnualReturnPercent = 8m;
+    private const decimal DefaultExpectedAnnualReturnPercent = HistoricalPortfolioReturnService.DefaultFallbackAnnualReturnPercent;
 
     public GoalProjection BuildProjection(GoalProjectionRequest request)
     {
@@ -676,7 +715,9 @@ public sealed class GoalProjectionService : IGoalProjectionService
     private static decimal NormalizeMonthlyRate(decimal? expectedAnnualReturnPercent)
     {
         decimal annualPercent = Math.Clamp(expectedAnnualReturnPercent ?? DefaultExpectedAnnualReturnPercent, -50m, 100m);
-        return annualPercent / 100m / 12m;
+        double annualRate = (double)annualPercent / 100d;
+        double monthlyRate = Math.Pow(1d + annualRate, 1d / 12d) - 1d;
+        return (decimal)monthlyRate;
     }
 }
 
@@ -774,5 +815,23 @@ file sealed class DesignGoalProgressBaselineService : IGoalProgressBaselineServi
     public IReadOnlyDictionary<Guid, decimal> CalculateCurrentAmounts(Guid portfolioId, IReadOnlyList<Goal> goals)
     {
         return goals.ToDictionary(goal => goal.Id, _ => 955000m);
+    }
+}
+
+file sealed class DesignHistoricalPortfolioReturnService : IHistoricalPortfolioReturnService
+{
+    public Task<HistoricalPortfolioReturn> CalculateAsync(Guid portfolioId, CancellationToken cancellationToken = default)
+    {
+        HistoricalPortfolioReturn result = new(
+            11.8m,
+            34.2m,
+            955000m,
+            711624m,
+            916,
+            DateTimeOffset.UtcNow.AddDays(-916),
+            IsFallback: false,
+            "CAGR по текущей истории портфеля за 916 дн. ROI: +34.2%.");
+
+        return Task.FromResult(result);
     }
 }

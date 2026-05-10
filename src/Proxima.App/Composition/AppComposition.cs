@@ -115,6 +115,7 @@ public static class AppComposition
 
         services.AddSingleton<IReportService>(_ => ProximaReportingComposition.CreateReportService());
         services.AddSingleton<IGoalProjectionService, GoalProjectionService>();
+        services.AddSingleton<IHistoricalPortfolioReturnService, HistoricalPortfolioReturnService>();
         services.AddSingleton<IGoalProgressBaselineService, GoalProgressBaselineService>();
 
         services.AddSingleton<DashboardViewModel>();

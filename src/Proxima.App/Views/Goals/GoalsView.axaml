@@ -34,7 +34,7 @@
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
                                 <StackPanel Spacing="2">
                                     <TextBlock Classes="proxima-goals-section-title" Text="Предсказание дохода" />
-                                    <TextBlock Classes="proxima-goals-section-subtitle" Text="Долгосрочная симуляция, основанная на текущем доходе" TextWrapping="Wrap" />
+                                    <TextBlock Classes="proxima-goals-section-subtitle" Text="Долгосрочная симуляция, основанная на исторической доходности профиля" TextWrapping="Wrap" />
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
@@ -68,6 +68,14 @@
                                     <ProgressBar Classes="proxima-goals-progress" Maximum="100" Minimum="0" Value="{Binding FinancialIndependenceProgressPercent}" />
                                     <TextBlock Classes="proxima-goals-small-caption" Text="{Binding FinancialIndependenceProgressText}" />
                                 </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <Border Classes="proxima-goals-return-card">
+                            <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+                                <TextBlock Classes="proxima-goals-eyebrow" Text="Историческая доходность профиля" />
+                                <TextBlock Grid.Row="1" Classes="proxima-goals-return-value" Text="{Binding HistoricalAnnualReturnText}" />
+                                <TextBlock Grid.Row="2" Classes="proxima-goals-small-caption" Text="{Binding HistoricalReturnSourceText}" TextWrapping="Wrap" />
                             </Grid>
                         </Border>
 

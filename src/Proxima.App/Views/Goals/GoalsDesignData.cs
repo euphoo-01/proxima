@@ -8,7 +8,6 @@ public static class GoalsDesignData
     {
         GoalsViewModel vm = GoalsViewModel.CreateDesignData();
         vm.MonthlyContribution = 450m;
-        vm.ExpectedAnnualReturnPercent = 8.5m;
         return vm;
     }
 }
