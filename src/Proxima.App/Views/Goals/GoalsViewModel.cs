@@ -463,7 +463,7 @@ public sealed class GoalsViewModel : ViewModelBase
                 Goals.Select(goal => new GoalProjectionTarget(goal.Id, goal.Name, goal.Currency, goal.TargetAmount)).ToArray()));
 
             ForecastPoints = projection.Points;
-            ForecastMilestones = projection.Milestones;
+            ForecastMilestones = BuildChartMilestones(projection);
             ProjectedAmount = projection.ProjectedAmount;
 
             UpdateGoalReachEstimates(projection);
@@ -482,6 +482,22 @@ public sealed class GoalsViewModel : ViewModelBase
         {
             IsProjectionChartLoading = false;
         }
+    }
+
+    private IReadOnlyList<GoalForecastMilestone> BuildChartMilestones(GoalProjection projection)
+    {
+        Dictionary<Guid, GoalForecastMilestone> milestoneByGoal = projection.Milestones
+            .GroupBy(item => item.GoalId)
+            .ToDictionary(group => group.Key, group => group.OrderBy(item => item.MonthIndex).First());
+
+        return Goals
+            .Select(goal => milestoneByGoal.TryGetValue(goal.Id, out GoalForecastMilestone? milestone) ? milestone : null)
+            .Where(milestone => milestone is not null)
+            .Select(milestone => milestone!)
+            .OrderBy(milestone => milestone.MonthIndex)
+            .ThenBy(milestone => milestone.TargetAmount)
+            .ThenBy(milestone => milestone.Title, StringComparer.CurrentCultureIgnoreCase)
+            .ToArray();
     }
 
     private void UpdateGoalReachEstimates(GoalProjection projection)
@@ -722,6 +738,8 @@ file sealed class DesignGoalService : IGoalService
         IReadOnlyList<Goal> goals =
         [
             new Goal(Guid.Parse("9a3f6f95-cd82-4901-9d98-211f5bd7b7da"), portfolioId, "Дворец", 2_250_000m, "USD", 2500m, 8m, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
+            new Goal(Guid.Parse("24a0f746-bb19-4a80-a55d-1886fbdf2e84"), portfolioId, "Яйца", 999_999m, "USD", 2500m, 8m, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
+            new Goal(Guid.Parse("c277a4f7-3d42-42d3-8d5a-1789bfc8378d"), portfolioId, "Дом", 4_800_000m, "USD", 2500m, 8m, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
         ];
 
         return Task.FromResult(goals);

@@ -28,7 +28,7 @@
                     </StackPanel>
                 </Border>
 
-                <Grid Grid.Row="2" ColumnDefinitions="2.08*,292" RowDefinitions="470,214" ColumnSpacing="24" RowSpacing="14" IsVisible="{Binding HasContent}">
+                <Grid Grid.Row="2" ColumnDefinitions="2.08*,292" RowDefinitions="470,Auto" ColumnSpacing="24" RowSpacing="14" IsVisible="{Binding HasContent}">
                     <Border Classes="proxima-goals-hero-card">
                         <Grid RowDefinitions="Auto,*">
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
@@ -125,8 +125,8 @@
                         </Grid>
                     </Border>
 
-                    <Border Grid.Column="1" Grid.Row="1" Classes="proxima-contribution-input-card">
-                        <Grid RowDefinitions="Auto,*,Auto" MinHeight="314">
+                    <Border Grid.Column="1" Grid.Row="1" Classes="proxima-contribution-input-card" MinHeight="314">
+                        <Grid RowDefinitions="Auto,*,Auto">
                             <StackPanel Spacing="22">
                                 <TextBlock Classes="proxima-goals-dark-title" Text="Ежемесячное&#x0a;пополнение" />
                                 <TextBlock Classes="proxima-goals-dark-caption" Text="Измените месячный взнос, чтобы моментально увидеть его влияние на рост капитала" TextWrapping="Wrap" />

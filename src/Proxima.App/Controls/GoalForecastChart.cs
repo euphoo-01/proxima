@@ -99,13 +99,14 @@ public sealed class GoalForecastChart : Control
 
         ChartLayout layout = CreateLayout(Bounds.Width, Bounds.Height);
         decimal maxValue = ResolveMaxValue(points, milestones);
+        IReadOnlyList<VisualMilestone> visualMilestones = BuildVisualMilestones(milestones, maxValue, layout);
         Point pointer = e.GetPosition(this);
         int hovered = -1;
-        double minDistance = 16d;
+        double minDistance = 18d;
 
-        for (int i = 0; i < milestones.Count; i++)
+        for (int i = 0; i < visualMilestones.Count; i++)
         {
-            Point marker = ToPoint(milestones[i].MonthIndex, milestones[i].TargetAmount, maxValue, layout);
+            Point marker = visualMilestones[i].Position;
             double distance = Math.Sqrt(Math.Pow(pointer.X - marker.X, 2d) + Math.Pow(pointer.Y - marker.Y, 2d));
             if (distance <= minDistance)
             {
@@ -159,13 +160,16 @@ public sealed class GoalForecastChart : Control
         IBrush tooltipBackground = ResolveBrush("ProximaBrush.Surface");
         IBrush tooltipBorder = ResolveBrush("ProximaBrush.Border");
 
-        DrawGridAndYearAxis(context, layout, maxValue, gridBrush, labelBrush, mutedBrush);
-        DrawProjectionLine(context, points, maxValue, layout, lineBrush);
-        DrawMilestones(context, milestones, maxValue, layout, markerBrush, markerBorderBrush, labelBrush);
+        IReadOnlyList<VisualMilestone> visualMilestones = BuildVisualMilestones(milestones, maxValue, layout);
 
-        if (_hoveredMilestoneIndex >= 0 && _hoveredMilestoneIndex < milestones.Count)
+        DrawGridAndYearAxis(context, layout, maxValue, gridBrush, labelBrush, mutedBrush);
+        DrawProjectionArea(context, points, maxValue, layout, lineBrush);
+        DrawProjectionLine(context, points, maxValue, layout, lineBrush);
+        DrawMilestones(context, visualMilestones, markerBrush, markerBorderBrush, labelBrush);
+
+        if (_hoveredMilestoneIndex >= 0 && _hoveredMilestoneIndex < visualMilestones.Count)
         {
-            DrawMilestoneTooltip(context, milestones[_hoveredMilestoneIndex], maxValue, layout, tooltipBackground, tooltipBorder, labelBrush, mutedBrush);
+            DrawMilestoneTooltip(context, visualMilestones[_hoveredMilestoneIndex], tooltipBackground, tooltipBorder, labelBrush, mutedBrush);
         }
     }
 
@@ -178,6 +182,93 @@ public sealed class GoalForecastChart : Control
 
         _hoveredMilestoneIndex = value;
         InvalidateVisual();
+    }
+
+    private static IReadOnlyList<VisualMilestone> BuildVisualMilestones(
+        IReadOnlyList<GoalForecastMilestone> milestones,
+        decimal maxValue,
+        ChartLayout layout)
+    {
+        if (milestones.Count == 0)
+        {
+            return [];
+        }
+
+        List<VisualMilestoneDraft> drafts = new(milestones.Count);
+        for (int i = 0; i < milestones.Count; i++)
+        {
+            GoalForecastMilestone milestone = milestones[i];
+            drafts.Add(new VisualMilestoneDraft(
+                i,
+                milestone,
+                ToPoint(milestone.MonthIndex, milestone.TargetAmount, maxValue, layout)));
+        }
+
+        VisualMilestone[] result = new VisualMilestone[milestones.Count];
+        foreach (IGrouping<(int X, int Y), VisualMilestoneDraft> group in drafts.GroupBy(item => (
+                     X: (int)Math.Round(item.BasePoint.X / 10d, MidpointRounding.AwayFromZero),
+                     Y: (int)Math.Round(item.BasePoint.Y / 10d, MidpointRounding.AwayFromZero))))
+        {
+            VisualMilestoneDraft[] cluster = group
+                .OrderBy(item => item.Milestone.TargetAmount)
+                .ThenBy(item => item.Milestone.Title, StringComparer.CurrentCultureIgnoreCase)
+                .ToArray();
+
+            for (int i = 0; i < cluster.Length; i++)
+            {
+                VisualMilestoneDraft item = cluster[i];
+                Point visualPoint = cluster.Length == 1
+                    ? item.BasePoint
+                    : OffsetClusterPoint(item.BasePoint, i, cluster.Length, layout);
+
+                result[item.SourceIndex] = new VisualMilestone(item.Milestone, visualPoint, layout);
+            }
+        }
+
+        return result;
+    }
+
+    private static Point OffsetClusterPoint(Point point, int index, int count, ChartLayout layout)
+    {
+        double center = (count - 1) / 2d;
+        double xOffset = (index - center) * 14d;
+        double yOffset = index % 2 == 0 ? -5d : 5d;
+        double x = Math.Clamp(point.X + xOffset, layout.Left + 8, layout.Right - 8);
+        double y = Math.Clamp(point.Y + yOffset, layout.Top + 8, layout.Bottom - 8);
+        return new Point(x, y);
+    }
+
+    private void DrawProjectionArea(
+        DrawingContext context,
+        IReadOnlyList<GoalForecastChartPoint> points,
+        decimal maxValue,
+        ChartLayout layout,
+        IBrush lineBrush)
+    {
+        if (points.Count < 2)
+        {
+            return;
+        }
+
+        StreamGeometry geometry = new();
+        using (StreamGeometryContext area = geometry.Open())
+        {
+            Point first = ToPoint(points[0].MonthIndex, points[0].Amount, maxValue, layout);
+            area.BeginFigure(new Point(first.X, layout.Bottom), true);
+            area.LineTo(first);
+
+            for (int i = 1; i < points.Count; i++)
+            {
+                area.LineTo(ToPoint(points[i].MonthIndex, points[i].Amount, maxValue, layout));
+            }
+
+            Point last = ToPoint(points[^1].MonthIndex, points[^1].Amount, maxValue, layout);
+            area.LineTo(new Point(last.X, layout.Bottom));
+            area.LineTo(new Point(first.X, layout.Bottom));
+            area.EndFigure(true);
+        }
+
+        context.DrawGeometry(CreateProjectionAreaBrush(lineBrush), null, geometry);
     }
 
     private void DrawProjectionLine(
@@ -209,41 +300,38 @@ public sealed class GoalForecastChart : Control
 
     private void DrawMilestones(
         DrawingContext context,
-        IReadOnlyList<GoalForecastMilestone> milestones,
-        decimal maxValue,
-        ChartLayout layout,
+        IReadOnlyList<VisualMilestone> visualMilestones,
         IBrush markerBrush,
         IBrush markerBorderBrush,
         IBrush labelBrush)
     {
-        for (int i = 0; i < milestones.Count; i++)
+        for (int i = 0; i < visualMilestones.Count; i++)
         {
-            GoalForecastMilestone milestone = milestones[i];
-            Point marker = ToPoint(milestone.MonthIndex, milestone.TargetAmount, maxValue, layout);
+            VisualMilestone visual = visualMilestones[i];
+            Point marker = visual.Position;
             double radius = i == _hoveredMilestoneIndex ? 8 : 7;
 
             context.DrawEllipse(markerBorderBrush, null, marker, radius + 3, radius + 3);
             context.DrawEllipse(markerBrush, null, marker, radius, radius);
 
-            string label = CompactLabel(milestone.Title, 16);
+            string label = CompactLabel(visual.Milestone.Title, 16);
             Size size = MeasureText(label, ProximaChartTheme.AxisLabelFontSize);
-            double labelX = Math.Clamp(marker.X - size.Width / 2d, layout.Left, layout.Right - size.Width);
-            double labelY = Math.Clamp(marker.Y + 10, layout.Top + 2, layout.Bottom - 20);
+            double labelX = Math.Clamp(marker.X - size.Width / 2d, visual.Layout.Left, visual.Layout.Right - size.Width);
+            double labelY = Math.Clamp(marker.Y + 10, visual.Layout.Top + 2, visual.Layout.Bottom - 20);
             DrawText(context, label, labelBrush, labelX, labelY, ProximaChartTheme.AxisLabelFontSize, FontWeight.Bold);
         }
     }
 
     private void DrawMilestoneTooltip(
         DrawingContext context,
-        GoalForecastMilestone milestone,
-        decimal maxValue,
-        ChartLayout layout,
+        VisualMilestone visualMilestone,
         IBrush background,
         IBrush border,
         IBrush textBrush,
         IBrush mutedBrush)
     {
-        Point marker = ToPoint(milestone.MonthIndex, milestone.TargetAmount, maxValue, layout);
+        GoalForecastMilestone milestone = visualMilestone.Milestone;
+        Point marker = visualMilestone.Position;
         double boxWidth = 188;
         double boxHeight = 70;
         double boxX = Math.Clamp(marker.X - boxWidth / 2d, 8, Bounds.Width - boxWidth - 8);
@@ -373,6 +461,27 @@ public sealed class GoalForecastChart : Control
         return $"{prefix}{value:0}{suffix}";
     }
 
+    private static IBrush CreateProjectionAreaBrush(IBrush lineBrush)
+    {
+        Color baseColor = Colors.SteelBlue;
+        if (lineBrush is ISolidColorBrush solidBrush)
+        {
+            baseColor = solidBrush.Color;
+        }
+
+        return new LinearGradientBrush
+        {
+            StartPoint = new RelativePoint(0.5, 0, RelativeUnit.Relative),
+            EndPoint = new RelativePoint(0.5, 1, RelativeUnit.Relative),
+            GradientStops =
+            {
+                new GradientStop(Color.FromArgb(52, baseColor.R, baseColor.G, baseColor.B), 0),
+                new GradientStop(Color.FromArgb(22, baseColor.R, baseColor.G, baseColor.B), 0.48),
+                new GradientStop(Color.FromArgb(0, baseColor.R, baseColor.G, baseColor.B), 1),
+            },
+        };
+    }
+
     private IBrush ResolveBrush(string key)
     {
         return ProximaChartTheme.ResolveBrush(this, key);
@@ -413,6 +522,10 @@ public sealed class GoalForecastChart : Control
             Brushes.Gray);
         context.DrawText(formatted, new Point(18, 18));
     }
+
+    private readonly record struct VisualMilestoneDraft(int SourceIndex, GoalForecastMilestone Milestone, Point BasePoint);
+
+    private readonly record struct VisualMilestone(GoalForecastMilestone Milestone, Point Position, ChartLayout Layout);
 
     private readonly record struct ChartLayout(double Left, double Top, double Right, double Bottom, int TotalMonths)
     {
