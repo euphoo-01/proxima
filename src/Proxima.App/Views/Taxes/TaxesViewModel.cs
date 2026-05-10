@@ -11,12 +11,17 @@ using Proxima.Reporting.Reports;
 
 namespace Proxima.App.Views.Taxes;
 
+public enum TaxRecalculationNotificationMode
+{
+    PageEnter,
+    UserAction
+}
+
 public sealed class TaxesViewModel : ViewModelBase
 {
     private const string BaseCurrency = "BYN";
 
     private readonly ITaxesReadModelProvider _provider;
-    private readonly IShellState _shellState;
     private readonly IAppNotificationCenter _notificationCenter;
     private readonly DelegateCommand _recalculateCommand;
     private readonly DelegateCommand _exportPdfCommand;
@@ -52,22 +57,17 @@ public sealed class TaxesViewModel : ViewModelBase
     private string _currentTaxProfileDescription = "Подтягивается из профиля пользователя";
     private string _taxDisclaimer = "Расчет носит информационный характер и не является юридической консультацией.";
 
-    public TaxesViewModel(ITaxesReadModelProvider provider, IShellState shellState, IRuntimeDataInvalidation dataInvalidation, IAppNotificationCenter notificationCenter)
+    public TaxesViewModel(ITaxesReadModelProvider provider, IAppNotificationCenter notificationCenter)
     {
         _provider = provider;
-        _shellState = shellState;
         _notificationCenter = notificationCenter;
 
         Years = BuildYears(DateTime.UtcNow.Year);
         BreakdownRows = [];
         TaxBreakdownRows = [];
 
-        _recalculateCommand = new DelegateCommand(_ => _ = RecalculateAsync(), _ => !IsLoading && !IsExporting);
+        _recalculateCommand = new DelegateCommand(_ => _ = RecalculateAsync(TaxRecalculationNotificationMode.UserAction), _ => !IsLoading && !IsExporting);
         _exportPdfCommand = new DelegateCommand(_ => _ = ExportPdfAsync(), _ => CanExportPdf);
-        _shellState.PortfolioChanged += (_, _) => _ = RecalculateAsync();
-        dataInvalidation.DataInvalidated += (_, _) => _ = RecalculateAsync();
-
-        _ = RecalculateAsync();
     }
 
     public string Title => "Налоги";
@@ -394,10 +394,20 @@ public sealed class TaxesViewModel : ViewModelBase
 
     public static TaxesViewModel CreateDesignData()
     {
-        return new TaxesViewModel(new DesignTaxesReadModelProvider(), new MockShellState(), new RuntimeDataInvalidation(), new NoOpAppNotificationCenter());
+        return new TaxesViewModel(new DesignTaxesReadModelProvider(), new NoOpAppNotificationCenter());
     }
 
-    private async Task RecalculateAsync()
+    public Task RefreshOnPageEnterAsync()
+    {
+        if (IsLoading || IsExporting)
+        {
+            return Task.CompletedTask;
+        }
+
+        return RecalculateAsync(TaxRecalculationNotificationMode.PageEnter);
+    }
+
+    private async Task RecalculateAsync(TaxRecalculationNotificationMode notificationMode)
     {
         IsLoading = true;
         HasError = false;
@@ -438,7 +448,7 @@ public sealed class TaxesViewModel : ViewModelBase
             TransactionCount = model.TransactionCount;
             SummaryStatus = model.Status;
             StatusMessage = model.Message;
-            if (!model.IsEmpty && !string.IsNullOrWhiteSpace(model.Message))
+            if (ShouldNotifySuccessfulCalculation(notificationMode, model) && !string.IsNullOrWhiteSpace(model.Message))
             {
                 await _notificationCenter.NotifyAsync(
                     model.IsOfflineRate ? AppNotificationLevel.Warning : AppNotificationLevel.Success,
@@ -507,6 +517,17 @@ public sealed class TaxesViewModel : ViewModelBase
         {
             IsExporting = false;
         }
+    }
+
+
+    private static bool ShouldNotifySuccessfulCalculation(TaxRecalculationNotificationMode mode, TaxScreenReadModel model)
+    {
+        if (model.IsEmpty)
+        {
+            return false;
+        }
+
+        return mode == TaxRecalculationNotificationMode.UserAction || model.IsOfflineRate;
     }
 
     private void OnContentStateChanged()

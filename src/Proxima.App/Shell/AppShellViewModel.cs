@@ -119,6 +119,11 @@ public sealed class AppShellViewModel : ViewModelBase
             AppRoutes.Profile => _profileViewModel,
             _ => new PlaceholderViewModel(route.Title, "Screen is not migrated yet. PlaceholderView is shown by runtime shell.")
         };
+
+        if (route.Key == AppRoutes.Taxes)
+        {
+            _ = _taxesViewModel.RefreshOnPageEnterAsync();
+        }
     }
 
     private void HandlePortfolioChanged(object? sender, ShellPortfolioChangedEventArgs e)

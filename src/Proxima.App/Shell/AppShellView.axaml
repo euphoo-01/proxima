@@ -72,7 +72,7 @@
                         BorderBrush="#DDE7F3"
                         BorderThickness="1"
                         BoxShadow="0 18 46 0 #1A001629"
-                        CornerRadius="22">
+                        CornerRadius="{StaticResource ProximaRadius.Large}">
                         <Grid ColumnDefinitions="44,*" RowDefinitions="Auto,Auto,Auto">
                             <Border
                                 Grid.RowSpan="3"
@@ -81,7 +81,7 @@
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Top"
                                 Background="{Binding SoftBackground}"
-                                CornerRadius="17">
+                                CornerRadius="{StaticResource ProximaRadius.Card}">
                                 <TextBlock
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"

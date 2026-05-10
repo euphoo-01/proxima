@@ -23,7 +23,7 @@
             <Setter Property="Background" Value="#FFFFFF" />
             <Setter Property="BorderBrush" Value="#E3EAF4" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="24" />
+            <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Large}" />
             <Setter Property="Padding" Value="24" />
             <Setter Property="BoxShadow" Value="0 16 42 0 #10001629" />
         </Style>
@@ -48,7 +48,7 @@
         </Style>
         <Style Selector="Button.ghost-action">
             <Setter Property="Padding" Value="14,9" />
-            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Small}" />
             <Setter Property="Background" Value="#F3F7FC" />
             <Setter Property="Foreground" Value="#15324F" />
             <Setter Property="BorderThickness" Value="0" />
@@ -58,7 +58,7 @@
         </Style>
         <Style Selector="Button.danger-action">
             <Setter Property="Padding" Value="14,9" />
-            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="CornerRadius" Value="{StaticResource ProximaRadius.Small}" />
             <Setter Property="Background" Value="#FFF0F0" />
             <Setter Property="Foreground" Value="#B42318" />
             <Setter Property="BorderThickness" Value="0" />
@@ -81,7 +81,7 @@
                 </StackPanel>
                 <Border Grid.Row="1" Grid.ColumnSpan="2" Classes="bento-card" Margin="0,18,0,0" Padding="20">
                     <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
-                        <Border Width="48" Height="48" Background="#EEF5FF" CornerRadius="18">
+                        <Border Width="48" Height="48" Background="#EEF5FF" CornerRadius="{StaticResource ProximaRadius.Card}">
                             <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22" FontWeight="ExtraBold" Foreground="#2D6CDF" Text="i" />
                         </Border>
                         <StackPanel Grid.Column="1" Spacing="4">
@@ -94,7 +94,7 @@
 
             <Border Classes="bento-card" IsVisible="{Binding IsEmpty}">
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="18">
-                    <Border Width="58" Height="58" Background="#EAFBF4" CornerRadius="22">
+                    <Border Width="58" Height="58" Background="#EAFBF4" CornerRadius="{StaticResource ProximaRadius.Large}">
                         <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" FontWeight="ExtraBold" Foreground="#19A974" Text="✓" />
                     </Border>
                     <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
@@ -114,7 +114,7 @@
                     <DataTemplate x:DataType="vm:AppNotificationViewModel">
                         <Border Classes="bento-card">
                             <Grid ColumnDefinitions="56,*,Auto" ColumnSpacing="16">
-                                <Border Width="42" Height="42" Background="{Binding SoftBackground}" CornerRadius="18">
+                                <Border Width="42" Height="42" Background="{Binding SoftBackground}" CornerRadius="{StaticResource ProximaRadius.Card}">
                                     <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22" FontWeight="ExtraBold" Foreground="{Binding AccentBrushKey}" Text="{Binding Icon}" />
                                 </Border>
 
