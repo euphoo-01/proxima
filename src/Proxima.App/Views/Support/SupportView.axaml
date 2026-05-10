@@ -36,8 +36,8 @@
         </Style>
     </UserControl.Styles>
 
-    <ScrollViewer Background="#F7F8F9">
-        <StackPanel Margin="0,29,34,60" Spacing="24">
+    <ScrollViewer Background="{StaticResource ProximaBrush.Sidebar}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24,24,34,64" Spacing="24">
             <TextBlock Classes="page-title" Text="Поддержка" />
 
             <Border Classes="card">

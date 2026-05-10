@@ -52,6 +52,9 @@
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Foreground" Value="#FFFFFF" />
         <Setter Property="CaretBrush" Value="#FFFFFF" />
+        <Setter Property="SelectionBrush" Value="#2A638B" />
+        <Setter Property="SelectionForegroundBrush" Value="#FFFFFF" />
+        <Setter Property="CornerRadius" Value="12" />
         <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
         <Setter Property="FontSize" Value="29" />
         <Setter Property="FontWeight" Value="ExtraBold" />
@@ -63,16 +66,22 @@
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Foreground" Value="#FFFFFF" />
         <Setter Property="CaretBrush" Value="#FFFFFF" />
+        <Setter Property="SelectionBrush" Value="#2A638B" />
+        <Setter Property="SelectionForegroundBrush" Value="#FFFFFF" />
     </Style>
 
-    <Style Selector="TextBox.proxima-goals-contribution-input /template/ Border#PART_Border">
+    <Style Selector="TextBox.proxima-goals-contribution-input /template/ Border#PART_BorderElement">
         <Setter Property="Background" Value="#173147" />
         <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="12" />
     </Style>
 
-    <Style Selector="TextBox.proxima-goals-contribution-input:pointerover /template/ Border#PART_Border, TextBox.proxima-goals-contribution-input:focus /template/ Border#PART_Border, TextBox.proxima-goals-contribution-input:focus-visible /template/ Border#PART_Border, TextBox.proxima-goals-contribution-input:focus-within /template/ Border#PART_Border">
+    <Style Selector="TextBox.proxima-goals-contribution-input:pointerover /template/ Border#PART_BorderElement, TextBox.proxima-goals-contribution-input:focus /template/ Border#PART_BorderElement, TextBox.proxima-goals-contribution-input:focus-visible /template/ Border#PART_BorderElement, TextBox.proxima-goals-contribution-input:focus-within /template/ Border#PART_BorderElement">
         <Setter Property="Background" Value="#173147" />
         <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="12" />
     </Style>
 
 </Styles>

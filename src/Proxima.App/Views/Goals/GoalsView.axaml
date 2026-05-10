@@ -138,7 +138,20 @@
                                     <TextBox Grid.Column="1"
                                              Classes="proxima-goals-contribution-input"
                                              Text="{Binding MonthlyContribution, Mode=TwoWay}"
-                                             Watermark="2500" />
+                                             Watermark="2500">
+                                        <TextBox.Resources>
+                                            <SolidColorBrush x:Key="TextControlBackground" Color="#173147" />
+                                            <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#173147" />
+                                            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#173147" />
+                                            <SolidColorBrush x:Key="TextControlBorderBrush" Color="Transparent" />
+                                            <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="Transparent" />
+                                            <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="Transparent" />
+                                            <SolidColorBrush x:Key="TextControlForeground" Color="#FFFFFF" />
+                                            <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="#FFFFFF" />
+                                            <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#FFFFFF" />
+                                            <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="#8EA2B8" />
+                                        </TextBox.Resources>
+                                    </TextBox>
                                     <TextBlock Grid.Column="2" Classes="proxima-goals-check" Text="✓" VerticalAlignment="Center" />
                                 </Grid>
                             </Border>
