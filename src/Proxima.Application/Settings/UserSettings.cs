@@ -13,6 +13,4 @@ public sealed record UserSettings(
     QuoteProviderKind QuoteProvider,
     int QuoteRefreshMinutes,
     string TwelveDataApiKeyProtected,
-    CurrencyProviderKind CurrencyProvider,
-    bool SyncEnabled,
-    DateTimeOffset? LastSnapshotAt);
+    CurrencyProviderKind CurrencyProvider);

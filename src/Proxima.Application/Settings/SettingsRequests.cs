@@ -19,5 +19,4 @@ public sealed record UpdateSettingsRequest(
     QuoteProviderKind QuoteProvider,
     int QuoteRefreshMinutes,
     string? TwelveDataApiKeyRaw,
-    CurrencyProviderKind CurrencyProvider,
-    bool SyncEnabled);
+    CurrencyProviderKind CurrencyProvider);

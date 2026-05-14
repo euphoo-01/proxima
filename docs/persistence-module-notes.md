@@ -12,9 +12,9 @@
 - Added bootstrap/config layer:
   - `DatabaseConnectionStringProvider` (`PROXIMA_DB_CONNECTION`, `PROXIMA_DB_SEED`).
   - `DatabaseBootstrapService` with graceful unavailable-DB message.
-- Added committed SQL migration/seed scripts:
-  - `scripts/sql/0001_initial_schema.sql`
-  - `scripts/sql/0002_seed_demo.sql`
+- Replaced committed SQL scripts with EF Core migrations under `src/Proxima.Infrastructure/Persistence/Migrations`:
+  - `20260515020000_InitialPostgreSqlSchema`
+  - `20260515021000_RemoveSyncAndUnusedTables`
 
 ## Integrity Rules
 
@@ -24,6 +24,4 @@
 
 ## Deferred
 
-- Full runtime repository switch from JSON storage to PostgreSQL-backed repositories.
-- EF migration artifacts generated via `dotnet ef` (currently schema is committed as SQL scripts).
 - Full DB error/setup UX in-app with dedicated setup panel.

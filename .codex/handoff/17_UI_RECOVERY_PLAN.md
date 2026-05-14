@@ -31,8 +31,6 @@ Keep and improve:
 - `src/Proxima.Analytics`
 - `src/Proxima.Importing`
 - `src/Proxima.Reporting`
-- `src/Proxima.Sync`
-- `scripts/sql`
 - `docker-compose.yml`
 - tests, but upgrade them to real xUnit/NUnit later
 

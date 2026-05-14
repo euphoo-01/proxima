@@ -76,7 +76,6 @@ src/
   Proxima.Reporting/
     Pdf/
     Templates/
-  Proxima.Sync/
     Snapshots/
     GoogleDrive/
 ```

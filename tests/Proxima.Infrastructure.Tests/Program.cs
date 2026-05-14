@@ -47,7 +47,7 @@ internal static class Program
         Repositories_UseUnitOfWorkPattern();
         NoJsonPersistenceRepositories_ArePresent();
         RedactionHelper_RemovesSensitiveKeys();
-        InitialSchemaScript_ContainsRequiredTablesAndCredentialColumns();
+        EfMigrations_ReplaceSqlScriptsAndCleanLegacyTables();
 
         Console.WriteLine("Proxima.Infrastructure.Tests passed.");
     }
@@ -199,8 +199,7 @@ internal static class Program
             QuoteProviderKind.Mock,
             30,
             null,
-            CurrencyProviderKind.Mock,
-            true)).ConfigureAwait(false);
+            CurrencyProviderKind.Mock)).ConfigureAwait(false);
 
         Assert(updated.Succeeded, "Settings update should persist.");
         UserSettings? loaded = await repository.FindByOwnerAsync(owner).ConfigureAwait(false);
@@ -315,39 +314,21 @@ internal static class Program
         Assert(!redacted.Contains("password", StringComparison.OrdinalIgnoreCase), "Sensitive password key name must be redacted.");
     }
 
-    private static void InitialSchemaScript_ContainsRequiredTablesAndCredentialColumns()
+    private static void EfMigrations_ReplaceSqlScriptsAndCleanLegacyTables()
     {
         string root = FindRepositoryRoot();
-        string sql = File.ReadAllText(Path.Combine(root, "scripts", "sql", "0001_initial_schema.sql"));
-        string[] required =
-        [
-            "create table if not exists users",
-            "password_algorithm",
-            "password_salt",
-            "password_hash",
-            "failed_unlock_attempts",
-            "create table if not exists portfolios",
-            "create table if not exists assets",
-            "create table if not exists tags",
-            "create table if not exists asset_tags",
-            "create table if not exists transactions",
-            "create table if not exists asset_prices",
-            "create table if not exists goals",
-            "create table if not exists tax_profiles",
-            "create table if not exists tax_reports",
-            "create table if not exists import_sessions",
-            "create table if not exists import_rows",
-            "create table if not exists quote_cache",
-            "create table if not exists user_settings",
-            "create table if not exists notifications",
-            "create table if not exists sync_snapshots",
-            "create table if not exists audit_log",
-        ];
+        string sqlDir = Path.Combine(root, "scripts", "sql");
+        Assert(!Directory.Exists(sqlDir), "Legacy scripts/sql directory must be removed after EF migrations adoption.");
 
-        foreach (string token in required)
-        {
-            Assert(sql.Contains(token, StringComparison.OrdinalIgnoreCase), $"Schema must contain declaration: {token}");
-        }
+        string migrationDir = Path.Combine(root, "src", "Proxima.Infrastructure", "Persistence", "Migrations");
+        string[] migrations = Directory.GetFiles(migrationDir, "*.cs", SearchOption.TopDirectoryOnly);
+        Assert(migrations.Any(path => Path.GetFileName(path).Contains("InitialPostgreSqlSchema", StringComparison.Ordinal)), "Initial EF migration must be present.");
+        Assert(migrations.Any(path => Path.GetFileName(path).Contains("RemoveSyncAndUnusedTables", StringComparison.Ordinal)), "Cleanup EF migration must be present.");
+
+        string model = File.ReadAllText(Path.Combine(root, "src", "Proxima.Infrastructure", "Persistence", "ProximaDbContext.cs"));
+        Assert(!model.Contains("SyncSnapshotEntity", StringComparison.Ordinal), "DbContext must not map sync snapshots after sync module removal.");
+        Assert(!model.Contains("TaxReportEntity", StringComparison.Ordinal), "DbContext must not map unused tax report table.");
+        Assert(!model.Contains("ImportSessionEntity", StringComparison.Ordinal), "DbContext must not map unused import session table.");
     }
 
     private static void Pbkdf2Hasher_VerifiesPasswordAndUsesUniqueSalt()

@@ -16,6 +16,5 @@
     <ProjectReference Include="..\Proxima.Infrastructure\Proxima.Infrastructure.csproj" />
     <ProjectReference Include="..\Proxima.Importing\Proxima.Importing.csproj" />
     <ProjectReference Include="..\Proxima.Reporting\Proxima.Reporting.csproj" />
-    <ProjectReference Include="..\Proxima.Sync\Proxima.Sync.csproj" />
   </ItemGroup>
 </Project>

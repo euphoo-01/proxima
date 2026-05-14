@@ -105,8 +105,8 @@
 
                             <Border Classes="proxima-security-status-card">
                                 <StackPanel Spacing="6">
-                                    <TextBlock Classes="proxima-body" Text="Состояние снапшотов" />
-                                    <TextBlock Classes="proxima-caption" Text="{Binding SnapshotStatus}" TextWrapping="Wrap" />
+                                    <TextBlock Classes="proxima-body" Text="Хранение данных" />
+                                    <TextBlock Classes="proxima-caption" Text="PostgreSQL + EF Core Migrations. Модуль синхронизации отключен." TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
 
@@ -138,20 +138,6 @@
                                     <ComboBox Grid.Column="1" Classes="proxima-input proxima-theme-selector" ItemsSource="{Binding ThemeOptions}" SelectedIndex="0" />
                                 </Grid>
                             </Border>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Classes="proxima-settings-section">
-                        <StackPanel Spacing="12">
-                            <TextBlock Classes="proxima-card-title" Text="Данные" />
-                            <Border Classes="proxima-settings-row">
-                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
-                                    <TextBlock Classes="proxima-caption" Text="Синхронизация снапшотов" VerticalAlignment="Center" />
-                                    <ComboBox Grid.Column="1" Classes="proxima-input" ItemsSource="{Binding SyncModeOptions}" SelectedIndex="{Binding SelectedSyncModeIndex}" />
-                                </Grid>
-                            </Border>
-                            <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding ExportSnapshotCommand}" Content="Экспорт снапшота" HorizontalAlignment="Left" />
-                            <Button Classes="proxima-secondary proxima-toolbar" Command="{Binding ImportSnapshotCommand}" Content="Импорт снапшота" HorizontalAlignment="Left" />
                         </StackPanel>
                     </Border>
 

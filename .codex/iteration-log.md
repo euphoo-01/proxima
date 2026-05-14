@@ -777,11 +777,11 @@ API key storage currently uses lightweight local protection placeholder and must
 
 d1c160f feat(settings): add persisted profile/preferences/provider configuration
 
-## Iteration 15 — Encrypted Snapshot Sync
+## Iteration 15 — Legacy Encrypted Snapshot Sync (removed)
 
 ### Scope
 
-Implement encrypted snapshot export/import in `Proxima.Sync`, wire settings sync actions to real service, add conflict detection and Google Drive adapter abstraction.
+Historical iteration for the removed snapshot-sync prototype. The implementation was deleted during the EF Migrations/PostgreSQL cleanup because project policy now keeps data local in the primary PostgreSQL schema without a sync module.
 
 ### User Stories Checked
 
@@ -802,9 +802,9 @@ Implement encrypted snapshot export/import in `Proxima.Sync`, wire settings sync
 
 | Test Type | Command/File | Result |
 | --- | --- | --- |
-| Unit/UI runner | `tests/Proxima.App.Tests` (`SnapshotService_EncryptDecryptAndTamperFail`) | Passed |
+| Unit/UI runner | Removed with the legacy snapshot-sync prototype | Superseded |
 | Regression | `dotnet build Proxima.sln`, `dotnet test Proxima.sln` | Passed |
-| Review | `docs/sync-module-notes.md` | Passed |
+| Review | Removed legacy sync module notes | Superseded |
 
 ### Commands Run
 
@@ -821,7 +821,7 @@ Partial
 
 ### Known Limitations
 
-Google Drive OAuth sync remains stubbed. Snapshot import currently targets local JSON store restoration; full PostgreSQL transactional restore comes with DB module.
+Legacy sync limitations are no longer applicable: the snapshot sync module was removed and persistence now uses PostgreSQL with EF Core migrations.
 
 ### Commit
 

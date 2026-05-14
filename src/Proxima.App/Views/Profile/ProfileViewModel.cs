@@ -463,8 +463,7 @@ public sealed class ProfileViewModel : ViewModelBase
                 current.QuoteProvider,
                 current.QuoteRefreshMinutes,
                 null,
-                current.CurrencyProvider,
-                current.SyncEnabled)).ConfigureAwait(true);
+                current.CurrencyProvider)).ConfigureAwait(true);
 
             if (!result.Succeeded || result.Settings is null)
             {
@@ -533,8 +532,7 @@ public sealed class ProfileViewModel : ViewModelBase
                 QuoteProviderKind.TwelveData,
                 current.QuoteRefreshMinutes,
                 TwelveDataApiKey,
-                current.CurrencyProvider,
-                current.SyncEnabled)).ConfigureAwait(true);
+                current.CurrencyProvider)).ConfigureAwait(true);
 
             if (!result.Succeeded || result.Settings is null)
             {

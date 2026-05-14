@@ -7,8 +7,6 @@ using Proxima.Infrastructure;
 using Proxima.Importing;
 using Proxima.Reporting;
 using Proxima.Reporting.Reports;
-using Proxima.Sync;
-using Proxima.Sync.Snapshots;
 
 namespace Proxima.App.Tests;
 
@@ -26,7 +24,6 @@ internal static class Program
         RuntimeRoutes_ExistForMigratedShellScreens();
         RuntimeViews_ContainExpectedChartAndSecurityElements();
         RedactionHelper_RedactsSensitiveFragments();
-        SnapshotService_EncryptDecryptAndTamperFail().GetAwaiter().GetResult();
         ReportingService_ExportsNonEmptyPdf().GetAwaiter().GetResult();
         Console.WriteLine("Proxima.App.Tests baseline checks passed.");
     }
@@ -166,7 +163,7 @@ internal static class Program
         Assert(dashboardView.Contains("controls:ProximaDonutChart", StringComparison.Ordinal), "Dashboard should include Proxima donut chart control.");
         Assert(assetDetailsView.Contains("controls:ProximaCandlestickChart", StringComparison.Ordinal), "Asset details should include Proxima candlestick chart control.");
         Assert(settingsView.Contains("Сменить пароль", StringComparison.Ordinal), "Settings should expose password change action.");
-        Assert(settingsView.Contains("Экспорт снапшота", StringComparison.Ordinal), "Settings should expose snapshot export action.");
+        Assert(!settingsView.Contains("Экспорт снапшота", StringComparison.Ordinal), "Settings must not expose removed snapshot sync actions.");
     }
 
     private static void RedactionHelper_RedactsSensitiveFragments()
@@ -175,27 +172,6 @@ internal static class Program
         Assert(!redacted.Contains("password", StringComparison.OrdinalIgnoreCase), "Redaction should remove password key fragments.");
         Assert(!redacted.Contains("token", StringComparison.OrdinalIgnoreCase), "Redaction should remove token key fragments.");
     }
-
-    private static async Task SnapshotService_EncryptDecryptAndTamperFail()
-    {
-        string root = Path.Combine(Path.GetTempPath(), "proxima-sync-tests", Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(root);
-        LocalEncryptedSnapshotService service = new(root, "1.0.0", "device-a");
-
-        SnapshotExportResult exported = await service.ExportAsync("Password123!").ConfigureAwait(false);
-        Assert(exported.Succeeded && !string.IsNullOrWhiteSpace(exported.FilePath), "Snapshot export should succeed.");
-
-        SnapshotPreviewResult preview = await service.PreviewImportAsync(exported.FilePath!, "Password123!").ConfigureAwait(false);
-        Assert(preview.Succeeded, "Snapshot preview should decrypt with valid password.");
-
-        string json = await File.ReadAllTextAsync(exported.FilePath!).ConfigureAwait(false);
-        string tampered = json.Replace("A", "B", StringComparison.Ordinal);
-        string tamperedPath = Path.Combine(root, "tampered.pxsnap");
-        await File.WriteAllTextAsync(tamperedPath, tampered).ConfigureAwait(false);
-        SnapshotPreviewResult bad = await service.PreviewImportAsync(tamperedPath, "Password123!").ConfigureAwait(false);
-        Assert(!bad.Succeeded, "Tampered snapshot should fail safely.");
-    }
-
     private static async Task ReportingService_ExportsNonEmptyPdf()
     {
         string outDir = Path.Combine(Path.GetTempPath(), "proxima-report-tests", Guid.NewGuid().ToString("N"));
@@ -227,7 +203,6 @@ internal static class Program
         AssertAssemblyName(typeof(AnalyticsAssemblyMarker), "Proxima.Analytics");
         AssertAssemblyName(typeof(ImportingAssemblyMarker), "Proxima.Importing");
         AssertAssemblyName(typeof(ReportingAssemblyMarker), "Proxima.Reporting");
-        AssertAssemblyName(typeof(SyncAssemblyMarker), "Proxima.Sync");
     }
 
     private static void Domain_HasNoForbiddenDependencies()

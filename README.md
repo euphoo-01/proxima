@@ -8,7 +8,7 @@ Proxima is a local-first desktop financial analytics application for private inv
 - C#
 - Avalonia UI
 - Clean Architecture + MVVM
-- PostgreSQL with EF Core/Npgsql planned for the persistence module
+- PostgreSQL with EF Core/Npgsql migrations
 
 ## Cross-Platform Requirement
 
@@ -26,19 +26,19 @@ src/
   Proxima.Analytics/
   Proxima.Importing/
   Proxima.Reporting/
-  Proxima.Sync/
 tests/
   Proxima.Domain.Tests/
   Proxima.Application.Tests/
   Proxima.Infrastructure.Tests/
   Proxima.Analytics.Tests/
   Proxima.Importing.Tests/
+  Proxima.App.Tests/
 ```
 
 ## Prerequisites
 
 - .NET SDK 10.0.104 or compatible .NET 10 SDK
-- PostgreSQL 16+ for later persistence modules
+- PostgreSQL 16+ for application persistence
 
 ## Build and Test
 
@@ -58,11 +58,10 @@ Default connection (override via `PROXIMA_DB_CONNECTION`):
 
 `Host=localhost;Port=55432;Database=proxima;Username=proxima;Password=proxima`
 
-Apply schema and demo seed manually:
+EF Core migrations are applied automatically by `DatabaseBootstrapService` on application startup. Architecture rules are documented in `docs/architecture-ddd-mvvm-services.md`. To run migrations manually:
 
 ```bash
-psql "postgresql://proxima:proxima@localhost:55432/proxima" -f scripts/sql/0001_initial_schema.sql
-psql "postgresql://proxima:proxima@localhost:55432/proxima" -f scripts/sql/0002_seed_demo.sql
+dotnet ef database update --project src/Proxima.Infrastructure/Proxima.Infrastructure.csproj --startup-project src/Proxima.App/Proxima.App.csproj
 ```
 
 `Proxima.sln` uses `Proxima.App.Tests` as the solution entrypoint so `dotnet build` and `dotnet test` build the full project graph consistently in restricted local environments. Individual projects can still be opened and run directly from `src/` and `tests/`.
@@ -102,7 +101,7 @@ Release gate:
 - Preflight checks: `./scripts/release-preflight.sh`
 - Artifact manifest + SHA256: `./scripts/generate-release-manifest.sh`
 
-The app currently supports local first-run setup, portfolio/asset/transaction management, and a CSV/PDF import preview flow with manual fallback routing. Local profile, portfolio, asset, and transaction data are stored in user local application data JSON stores. Passwords are saved only as PBKDF2-SHA256 metadata, salt and hash. PostgreSQL migrations and EF Core/Npgsql persistence are still implemented in later persistence modules.
+The app currently supports local first-run setup, portfolio/asset/transaction management, and a CSV/PDF import preview flow with manual fallback routing. Local profile, portfolio, asset, transaction, settings, notifications and quote-cache data are persisted in PostgreSQL through EF Core migrations. Passwords are saved only as PBKDF2-SHA256 metadata, salt and hash.
 
 ### CSV Demo Import Format
 
@@ -135,5 +134,4 @@ Module 01 used the custom `mcp__figma__` server for final inspection and capture
 - Market quotes: Twelve Data API (`docs/api-providers.md`).
 
 Current settings module includes provider selection and masked Twelve Data API key input for local configuration.
-Current sync module supports encrypted local snapshot export/import (`.pxsnap`) with AES-GCM and conflict preview. Google Drive adapter is present as a stub.
 Current reporting module supports portfolio and tax draft PDF export to the local reports directory.

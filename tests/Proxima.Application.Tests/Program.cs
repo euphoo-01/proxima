@@ -45,11 +45,11 @@ internal static class Program
         await service.EnsureAsync(new CreateDefaultSettingsRequest(owner, "Demo", UserRole.PrivateInvestor, "demo", "USD")).ConfigureAwait(false);
 
         SettingsOperationResult invalidScale = await service.UpdateAsync(new UpdateSettingsRequest(
-            owner, "Demo", UserRole.PrivateInvestor, "USD", AppLanguage.RU, 2m, QuoteProviderKind.Mock, 15, null, CurrencyProviderKind.Mock, false)).ConfigureAwait(false);
+            owner, "Demo", UserRole.PrivateInvestor, "USD", AppLanguage.RU, 2m, QuoteProviderKind.Mock, 15, null, CurrencyProviderKind.Mock)).ConfigureAwait(false);
         Assert(!invalidScale.Succeeded, "Out-of-range UI scale must be rejected.");
 
         SettingsOperationResult invalidInterval = await service.UpdateAsync(new UpdateSettingsRequest(
-            owner, "Demo", UserRole.PrivateInvestor, "USD", AppLanguage.RU, 1m, QuoteProviderKind.Mock, 500, null, CurrencyProviderKind.Mock, false)).ConfigureAwait(false);
+            owner, "Demo", UserRole.PrivateInvestor, "USD", AppLanguage.RU, 1m, QuoteProviderKind.Mock, 500, null, CurrencyProviderKind.Mock)).ConfigureAwait(false);
         Assert(!invalidInterval.Succeeded, "Out-of-range refresh interval must be rejected.");
     }
 

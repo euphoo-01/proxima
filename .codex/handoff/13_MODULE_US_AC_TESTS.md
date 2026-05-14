@@ -117,7 +117,7 @@ As a maintainer, I want all meaningful changes committed using Conventional Comm
   - `Proxima.Analytics`
   - `Proxima.Importing`
   - `Proxima.Reporting`
-  - `Proxima.Sync`
+  - `removed sync module`
 - Test projects exist:
   - `Proxima.Domain.Tests`
   - `Proxima.Application.Tests`
@@ -1863,12 +1863,9 @@ Required tables exist:
 - transactions;
 - asset_prices;
 - goals;
-- tax_profiles;
-- tax_reports;
-- import_sessions;
-- import_rows;
 - quote_cache;
-- sync_snapshots;
+- user_settings;
+- notifications;
 - audit_log.
 
 ### AC-17.3 Integrity

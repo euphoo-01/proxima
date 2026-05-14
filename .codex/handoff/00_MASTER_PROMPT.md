@@ -103,7 +103,6 @@ Proxima/
     Proxima.Reporting/           # PDF/report generation
     Proxima.Importing/           # CSV/PDF import pipeline
     Proxima.Analytics/           # Portfolio and asset metrics
-    Proxima.Sync/                # encrypted snapshot sync abstractions
   tests/
     Proxima.Domain.Tests/
     Proxima.Application.Tests/

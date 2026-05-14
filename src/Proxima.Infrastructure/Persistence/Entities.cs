@@ -118,44 +118,8 @@ public sealed class UserSettingsEntity
     public int QuoteRefreshMinutes { get; set; }
     public string TwelveDataApiKeyProtected { get; set; } = string.Empty;
     public string CurrencyProvider { get; set; } = "Mock";
-    public bool SyncEnabled { get; set; }
-    public DateTimeOffset? LastSnapshotAt { get; set; }
 }
 
-public sealed class TaxProfileEntity
-{
-    public Guid Id { get; set; }
-    public Guid UserId { get; set; }
-    public string ProfileKind { get; set; } = string.Empty;
-    public DateTimeOffset UpdatedAt { get; set; }
-}
-
-public sealed class TaxReportEntity
-{
-    public Guid Id { get; set; }
-    public Guid PortfolioId { get; set; }
-    public int ReportYear { get; set; }
-    public decimal TaxableBase { get; set; }
-    public decimal TotalTaxDue { get; set; }
-    public string Version { get; set; } = string.Empty;
-    public DateTimeOffset CreatedAt { get; set; }
-}
-
-public sealed class ImportSessionEntity
-{
-    public Guid Id { get; set; }
-    public Guid PortfolioId { get; set; }
-    public string Source { get; set; } = string.Empty;
-    public DateTimeOffset StartedAt { get; set; }
-}
-
-public sealed class ImportRowEntity
-{
-    public Guid Id { get; set; }
-    public Guid ImportSessionId { get; set; }
-    public string Status { get; set; } = string.Empty;
-    public string PayloadJson { get; set; } = string.Empty;
-}
 
 public sealed class QuoteCacheEntity
 {
@@ -168,13 +132,6 @@ public sealed class QuoteCacheEntity
     public string Source { get; set; } = string.Empty;
 }
 
-public sealed class SyncSnapshotEntity
-{
-    public Guid Id { get; set; }
-    public Guid UserId { get; set; }
-    public string FileName { get; set; } = string.Empty;
-    public DateTimeOffset CreatedAt { get; set; }
-}
 
 public sealed class NotificationEntity
 {

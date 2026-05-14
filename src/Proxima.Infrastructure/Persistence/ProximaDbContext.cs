@@ -13,13 +13,8 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
     public DbSet<TransactionEntity> Transactions => Set<TransactionEntity>();
     public DbSet<AssetPriceEntity> AssetPrices => Set<AssetPriceEntity>();
     public DbSet<GoalEntity> Goals => Set<GoalEntity>();
-    public DbSet<TaxProfileEntity> TaxProfiles => Set<TaxProfileEntity>();
-    public DbSet<TaxReportEntity> TaxReports => Set<TaxReportEntity>();
-    public DbSet<ImportSessionEntity> ImportSessions => Set<ImportSessionEntity>();
-    public DbSet<ImportRowEntity> ImportRows => Set<ImportRowEntity>();
     public DbSet<QuoteCacheEntity> QuoteCache => Set<QuoteCacheEntity>();
     public DbSet<UserSettingsEntity> UserSettings => Set<UserSettingsEntity>();
-    public DbSet<SyncSnapshotEntity> SyncSnapshots => Set<SyncSnapshotEntity>();
     public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
     public DbSet<AuditLogEntity> AuditLog => Set<AuditLogEntity>();
 
@@ -119,36 +114,6 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
             e.HasOne<PortfolioEntity>().WithMany().HasForeignKey(x => x.PortfolioId).OnDelete(DeleteBehavior.Restrict);
         });
 
-        model.Entity<TaxProfileEntity>(e =>
-        {
-            e.ToTable("tax_profiles");
-            e.HasKey(x => x.Id);
-            e.HasOne<UserEntity>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
-        });
-
-        model.Entity<TaxReportEntity>(e =>
-        {
-            e.ToTable("tax_reports");
-            e.HasKey(x => x.Id);
-            e.Property(x => x.TaxableBase).HasPrecision(20, 8);
-            e.Property(x => x.TotalTaxDue).HasPrecision(20, 8);
-            e.HasOne<PortfolioEntity>().WithMany().HasForeignKey(x => x.PortfolioId).OnDelete(DeleteBehavior.Restrict);
-        });
-
-        model.Entity<ImportSessionEntity>(e =>
-        {
-            e.ToTable("import_sessions");
-            e.HasKey(x => x.Id);
-            e.HasOne<PortfolioEntity>().WithMany().HasForeignKey(x => x.PortfolioId).OnDelete(DeleteBehavior.Restrict);
-        });
-
-        model.Entity<ImportRowEntity>(e =>
-        {
-            e.ToTable("import_rows");
-            e.HasKey(x => x.Id);
-            e.HasOne<ImportSessionEntity>().WithMany().HasForeignKey(x => x.ImportSessionId).OnDelete(DeleteBehavior.Cascade);
-        });
-
         model.Entity<QuoteCacheEntity>(e =>
         {
             e.ToTable("quote_cache");
@@ -173,13 +138,6 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
             e.Property(x => x.TwelveDataApiKeyProtected).HasMaxLength(2048);
             e.Property(x => x.CurrencyProvider).HasMaxLength(64);
             e.HasOne<UserEntity>().WithMany().HasForeignKey(x => x.OwnerUserId).OnDelete(DeleteBehavior.Cascade);
-        });
-
-        model.Entity<SyncSnapshotEntity>(e =>
-        {
-            e.ToTable("sync_snapshots");
-            e.HasKey(x => x.Id);
-            e.HasOne<UserEntity>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
         });
 
 

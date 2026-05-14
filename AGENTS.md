@@ -94,7 +94,6 @@ src/
   Proxima.Analytics/
   Proxima.Importing/
   Proxima.Reporting/
-  Proxima.Sync/
 
 tests/
   Proxima.Domain.Tests/
@@ -116,7 +115,7 @@ Dependency rules:
 * Financial calculations belong in `Proxima.Analytics` or domain/application services.
 * Import logic belongs in `Proxima.Importing`.
 * PDF/report generation belongs in `Proxima.Reporting`.
-* Sync logic belongs in `Proxima.Sync`.
+* Cross-device sync is out of scope. Do not reintroduce a sync project without explicit approval.
 
 Apply SOLID, DRY, KISS and YAGNI pragmatically.
 
@@ -195,12 +194,11 @@ Use:
 
 * local password gate;
 * password hashing with salt;
-* app-level encryption for sensitive fields/snapshots;
-* encrypted snapshots for backup/sync;
+* app-level encryption for sensitive fields when needed;
 * redacted structured logs;
 * safe parser behavior for imported files.
 
-Google Drive sync, if implemented, must upload/download only encrypted application snapshots.
+Do not add Google Drive/raw database sync. Backup/export flows must be designed separately and explicitly approved.
 
 ## Iteration protocol
 
@@ -291,7 +289,7 @@ git status --short
 For every module:
 
 * add unit tests for domain/application logic;
-* add integration tests for database/import/sync behavior where feasible;
+* add integration tests for database/import behavior where feasible;
 * add UI/headless tests for Avalonia behavior where feasible;
 * document manual smoke tests when UI automation is impractical.
 
@@ -384,7 +382,6 @@ The application must support, at minimum:
 * goals and compound interest forecast;
 * Belarus tax draft page;
 * settings;
-* encrypted snapshot sync abstraction;
 * reporting/PDF export if feasible.
 
 ## Final response requirements

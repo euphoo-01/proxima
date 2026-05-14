@@ -23,27 +23,7 @@ public sealed class PostgresAccountDeletionService(
             cancellationToken).ConfigureAwait(false);
 
         await ctx.Database.ExecuteSqlInterpolatedAsync(
-            $"delete from sync_snapshots where user_id = {userId};",
-            cancellationToken).ConfigureAwait(false);
-
-        await ctx.Database.ExecuteSqlInterpolatedAsync(
             $"delete from user_settings where owner_user_id = {userId};",
-            cancellationToken).ConfigureAwait(false);
-
-        await ctx.Database.ExecuteSqlInterpolatedAsync(
-            $"delete from tax_profiles where user_id = {userId};",
-            cancellationToken).ConfigureAwait(false);
-
-        await ctx.Database.ExecuteSqlInterpolatedAsync(
-            $"delete from tax_reports where portfolio_id in (select id from portfolios where owner_user_id = {userId});",
-            cancellationToken).ConfigureAwait(false);
-
-        await ctx.Database.ExecuteSqlInterpolatedAsync(
-            $"delete from import_rows where import_session_id in (select s.id from import_sessions s join portfolios p on p.id = s.portfolio_id where p.owner_user_id = {userId});",
-            cancellationToken).ConfigureAwait(false);
-
-        await ctx.Database.ExecuteSqlInterpolatedAsync(
-            $"delete from import_sessions where portfolio_id in (select id from portfolios where owner_user_id = {userId});",
             cancellationToken).ConfigureAwait(false);
 
         await ctx.Database.ExecuteSqlInterpolatedAsync(

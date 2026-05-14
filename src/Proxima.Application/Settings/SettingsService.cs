@@ -23,9 +23,7 @@ public sealed class SettingsService(IUserSettingsRepository repository) : ISetti
             QuoteProviderKind.TwelveData,
             15,
             string.Empty,
-            CurrencyProviderKind.Mock,
-            false,
-            null);
+            CurrencyProviderKind.Mock);
 
         await repository.UpsertAsync(settings, cancellationToken).ConfigureAwait(false);
         return settings;
@@ -67,7 +65,6 @@ public sealed class SettingsService(IUserSettingsRepository repository) : ISetti
             QuoteRefreshMinutes = request.QuoteRefreshMinutes,
             TwelveDataApiKeyProtected = protectedKey,
             CurrencyProvider = request.CurrencyProvider,
-            SyncEnabled = request.SyncEnabled,
         };
 
         await repository.UpsertAsync(updated, cancellationToken).ConfigureAwait(false);

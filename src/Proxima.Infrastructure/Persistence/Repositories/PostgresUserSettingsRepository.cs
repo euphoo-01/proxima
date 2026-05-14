@@ -44,8 +44,6 @@ public sealed class PostgresUserSettingsRepository(IProximaUnitOfWorkFactory uow
             existing.QuoteRefreshMinutes = settings.QuoteRefreshMinutes;
             existing.TwelveDataApiKeyProtected = settings.TwelveDataApiKeyProtected;
             existing.CurrencyProvider = settings.CurrencyProvider.ToString();
-            existing.SyncEnabled = settings.SyncEnabled;
-            existing.LastSnapshotAt = settings.LastSnapshotAt;
         }
 
         await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -123,9 +121,7 @@ public sealed class PostgresUserSettingsRepository(IProximaUnitOfWorkFactory uow
             ParseQuoteProvider(x.QuoteProvider),
             x.QuoteRefreshMinutes,
             x.TwelveDataApiKeyProtected,
-            Enum.Parse<CurrencyProviderKind>(x.CurrencyProvider, true),
-            x.SyncEnabled,
-            x.LastSnapshotAt);
+            Enum.Parse<CurrencyProviderKind>(x.CurrencyProvider, true));
     }
 
     private static QuoteProviderKind ParseQuoteProvider(string value)
@@ -151,8 +147,6 @@ public sealed class PostgresUserSettingsRepository(IProximaUnitOfWorkFactory uow
             QuoteRefreshMinutes = settings.QuoteRefreshMinutes,
             TwelveDataApiKeyProtected = settings.TwelveDataApiKeyProtected,
             CurrencyProvider = settings.CurrencyProvider.ToString(),
-            SyncEnabled = settings.SyncEnabled,
-            LastSnapshotAt = settings.LastSnapshotAt,
         };
     }
 }

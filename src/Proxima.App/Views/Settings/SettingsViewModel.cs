@@ -16,8 +16,6 @@ public sealed class SettingsViewModel : ViewModelBase
     private readonly DelegateCommand _saveCommand;
     private readonly DelegateCommand _reloadCommand;
     private readonly DelegateCommand _changePasswordCommand;
-    private readonly DelegateCommand _exportSnapshotCommand;
-    private readonly DelegateCommand _importSnapshotCommand;
 
     private UserRole _selectedRole = UserRole.PrivateInvestor;
     private AppLanguage _selectedLanguage = AppLanguage.RU;
@@ -28,8 +26,6 @@ public sealed class SettingsViewModel : ViewModelBase
     private QuoteProviderKind _selectedQuoteProvider = QuoteProviderKind.TwelveData;
     private int _quoteRefreshMinutes = 15;
     private CurrencyProviderKind _selectedCurrencyProvider = CurrencyProviderKind.Mock;
-    private bool _syncEnabled;
-    private int _selectedSyncModeIndex;
 
     private bool _isLoading;
     private bool _isSaving;
@@ -38,7 +34,6 @@ public sealed class SettingsViewModel : ViewModelBase
     private string _statusMessage = "Загрузка настроек...";
     private string _errorMessage = string.Empty;
     private string _securityStatus = "Локальный пароль включен.";
-    private string _snapshotStatus = "Снапшоты еще не создавались.";
 
     public SettingsViewModel(ISettingsService settingsService, IRuntimeUserContext runtimeUserContext, IAppNotificationCenter notificationCenter)
     {
@@ -52,13 +47,10 @@ public sealed class SettingsViewModel : ViewModelBase
         QuoteProviderOptions = [QuoteProviderKind.TwelveData];
         CurrencyProviderOptions = Enum.GetValues<CurrencyProviderKind>();
         ThemeOptions = ["Светлая"];
-        SyncModeOptions = ["Выключена", "Включена"];
 
         _saveCommand = new DelegateCommand(_ => _ = SaveAsync());
         _reloadCommand = new DelegateCommand(_ => _ = LoadAsync());
         _changePasswordCommand = new DelegateCommand(_ => ChangePassword());
-        _exportSnapshotCommand = new DelegateCommand(_ => ExportSnapshot());
-        _importSnapshotCommand = new DelegateCommand(_ => ImportSnapshot());
 
         _ = LoadAsync();
     }
@@ -78,17 +70,11 @@ public sealed class SettingsViewModel : ViewModelBase
     public IReadOnlyList<CurrencyProviderKind> CurrencyProviderOptions { get; }
 
     public IReadOnlyList<string> ThemeOptions { get; }
-    public IReadOnlyList<string> SyncModeOptions { get; }
-
     public ICommand SaveCommand => _saveCommand;
 
     public ICommand ReloadCommand => _reloadCommand;
 
     public ICommand ChangePasswordCommand => _changePasswordCommand;
-
-    public ICommand ExportSnapshotCommand => _exportSnapshotCommand;
-
-    public ICommand ImportSnapshotCommand => _importSnapshotCommand;
 
     public string DisplayName
     {
@@ -142,24 +128,6 @@ public sealed class SettingsViewModel : ViewModelBase
     {
         get => _selectedCurrencyProvider;
         set => SetProperty(ref _selectedCurrencyProvider, value);
-    }
-
-    public bool SyncEnabled
-    {
-        get => _syncEnabled;
-        private set => SetProperty(ref _syncEnabled, value);
-    }
-
-    public int SelectedSyncModeIndex
-    {
-        get => _selectedSyncModeIndex;
-        set
-        {
-            if (SetProperty(ref _selectedSyncModeIndex, value))
-            {
-                SyncEnabled = value == 1;
-            }
-        }
     }
 
     public bool IsLoading
@@ -228,12 +196,6 @@ public sealed class SettingsViewModel : ViewModelBase
     {
         get => _securityStatus;
         private set => SetProperty(ref _securityStatus, value);
-    }
-
-    public string SnapshotStatus
-    {
-        get => _snapshotStatus;
-        private set => SetProperty(ref _snapshotStatus, value);
     }
 
     public static SettingsViewModel CreateDesignData()
@@ -314,8 +276,7 @@ public sealed class SettingsViewModel : ViewModelBase
                 SelectedQuoteProvider,
                 QuoteRefreshMinutes,
                 null,
-                SelectedCurrencyProvider,
-                SyncEnabled)).ConfigureAwait(true);
+                SelectedCurrencyProvider)).ConfigureAwait(true);
 
             if (!result.Succeeded || result.Settings is null)
             {
@@ -344,16 +305,6 @@ public sealed class SettingsViewModel : ViewModelBase
         StatusMessage = "Смена пароля будет доступна после миграции auth в новый AppShell.";
     }
 
-    private void ExportSnapshot()
-    {
-        StatusMessage = "Экспорт снапшота будет подключен через Proxima.Sync.";
-    }
-
-    private void ImportSnapshot()
-    {
-        StatusMessage = "Импорт снапшота будет подключен через Proxima.Sync.";
-    }
-
     private void Apply(UserSettings settings)
     {
         DisplayName = settings.DisplayName;
@@ -365,12 +316,6 @@ public sealed class SettingsViewModel : ViewModelBase
         SelectedQuoteProvider = QuoteProviderKind.TwelveData;
         QuoteRefreshMinutes = settings.QuoteRefreshMinutes;
         SelectedCurrencyProvider = settings.CurrencyProvider;
-        SyncEnabled = settings.SyncEnabled;
-        SelectedSyncModeIndex = settings.SyncEnabled ? 1 : 0;
-
-        SnapshotStatus = settings.LastSnapshotAt is null
-            ? "Снапшоты еще не создавались."
-            : $"Последний снапшот: {settings.LastSnapshotAt:yyyy-MM-dd HH:mm}";
     }
 
     private sealed class DelegateCommand(Action<object?> execute) : ICommand
@@ -401,9 +346,7 @@ public sealed class SettingsViewModel : ViewModelBase
                 QuoteProviderKind.TwelveData,
                 15,
                 string.Empty,
-                CurrencyProviderKind.Mock,
-                false,
-                null));
+                CurrencyProviderKind.Mock));
         }
 
         public Task<UserSettings?> GetAsync(Guid ownerUserId, CancellationToken cancellationToken = default)
@@ -424,9 +367,7 @@ public sealed class SettingsViewModel : ViewModelBase
                 request.QuoteProvider,
                 request.QuoteRefreshMinutes,
                 string.Empty,
-                request.CurrencyProvider,
-                request.SyncEnabled,
-                DateTimeOffset.UtcNow);
+                request.CurrencyProvider);
 
             return Task.FromResult(SettingsOperationResult.Success(updated));
         }
