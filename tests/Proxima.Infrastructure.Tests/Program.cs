@@ -73,9 +73,9 @@ internal static class Program
 
         await using ProximaDbContext verify = fixture.CreateContext();
         UserEntity row = await verify.Users.AsNoTracking().SingleAsync().ConfigureAwait(false);
-        string combinedCredentialText = $"{row.PasswordAlgorithm}:{Convert.ToBase64String(row.PasswordSalt)}:{Convert.ToBase64String(row.PasswordHash)}";
-        Assert(!combinedCredentialText.Contains("Proxima2026", StringComparison.Ordinal), "Database credentials must not contain plaintext password.");
-        Assert(row.PasswordAlgorithm == Pbkdf2PasswordHasher.AlgorithmName, "Database credentials must store password algorithm metadata.");
+        Assert(!row.PasswordHash.Contains("Proxima2026", StringComparison.Ordinal), "Database credential must not contain plaintext password.");
+        Assert(row.PasswordHash.StartsWith("$" + Pbkdf2PasswordHasher.AlgorithmName + "$", StringComparison.Ordinal), "Database credential must store password algorithm metadata inside the encoded hash.");
+        Assert(row.PasswordHash.Contains("$v=", StringComparison.Ordinal) && row.PasswordHash.Contains("$i=", StringComparison.Ordinal), "Database credential must store version and work-factor metadata inside the encoded hash.");
         Assert(row.FailedUnlockAttempts == 0, "Successful unlock must reset failed attempt counter.");
     }
 
@@ -338,10 +338,10 @@ internal static class Program
         PasswordCredential first = hasher.Hash("Proxima2026");
         PasswordCredential second = hasher.Hash("Proxima2026");
 
-        Assert(first.Hash.Length > 0, "Password hash must not be empty.");
-        Assert(first.Salt.Length > 0, "Password salt must not be empty.");
-        Assert(!first.Salt.SequenceEqual(second.Salt), "Same password must use different salts.");
-        Assert(!first.Hash.SequenceEqual(second.Hash), "Same password with different salts must produce different hashes.");
+        Assert(first.EncodedHash.Length > 0, "Encoded password hash must not be empty.");
+        Assert(first.EncodedHash.StartsWith("$" + Pbkdf2PasswordHasher.AlgorithmName + "$", StringComparison.Ordinal), "Encoded password hash must include the algorithm.");
+        Assert(first.EncodedHash.Contains("$v=", StringComparison.Ordinal) && first.EncodedHash.Contains("$i=", StringComparison.Ordinal), "Encoded password hash must include version and iterations.");
+        Assert(!string.Equals(first.EncodedHash, second.EncodedHash, StringComparison.Ordinal), "Same password must use different salts and encoded hashes.");
         Assert(hasher.Verify("Proxima2026", first), "Correct password must verify.");
         Assert(!hasher.Verify("WrongPassword2026", first), "Incorrect password must fail.");
     }
@@ -416,11 +416,7 @@ internal static class Program
                 DisplayName = login,
                 Login = login,
                 Role = UserRole.PrivateInvestor.ToString(),
-                PasswordAlgorithm = string.Empty,
-                PasswordSalt = [],
-                PasswordHash = [],
-                PasswordIterations = 0,
-                PasswordVersion = 0,
+                PasswordHash = string.Empty,
                 FailedUnlockAttempts = 0,
                 CreatedAt = now,
                 UpdatedAt = now,

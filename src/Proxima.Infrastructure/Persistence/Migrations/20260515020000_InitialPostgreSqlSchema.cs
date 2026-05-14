@@ -19,11 +19,7 @@ public partial class InitialPostgreSqlSchema : Migration
               display_name varchar(128) not null,
               login varchar(128) not null,
               role varchar(64) not null,
-              password_algorithm varchar(64) not null default '',
-              password_salt bytea not null default decode('', 'hex'),
-              password_hash bytea not null default decode('', 'hex'),
-              password_iterations int not null default 0,
-              password_version int not null default 0,
+              password_hash text not null default '',
               failed_unlock_attempts int not null default 0,
               created_at timestamptz not null,
               updated_at timestamptz not null

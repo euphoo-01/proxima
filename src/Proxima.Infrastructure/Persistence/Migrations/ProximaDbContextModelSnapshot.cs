@@ -24,11 +24,7 @@ public sealed class ProximaDbContextModelSnapshot : ModelSnapshot
             entity.Property(e => e.DisplayName).HasColumnName("display_name").HasMaxLength(128).IsRequired();
             entity.Property(e => e.Login).HasColumnName("login").HasMaxLength(128).IsRequired();
             entity.Property(e => e.Role).HasColumnName("role").HasMaxLength(64).IsRequired();
-            entity.Property(e => e.PasswordAlgorithm).HasColumnName("password_algorithm").HasMaxLength(64).IsRequired();
-            entity.Property(e => e.PasswordSalt).HasColumnName("password_salt").HasColumnType("bytea").IsRequired();
-            entity.Property(e => e.PasswordHash).HasColumnName("password_hash").HasColumnType("bytea").IsRequired();
-            entity.Property(e => e.PasswordIterations).HasColumnName("password_iterations");
-            entity.Property(e => e.PasswordVersion).HasColumnName("password_version");
+            entity.Property(e => e.PasswordHash).HasColumnName("password_hash").HasColumnType("text").IsRequired();
             entity.Property(e => e.FailedUnlockAttempts).HasColumnName("failed_unlock_attempts");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");

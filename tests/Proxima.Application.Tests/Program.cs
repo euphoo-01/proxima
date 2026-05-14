@@ -314,12 +314,12 @@ internal static class Program
     {
         public PasswordCredential Hash(string password)
         {
-            return new PasswordCredential("test", [1, 2, 3], System.Text.Encoding.UTF8.GetBytes("hashed:" + password), 1, 1);
+            return new PasswordCredential("$test$v=1$i=1$salt$hashed:" + password);
         }
 
         public bool Verify(string password, PasswordCredential credential)
         {
-            return credential.Hash.SequenceEqual(System.Text.Encoding.UTF8.GetBytes("hashed:" + password));
+            return string.Equals(credential.EncodedHash, "$test$v=1$i=1$salt$hashed:" + password, StringComparison.Ordinal);
         }
     }
 

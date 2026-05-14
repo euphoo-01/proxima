@@ -6,11 +6,7 @@ public sealed class UserEntity
     public string DisplayName { get; set; } = string.Empty;
     public string Login { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
-    public string PasswordAlgorithm { get; set; } = string.Empty;
-    public byte[] PasswordSalt { get; set; } = [];
-    public byte[] PasswordHash { get; set; } = [];
-    public int PasswordIterations { get; set; }
-    public int PasswordVersion { get; set; }
+    public string PasswordHash { get; set; } = string.Empty;
     public int FailedUnlockAttempts { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }

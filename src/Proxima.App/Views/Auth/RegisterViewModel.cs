@@ -217,7 +217,7 @@ public sealed class RegisterViewModel : ViewModelBase
                 request.DisplayName,
                 request.Login,
                 request.Role,
-                new PasswordCredential("design", [1], [1], 1, 1),
+                new PasswordCredential("$design$v=1$i=1$salt$hash"),
                 DateTimeOffset.UtcNow,
                 DateTimeOffset.UtcNow,
                 0);
@@ -232,7 +232,7 @@ public sealed class RegisterViewModel : ViewModelBase
                 "Design",
                 login,
                 UserRole.PrivateInvestor,
-                new PasswordCredential("design", [1], [1], 1, 1),
+                new PasswordCredential("$design$v=1$i=1$salt$hash"),
                 DateTimeOffset.UtcNow,
                 DateTimeOffset.UtcNow,
                 0);

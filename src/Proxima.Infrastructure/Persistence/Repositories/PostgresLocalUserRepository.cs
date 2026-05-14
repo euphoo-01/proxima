@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Proxima.Application.Auth;
 using Proxima.Domain.Auth;
+using Proxima.Infrastructure.Persistence.UnitOfWork;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 
@@ -14,7 +15,7 @@ public sealed class PostgresLocalUserRepository(
         await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
         return await lease.Context.Users
             .AsNoTracking()
-            .AnyAsync(x => x.PasswordIterations > 0 && x.PasswordVersion > 0, cancellationToken)
+            .AnyAsync(x => x.PasswordHash != string.Empty, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -29,7 +30,7 @@ public sealed class PostgresLocalUserRepository(
         await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
         UserEntity? entity = await lease.Context.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Login == normalizedLogin && x.PasswordIterations > 0 && x.PasswordVersion > 0, cancellationToken)
+            .FirstOrDefaultAsync(x => x.Login == normalizedLogin && x.PasswordHash != string.Empty, cancellationToken)
             .ConfigureAwait(false);
 
         return entity is null ? null : ToDomain(entity);
@@ -77,11 +78,7 @@ public sealed class PostgresLocalUserRepository(
         entity.DisplayName = profile.DisplayName.Trim();
         entity.Login = normalizedLogin;
         entity.Role = profile.Role.ToString();
-        entity.PasswordAlgorithm = profile.Credential.Algorithm;
-        entity.PasswordSalt = profile.Credential.Salt;
-        entity.PasswordHash = profile.Credential.Hash;
-        entity.PasswordIterations = profile.Credential.Iterations;
-        entity.PasswordVersion = profile.Credential.Version;
+        entity.PasswordHash = profile.Credential.EncodedHash;
         entity.FailedUnlockAttempts = profile.FailedUnlockAttempts;
         entity.UpdatedAt = profile.UpdatedAt;
 
@@ -109,12 +106,7 @@ public sealed class PostgresLocalUserRepository(
             entity.DisplayName,
             entity.Login,
             Enum.Parse<UserRole>(entity.Role, ignoreCase: true),
-            new PasswordCredential(
-                entity.PasswordAlgorithm,
-                entity.PasswordSalt,
-                entity.PasswordHash,
-                entity.PasswordIterations,
-                entity.PasswordVersion),
+            new PasswordCredential(entity.PasswordHash),
             entity.CreatedAt,
             entity.UpdatedAt,
             entity.FailedUnlockAttempts);
@@ -128,11 +120,7 @@ public sealed class PostgresLocalUserRepository(
             DisplayName = profile.DisplayName.Trim(),
             Login = NormalizeLogin(profile.Login),
             Role = profile.Role.ToString(),
-            PasswordAlgorithm = profile.Credential.Algorithm,
-            PasswordSalt = profile.Credential.Salt,
-            PasswordHash = profile.Credential.Hash,
-            PasswordIterations = profile.Credential.Iterations,
-            PasswordVersion = profile.Credential.Version,
+            PasswordHash = profile.Credential.EncodedHash,
             FailedUnlockAttempts = profile.FailedUnlockAttempts,
             CreatedAt = profile.CreatedAt,
             UpdatedAt = profile.UpdatedAt,
