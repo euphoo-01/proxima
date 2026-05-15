@@ -14,7 +14,8 @@ public sealed class SimplePdfReportService : IReportService
 
     public ReportPreviewResult PreviewPortfolio(PortfolioReportRequest request)
     {
-        if (!ValidateOutputDirectory(request.OutputDirectory, out string message))
+        PortfolioReportRequest safeRequest = NormalizePortfolioRequest(request);
+        if (!ValidateOutputDirectory(safeRequest.OutputDirectory, out string message))
         {
             return new ReportPreviewResult(false, message, []);
         }
@@ -23,9 +24,10 @@ public sealed class SimplePdfReportService : IReportService
         [
             "Portfolio Summary",
             "Allocation",
+            "Allocation chart",
             "Top Assets",
-            "Risk Metrics",
-            "Transaction Summary",
+            "Portfolio Metrics",
+            "Asset table",
             "Disclaimer",
         ];
 
@@ -53,7 +55,13 @@ public sealed class SimplePdfReportService : IReportService
 
     public async Task<ReportExportResult> ExportPortfolioPdfAsync(PortfolioReportRequest request, CancellationToken cancellationToken = default)
     {
-        if (!ValidateOutputDirectory(request.OutputDirectory, out string message))
+        if (request is null)
+        {
+            return new ReportExportResult(false, "Portfolio export failed: request is empty.", null);
+        }
+
+        PortfolioReportRequest safeRequest = NormalizePortfolioRequest(request);
+        if (!ValidateOutputDirectory(safeRequest.OutputDirectory, out string message))
         {
             return new ReportExportResult(false, message, null);
         }
@@ -61,34 +69,37 @@ public sealed class SimplePdfReportService : IReportService
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Directory.CreateDirectory(request.OutputDirectory);
-            string path = Path.Combine(request.OutputDirectory, BuildFileName("portfolio-report", request.PortfolioName));
+            Directory.CreateDirectory(safeRequest.OutputDirectory);
+            string path = Path.Combine(safeRequest.OutputDirectory, BuildFileName("portfolio-report", safeRequest.PortfolioName));
 
             EnsureFontResolver();
             using PdfDocument document = new();
             document.Info.Title = "Proxima Portfolio Report";
             document.Info.Author = "Proxima";
-            document.Info.Subject = request.PortfolioName;
+            document.Info.Subject = safeRequest.PortfolioName;
             document.Info.CreationDate = DateTime.Now;
 
-            ReportCanvas canvas = new(document, "Отчет по портфелю", request.PortfolioName);
-            canvas.DrawTitle("Отчет по портфелю", request.PeriodLabel);
+            ReportCanvas canvas = new(document, "Отчет по портфелю", safeRequest.PortfolioName);
+            canvas.DrawTitle("Отчет по текущему портфелю", safeRequest.PeriodLabel);
             canvas.DrawKpiCards([
-                new KpiCard("Стоимость портфеля", FormatMoney(request.TotalValue, request.Currency), "Все активы в базовой валюте", ReportPalette.BlueTint),
-                new KpiCard("P&L", FormatMoney(request.ProfitLoss, request.Currency), "Финансовый результат", request.ProfitLoss >= 0m ? ReportPalette.GreenTint : ReportPalette.RedTint),
-                new KpiCard("Операции", request.TransactionCount.ToString(CultureInfo.InvariantCulture), "Количество транзакций", ReportPalette.GrayTint),
+                new KpiCard("Стоимость портфеля", FormatMoney(safeRequest.TotalValue, safeRequest.Currency), "Все активы в базовой валюте", ReportPalette.BlueTint),
+                new KpiCard("P&L", FormatMoney(safeRequest.ProfitLoss, safeRequest.Currency), "Финансовый результат", safeRequest.ProfitLoss >= 0m ? ReportPalette.GreenTint : ReportPalette.RedTint),
+                new KpiCard("Операции", safeRequest.TransactionCount.ToString(CultureInfo.InvariantCulture), "Количество транзакций", ReportPalette.GrayTint),
             ]);
 
+            canvas.DrawSectionTitle("Основные показатели");
+            canvas.DrawSimpleRows(safeRequest.RiskMetrics.Select(item => new SimpleRow(item.Metric, item.Value, "Показатель портфеля")).ToList());
+
             canvas.DrawSectionTitle("Распределение портфеля");
-            canvas.DrawSimpleRows(request.Allocation.Select(item => new SimpleRow(item.Category, FormatMoney(item.Value, request.Currency), "Категория портфеля")).ToList());
+            canvas.DrawSimpleRows(safeRequest.Allocation.Select(item => new SimpleRow(item.Category, FormatMoney(item.Value, safeRequest.Currency), "Категория портфеля")).ToList());
+            canvas.DrawHorizontalBars(safeRequest.Allocation, safeRequest.Currency);
 
             canvas.DrawSectionTitle("Крупнейшие активы");
-            canvas.DrawSimpleRows(request.TopAssets.Select(item => new SimpleRow(item.Asset, FormatMoney(item.Value, request.Currency), "Текущая оценка")).ToList());
+            canvas.DrawSimpleRows(safeRequest.TopAssets.Select(item => new SimpleRow(item.Asset, FormatMoney(item.Value, safeRequest.Currency), "Текущая оценка")).ToList());
+            canvas.DrawHorizontalBars(safeRequest.TopAssets, safeRequest.Currency);
 
-            canvas.DrawSectionTitle("Риск-метрики");
-            canvas.DrawSimpleRows(request.RiskMetrics.Select(item => new SimpleRow(item.Metric, item.Value, string.Empty)).ToList());
-
-            canvas.DrawDisclaimer(request.Disclaimer);
+            canvas.DrawAssetTable(safeRequest.AssetRows ?? [], safeRequest.Currency);
+            canvas.DrawDisclaimer(safeRequest.Disclaimer);
             canvas.Save(path);
             await Task.CompletedTask.ConfigureAwait(false);
             return new ReportExportResult(true, "Portfolio report exported.", path);
@@ -96,7 +107,8 @@ public sealed class SimplePdfReportService : IReportService
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             Exception root = ex.GetBaseException();
-            return new ReportExportResult(false, $"Portfolio export failed: {root.Message}", null);
+            string rootMessage = string.IsNullOrWhiteSpace(root.Message) ? root.GetType().Name : root.Message;
+            return new ReportExportResult(false, $"Portfolio export failed: {root.GetType().Name}: {rootMessage}", null);
         }
     }
 
@@ -252,6 +264,27 @@ public sealed class SimplePdfReportService : IReportService
 
         message = string.Empty;
         return true;
+    }
+
+
+    private static PortfolioReportRequest NormalizePortfolioRequest(PortfolioReportRequest request)
+    {
+        IReadOnlyList<(string Category, decimal Value)> allocation = request.Allocation ?? Array.Empty<(string Category, decimal Value)>();
+        IReadOnlyList<(string Asset, decimal Value)> topAssets = request.TopAssets ?? Array.Empty<(string Asset, decimal Value)>();
+        IReadOnlyList<(string Metric, string Value)> riskMetrics = request.RiskMetrics ?? Array.Empty<(string Metric, string Value)>();
+
+        return request with
+        {
+            PortfolioName = SafeText(request.PortfolioName, "Основной портфель"),
+            PeriodLabel = SafeText(request.PeriodLabel, $"Срез на {DateTime.Now:dd.MM.yyyy}"),
+            Currency = SafeText(request.Currency, "USD"),
+            Disclaimer = SafeText(request.Disclaimer, "Отчет носит информационный характер."),
+            Allocation = allocation,
+            TopAssets = topAssets,
+            RiskMetrics = riskMetrics,
+            AssetRows = request.AssetRows ?? Array.Empty<PortfolioReportAsset>(),
+            OutputDirectory = SafeText(request.OutputDirectory, ProximaReportingComposition.GetDefaultReportDirectory()),
+        };
     }
 
     private static TaxReportRequest NormalizeTaxRequest(TaxReportRequest request)
@@ -480,6 +513,90 @@ public sealed class SimplePdfReportService : IReportService
             }
 
             _y += 8d;
+        }
+
+        public void DrawHorizontalBars(IReadOnlyList<(string Label, decimal Value)>? rows, string currency)
+        {
+            rows ??= Array.Empty<(string Label, decimal Value)>();
+            IReadOnlyList<(string Label, decimal Value)> visibleRows = rows
+                .Where(static row => row.Value > 0m)
+                .OrderByDescending(static row => row.Value)
+                .Take(8)
+                .ToArray();
+
+            if (visibleRows.Count == 0)
+            {
+                DrawCallout("График недоступен", "Для построения графика распределения пока нет положительных значений.", ReportPalette.GrayTint);
+                return;
+            }
+
+            EnsureSpace(46d + visibleRows.Count * 34d);
+            decimal max = visibleRows.Max(static row => row.Value);
+            double labelWidth = 142d;
+            double barWidth = 245d;
+            double amountWidth = 100d;
+
+            DrawCallout("График", "Горизонтальные бары показывают относительный вес категорий и крупнейших активов в текущем портфеле.", ReportPalette.BlueTint);
+
+            foreach ((string label, decimal value) in visibleRows)
+            {
+                EnsureSpace(34d);
+                double y = _y;
+                double fillWidth = max <= 0m ? 0d : Math.Max(8d, (double)(value / max) * barWidth);
+                DrawText(label, _bodyBoldFont, ReportPalette.Text, new XRect(Margin, y + 2d, labelWidth - 10d, 18d));
+                DrawRoundedRect(Margin + labelWidth, y + 5d, barWidth, 10d, ReportPalette.GrayTint, ReportPalette.Border);
+                DrawRoundedRect(Margin + labelWidth, y + 5d, fillWidth, 10d, ReportPalette.Navy, ReportPalette.NavyPen);
+                _gfx.DrawString(FormatMoney(value, currency), _bodyBoldFont, ReportPalette.Navy, new XRect(Margin + labelWidth + barWidth + 12d, y + 1d, amountWidth, 16d), XStringFormats.TopRight);
+                _y += 30d;
+            }
+
+            _y += 10d;
+        }
+
+        public void DrawAssetTable(IReadOnlyList<PortfolioReportAsset>? assets, string currency)
+        {
+            DrawSectionTitle("Список активов");
+            assets ??= Array.Empty<PortfolioReportAsset>();
+            if (assets.Count == 0)
+            {
+                DrawCallout("Нет активов", "В текущем портфеле нет активов для вывода в отчет.", ReportPalette.GrayTint);
+                return;
+            }
+
+            double tableWidth = PageWidth - Margin * 2d;
+            double tickerWidth = 70d;
+            double nameWidth = 128d;
+            double typeWidth = 68d;
+            double qtyWidth = 72d;
+            double priceWidth = 82d;
+            double valueWidth = tableWidth - tickerWidth - nameWidth - typeWidth - qtyWidth - priceWidth;
+
+            EnsureSpace(32d);
+            DrawRoundedRect(Margin, _y, tableWidth, 27d, ReportPalette.Navy, ReportPalette.NavyPen);
+            _gfx.DrawString("Тикер", _bodyBoldFont, XBrushes.White, new XRect(Margin + 10d, _y + 8d, tickerWidth - 14d, 12d), XStringFormats.TopLeft);
+            _gfx.DrawString("Актив", _bodyBoldFont, XBrushes.White, new XRect(Margin + tickerWidth, _y + 8d, nameWidth - 8d, 12d), XStringFormats.TopLeft);
+            _gfx.DrawString("Тип", _bodyBoldFont, XBrushes.White, new XRect(Margin + tickerWidth + nameWidth, _y + 8d, typeWidth - 8d, 12d), XStringFormats.TopLeft);
+            _gfx.DrawString("Кол-во", _bodyBoldFont, XBrushes.White, new XRect(Margin + tickerWidth + nameWidth + typeWidth, _y + 8d, qtyWidth - 8d, 12d), XStringFormats.TopRight);
+            _gfx.DrawString("Цена", _bodyBoldFont, XBrushes.White, new XRect(Margin + tickerWidth + nameWidth + typeWidth + qtyWidth, _y + 8d, priceWidth - 8d, 12d), XStringFormats.TopRight);
+            _gfx.DrawString("Стоимость", _bodyBoldFont, XBrushes.White, new XRect(Margin + tickerWidth + nameWidth + typeWidth + qtyWidth + priceWidth, _y + 8d, valueWidth - 10d, 12d), XStringFormats.TopRight);
+            _y += 27d;
+
+            foreach (PortfolioReportAsset asset in assets)
+            {
+                EnsureSpace(42d);
+                double y = _y;
+                DrawRoundedRect(Margin, y, tableWidth, 38d, XBrushes.White, ReportPalette.Border);
+                DrawText(asset.Ticker, _bodyBoldFont, ReportPalette.Text, new XRect(Margin + 10d, y + 8d, tickerWidth - 14d, 13d));
+                DrawText(asset.Name, _smallFont, ReportPalette.Muted, new XRect(Margin + tickerWidth, y + 7d, nameWidth - 8d, 24d));
+                DrawText(asset.Type, _smallFont, ReportPalette.Text, new XRect(Margin + tickerWidth + nameWidth, y + 8d, typeWidth - 8d, 13d));
+                _gfx.DrawString(SafeText(asset.Quantity), _smallFont, ReportPalette.Text, new XRect(Margin + tickerWidth + nameWidth + typeWidth, y + 8d, qtyWidth - 8d, 13d), XStringFormats.TopRight);
+                _gfx.DrawString(SafeText(asset.CurrentPrice), _smallFont, ReportPalette.Text, new XRect(Margin + tickerWidth + nameWidth + typeWidth + qtyWidth, y + 8d, priceWidth - 8d, 13d), XStringFormats.TopRight);
+                _gfx.DrawString(SafeText(asset.TotalValue), _bodyBoldFont, ReportPalette.Navy, new XRect(Margin + tickerWidth + nameWidth + typeWidth + qtyWidth + priceWidth, y + 8d, valueWidth - 10d, 13d), XStringFormats.TopRight);
+                _gfx.DrawString($"Доля {SafeText(asset.Share)} · 24ч {SafeText(asset.Change24H)}", _smallFont, ReportPalette.Muted, new XRect(Margin + tickerWidth + nameWidth + typeWidth, y + 22d, tableWidth - tickerWidth - nameWidth - typeWidth - 10d, 12d), XStringFormats.TopRight);
+                _y += 42d;
+            }
+
+            _y += 10d;
         }
 
         public void DrawRateNote(string note)

@@ -11,7 +11,18 @@ public sealed record PortfolioReportRequest(
     int TransactionCount,
     string Currency,
     string Disclaimer,
-    string OutputDirectory);
+    string OutputDirectory,
+    IReadOnlyList<PortfolioReportAsset>? AssetRows = null);
+
+public sealed record PortfolioReportAsset(
+    string Ticker,
+    string Name,
+    string Type,
+    string Quantity,
+    string CurrentPrice,
+    string TotalValue,
+    string Share,
+    string Change24H);
 
 public sealed record TaxReportRequest(
     string UserDisplayName,

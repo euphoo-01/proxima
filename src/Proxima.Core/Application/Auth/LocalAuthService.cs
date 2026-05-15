@@ -68,6 +68,11 @@ public sealed class LocalAuthService(
         {
             return AuthResult.Failure(AuthFailureReason.StorageUnavailable, "Нет доступа к локальному хранилищу профиля.");
         }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("same login", StringComparison.OrdinalIgnoreCase)
+            || ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+        {
+            return AuthResult.Failure(AuthFailureReason.ProfileAlreadyExists, "Пользователь с таким логином уже существует.");
+        }
     }
 
     public async Task<AuthResult> UnlockAsync(string login, string password, CancellationToken cancellationToken = default)

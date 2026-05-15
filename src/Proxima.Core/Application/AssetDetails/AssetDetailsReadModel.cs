@@ -1,3 +1,5 @@
+using Proxima.Core.Domain.Assets;
+
 namespace Proxima.Core.Application.AssetDetails;
 
 public interface IAssetDetailsService
@@ -12,6 +14,7 @@ public sealed record AssetDetailsReadModel(
     Guid AssetId,
     string AssetName,
     string AssetTicker,
+    AssetType AssetType,
     string LogoText,
     string PriceText,
     string DeltaText,

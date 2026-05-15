@@ -350,7 +350,7 @@ public sealed class AssetsViewModel : ViewModelBase
 
     public string RefreshButtonText => IsBusy ? "Обновляем..." : "Обновить котировки";
 
-    public string ExportReportButtonText => IsBusy ? "Формируем..." : "Экспорт отчёта";
+    public string ExportReportButtonText => IsBusy ? "Формируем..." : "Скачать отчет";
 
     public bool CanExportReport => HasContent && !IsBusy && _allAssets.Count > 0;
 
@@ -1162,8 +1162,8 @@ public sealed class AssetsViewModel : ViewModelBase
             if (result.Succeeded)
             {
                 string message = string.IsNullOrWhiteSpace(result.OutputPath)
-                    ? "PDF-отчет по активам сформирован."
-                    : $"PDF-отчет по активам сохранен: {result.OutputPath}";
+                    ? "PDF-отчет по текущему портфелю сформирован."
+                    : $"PDF-отчет по текущему портфелю сохранен: {result.OutputPath}";
 
                 await _notificationCenter.NotifyAsync(AppNotificationLevel.Success, "Отчет сформирован", message, "Все активы").ConfigureAwait(true);
                 return;
@@ -1200,26 +1200,41 @@ public sealed class AssetsViewModel : ViewModelBase
             .Select(static item => (Asset: $"{item.Ticker} — {item.Name}", Value: decimal.Round(item.Value, 2)))
             .ToArray();
 
-        IReadOnlyList<(string Metric, string Value)> riskMetrics =
+        IReadOnlyList<(string Metric, string Value)> portfolioMetrics =
         [
             ("Прирост", GrowthMetricValue),
             ("Налоги к уплате", TaxesMetric),
             ("Активов", _allAssets.Count.ToString(CultureInfo.InvariantCulture)),
             ("Операций", _transactions.Count.ToString(CultureInfo.InvariantCulture)),
+            ("Стоимость", TotalValueMetric),
         ];
+
+        IReadOnlyList<PortfolioReportAsset> assetRows = _allAssets
+            .OrderByDescending(static item => item.Value)
+            .Select(static item => new PortfolioReportAsset(
+                item.Ticker,
+                item.Name,
+                item.TypeLabel,
+                item.QuantityText,
+                item.CurrentPriceText,
+                item.ValueText,
+                item.ShareText,
+                item.Change24HText))
+            .ToArray();
 
         return new PortfolioReportRequest(
             PortfolioName: portfolioName,
-            PeriodLabel: $"Срез на {DateTime.Now.ToString("dd.MM.yyyy", RuCulture)}",
+            PeriodLabel: $"Срез All assets на {DateTime.Now.ToString("dd.MM.yyyy HH:mm", RuCulture)}",
             TotalValue: decimal.Round(totalValue, 2),
             ProfitLoss: decimal.Round(_currentPortfolioProfitLoss, 2),
             Allocation: allocation,
             TopAssets: topAssets,
-            RiskMetrics: riskMetrics,
+            RiskMetrics: portfolioMetrics,
             TransactionCount: _transactions.Count,
             Currency: "USD",
-            Disclaimer: "Отчет сформирован по текущей таблице All assets. Налоговая сумма синхронизирована с разделом Налоги и показана в USD по текущему курсу.",
-            OutputDirectory: string.Empty);
+            Disclaimer: "Отчет сформирован по текущему портфелю на странице All assets. Сумма налогов синхронизирована с разделом Налоги и показана в USD по текущему курсу. Документ носит информационный характер и не является инвестиционной или налоговой консультацией.",
+            OutputDirectory: string.Empty,
+            AssetRows: assetRows);
     }
 
     private void SetFormError(string message)

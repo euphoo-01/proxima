@@ -5,6 +5,7 @@ using Proxima.App.Navigation;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
 using Proxima.Core.Application.AssetDetails;
+using Proxima.Core.Domain.Assets;
 
 namespace Proxima.App.Views.AssetDetails;
 
@@ -393,7 +394,7 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         RebuildMetricHighlights();
 
         _allTransactions = model.Transactions
-            .Select(AssetTransactionRowViewModel.FromTransaction)
+            .Select(transaction => AssetTransactionRowViewModel.FromTransaction(transaction, model.AssetType, model.AssetTicker))
             .ToArray();
 
         ApplyTransactionFilters();
@@ -800,6 +801,7 @@ public sealed class AssetDetailsViewModel : ViewModelBase
                 PrimaryAssetId,
                 "NVIDIA Corp.",
                 "NVDA",
+                AssetType.Stock,
                 "NV",
                 "$875.28",
                 "↗ +4.21%",
@@ -869,13 +871,22 @@ public sealed record AssetTransactionRowViewModel(
     decimal Amount,
     decimal FeeAmount,
     string Currency,
-    string Status)
+    string Status,
+    AssetType AssetType,
+    string AssetTicker)
 {
     public string DateText => Date.LocalDateTime.ToString("dd MMM, yyyy", CultureInfo.GetCultureInfo("ru-RU"));
 
     public string PriceText => $"${Price:N2}";
 
-    public string QuantityText => $"{Quantity:N2} {Currency}";
+    public string QuantityText => AssetType switch
+    {
+        AssetType.Crypto => string.Create(CultureInfo.InvariantCulture, $"{Quantity:N4} {NormalizedAssetTicker}"),
+        AssetType.Stock or AssetType.Etf => string.Create(CultureInfo.InvariantCulture, $"{Quantity:N2} Shares"),
+        AssetType.Bond => string.Create(CultureInfo.InvariantCulture, $"{Quantity:N2} Units"),
+        AssetType.Cash or AssetType.Currency => string.Create(CultureInfo.InvariantCulture, $"{Quantity:N2} {CashQuantitySymbol}"),
+        _ => string.Create(CultureInfo.InvariantCulture, $"{Quantity:N2}"),
+    };
 
     public string AmountText => $"${Amount:N2}";
 
@@ -889,7 +900,34 @@ public sealed record AssetTransactionRowViewModel(
     public bool IsSell => TypeLabel.Contains("прод", StringComparison.OrdinalIgnoreCase)
         || TypeLabel.Contains("sell", StringComparison.OrdinalIgnoreCase);
 
-    public static AssetTransactionRowViewModel FromTransaction(AssetDetailsTransaction transaction)
+    private string NormalizedAssetTicker
+    {
+        get
+        {
+            string ticker = AssetTicker.Trim().ToUpperInvariant();
+            return string.IsNullOrWhiteSpace(ticker) ? Currency : ticker;
+        }
+    }
+
+    private string CashQuantitySymbol
+    {
+        get
+        {
+            string ticker = NormalizedAssetTicker;
+            int slash = ticker.IndexOf('/', StringComparison.Ordinal);
+            if (slash > 0)
+            {
+                return ticker[..slash];
+            }
+
+            return string.IsNullOrWhiteSpace(ticker) ? Currency : ticker;
+        }
+    }
+
+    public static AssetTransactionRowViewModel FromTransaction(
+        AssetDetailsTransaction transaction,
+        AssetType assetType,
+        string assetTicker)
     {
         return new AssetTransactionRowViewModel(
             transaction.TransactionId,
@@ -900,6 +938,8 @@ public sealed record AssetTransactionRowViewModel(
             transaction.Amount,
             transaction.FeeAmount,
             transaction.Currency,
-            transaction.Status);
+            transaction.Status,
+            assetType,
+            assetTicker);
     }
 }

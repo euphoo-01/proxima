@@ -383,7 +383,7 @@ public sealed class ProfileViewModel : ViewModelBase
     {
         IsLoading = true;
         ErrorMessage = string.Empty;
-        StatusMessage = "Загрузка профиля...";
+        StatusMessage = string.Empty;
 
         try
         {
@@ -419,8 +419,6 @@ public sealed class ProfileViewModel : ViewModelBase
             _userContext.UpdateRuntimeProfile(DisplayName, SelectedRole);
 
             await ReloadPortfoliosAsync().ConfigureAwait(true);
-
-            StatusMessage = "Профиль загружен.";
         }
         catch (Exception ex)
         {
@@ -1028,8 +1026,6 @@ public sealed class ProfileViewModel : ViewModelBase
             || normalized.Contains("создан", StringComparison.Ordinal)
             || normalized.Contains("удален", StringComparison.Ordinal)
             || normalized.Contains("обнов", StringComparison.Ordinal)
-            || normalized.Contains("загруж", StringComparison.Ordinal)
-            || normalized.Contains("примен", StringComparison.Ordinal)
             || normalized.Contains("аватар", StringComparison.Ordinal);
 
         if (isSuccess)

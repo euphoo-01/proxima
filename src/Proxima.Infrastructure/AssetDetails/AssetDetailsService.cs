@@ -184,6 +184,7 @@ public sealed class AssetDetailsService(
             asset.Id,
             assetName,
             asset.Ticker.ToUpperInvariant(),
+            asset.Type,
             BuildLogoText(asset.Ticker),
             FormatCurrency(currentPrice, currency),
             FormatDelta(deltaPct),

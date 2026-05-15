@@ -372,18 +372,10 @@
     </UserControl.Styles>
 
     <ScrollViewer Classes="assets-scroll" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <Grid Margin="24,24,34,70" RowDefinitions="Auto,12,Auto,32,Auto,32,Auto,32,Auto">
+        <Grid Margin="24,24,34,70" RowDefinitions="Auto,32,Auto,32,Auto,32,Auto">
             <TextBlock Classes="page-title" Text="{Binding PageTitle}" />
 
-            <TextBlock
-                Grid.Row="2"
-                Classes="form-message"
-                Classes.error="{Binding HasFormError}"
-                IsVisible="{Binding HasFormMessage}"
-                Text="{Binding FormMessage}"
-                TextWrapping="Wrap" />
-
-            <Grid Grid.Row="4" ColumnDefinitions="1.48*,32,1*">
+            <Grid Grid.Row="2" ColumnDefinitions="1.48*,32,1*">
                 <Border Classes="card" MinHeight="330" Padding="32,32,30,30">
                     <Grid ColumnDefinitions="*,178" RowDefinitions="*,Auto">
                         <StackPanel Grid.Column="0" Spacing="28">
@@ -502,7 +494,7 @@
                 </Border>
             </Grid>
 
-            <Grid Grid.Row="6" ColumnDefinitions="*,24,*,24,*">
+            <Grid Grid.Row="4" ColumnDefinitions="*,24,*,24,*">
                 <Border Classes="card" MinHeight="88" Padding="24,18">
                     <Grid ColumnDefinitions="54,*" ColumnSpacing="16">
                         <Border Width="46" Height="46" CornerRadius="23" Background="#84DC84">
@@ -546,7 +538,7 @@
                 </Border>
             </Grid>
 
-            <Border Grid.Row="8" Classes="card-muted" MinHeight="434" Padding="24,16,24,26">
+            <Border Grid.Row="6" Classes="card-muted" MinHeight="434" Padding="24,16,24,26">
                 <Grid RowDefinitions="Auto,28,Auto,18,*">
                     <Grid ColumnDefinitions="*,Auto,10,Auto,10,Auto">
                         <TextBlock Classes="table-title" Text="Все активы" VerticalAlignment="Center" />

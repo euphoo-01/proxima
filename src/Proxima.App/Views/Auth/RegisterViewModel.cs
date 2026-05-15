@@ -136,10 +136,31 @@ public sealed class RegisterViewModel : ViewModelBase
             Password = string.Empty;
             Registered?.Invoke(this, result.Profile);
         }
+        catch (Exception ex)
+        {
+            ErrorMessage = BuildRegistrationError(ex);
+        }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private static string BuildRegistrationError(Exception ex)
+    {
+        Exception root = ex.GetBaseException();
+        string message = string.IsNullOrWhiteSpace(root.Message) ? root.GetType().Name : root.Message;
+
+        if (message.Contains("same login", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("duplicate", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("unique", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("already exists", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("уже", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Пользователь с таким логином уже существует.";
+        }
+
+        return $"Не удалось зарегистрироваться: {message}";
     }
 
     private static string BuildDisplayName(string login)
