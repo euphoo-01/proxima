@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:controls="using:Proxima.App.Controls"
+    xmlns:controls="using:Proxima.App.CustomControls"
     xmlns:goals="using:Proxima.App.Views.Goals"
     x:DataType="goals:GoalsViewModel"
     mc:Ignorable="d"

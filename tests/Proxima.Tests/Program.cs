@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text;
+using Proxima.Core.Application.Analytics.AssetDetails;
 using Microsoft.EntityFrameworkCore;
 using Proxima.Core.Application.Analytics.Engine;
 using Proxima.Core.Application.Importing;
@@ -22,6 +23,7 @@ internal static class Program
         EfModel_ContainsOnlyActiveTablesAndSingleEncodedPasswordColumn();
         PasswordHasher_StoresSelfContainedPbkdf2Credential();
         AnalyticsEngine_ComputesCorePortfolioMetrics();
+        AssetDetailsCalculator_ComputesRiskMetricsInCore();
         await Importing_CsvPreviewParsesRowsWithoutSavingAnything().ConfigureAwait(false);
         await Reporting_PdfExporterProducesNonEmptyFile().ConfigureAwait(false);
 
@@ -129,6 +131,10 @@ internal static class Program
             {
                 Assert(!text.Contains(fragment, StringComparison.OrdinalIgnoreCase), $"Removed fragment '{fragment}' remains in {file}.");
             }
+
+            Assert(!text.Contains("Proxima" + "QuoteComposition", StringComparison.Ordinal), $"Old composition name remains in {file}.");
+            Assert(!text.Contains("Proxima" + "PortfolioComposition", StringComparison.Ordinal), $"Old composition name remains in {file}.");
+            Assert(!text.Contains("Proxima.App." + "Controls", StringComparison.Ordinal), $"Ambiguous app controls namespace remains in {file}.");
         }
     }
 
@@ -211,6 +217,20 @@ internal static class Program
         Assert(PortfolioAnalyticsEngine.MaxDrawdown([100d, 95d, 110d, 90d]).Availability == MetricAvailability.Available, "Max drawdown should compute.");
         Assert(PortfolioAnalyticsEngine.Volatility([0.01d, -0.02d, 0.015d]).Availability == MetricAvailability.Available, "Volatility should compute.");
         Assert(PortfolioAnalyticsEngine.Sharpe([0.01d, -0.02d, 0.015d]).Availability == MetricAvailability.Available, "Sharpe should compute.");
+    }
+
+    private static void AssetDetailsCalculator_ComputesRiskMetricsInCore()
+    {
+        decimal[] closes = [100m, 104m, 102m, 108m, 111m, 109m, 115m];
+        decimal[] highs = [101m, 105m, 103m, 109m, 112m, 110m, 116m];
+        decimal[] lows = [99m, 102m, 100m, 106m, 108m, 107m, 112m];
+
+        AssetDetailsAnalyticsResult result = AssetDetailsCalculator.Calculate(closes, highs, lows, 115m, 1.2m);
+
+        Assert(result.Rsi > 50m, "Rising closes should produce RSI above neutral.");
+        Assert(result.Atr > 0m, "ATR should be available for OHLC data.");
+        Assert(result.Beta == 1.2m, "Provider beta should pass through analytics result.");
+        Assert(!string.IsNullOrWhiteSpace(result.SmaStatus), "SMA status should be user-visible.");
     }
 
     private static async Task Importing_CsvPreviewParsesRowsWithoutSavingAnything()

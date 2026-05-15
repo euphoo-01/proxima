@@ -74,31 +74,31 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
                         break;
 
                     case TransactionType.Sell:
-                    {
-                        decimal cost = ConsumeCost(lotsByAsset, transaction, out bool costBasisMissing);
-                        if (costBasisMissing && belongsToReportYear)
                         {
-                            missingCostBasisCount++;
-                        }
+                            decimal cost = ConsumeCost(lotsByAsset, transaction, out bool costBasisMissing);
+                            if (costBasisMissing && belongsToReportYear)
+                            {
+                                missingCostBasisCount++;
+                            }
 
-                        if (!belongsToReportYear)
-                        {
+                            if (!belongsToReportYear)
+                            {
+                                break;
+                            }
+
+                            decimal proceeds = Math.Max(0m, money.Gross - Math.Abs(money.Fee) - Math.Abs(money.Tax));
+                            decimal result = proceeds - cost;
+                            if (result >= 0m)
+                            {
+                                realizedPositive += result;
+                            }
+                            else
+                            {
+                                realizedLosses += Math.Abs(result);
+                            }
+
                             break;
                         }
-
-                        decimal proceeds = Math.Max(0m, money.Gross - Math.Abs(money.Fee) - Math.Abs(money.Tax));
-                        decimal result = proceeds - cost;
-                        if (result >= 0m)
-                        {
-                            realizedPositive += result;
-                        }
-                        else
-                        {
-                            realizedLosses += Math.Abs(result);
-                        }
-
-                        break;
-                    }
 
                     case TransactionType.Dividend:
                         if (belongsToReportYear)

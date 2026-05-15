@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Input;
-using Proxima.App.Controls;
+using Proxima.App.CustomControls;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
 using Proxima.Core.Application.Goals;

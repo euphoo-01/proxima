@@ -1,0 +1,46 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:controls="using:Proxima.App.CustomControls">
+    <Style Selector="controls|StatusPill">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border
+                    Padding="12,4"
+                    Background="{StaticResource ProximaBrush.SurfaceSubtle}"
+                    CornerRadius="{StaticResource ProximaRadius.Pill}">
+                    <TextBlock
+                        FontFamily="{StaticResource ProximaFont.Family}"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource ProximaBrush.Brand}"
+                        LetterSpacing="1.2"
+                        LineHeight="16"
+                        Text="{TemplateBinding Text}" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <Style Selector="controls|StatusPill.success /template/ Border">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.SuccessSurface}" />
+    </Style>
+
+    <Style Selector="controls|StatusPill.success /template/ TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Success}" />
+    </Style>
+
+    <Style Selector="controls|StatusPill.warning /template/ Border">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.WarningSurface}" />
+    </Style>
+
+    <Style Selector="controls|StatusPill.warning /template/ TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Warning}" />
+    </Style>
+
+    <Style Selector="controls|StatusPill.danger /template/ Border">
+        <Setter Property="Background" Value="{StaticResource ProximaBrush.DangerSurface}" />
+    </Style>
+
+    <Style Selector="controls|StatusPill.danger /template/ TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Danger}" />
+    </Style>
+</Styles>

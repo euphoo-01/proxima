@@ -1,8 +1,0 @@
-<Styles xmlns="https://github.com/avaloniaui"
-        xmlns:controls="using:Proxima.App.Controls">
-    <Style Selector="controls|ProximaCandlestickChart">
-        <Setter Property="MinHeight" Value="220" />
-        <Setter Property="HorizontalAlignment" Value="Stretch" />
-        <Setter Property="VerticalAlignment" Value="Stretch" />
-    </Style>
-</Styles>

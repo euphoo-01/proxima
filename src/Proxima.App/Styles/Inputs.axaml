@@ -1,4 +1,4 @@
 <Styles xmlns="https://github.com/avaloniaui">
-    <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/TextBox.axaml" />
-    <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/ComboBox.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/NativeControlThemes/TextBox.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/NativeControlThemes/ComboBox.axaml" />
 </Styles>

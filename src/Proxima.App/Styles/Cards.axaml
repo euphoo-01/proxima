@@ -1,7 +1,7 @@
 <Styles xmlns="https://github.com/avaloniaui">
-    <StyleInclude Source="avares://Proxima.App/DesignSystem/Controls/Card.axaml" />
-    <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/BentoCard.axaml" />
-    <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/MetricCard.axaml" />
-    <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/StatusPill.axaml" />
-    <StyleInclude Source="avares://Proxima.App/DesignSystem/Components/PageHeader.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/NativeControlThemes/Card.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/CustomControlThemes/BentoCard.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/CustomControlThemes/MetricCard.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/CustomControlThemes/StatusPill.axaml" />
+    <StyleInclude Source="avares://Proxima.App/DesignSystem/CustomControlThemes/PageHeader.axaml" />
 </Styles>

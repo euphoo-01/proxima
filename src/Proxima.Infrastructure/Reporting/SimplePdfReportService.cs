@@ -283,7 +283,7 @@ public sealed class SimplePdfReportService : IReportService
             TopAssets = topAssets,
             RiskMetrics = riskMetrics,
             AssetRows = request.AssetRows ?? Array.Empty<PortfolioReportAsset>(),
-            OutputDirectory = SafeText(request.OutputDirectory, ProximaReportingComposition.GetDefaultReportDirectory()),
+            OutputDirectory = SafeText(request.OutputDirectory, ReportPathDefaults.GetDefaultReportDirectory()),
         };
     }
 
@@ -300,7 +300,7 @@ public sealed class SimplePdfReportService : IReportService
             LegalDisclaimer = SafeText(request.LegalDisclaimer, "Расчет носит информационный характер и не является юридической консультацией."),
             CalculationBreakdown = request.CalculationBreakdown ?? Array.Empty<TaxReportLine>(),
             TaxBreakdown = request.TaxBreakdown ?? Array.Empty<TaxReportLine>(),
-            OutputDirectory = SafeText(request.OutputDirectory, ProximaReportingComposition.GetDefaultReportDirectory()),
+            OutputDirectory = SafeText(request.OutputDirectory, ReportPathDefaults.GetDefaultReportDirectory()),
         };
     }
 

@@ -1,7 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Proxima.App.Navigation;
-using Proxima.Infrastructure.Notifications;
-using Proxima.Core.Application.Notifications;
 using Proxima.App.Notifications;
 using Proxima.App.Shell;
 using Proxima.App.Views.Assets;
@@ -16,27 +14,27 @@ using Proxima.App.Views.Settings;
 using Proxima.App.Views.Support;
 using Proxima.App.Views.Taxes;
 using Proxima.Core.Application.AssetDetails;
-using Proxima.Core.Application.Assets;
 using Proxima.Core.Application.Auth;
 using Proxima.Core.Application.Goals;
-using Proxima.Core.Application.MarketData;
-using Proxima.Core.Application.Observability;
+using Proxima.Core.Application.Importing;
 using Proxima.Core.Application.Portfolios;
-using Proxima.Core.Application.Quotes;
-using Proxima.Core.Application.Settings;
 using Proxima.Core.Application.Taxes;
 using Proxima.Core.Application.Transactions;
 using Proxima.Infrastructure.AssetDetails;
 using Proxima.Infrastructure.Auth;
+using Proxima.Infrastructure.Assets;
+using Proxima.Infrastructure.Goals;
+using Proxima.Infrastructure.Notifications;
 using Proxima.Infrastructure.Persistence;
-using Proxima.Infrastructure.Persistence.Repositories;
+using Proxima.Infrastructure.Portfolios;
 using Proxima.Infrastructure.Quotes;
 using Proxima.Infrastructure.MarketData;
+using Proxima.Infrastructure.Settings;
 using Proxima.Infrastructure.Taxes;
-using Proxima.Core.Application.Importing;
 using Proxima.Infrastructure.Importing;
 using Proxima.Core.Application.Reporting;
 using Proxima.Infrastructure.Reporting;
+using Proxima.Infrastructure.Transactions;
 
 namespace Proxima.App.Composition;
 
@@ -55,48 +53,30 @@ public static class AppComposition
         services.AddSingleton<IRuntimeUserContext>(provider => provider.GetRequiredService<RuntimeUserContext>());
         services.AddSingleton<ICurrentUserContext>(provider => provider.GetRequiredService<RuntimeUserContext>());
 
-        services.AddSingleton<ILocalUserRepository, PostgresLocalUserRepository>();
-        services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
-        services.AddSingleton<PasswordPolicyValidator>();
-        services.AddSingleton<ILocalAuthService, LocalAuthService>();
-
         services.AddSingleton<IAuthGateService, LocalProfileAuthGateService>();
         services.AddSingleton<IRuntimeAuthBootstrapper, RuntimeAuthBootstrapper>();
-
-        services.AddSingleton(databaseOptions);
-        services.AddSingleton(db);
-
-        services.AddSingleton<IProximaUnitOfWorkAccessor, ProximaUnitOfWorkAccessor>();
-        services.AddSingleton<IProximaUnitOfWorkFactory, ProximaUnitOfWorkFactory>();
-
-        services.AddSingleton<IPortfolioRepository, PostgresPortfolioRepository>();
-        services.AddSingleton<IAssetRepository, PostgresAssetRepository>();
-        services.AddSingleton<ITransactionRepository, PostgresTransactionRepository>();
-        services.AddSingleton<IGoalRepository, PostgresGoalRepository>();
-        services.AddSingleton<IUserSettingsRepository, PostgresUserSettingsRepository>();
-        services.AddSingleton<IQuoteCacheRepository, PostgresQuoteCacheRepository>();
-        services.AddSingleton<IAccountDeletionService, PostgresAccountDeletionService>();
-        services.AddSingleton<IAuditLogRepository, PostgresAuditLogRepository>();
-        services.AddSingleton<INotificationRepository, PostgresNotificationRepository>();
-
-        services.AddSingleton<IPortfolioService, PortfolioService>();
-        services.AddSingleton<IAssetService, AssetService>();
-        services.AddSingleton<ITransactionService, TransactionService>();
-        services.AddSingleton<IImportCommitService, PostgresImportCommitService>();
-        services.AddSingleton<IGoalService, GoalService>();
-        services.AddSingleton<ISettingsService, SettingsService>();
-        services.AddSingleton<IAuditService, AuditService>();
-        services.AddSingleton<INotificationService, NotificationService>();
-        services.AddSingleton<IAppNotificationCenter, AppNotificationCenter>();
 
         services.AddSingleton(_ => new HttpClient
         {
             Timeout = TimeSpan.FromSeconds(12),
         });
 
-        services.AddSingleton<IQuoteProvider, ConfigurableQuoteProvider>();
-        services.AddSingleton<IMarketSymbolSearchService, TwelveDataSymbolSearchService>();
-        services.AddSingleton<IQuoteRefreshService, QuoteRefreshService>();
+        services
+            .AddPersistenceModule(databaseOptions, db)
+            .AddAuthModule()
+            .AddPortfolioModule()
+            .AddAssetModule()
+            .AddTransactionModule()
+            .AddGoalModule()
+            .AddSettingsModule()
+            .AddQuoteModule()
+            .AddTaxModule()
+            .AddImportModule()
+            .AddReportingModule()
+            .AddAuditModule()
+            .AddNotificationModule();
+
+        services.AddSingleton<IAppNotificationCenter, AppNotificationCenter>();
 
         services.AddSingleton<RuntimeShellState>();
         services.AddSingleton<IShellState>(provider => provider.GetRequiredService<RuntimeShellState>());
@@ -106,20 +86,12 @@ public static class AppComposition
         services.AddSingleton<IRuntimeDataInvalidation, RuntimeDataInvalidation>();
 
         services.AddSingleton<IImportPreviewGateway>(provider =>
-            new ImportPreviewGateway(ProximaImportComposition.CreateImportService()));
+            new ImportPreviewGateway(provider.GetRequiredService<IImportService>()));
 
         services.AddSingleton<IDashboardDataProvider, RuntimeDashboardDataProvider>();
 
         services.AddSingleton<TwelveDataAssetMarketDataProvider>();
         services.AddSingleton<IAssetDetailsService, AssetDetailsService>();
-
-        services.AddSingleton<IExchangeRateProvider, ConfigurableExchangeRateProvider>();
-        services.AddSingleton<ITaxCalculator, DraftTaxCalculator>();
-
-        services.AddSingleton<IReportService>(_ => ProximaReportingComposition.CreateReportService());
-        services.AddSingleton<IGoalProjectionService, GoalProjectionService>();
-        services.AddSingleton<IHistoricalPortfolioReturnService, HistoricalPortfolioReturnService>();
-        services.AddSingleton<IGoalProgressBaselineService, GoalProgressBaselineService>();
 
         services.AddSingleton<DashboardViewModel>();
         services.AddTransient<LoginViewModel>();
@@ -143,6 +115,9 @@ public static class AppComposition
         services.AddSingleton<SupportViewModel>();
         services.AddSingleton<NotificationsViewModel>();
         services.AddSingleton<ProfileViewModel>();
+        services.AddSingleton<IGoalProjectionService, GoalProjectionService>();
+        services.AddSingleton<IHistoricalPortfolioReturnService, HistoricalPortfolioReturnService>();
+        services.AddSingleton<IGoalProgressBaselineService, GoalProgressBaselineService>();
 
         services.AddSingleton<SidebarViewModel>();
         services.AddSingleton<TopbarViewModel>();

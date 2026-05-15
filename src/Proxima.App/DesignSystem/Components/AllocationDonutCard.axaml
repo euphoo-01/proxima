@@ -1,9 +1,0 @@
-<Styles xmlns="https://github.com/avaloniaui"
-        xmlns:controls="using:Proxima.App.Controls">
-    <Style Selector="controls|BentoCard.proxima-allocation-donut-card">
-        <Setter Property="CardPadding" Value="{StaticResource ProximaSpace.24}" />
-        <Setter Property="MinHeight" Value="278" />
-        <Setter Property="CardBackground" Value="{StaticResource ProximaBrush.AccentAmberSurface}" />
-        <Setter Property="CardBorderBrush" Value="{StaticResource ProximaBrush.AccentAmberBorder}" />
-    </Style>
-</Styles>

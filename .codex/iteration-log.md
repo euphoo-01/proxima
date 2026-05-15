@@ -2330,3 +2330,56 @@ Done
 ### Commit
 
 Pending feat(ui): refresh bento palette with accent gradients and white content base
+
+## Iteration 43 — Architecture Composition and Asset Details Cleanup
+
+### Scope
+
+Clean up confusing composition naming, reduce `AppComposition` service-registration noise through module extension methods, remove dead code, split EF persistence entities into maintainable files, clarify App custom-control/design-system folder names, and move asset-details analytics formulas from Infrastructure into Core/Application.
+
+### User Stories Checked
+
+- [x] US-00.1 — Developer can rely on predictable project boundaries.
+- [x] US-00.2 — Developer can rely on automated quality checks.
+- [x] US-10.1 — Asset details metrics remain available after architecture cleanup.
+- [x] US-11.1 — Analytics calculations live in the application/core layer rather than infrastructure.
+
+### Acceptance Criteria Status
+
+| ID | Status | Evidence |
+| --- | --- | --- |
+| ARCH-43.1 | Done | `Proxima*Composition` classes renamed to module names and implemented as `IServiceCollection` extension methods consumed by `AppComposition`. |
+| ARCH-43.2 | Done | Removed unused `NoOpAuditService` and obsolete asset-details snapshot/metric/risk DTOs. |
+| ARCH-43.3 | Done | `Entities.cs` split into `src/Proxima.Infrastructure/Persistence/Entities/*.cs` with unchanged persistence namespace. |
+| ARCH-43.4 | Done | App `Controls` folder renamed to `CustomControls`; design-system style folders renamed to `NativeControlThemes` and `CustomControlThemes`. |
+| ARCH-43.5 | Done | Asset-details risk/technical calculations now run through `Proxima.Core.Application.Analytics.AssetDetails.AssetDetailsCalculator`. |
+| ARCH-43.6 | Partial | XAML style guard still fails on pre-existing View-level raw styles; recorded in known limitations. |
+
+### Tests Added/Updated
+
+- Unit: added `AssetDetailsCalculator_ComputesRiskMetricsInCore` in `tests/Proxima.Tests/Program.cs`.
+- Architecture: updated compact architecture checks for old composition and ambiguous control namespace names.
+- Integration: existing EF model and import/reporting tests preserved.
+- UI/manual: style guard executed and documented as failing due pre-existing View style violations.
+
+### Commands Run
+
+```bash
+dotnet format
+dotnet build
+dotnet test
+bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views
+git status --short
+```
+
+### Result
+
+Partial
+
+### Known Limitations
+
+- `bash scripts/scan-xaml-style-violations.sh src/Proxima.App/Views` fails on existing raw hex, inline styling and page-local style violations across production Views. This pass did not attempt the large UI-token migration required to clear that guard.
+
+### Commit
+
+093dd0d refactor(architecture): modularize composition and asset details analytics

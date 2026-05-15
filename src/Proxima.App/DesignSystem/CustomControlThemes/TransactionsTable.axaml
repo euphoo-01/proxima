@@ -1,0 +1,21 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:controls="using:Proxima.App.CustomControls">
+    <Style Selector="controls|BentoCard.proxima-transactions-table-card">
+        <Setter Property="CardPadding" Value="{StaticResource ProximaSpace.24}" />
+    </Style>
+
+    <Style Selector="Button.proxima-table-sort-button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.TextMuted}" />
+        <Setter Property="FontFamily" Value="{StaticResource ProximaFont.Family}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Padding" Value="4" />
+    </Style>
+
+    <Style Selector="Button.proxima-table-sort-button:pointerover">
+        <Setter Property="Foreground" Value="{StaticResource ProximaBrush.Brand}" />
+    </Style>
+</Styles>

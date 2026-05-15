@@ -1,9 +1,0 @@
-<Styles xmlns="https://github.com/avaloniaui"
-        xmlns:controls="using:Proxima.App.Controls">
-    <Style Selector="controls|ProximaDonutChart">
-        <Setter Property="MinHeight" Value="120" />
-        <Setter Property="MinWidth" Value="120" />
-        <Setter Property="HorizontalAlignment" Value="Stretch" />
-        <Setter Property="VerticalAlignment" Value="Stretch" />
-    </Style>
-</Styles>

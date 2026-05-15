@@ -1,0 +1,29 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:controls="using:Proxima.App.CustomControls">
+    <Style Selector="controls|BentoCard">
+        <Setter Property="CardBackground" Value="{StaticResource ProximaBrush.Surface}" />
+        <Setter Property="CardBorderBrush" Value="{StaticResource ProximaBrush.BorderSubtle}" />
+        <Setter Property="CardBorderThickness" Value="1" />
+        <Setter Property="CardPadding" Value="{StaticResource ProximaSpace.24}" />
+        <Setter Property="CardCornerRadius" Value="{StaticResource ProximaRadius.Large}" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border
+                    Padding="{TemplateBinding CardPadding}"
+                    Background="{TemplateBinding CardBackground}"
+                    BorderBrush="{TemplateBinding CardBorderBrush}"
+                    BorderThickness="{TemplateBinding CardBorderThickness}"
+                    BoxShadow="{StaticResource ProximaShadow.Card}"
+                    CornerRadius="{TemplateBinding CardCornerRadius}">
+                    <StackPanel Spacing="16">
+                        <StackPanel>
+                            <TextBlock Classes="proxima-card-title" Text="{TemplateBinding Title}" />
+                            <TextBlock Classes="proxima-caption" Text="{TemplateBinding Subtitle}" />
+                        </StackPanel>
+                        <ContentPresenter Content="{TemplateBinding Content}" />
+                    </StackPanel>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+</Styles>

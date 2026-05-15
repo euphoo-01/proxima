@@ -174,26 +174,26 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
         switch (row.Type)
         {
             case TransactionType.Buy:
-            {
-                decimal existingQuantity = asset.Quantity;
-                decimal newQuantity = existingQuantity + row.Quantity;
-                decimal weightedTotal = (existingQuantity * asset.AverageBuyPrice) + (row.Quantity * row.Price);
-
-                asset.Quantity = newQuantity;
-                asset.AverageBuyPrice = newQuantity <= 0m ? row.Price : weightedTotal / newQuantity;
-                break;
-            }
-
-            case TransactionType.Sell:
-            {
-                asset.Quantity = Math.Max(0m, asset.Quantity - row.Quantity);
-                if (asset.Quantity == 0m)
                 {
-                    asset.AverageBuyPrice = 0m;
+                    decimal existingQuantity = asset.Quantity;
+                    decimal newQuantity = existingQuantity + row.Quantity;
+                    decimal weightedTotal = (existingQuantity * asset.AverageBuyPrice) + (row.Quantity * row.Price);
+
+                    asset.Quantity = newQuantity;
+                    asset.AverageBuyPrice = newQuantity <= 0m ? row.Price : weightedTotal / newQuantity;
+                    break;
                 }
 
-                break;
-            }
+            case TransactionType.Sell:
+                {
+                    asset.Quantity = Math.Max(0m, asset.Quantity - row.Quantity);
+                    if (asset.Quantity == 0m)
+                    {
+                        asset.AverageBuyPrice = 0m;
+                    }
+
+                    break;
+                }
         }
     }
 

@@ -498,25 +498,25 @@ public sealed class AssetsViewModel : ViewModelBase
                 switch (tx.Type)
                 {
                     case TransactionType.Buy:
-                    {
-                        decimal newQuantity = quantity + tx.Quantity;
-                        averageBuyPrice = newQuantity <= 0m
-                            ? tx.Price
-                            : ((quantity * averageBuyPrice) + (tx.Quantity * tx.Price)) / newQuantity;
-                        quantity = newQuantity;
-                        break;
-                    }
-
-                    case TransactionType.Sell:
-                    {
-                        quantity = Math.Max(0m, quantity - tx.Quantity);
-                        if (quantity == 0m)
                         {
-                            averageBuyPrice = 0m;
+                            decimal newQuantity = quantity + tx.Quantity;
+                            averageBuyPrice = newQuantity <= 0m
+                                ? tx.Price
+                                : ((quantity * averageBuyPrice) + (tx.Quantity * tx.Price)) / newQuantity;
+                            quantity = newQuantity;
+                            break;
                         }
 
-                        break;
-                    }
+                    case TransactionType.Sell:
+                        {
+                            quantity = Math.Max(0m, quantity - tx.Quantity);
+                            if (quantity == 0m)
+                            {
+                                averageBuyPrice = 0m;
+                            }
+
+                            break;
+                        }
                 }
             }
 

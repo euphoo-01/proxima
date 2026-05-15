@@ -14,8 +14,4 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.4" />
   </ItemGroup>
-
-  <Target Name="VSTest" DependsOnTargets="Build">
-    <Exec Command="&quot;$(TargetPath)&quot;" />
-  </Target>
 </Project>
