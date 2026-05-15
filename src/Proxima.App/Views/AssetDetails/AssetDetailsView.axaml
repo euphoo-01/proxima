@@ -260,10 +260,9 @@
 
             <Border Grid.Row="8" IsVisible="{Binding HasData}" Classes="asset-table-card">
                 <Grid RowDefinitions="Auto,26,Auto,8,*">
-                    <Grid ColumnDefinitions="*,300,24,Auto">
+                    <Grid ColumnDefinitions="*,300">
                         <TextBlock Classes="asset-section-title" Text="История транзакций" VerticalAlignment="Center" />
                         <TextBox Grid.Column="1" Classes="proxima-input" Text="{Binding SearchQuery}" Watermark="Искать активы..." />
-                        <Button Grid.Column="3" Classes="proxima-toolbar" Content="Скачать отчёт" VerticalAlignment="Center" />
                     </Grid>
 
                     <Grid Grid.Row="2" ColumnDefinitions="1.25*,1.1*,1.2*,1.2*,1.1*,1.1*" Margin="0,0,0,0">

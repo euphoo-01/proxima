@@ -731,7 +731,8 @@ public sealed class ManualImportViewModel : ViewModelBase
                 price,
                 commission,
                 row.Currency.Trim().ToUpperInvariant(),
-                string.IsNullOrWhiteSpace(row.TagOrCategory) ? null : row.TagOrCategory.Trim()));
+                Notes: null,
+                Tag: string.IsNullOrWhiteSpace(row.TagOrCategory) ? null : row.TagOrCategory.Trim()));
         }
 
         ImportCommitResult result = await _importCommitService

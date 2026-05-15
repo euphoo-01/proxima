@@ -548,7 +548,7 @@
 
             <Border Grid.Row="8" Classes="card-muted" MinHeight="434" Padding="24,16,24,26">
                 <Grid RowDefinitions="Auto,28,Auto,18,*">
-                    <Grid ColumnDefinitions="*,Auto,10,Auto">
+                    <Grid ColumnDefinitions="*,Auto,10,Auto,10,Auto">
                         <TextBlock Classes="table-title" Text="Все активы" VerticalAlignment="Center" />
 
                         <Grid Grid.Column="1" Width="256" Height="36">
@@ -558,7 +558,14 @@
                             </Canvas>
                         </Grid>
 
-                        <Button Grid.Column="3" Classes="icon-filter-button">
+                        <Button
+                            Grid.Column="3"
+                            Classes="secondary-action"
+                            Command="{Binding ExportReportCommand}"
+                            Content="{Binding ExportReportButtonText}"
+                            IsEnabled="{Binding CanExportReport}" />
+
+                        <Button Grid.Column="5" Classes="icon-filter-button">
                             <Button.Flyout>
                                 <MenuFlyout>
                                     <MenuItem Header="Сортировать по названию" Command="{Binding SortByNameCommand}" />

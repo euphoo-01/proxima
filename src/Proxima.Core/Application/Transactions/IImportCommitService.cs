@@ -15,6 +15,7 @@ public sealed record ImportTransactionDraft(
     decimal Price,
     decimal FeeAmount,
     string Currency,
-    string? Notes);
+    string? Notes,
+    string? Tag = null);
 
 public sealed record ImportCommitResult(bool Succeeded, int SavedRows, string Message);

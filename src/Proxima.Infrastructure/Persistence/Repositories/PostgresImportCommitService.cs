@@ -1,8 +1,9 @@
 using System.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
-using Proxima.Core.Application.Transactions;
 using Proxima.Core.Application.MarketData;
+using Proxima.Core.Application.Transactions;
 using Proxima.Core.Domain.Assets;
 using Proxima.Core.Domain.Transactions;
 
@@ -27,6 +28,15 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
             return await uowFactory.ExecuteInTransactionAsync(async uow =>
             {
                 ProximaDbContext ctx = uow.Context;
+                PortfolioEntity? portfolio = await ctx.Portfolios
+                    .FirstOrDefaultAsync(x => x.Id == portfolioId && !x.IsArchived, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (portfolio is null)
+                {
+                    return new ImportCommitResult(false, 0, "Портфель не найден.");
+                }
+
                 List<AssetEntity> assets = await ctx.Assets
                     .Where(x => x.PortfolioId == portfolioId && !x.IsArchived)
                     .ToListAsync(cancellationToken)
@@ -39,11 +49,14 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
 
                 DateTimeOffset now = DateTimeOffset.UtcNow;
                 int savedRows = 0;
+                HashSet<string> affectedTickers = new(StringComparer.OrdinalIgnoreCase);
+                HashSet<string> affectedTags = new(StringComparer.OrdinalIgnoreCase);
+                Dictionary<TransactionType, int> savedByType = new();
 
                 foreach (ImportTransactionDraft row in rows)
                 {
                     string displayText = row.AssetTicker.Trim();
-                    AssetType inferredType = InferAssetType(displayText, row.Notes);
+                    AssetType inferredType = InferAssetType(displayText, BuildInferenceText(row));
                     string normalizedTicker = NormalizeTicker(displayText, inferredType);
                     if (string.IsNullOrWhiteSpace(normalizedTicker))
                     {
@@ -84,6 +97,14 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
                         asset.UpdatedAt = now;
                     }
 
+                    string[] tags = ResolveImportTags(row, inferredType);
+                    await AppendAssetTagsAsync(ctx, asset.Id, tags, cancellationToken).ConfigureAwait(false);
+
+                    foreach (string tag in tags)
+                    {
+                        affectedTags.Add(tag);
+                    }
+
                     ApplyTransactionToAsset(asset, row);
 
                     decimal gross = row.Quantity * row.Price;
@@ -100,13 +121,20 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
                         FeeAmount = row.FeeAmount,
                         TaxAmount = 0m,
                         Currency = storageCurrency,
-                        EncryptedNotes = string.IsNullOrWhiteSpace(row.Notes) ? null : row.Notes,
+                        EncryptedNotes = string.IsNullOrWhiteSpace(row.Notes) ? null : row.Notes.Trim(),
                         IsArchived = false,
                         CreatedAt = now,
                         UpdatedAt = now,
                     });
 
                     savedRows++;
+                    affectedTickers.Add(normalizedTicker);
+                    savedByType[row.Type] = savedByType.TryGetValue(row.Type, out int count) ? count + 1 : 1;
+                }
+
+                if (savedRows > 0)
+                {
+                    AppendImportAuditLog(ctx, portfolio.OwnerUserId, portfolioId, savedRows, affectedTickers, affectedTags, savedByType, now);
                 }
 
                 return new ImportCommitResult(true, savedRows, $"Импортировано строк: {savedRows}");
@@ -167,6 +195,196 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
                 break;
             }
         }
+    }
+
+    private static async Task AppendAssetTagsAsync(ProximaDbContext ctx, Guid assetId, IReadOnlyList<string> tags, CancellationToken cancellationToken)
+    {
+        string[] normalizedTags = tags
+            .Select(NormalizeTag)
+            .Where(static tag => !string.IsNullOrWhiteSpace(tag))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        foreach (string tagName in normalizedTags)
+        {
+            TagEntity tag = await FindOrCreateTagAsync(ctx, tagName, cancellationToken).ConfigureAwait(false);
+            bool trackedLinkExists = ctx.AssetTags.Local.Any(x => x.AssetId == assetId && x.TagId == tag.Id);
+            if (trackedLinkExists)
+            {
+                continue;
+            }
+
+            bool storedLinkExists = await ctx.AssetTags
+                .AnyAsync(x => x.AssetId == assetId && x.TagId == tag.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!storedLinkExists)
+            {
+                ctx.AssetTags.Add(new AssetTagEntity
+                {
+                    AssetId = assetId,
+                    TagId = tag.Id,
+                });
+            }
+        }
+    }
+
+    private static async Task<TagEntity> FindOrCreateTagAsync(ProximaDbContext ctx, string tagName, CancellationToken cancellationToken)
+    {
+        string normalizedName = NormalizeTag(tagName);
+        TagEntity? tracked = ctx.Tags.Local.FirstOrDefault(x => string.Equals(x.Name, normalizedName, StringComparison.OrdinalIgnoreCase));
+        if (tracked is not null)
+        {
+            return tracked;
+        }
+
+        string lookup = normalizedName.ToLowerInvariant();
+        TagEntity? stored = await ctx.Tags
+            .FirstOrDefaultAsync(x => x.Name.ToLower() == lookup, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (stored is not null)
+        {
+            if (!string.Equals(stored.Name, normalizedName, StringComparison.Ordinal))
+            {
+                stored.Name = normalizedName;
+            }
+
+            return stored;
+        }
+
+        TagEntity created = new()
+        {
+            Id = Guid.NewGuid(),
+            Name = normalizedName,
+        };
+        ctx.Tags.Add(created);
+        return created;
+    }
+
+    private static string[] ResolveImportTags(ImportTransactionDraft row, AssetType inferredType)
+    {
+        List<string> tags = [];
+
+        string? explicitTag = NormalizeTag(row.Tag);
+        if (!string.IsNullOrWhiteSpace(explicitTag))
+        {
+            tags.Add(explicitTag);
+        }
+        else
+        {
+            string? legacyTag = NormalizeLegacyTag(row.Notes);
+            if (!string.IsNullOrWhiteSpace(legacyTag))
+            {
+                tags.Add(legacyTag);
+            }
+        }
+
+        if (tags.Count == 0)
+        {
+            tags.Add(DefaultTagFor(inferredType));
+        }
+
+        return tags.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    private static string BuildInferenceText(ImportTransactionDraft row)
+    {
+        List<string> parts = [];
+        if (!string.IsNullOrWhiteSpace(row.Tag))
+        {
+            parts.Add(row.Tag);
+        }
+
+        if (!string.IsNullOrWhiteSpace(row.Notes))
+        {
+            parts.Add(row.Notes);
+        }
+
+        return string.Join(' ', parts);
+    }
+
+    private static string? NormalizeLegacyTag(string? value)
+    {
+        string tag = NormalizeTag(value);
+        if (string.IsNullOrWhiteSpace(tag))
+        {
+            return null;
+        }
+
+        return IsKnownTag(tag) ? tag : null;
+    }
+
+    private static string NormalizeTag(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        string tag = Regex.Replace(value.Trim(), "\\s+", " ", RegexOptions.None, TimeSpan.FromMilliseconds(50));
+        return tag.ToLowerInvariant() switch
+        {
+            "stock" or "stocks" or "equity" or "equities" or "share" or "shares" or "акции" or "акция" => "Акция",
+            "etf" or "фонды" or "фонд" => "ETF",
+            "crypto" or "cryptocurrency" or "крипта" or "криптовалюта" or "криптовалюты" => "Криптовалюта",
+            "bond" or "bonds" or "облигация" or "облигации" => "Облигация",
+            "currency" or "currencies" or "fx" or "валюта" or "валюты" => "Валюта",
+            "cash" or "наличные" or "наличность" => "Наличность",
+            "dividend" or "dividends" or "дивиденд" or "дивиденды" => "Дивиденды",
+            _ => tag,
+        };
+    }
+
+    private static bool IsKnownTag(string tag)
+    {
+        return tag is "Акция" or "ETF" or "Криптовалюта" or "Облигация" or "Валюта" or "Наличность" or "Дивиденды";
+    }
+
+    private static string DefaultTagFor(AssetType assetType)
+    {
+        return assetType switch
+        {
+            AssetType.Etf => "ETF",
+            AssetType.Crypto => "Криптовалюта",
+            AssetType.Bond => "Облигация",
+            AssetType.Currency => "Валюта",
+            AssetType.Cash => "Наличность",
+            _ => "Акция",
+        };
+    }
+
+    private static void AppendImportAuditLog(
+        ProximaDbContext ctx,
+        Guid ownerUserId,
+        Guid portfolioId,
+        int savedRows,
+        IReadOnlyCollection<string> affectedTickers,
+        IReadOnlyCollection<string> affectedTags,
+        IReadOnlyDictionary<TransactionType, int> savedByType,
+        DateTimeOffset occurredAtUtc)
+    {
+        string metadata = JsonSerializer.Serialize(new
+        {
+            portfolioId,
+            savedRows,
+            assetCount = affectedTickers.Count,
+            tagCount = affectedTags.Count,
+            tickers = affectedTickers.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase).Take(25).ToArray(),
+            tags = affectedTags.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase).Take(25).ToArray(),
+            transactionTypes = savedByType
+                .OrderBy(static x => x.Key.ToString(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(x => x.Key.ToString(), x => x.Value),
+        });
+
+        ctx.AuditLog.Add(new AuditLogEntity
+        {
+            Id = Guid.NewGuid(),
+            UserId = ownerUserId,
+            Action = "Import.Committed",
+            Timestamp = occurredAtUtc,
+            MetadataJson = metadata,
+        });
     }
 
     private static string NormalizeTicker(string value, AssetType assetType)

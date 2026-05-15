@@ -1028,6 +1028,8 @@ public sealed class ProfileViewModel : ViewModelBase
             || normalized.Contains("создан", StringComparison.Ordinal)
             || normalized.Contains("удален", StringComparison.Ordinal)
             || normalized.Contains("обнов", StringComparison.Ordinal)
+            || normalized.Contains("загруж", StringComparison.Ordinal)
+            || normalized.Contains("примен", StringComparison.Ordinal)
             || normalized.Contains("аватар", StringComparison.Ordinal);
 
         if (isSuccess)

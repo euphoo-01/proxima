@@ -12,7 +12,7 @@ using Proxima.Infrastructure.Persistence;
 namespace Proxima.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ProximaDbContext))]
-    [Migration("20260514235250_InitialCompactSchema")]
+    [Migration("20260515001514_InitialCompactSchema")]
     partial class InitialCompactSchema
     {
         /// <inheritdoc />

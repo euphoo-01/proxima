@@ -214,19 +214,13 @@
         <Grid Margin="24,24,34,70" RowDefinitions="Auto,12,Auto,24,Auto,14,Auto,14,Auto,14,Auto,22,Auto">
             <TextBlock Classes="page-title" Text="Аккаунт" />
 
-            <StackPanel Grid.Row="2" Spacing="6">
-                <TextBlock
-                    Classes="muted"
-                    Foreground="#0E7A4B"
-                    IsVisible="{Binding HasStatus}"
-                    Text="{Binding StatusMessage}" />
-                <TextBlock
-                    Classes="muted"
-                    Foreground="#E05757"
-                    IsVisible="{Binding HasError}"
-                    Text="{Binding ErrorMessage}"
-                    TextWrapping="Wrap" />
-            </StackPanel>
+            <TextBlock
+                Grid.Row="2"
+                Classes="muted"
+                Foreground="#E05757"
+                IsVisible="{Binding HasError}"
+                Text="{Binding ErrorMessage}"
+                TextWrapping="Wrap" />
 
             <Border Grid.Row="4" Classes="surface" MinHeight="184">
                 <Grid ColumnDefinitions="132,28,420,*,128">

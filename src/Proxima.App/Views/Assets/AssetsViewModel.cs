@@ -5,9 +5,12 @@ using Proxima.App.Navigation;
 using Proxima.App.Notifications;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
+using Proxima.App.Views.Taxes;
 using Proxima.Core.Application.Assets;
 using Proxima.Core.Application.MarketData;
 using Proxima.Core.Application.Quotes;
+using Proxima.Core.Application.Reporting;
+using Proxima.Core.Application.Taxes;
 using Proxima.Core.Application.Transactions;
 using Proxima.Core.Domain.Assets;
 using Proxima.Core.Domain.Transactions;
@@ -27,9 +30,13 @@ public sealed class AssetsViewModel : ViewModelBase
     private readonly IRuntimeDataInvalidation _dataInvalidation;
     private readonly IMarketSymbolSearchService _symbolSearchService;
     private readonly IAppNotificationCenter _notificationCenter;
+    private readonly IReportService _reportService;
+    private readonly TaxesViewModel.ITaxesReadModelProvider _taxesProvider;
+    private readonly IExchangeRateProvider _exchangeRateProvider;
     private readonly AsyncCommand _loadCommand;
     private readonly AsyncCommand _addManualTransactionCommand;
     private readonly AsyncCommand _refreshQuotesCommand;
+    private readonly AsyncCommand _exportReportCommand;
     private readonly DelegateCommand _openImportDialogCommand;
     private readonly DelegateCommand _moreAssetsCommand;
     private readonly DelegateCommand _sortByNameCommand;
@@ -58,6 +65,7 @@ public sealed class AssetsViewModel : ViewModelBase
     private string _symbolSearchMessage = string.Empty;
     private bool _isApplyingManualSymbolSelection;
     private string _manualTagText = "Акции";
+    private decimal _currentPortfolioProfitLoss;
     private ManualTransactionTypeOption _selectedManualTransactionType;
     private AssetSortMode _sortMode = AssetSortMode.Value;
     private bool _sortDescending = true;
@@ -70,7 +78,10 @@ public sealed class AssetsViewModel : ViewModelBase
         IShellState shellState,
         IRuntimeDataInvalidation dataInvalidation,
         IMarketSymbolSearchService symbolSearchService,
-        IAppNotificationCenter notificationCenter)
+        IAppNotificationCenter notificationCenter,
+        IReportService reportService,
+        TaxesViewModel.ITaxesReadModelProvider taxesProvider,
+        IExchangeRateProvider exchangeRateProvider)
     {
         _navigation = navigation;
         _assetService = assetService;
@@ -80,6 +91,9 @@ public sealed class AssetsViewModel : ViewModelBase
         _dataInvalidation = dataInvalidation;
         _symbolSearchService = symbolSearchService;
         _notificationCenter = notificationCenter;
+        _reportService = reportService;
+        _taxesProvider = taxesProvider;
+        _exchangeRateProvider = exchangeRateProvider;
 
         ManualTransactionTypeOptions =
         [
@@ -95,6 +109,7 @@ public sealed class AssetsViewModel : ViewModelBase
         _loadCommand = new AsyncCommand(LoadAsync, () => !IsBusy);
         _addManualTransactionCommand = new AsyncCommand(AddManualTransactionAsync, () => !IsBusy);
         _refreshQuotesCommand = new AsyncCommand(RefreshQuotesAsync, () => !IsBusy);
+        _exportReportCommand = new AsyncCommand(ExportPortfolioReportAsync, () => CanExportReport);
         _openImportDialogCommand = new DelegateCommand(_ => _navigation.Navigate(AppRoutes.ImportPreview));
         _moreAssetsCommand = new DelegateCommand(_ => ToggleAssetsLimit());
         _sortByNameCommand = new DelegateCommand(_ => SetSort(AssetSortMode.Name));
@@ -162,9 +177,12 @@ public sealed class AssetsViewModel : ViewModelBase
                 _loadCommand.RaiseCanExecuteChanged();
                 _addManualTransactionCommand.RaiseCanExecuteChanged();
                 _refreshQuotesCommand.RaiseCanExecuteChanged();
+                _exportReportCommand.RaiseCanExecuteChanged();
                 OnPropertyChanged(nameof(IsNotBusy));
                 OnPropertyChanged(nameof(AddButtonText));
                 OnPropertyChanged(nameof(RefreshButtonText));
+                OnPropertyChanged(nameof(ExportReportButtonText));
+                OnPropertyChanged(nameof(CanExportReport));
             }
         }
     }
@@ -332,6 +350,10 @@ public sealed class AssetsViewModel : ViewModelBase
 
     public string RefreshButtonText => IsBusy ? "Обновляем..." : "Обновить котировки";
 
+    public string ExportReportButtonText => IsBusy ? "Формируем..." : "Экспорт отчёта";
+
+    public bool CanExportReport => HasContent && !IsBusy && _allAssets.Count > 0;
+
     public string GrowthMetricValue { get; private set; } = "+0.0%";
 
     public string TotalValueMetric { get; private set; } = "$0.00";
@@ -347,6 +369,8 @@ public sealed class AssetsViewModel : ViewModelBase
     public ICommand RefreshQuotesCommand => _refreshQuotesCommand;
 
     public ICommand OpenImportDialogCommand => _openImportDialogCommand;
+
+    public ICommand ExportReportCommand => _exportReportCommand;
 
     public ICommand MoreAssetsCommand => _moreAssetsCommand;
 
@@ -385,12 +409,13 @@ public sealed class AssetsViewModel : ViewModelBase
                 return snapshot.Quantity * snapshot.AverageBuyPrice;
             });
 
-            decimal growth = totalCost <= 0m ? 0m : (totalValue - totalCost) / totalCost * 100m;
-            decimal taxes = _transactions.Sum(static tx => tx.TaxAmount + (tx.Type == TransactionType.Tax ? tx.GrossAmount : 0m));
+            _currentPortfolioProfitLoss = totalValue - totalCost;
+            decimal growth = totalCost <= 0m ? 0m : _currentPortfolioProfitLoss / totalCost * 100m;
+            decimal taxesUsd = await LoadCurrentTaxDueUsdAsync().ConfigureAwait(true);
 
             GrowthMetricValue = FormatPercent(growth, includeArrow: false);
             TotalValueMetric = FormatMoney(totalValue, "USD");
-            TaxesMetric = FormatMoney(taxes, "USD");
+            TaxesMetric = FormatMoney(taxesUsd, "USD");
 
             _allAssets = assets
                 .Select(asset =>
@@ -1079,6 +1104,122 @@ public sealed class AssetsViewModel : ViewModelBase
         OnPropertyChanged(nameof(TaxesMetric));
         OnPropertyChanged(nameof(ShowEmptyState));
         OnPropertyChanged(nameof(HasContent));
+        OnPropertyChanged(nameof(CanExportReport));
+        _exportReportCommand.RaiseCanExecuteChanged();
+    }
+
+    private async Task<decimal> LoadCurrentTaxDueUsdAsync()
+    {
+        try
+        {
+            TaxScreenReadModel taxModel = await _taxesProvider.GetAsync(DateTime.UtcNow.Year, CancellationToken.None).ConfigureAwait(true);
+            if (taxModel.IsEmpty || taxModel.TotalTaxDue <= 0m)
+            {
+                return 0m;
+            }
+
+            if (taxModel.Currency.Equals("USD", StringComparison.OrdinalIgnoreCase))
+            {
+                return taxModel.TotalTaxDue;
+            }
+
+            DateOnly rateDate = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+            ExchangeRateResult usdRate = await _exchangeRateProvider
+                .GetRateAsync("USD", taxModel.Currency, rateDate, CancellationToken.None)
+                .ConfigureAwait(true);
+
+            if (!usdRate.Succeeded || usdRate.Rate <= 0m)
+            {
+                return 0m;
+            }
+
+            return decimal.Round(taxModel.TotalTaxDue / usdRate.Rate, 2);
+        }
+        catch
+        {
+            return 0m;
+        }
+    }
+
+    private async Task ExportPortfolioReportAsync()
+    {
+        if (!CanExportReport)
+        {
+            await _notificationCenter.NotifyAsync(
+                AppNotificationLevel.Warning,
+                "Отчет не сформирован",
+                "Сначала дождитесь загрузки таблицы активов и проверьте, что в портфеле есть активы.",
+                "Все активы").ConfigureAwait(true);
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            PortfolioReportRequest request = BuildPortfolioReportRequest();
+            ReportExportResult result = await _reportService.ExportPortfolioPdfAsync(request, CancellationToken.None).ConfigureAwait(true);
+
+            if (result.Succeeded)
+            {
+                string message = string.IsNullOrWhiteSpace(result.OutputPath)
+                    ? "PDF-отчет по активам сформирован."
+                    : $"PDF-отчет по активам сохранен: {result.OutputPath}";
+
+                await _notificationCenter.NotifyAsync(AppNotificationLevel.Success, "Отчет сформирован", message, "Все активы").ConfigureAwait(true);
+                return;
+            }
+
+            await _notificationCenter.NotifyAsync(AppNotificationLevel.Error, "Отчет не сформирован", result.Message, "Все активы").ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            await _notificationCenter.NotifyAsync(AppNotificationLevel.Error, "Ошибка экспорта отчета", ex.Message, "Все активы").ConfigureAwait(true);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private PortfolioReportRequest BuildPortfolioReportRequest()
+    {
+        string portfolioName = string.IsNullOrWhiteSpace(_shellState.CurrentPortfolioName)
+            ? "Основной портфель"
+            : _shellState.CurrentPortfolioName;
+
+        decimal totalValue = _allAssets.Sum(static item => item.Value);
+        IReadOnlyList<(string Category, decimal Value)> allocation = _allAssets
+            .GroupBy(static item => item.TypeLabel, StringComparer.OrdinalIgnoreCase)
+            .Select(static group => (Category: group.Key, Value: decimal.Round(group.Sum(item => item.Value), 2)))
+            .OrderByDescending(static item => item.Value)
+            .ToArray();
+
+        IReadOnlyList<(string Asset, decimal Value)> topAssets = _allAssets
+            .OrderByDescending(static item => item.Value)
+            .Take(8)
+            .Select(static item => (Asset: $"{item.Ticker} — {item.Name}", Value: decimal.Round(item.Value, 2)))
+            .ToArray();
+
+        IReadOnlyList<(string Metric, string Value)> riskMetrics =
+        [
+            ("Прирост", GrowthMetricValue),
+            ("Налоги к уплате", TaxesMetric),
+            ("Активов", _allAssets.Count.ToString(CultureInfo.InvariantCulture)),
+            ("Операций", _transactions.Count.ToString(CultureInfo.InvariantCulture)),
+        ];
+
+        return new PortfolioReportRequest(
+            PortfolioName: portfolioName,
+            PeriodLabel: $"Срез на {DateTime.Now.ToString("dd.MM.yyyy", RuCulture)}",
+            TotalValue: decimal.Round(totalValue, 2),
+            ProfitLoss: decimal.Round(_currentPortfolioProfitLoss, 2),
+            Allocation: allocation,
+            TopAssets: topAssets,
+            RiskMetrics: riskMetrics,
+            TransactionCount: _transactions.Count,
+            Currency: "USD",
+            Disclaimer: "Отчет сформирован по текущей таблице All assets. Налоговая сумма синхронизирована с разделом Налоги и показана в USD по текущему курсу.",
+            OutputDirectory: string.Empty);
     }
 
     private void SetFormError(string message)
