@@ -1,4 +1,4 @@
-using Proxima.Application.Goals;
+using Proxima.Core.Application.Goals;
 using Proxima.Infrastructure.Persistence;
 using Proxima.Infrastructure.Persistence.Repositories;
 

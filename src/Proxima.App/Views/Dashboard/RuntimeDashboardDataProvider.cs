@@ -1,10 +1,10 @@
-using Proxima.Analytics.Dashboard;
+using Proxima.Core.Application.Analytics.Dashboard;
 using Proxima.App.Shell;
-using Proxima.Application.Assets;
-using Proxima.Application.Quotes;
-using Proxima.Application.Transactions;
-using Proxima.Domain.Assets;
-using Proxima.Domain.Transactions;
+using Proxima.Core.Application.Assets;
+using Proxima.Core.Application.Quotes;
+using Proxima.Core.Application.Transactions;
+using Proxima.Core.Domain.Assets;
+using Proxima.Core.Domain.Transactions;
 
 namespace Proxima.App.Views.Dashboard;
 

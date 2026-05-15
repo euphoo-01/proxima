@@ -1,4 +1,4 @@
-using Proxima.Importing;
+using Proxima.Core.Application.Importing;
 
 namespace Proxima.App.ViewModels;
 

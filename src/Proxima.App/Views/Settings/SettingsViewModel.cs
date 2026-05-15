@@ -3,8 +3,8 @@ using System.Windows.Input;
 using Proxima.App.Views.Auth;
 using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
-using Proxima.Application.Settings;
-using Proxima.Domain.Auth;
+using Proxima.Core.Application.Settings;
+using Proxima.Core.Domain.Auth;
 
 namespace Proxima.App.Views.Settings;
 
@@ -201,12 +201,12 @@ public sealed class SettingsViewModel : ViewModelBase
     public static SettingsViewModel CreateDesignData()
     {
         RuntimeUserContext context = new();
-        context.SetAuthenticated(new Proxima.Domain.Auth.LocalUserProfile(
+        context.SetAuthenticated(new Proxima.Core.Domain.Auth.LocalUserProfile(
             Guid.Parse("11111111-1111-1111-1111-111111111111"),
             "Андрей К.",
             "local",
             UserRole.PrivateInvestor,
-            new Proxima.Domain.Auth.PasswordCredential("design", [], [], 1, 1),
+            new Proxima.Core.Domain.Auth.PasswordCredential("$design$v=1$i=1$salt$hash"),
             DateTimeOffset.UtcNow,
             DateTimeOffset.UtcNow,
             0));

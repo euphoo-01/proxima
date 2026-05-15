@@ -1,11 +1,11 @@
 using System.Globalization;
-using Proxima.Application.AssetDetails;
-using Proxima.Application.Assets;
-using Proxima.Application.Portfolios;
-using Proxima.Application.Quotes;
-using Proxima.Application.Transactions;
-using Proxima.Domain.Assets;
-using Proxima.Domain.Transactions;
+using Proxima.Core.Application.AssetDetails;
+using Proxima.Core.Application.Assets;
+using Proxima.Core.Application.Portfolios;
+using Proxima.Core.Application.Quotes;
+using Proxima.Core.Application.Transactions;
+using Proxima.Core.Domain.Assets;
+using Proxima.Core.Domain.Transactions;
 
 namespace Proxima.Infrastructure.AssetDetails;
 

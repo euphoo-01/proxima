@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Proxima.Application.Goals;
-using Proxima.Domain.Goals;
+using Proxima.Core.Application.Goals;
+using Proxima.Core.Domain.Goals;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 

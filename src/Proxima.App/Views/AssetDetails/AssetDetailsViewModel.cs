@@ -4,7 +4,7 @@ using System.Windows.Input;
 using Proxima.App.Navigation;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
-using Proxima.Application.AssetDetails;
+using Proxima.Core.Application.AssetDetails;
 
 namespace Proxima.App.Views.AssetDetails;
 

@@ -1,4 +1,4 @@
-using Proxima.Application.Settings;
+using Proxima.Core.Application.Settings;
 
 namespace Proxima.App.ViewModels;
 

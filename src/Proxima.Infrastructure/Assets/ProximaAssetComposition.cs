@@ -1,4 +1,4 @@
-using Proxima.Application.Assets;
+using Proxima.Core.Application.Assets;
 using Proxima.Infrastructure.Persistence;
 using Proxima.Infrastructure.Persistence.Repositories;
 

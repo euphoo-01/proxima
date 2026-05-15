@@ -5,12 +5,12 @@ using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using Proxima.App.Shell;
-using Proxima.Application.Transactions;
-using Proxima.Application.MarketData;
+using Proxima.Core.Application.Transactions;
+using Proxima.Core.Application.MarketData;
 using Proxima.App.ViewModels;
 using Proxima.App.Notifications;
-using Proxima.Domain.Transactions;
-using Proxima.Importing;
+using Proxima.Core.Domain.Transactions;
+using Proxima.Core.Application.Importing;
 
 namespace Proxima.App.Views.Import;
 
@@ -477,7 +477,7 @@ public sealed class ManualImportViewModel : ViewModelBase
             Quantity = quantity.ToString("0.####", CultureInfo.InvariantCulture),
             Price = price.ToString("0.####", CultureInfo.InvariantCulture),
             Commission = "0",
-            Currency = symbol.AssetType is Proxima.Domain.Assets.AssetType.Cash
+            Currency = symbol.AssetType is Proxima.Core.Domain.Assets.AssetType.Cash
                 ? "USD"
                 : string.IsNullOrWhiteSpace(symbol.Currency) ? "USD" : symbol.Currency,
             TagOrCategory = string.IsNullOrWhiteSpace(NewTag) ? DefaultTagFor(symbol) : NewTag.Trim(),
@@ -571,7 +571,7 @@ public sealed class ManualImportViewModel : ViewModelBase
 
         if (_symbolSearchService is null)
         {
-            return new MarketSymbolCandidate(query.Trim().ToUpperInvariant(), query.Trim().ToUpperInvariant(), query.Trim(), "Manual", "USD", string.Empty, null, Proxima.Domain.Assets.AssetType.Stock);
+            return new MarketSymbolCandidate(query.Trim().ToUpperInvariant(), query.Trim().ToUpperInvariant(), query.Trim(), "Manual", "USD", string.Empty, null, Proxima.Core.Domain.Assets.AssetType.Stock);
         }
 
         MarketSymbolSearchResult result = await _symbolSearchService.ResolveAsync(query, cancellationToken).ConfigureAwait(true);
@@ -608,11 +608,11 @@ public sealed class ManualImportViewModel : ViewModelBase
     {
         return symbol.AssetType switch
         {
-            Proxima.Domain.Assets.AssetType.Crypto => "Криптовалюта",
-            Proxima.Domain.Assets.AssetType.Etf => "ETF",
-            Proxima.Domain.Assets.AssetType.Bond => "Облигация",
-            Proxima.Domain.Assets.AssetType.Currency => "Валюта",
-            Proxima.Domain.Assets.AssetType.Cash => "Наличность",
+            Proxima.Core.Domain.Assets.AssetType.Crypto => "Криптовалюта",
+            Proxima.Core.Domain.Assets.AssetType.Etf => "ETF",
+            Proxima.Core.Domain.Assets.AssetType.Bond => "Облигация",
+            Proxima.Core.Domain.Assets.AssetType.Currency => "Валюта",
+            Proxima.Core.Domain.Assets.AssetType.Cash => "Наличность",
             _ => "Акция",
         };
     }

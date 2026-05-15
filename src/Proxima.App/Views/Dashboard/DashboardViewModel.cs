@@ -2,12 +2,12 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Input;
 using Avalonia.Media;
-using Proxima.Analytics.Dashboard;
+using Proxima.Core.Application.Analytics.Dashboard;
 using Proxima.App.Navigation;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
-using Proxima.Application.Transactions;
-using Proxima.Domain.Transactions;
+using Proxima.Core.Application.Transactions;
+using Proxima.Core.Domain.Transactions;
 
 namespace Proxima.App.Views.Dashboard;
 

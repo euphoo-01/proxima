@@ -1,4 +1,4 @@
-using Proxima.Application.Observability;
+using Proxima.Core.Application.Observability;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 

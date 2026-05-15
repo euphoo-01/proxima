@@ -1,4 +1,4 @@
-using Proxima.Domain.Assets;
+using Proxima.Core.Domain.Assets;
 
 namespace Proxima.App.ViewModels;
 

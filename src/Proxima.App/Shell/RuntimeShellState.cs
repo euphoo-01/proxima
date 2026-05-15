@@ -1,4 +1,4 @@
-using Proxima.Application.Portfolios;
+using Proxima.Core.Application.Portfolios;
 
 namespace Proxima.App.Shell;
 

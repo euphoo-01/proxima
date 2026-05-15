@@ -1,4 +1,4 @@
-using Proxima.Domain.Transactions;
+using Proxima.Core.Domain.Transactions;
 
 namespace Proxima.App.ViewModels;
 

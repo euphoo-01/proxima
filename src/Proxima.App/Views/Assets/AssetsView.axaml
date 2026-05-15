@@ -3,7 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:assets="using:Proxima.App.Views.Assets"
-    xmlns:market="using:Proxima.Application.MarketData"
+    xmlns:market="using:Proxima.Core.Application.MarketData"
     x:DataType="assets:AssetsViewModel">
 
     <UserControl.Styles>

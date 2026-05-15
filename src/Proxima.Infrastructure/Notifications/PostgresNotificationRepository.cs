@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Proxima.Application.Notifications;
-using Proxima.Domain.Notifications;
+using Proxima.Core.Application.Notifications;
+using Proxima.Core.Domain.Notifications;
 using Proxima.Infrastructure.Persistence;
 using Proxima.Infrastructure.Persistence.Repositories;
 

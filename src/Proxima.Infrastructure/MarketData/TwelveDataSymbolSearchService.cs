@@ -1,10 +1,10 @@
 using System.Collections.Concurrent;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using Proxima.Application.Auth;
-using Proxima.Application.MarketData;
-using Proxima.Application.Settings;
-using Proxima.Domain.Assets;
+using Proxima.Core.Application.Auth;
+using Proxima.Core.Application.MarketData;
+using Proxima.Core.Application.Settings;
+using Proxima.Core.Domain.Assets;
 using Proxima.Infrastructure.Quotes;
 
 namespace Proxima.Infrastructure.MarketData;

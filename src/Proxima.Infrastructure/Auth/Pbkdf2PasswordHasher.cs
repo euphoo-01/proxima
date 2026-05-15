@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
-using Proxima.Application.Auth;
-using Proxima.Domain.Auth;
+using Proxima.Core.Application.Auth;
+using Proxima.Core.Domain.Auth;
 
 namespace Proxima.Infrastructure.Auth;
 

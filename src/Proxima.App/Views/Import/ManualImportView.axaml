@@ -3,7 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:import="using:Proxima.App.Views.Import"
-    xmlns:market="using:Proxima.Application.MarketData"
+    xmlns:market="using:Proxima.Core.Application.MarketData"
     x:DataType="import:ManualImportViewModel">
 
     <UserControl.Styles>

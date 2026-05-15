@@ -5,7 +5,7 @@ using System.Windows.Input;
 using Proxima.App.Navigation;
 using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
-using Proxima.Importing;
+using Proxima.Core.Application.Importing;
 
 namespace Proxima.App.Views.Import;
 

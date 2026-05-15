@@ -5,12 +5,12 @@ using Proxima.App.Navigation;
 using Proxima.App.Notifications;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
-using Proxima.Application.Assets;
-using Proxima.Application.MarketData;
-using Proxima.Application.Quotes;
-using Proxima.Application.Transactions;
-using Proxima.Domain.Assets;
-using Proxima.Domain.Transactions;
+using Proxima.Core.Application.Assets;
+using Proxima.Core.Application.MarketData;
+using Proxima.Core.Application.Quotes;
+using Proxima.Core.Application.Transactions;
+using Proxima.Core.Domain.Assets;
+using Proxima.Core.Domain.Transactions;
 
 namespace Proxima.App.Views.Assets;
 

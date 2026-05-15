@@ -1,6 +1,6 @@
-using Proxima.Application.Auth;
-using Proxima.Application.Settings;
-using Proxima.Domain.Auth;
+using Proxima.Core.Application.Auth;
+using Proxima.Core.Application.Settings;
+using Proxima.Core.Domain.Auth;
 
 namespace Proxima.App.Views.Auth;
 

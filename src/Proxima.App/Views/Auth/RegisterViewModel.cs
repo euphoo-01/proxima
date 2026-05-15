@@ -1,7 +1,7 @@
 using System.Windows.Input;
 using Proxima.App.ViewModels;
-using Proxima.Application.Auth;
-using Proxima.Domain.Auth;
+using Proxima.Core.Application.Auth;
+using Proxima.Core.Domain.Auth;
 
 namespace Proxima.App.Views.Auth;
 

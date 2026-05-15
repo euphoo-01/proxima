@@ -88,33 +88,33 @@ Expected high-level structure:
 ```text
 src/
   Proxima.App/
-  Proxima.Domain/
-  Proxima.Application/
+  Proxima.Core.Domain/
+  Proxima.Core.Application/
   Proxima.Infrastructure/
-  Proxima.Analytics/
-  Proxima.Importing/
-  Proxima.Reporting/
+  Proxima.Core.Application.Analytics/
+  Proxima.Core.Application.Importing/
+  Proxima.Core.Application.Reporting/
 
 tests/
-  Proxima.Domain.Tests/
-  Proxima.Application.Tests/
-  Proxima.Infrastructure.Tests/
-  Proxima.Analytics.Tests/
-  Proxima.Importing.Tests/
-  Proxima.App.Tests/
+  Proxima.Tests/
+  Proxima.Tests/
+  Proxima.Tests/
+  Proxima.Tests/
+  Proxima.Tests/
+  Proxima.Tests/
 ````
 
 Dependency rules:
 
-* `Proxima.Domain` must not reference Avalonia, EF Core, Npgsql, HTTP clients, file system APIs, or UI frameworks.
-* `Proxima.Application` may reference `Domain`.
+* `Proxima.Core.Domain` must not reference Avalonia, EF Core, Npgsql, HTTP clients, file system APIs, or UI frameworks.
+* `Proxima.Core.Application` may reference `Domain`.
 * `Infrastructure` implements application abstractions.
 * `App` composes dependencies and contains Avalonia Views/ViewModels.
 * Business logic must not live in Views or code-behind.
 * ViewModels must not contain SQL, HTTP calls, cryptography internals, or complex financial formulas.
-* Financial calculations belong in `Proxima.Analytics` or domain/application services.
-* Import logic belongs in `Proxima.Importing`.
-* PDF/report generation belongs in `Proxima.Reporting`.
+* Financial calculations belong in `Proxima.Core.Application.Analytics` or domain/application services.
+* Import logic belongs in `Proxima.Core.Application.Importing`.
+* PDF/report generation belongs in `Proxima.Core.Application.Reporting`.
 * Cross-device sync is out of scope. Do not reintroduce a sync project without explicit approval.
 
 Apply SOLID, DRY, KISS and YAGNI pragmatically.

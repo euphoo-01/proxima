@@ -4,8 +4,8 @@ using System.Windows.Input;
 using Proxima.App.Controls;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
-using Proxima.Application.Goals;
-using Proxima.Domain.Goals;
+using Proxima.Core.Application.Goals;
+using Proxima.Core.Domain.Goals;
 
 namespace Proxima.App.Views.Goals;
 

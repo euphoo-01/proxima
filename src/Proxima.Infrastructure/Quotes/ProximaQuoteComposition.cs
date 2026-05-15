@@ -1,4 +1,4 @@
-using Proxima.Application.Quotes;
+using Proxima.Core.Application.Quotes;
 using Proxima.Infrastructure.Persistence;
 using Proxima.Infrastructure.Persistence.Repositories;
 

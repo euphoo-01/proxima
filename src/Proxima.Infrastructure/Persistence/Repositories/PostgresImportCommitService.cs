@@ -1,10 +1,10 @@
 using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
-using Proxima.Application.Transactions;
-using Proxima.Application.MarketData;
-using Proxima.Domain.Assets;
-using Proxima.Domain.Transactions;
+using Proxima.Core.Application.Transactions;
+using Proxima.Core.Application.MarketData;
+using Proxima.Core.Domain.Assets;
+using Proxima.Core.Domain.Transactions;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 

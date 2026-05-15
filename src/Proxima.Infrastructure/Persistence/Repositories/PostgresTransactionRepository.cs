@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Proxima.Application.Transactions;
-using Proxima.Domain.Transactions;
+using Proxima.Core.Application.Transactions;
+using Proxima.Core.Domain.Transactions;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 

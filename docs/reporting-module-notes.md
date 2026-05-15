@@ -2,7 +2,7 @@
 
 ## Implemented
 
-- `Proxima.Reporting` report abstraction:
+- `Proxima.Core.Application.Reporting` report abstraction:
   - `IReportService`
   - `SimplePdfReportService`
   - portfolio/tax report request+preview/export DTOs

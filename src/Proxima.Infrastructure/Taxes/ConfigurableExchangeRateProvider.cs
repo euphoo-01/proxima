@@ -1,6 +1,6 @@
-using Proxima.Application.Auth;
-using Proxima.Application.Settings;
-using Proxima.Application.Taxes;
+using Proxima.Core.Application.Auth;
+using Proxima.Core.Application.Settings;
+using Proxima.Core.Application.Taxes;
 
 namespace Proxima.Infrastructure.Taxes;
 

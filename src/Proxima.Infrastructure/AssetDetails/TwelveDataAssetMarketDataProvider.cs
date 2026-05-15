@@ -1,10 +1,10 @@
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using Proxima.Application.AssetDetails;
-using Proxima.Application.Auth;
-using Proxima.Application.MarketData;
-using Proxima.Application.Settings;
+using Proxima.Core.Application.AssetDetails;
+using Proxima.Core.Application.Auth;
+using Proxima.Core.Application.MarketData;
+using Proxima.Core.Application.Settings;
 using Proxima.Infrastructure.MarketData;
 using Proxima.Infrastructure.Quotes;
 

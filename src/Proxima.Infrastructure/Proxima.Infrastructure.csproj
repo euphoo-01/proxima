@@ -7,9 +7,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageReference Include="PdfSharp" Version="6.2.2" />
   </ItemGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\Proxima.Application\Proxima.Application.csproj" />
-    <ProjectReference Include="..\Proxima.Domain\Proxima.Domain.csproj" />
+    <ProjectReference Include="..\Proxima.Core\Proxima.Core.csproj" />
   </ItemGroup>
 </Project>

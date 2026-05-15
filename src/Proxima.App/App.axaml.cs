@@ -8,9 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Proxima.App.Composition;
 using Proxima.App.Shell;
 using Proxima.App.Views.Auth;
-using Proxima.Application.Auth;
-using Proxima.Application.Settings;
-using Proxima.Domain.Auth;
+using Proxima.Core.Application.Auth;
+using Proxima.Core.Application.Settings;
+using Proxima.Core.Domain.Auth;
 using Proxima.Infrastructure.Persistence;
 
 namespace Proxima.App;

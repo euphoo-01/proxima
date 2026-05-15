@@ -5,11 +5,11 @@ using Proxima.App.Shell;
 using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
 using Proxima.App.Views.Auth;
-using Proxima.Application.Auth;
-using Proxima.Application.Portfolios;
-using Proxima.Application.Settings;
-using Proxima.Domain.Auth;
-using Proxima.Domain.Portfolios;
+using Proxima.Core.Application.Auth;
+using Proxima.Core.Application.Portfolios;
+using Proxima.Core.Application.Settings;
+using Proxima.Core.Domain.Auth;
+using Proxima.Core.Domain.Portfolios;
 
 namespace Proxima.App.Views.Profile;
 

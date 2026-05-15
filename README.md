@@ -1,137 +1,91 @@
 # Proxima
 
-Proxima is a local-first desktop financial analytics application for private investors and financial consultants.
+Proxima is a C# Avalonia MVVM desktop application for local-first portfolio tracking, analytics, imports, Belarus tax calculations, reporting and PostgreSQL persistence.
 
-## Stack
-
-- .NET 10 LTS
-- C#
-- Avalonia UI
-- Clean Architecture + MVVM
-- PostgreSQL with EF Core/Npgsql migrations
-
-## Cross-Platform Requirement
-
-Proxima is a desktop app that must run on both Linux and Windows.  
-All runtime file locations should use platform-safe APIs (for example, `Environment.SpecialFolder` + `Path.Combine`) instead of hardcoded OS-specific absolute paths.
-
-## Repository Layout
+## Solution structure
 
 ```text
 src/
-  Proxima.App/
-  Proxima.Domain/
-  Proxima.Application/
-  Proxima.Infrastructure/
-  Proxima.Analytics/
-  Proxima.Importing/
-  Proxima.Reporting/
+  Proxima.App/              # Avalonia UI, MVVM, navigation, dialogs, composition root
+  Proxima.Core/             # Domain model, use cases, business services, DTOs, ports
+  Proxima.Infrastructure/   # EF Core/PostgreSQL, migrations, providers, import/PDF adapters
+
 tests/
-  Proxima.Domain.Tests/
-  Proxima.Application.Tests/
-  Proxima.Infrastructure.Tests/
-  Proxima.Analytics.Tests/
-  Proxima.Importing.Tests/
-  Proxima.App.Tests/
+  Proxima.Tests/            # Architecture, persistence metadata and behavior checks
 ```
 
-## Prerequisites
+Runtime dependency graph:
 
-- .NET SDK 10.0.104 or compatible .NET 10 SDK
-- PostgreSQL 16+ for application persistence
+```text
+Proxima.App            -> Proxima.Core, Proxima.Infrastructure
+Proxima.Infrastructure -> Proxima.Core
+Proxima.Core           -> no project dependencies
+Proxima.Tests          -> Proxima.Core, Proxima.Infrastructure, Proxima.App
+```
 
-## Build and Test
+## Layer rules
+
+`Proxima.App` contains Avalonia views, ViewModels, commands, navigation, dialogs, notifications and UI composition. ViewModels call Core application services/use cases; they must not depend directly on `DbContext` or infrastructure repositories.
+
+`Proxima.Core` contains domain entities/value objects/enums, application services, analytics, tax calculation, import/report contracts, DTOs, results and ports. It must not reference Avalonia, EF Core, PostgreSQL/Npgsql, PDFSharp, file pickers, HTTP implementation details or operating-system APIs.
+
+`Proxima.Infrastructure` contains EF Core persistence, migrations, repositories, Unit of Work, Twelve Data/NBRB/Belarusbank providers, PBKDF2 password hashing, CSV/PDF parser implementations, PDFSharp exporters and other technical adapters.
+
+## Persistence
+
+PostgreSQL is the only runtime persistence provider. Schema management is done by EF Core migrations under:
+
+```text
+src/Proxima.Infrastructure/Persistence/Migrations/
+```
+
+Application startup must migrate the database through `Database.MigrateAsync`; raw SQL bootstrap scripts are not used.
+
+Set a connection string before running the app or EF tooling when the default local PostgreSQL container is not used:
+
+```bash
+export PROXIMA_POSTGRES="Host=localhost;Port=55432;Database=proxima;Username=proxima;Password=proxima"
+```
+
+Create a migration:
+
+```bash
+dotnet ef migrations add <MigrationName> \
+  --project src/Proxima.Infrastructure/Proxima.Infrastructure.csproj \
+  --startup-project src/Proxima.App/Proxima.App.csproj \
+  --output-dir Persistence/Migrations
+```
+
+Apply migrations:
+
+```bash
+dotnet ef database update \
+  --project src/Proxima.Infrastructure/Proxima.Infrastructure.csproj \
+  --startup-project src/Proxima.App/Proxima.App.csproj
+```
+
+## Password credentials
+
+User credentials are stored in one self-contained `users.password_hash text not null` column. The stored value uses the encoded PBKDF2-SHA256 format:
+
+```text
+$pbkdf2-sha256$v=1$i=210000$<base64-salt>$<base64-derived-hash>
+```
+
+The salt, work factor and format version are encoded inside the string. Passwords must not be stored as plain SHA hashes.
+
+## Tests
+
+Run:
 
 ```bash
 dotnet restore
-dotnet build
-dotnet test
+dotnet build Proxima.sln
+dotnet test Proxima.sln
 ```
 
-## PostgreSQL Dev Setup
+The consolidated `Proxima.Tests` project verifies layer dependencies, absence of removed project fragments in active code, EF model metadata, encoded password hashing, analytics behavior, import preview behavior and PDF export behavior.
 
-```bash
-docker compose up -d
-```
+## Architecture decision
 
-Default connection (override via `PROXIMA_DB_CONNECTION`):
-
-`Host=localhost;Port=55432;Database=proxima;Username=proxima;Password=proxima`
-
-EF Core migrations are applied automatically by `DatabaseBootstrapService` on application startup. Architecture rules are documented in `docs/architecture-ddd-mvvm-services.md`. To run migrations manually:
-
-```bash
-dotnet ef database update --project src/Proxima.Infrastructure/Proxima.Infrastructure.csproj --startup-project src/Proxima.App/Proxima.App.csproj
-```
-
-`Proxima.sln` uses `Proxima.App.Tests` as the solution entrypoint so `dotnet build` and `dotnet test` build the full project graph consistently in restricted local environments. Individual projects can still be opened and run directly from `src/` and `tests/`.
-
-## Run
-
-```bash
-dotnet run --project src/Proxima.App/Proxima.App.csproj
-```
-
-## Publish (Without Docker Runtime)
-
-Self-contained publish scripts:
-
-- Linux: `./scripts/publish-linux-x64.sh`
-- Windows (PowerShell): `./scripts/publish-win-x64.ps1`
-
-Both produce standalone outputs in `artifacts/publish/*`.
-Docker is optional and is used only as a convenient way to host PostgreSQL locally.
-
-Distributable archives:
-
-- Linux tarball: `./scripts/package-linux-x64.sh 0.1.0`
-- Windows zip: `./scripts/package-win-x64.ps1 -Version 0.1.0`
-
-See `docs/deployment.md` for packaging details and current installer status.
-
-Installer baseline:
-
-- Linux DEB: `./scripts/package-linux-deb.sh 0.1.0 amd64`
-- Linux RPM: `./scripts/package-linux-rpm.sh 0.1.0 1 x86_64`
-- Linux all formats: `./scripts/package-linux-all.sh 0.1.0`
-- Windows MSIX (on Windows SDK host): `./scripts/package-win-msix.ps1 -Version 0.1.0.0`
-
-Release gate:
-
-- Preflight checks: `./scripts/release-preflight.sh`
-- Artifact manifest + SHA256: `./scripts/generate-release-manifest.sh`
-
-The app currently supports local first-run setup, portfolio/asset/transaction management, and a CSV/PDF import preview flow with manual fallback routing. Local profile, portfolio, asset, transaction, settings, notifications and quote-cache data are persisted in PostgreSQL through EF Core migrations. Passwords are saved only as PBKDF2-SHA256 metadata, salt and hash.
-
-### CSV Demo Import Format
-
-Supported header columns (comma or semicolon separators):
-
-```csv
-date,ticker,name,type,quantity,price,currency,fee,broker,tag
-2026-01-01,AAPL,Apple,Buy,2,100,USD,1,Broker A,tech
-2026-01-05,BND,US Bond ETF,Dividend,0,0,USD,0,Broker B,bonds
-```
-
-- `type` supports values from transaction enum: `Buy`, `Sell`, `Dividend`, `Deposit`, `Withdrawal`, `Fee`, `Tax`, `Transfer`, `Split`, `Airdrop`, `StakingReward`.
-- Invalid or suspicious rows are flagged in preview before commit.
-
-## Figma
-
-Figma source of truth:
-
-```text
-https://www.figma.com/design/Drxcen3JN69XP0fnYxkgOi/Proxima-2?node-id=62-497&p=f&t=5bNwquv4cza52Z5Z-0
-```
-
-UI implementation modules must inspect the Figma file through MCP before implementing authenticated screens. If MCP is unavailable, the UI must be explicitly documented as approximated from the design-system spec.
-
-Module 01 used the custom `mcp__figma__` server for final inspection and captured structured node metadata for the final Mockup desktop/mobile screens plus shared Wireframe components. The current design system is Figma-derived reusable groundwork; individual production screens are implemented in later module iterations.
-
-## External APIs
-
-- Currency rates: Belarusbank developer API (`docs/api-providers.md`).
-- Market quotes: Twelve Data API (`docs/api-providers.md`).
-
-Current settings module includes provider selection and masked Twelve Data API key input for local configuration.
-Current reporting module supports portfolio and tax draft PDF export to the local reports directory.
+The solution uses three runtime projects instead of many narrow runtime assemblies to keep the course project maintainable: UI/MVVM in App, all domain and application logic in Core, and all technical adapters in Infrastructure. This preserves clean boundaries without scattering closely related business modules across separate projects.

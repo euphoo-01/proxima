@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Proxima.Application.Assets;
-using Proxima.Domain.Assets;
+using Proxima.Core.Application.Assets;
+using Proxima.Core.Domain.Assets;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 

@@ -1,4 +1,4 @@
-using Proxima.Application.Auth;
+using Proxima.Core.Application.Auth;
 using Proxima.Infrastructure.Persistence;
 using Proxima.Infrastructure.Persistence.Repositories;
 

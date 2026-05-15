@@ -5,7 +5,7 @@ using Avalonia.Media.Imaging;
 using Proxima.App.Navigation;
 using Proxima.App.ViewModels;
 using Proxima.App.Views.Auth;
-using Proxima.Domain.Auth;
+using Proxima.Core.Domain.Auth;
 
 namespace Proxima.App.Shell;
 

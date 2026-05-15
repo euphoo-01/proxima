@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Proxima.Application.Quotes;
+using Proxima.Core.Application.Quotes;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 

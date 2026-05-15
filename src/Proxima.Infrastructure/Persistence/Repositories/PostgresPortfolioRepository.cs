@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Proxima.Application.Portfolios;
-using Proxima.Domain.Portfolios;
+using Proxima.Core.Application.Portfolios;
+using Proxima.Core.Domain.Portfolios;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 

@@ -4,9 +4,9 @@ using Proxima.App.Navigation;
 using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
 using Proxima.App.Views.Auth;
-using Proxima.Application.Portfolios;
-using Proxima.Domain.Auth;
-using Proxima.Domain.Portfolios;
+using Proxima.Core.Application.Portfolios;
+using Proxima.Core.Domain.Auth;
+using Proxima.Core.Domain.Portfolios;
 
 namespace Proxima.App.Shell;
 

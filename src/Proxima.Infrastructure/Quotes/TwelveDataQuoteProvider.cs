@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using Proxima.Application.MarketData;
-using Proxima.Application.Quotes;
+using Proxima.Core.Application.MarketData;
+using Proxima.Core.Application.Quotes;
 using Proxima.Infrastructure.MarketData;
 
 namespace Proxima.Infrastructure.Quotes;

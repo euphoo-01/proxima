@@ -1,5 +1,6 @@
-using Proxima.Application.Assets;
-using Proxima.Domain.Goals;
+using Proxima.Core.Application.Assets;
+using Proxima.Core.Domain.Goals;
+using Proxima.Core.Domain.Assets;
 
 namespace Proxima.App.Views.Goals;
 
@@ -8,7 +9,7 @@ public interface IGoalProgressBaselineService
     IReadOnlyDictionary<Guid, decimal> CalculateCurrentAmounts(Guid portfolioId, IReadOnlyList<Goal> goals);
 }
 
-public sealed class GoalProgressBaselineService(IAssetRepository assets) : IGoalProgressBaselineService
+public sealed class GoalProgressBaselineService(IAssetService assets) : IGoalProgressBaselineService
 {
     public IReadOnlyDictionary<Guid, decimal> CalculateCurrentAmounts(Guid portfolioId, IReadOnlyList<Goal> goals)
     {
@@ -36,8 +37,8 @@ public sealed class GoalProgressBaselineService(IAssetRepository assets) : IGoal
 
     private decimal ResolvePortfolioValue(Guid portfolioId)
     {
-        IReadOnlyList<Domain.Assets.Asset> portfolioAssets = assets
-            .ListByPortfolioAsync(portfolioId, includeArchived: false, CancellationToken.None)
+        IReadOnlyList<Asset> portfolioAssets = assets
+            .ListActiveAsync(portfolioId, CancellationToken.None)
             .GetAwaiter()
             .GetResult();
 

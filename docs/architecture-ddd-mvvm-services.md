@@ -5,15 +5,15 @@
 Proxima is split into strict layers. Dependencies must point inward only:
 
 ```text
-Proxima.App          -> Proxima.Application, Proxima.Infrastructure, Proxima.Analytics, Proxima.Importing, Proxima.Reporting
-Proxima.Infrastructure -> Proxima.Application, Proxima.Domain
-Proxima.Application -> Proxima.Domain
-Proxima.Domain      -> no project dependencies
+Proxima.App          -> Proxima.Core.Application, Proxima.Infrastructure, Proxima.Core.Application.Analytics, Proxima.Core.Application.Importing, Proxima.Core.Application.Reporting
+Proxima.Infrastructure -> Proxima.Core.Application, Proxima.Core.Domain
+Proxima.Core.Application -> Proxima.Core.Domain
+Proxima.Core.Domain      -> no project dependencies
 ```
 
 ## Domain layer
 
-`src/Proxima.Domain` contains domain records, enums and business terms only. It must not know about Avalonia, EF Core, PostgreSQL, HTTP clients, PDF libraries, file systems or UI commands.
+`src/Proxima.Core.Domain` contains domain records, enums and business terms only. It must not know about Avalonia, EF Core, PostgreSQL, HTTP clients, PDF libraries, file systems or UI commands.
 
 Current domain modules:
 
@@ -26,7 +26,7 @@ Current domain modules:
 
 ## Application layer
 
-`src/Proxima.Application` contains use-case services, repository ports, request/result contracts and orchestration logic. This layer owns business workflows, not infrastructure details.
+`src/Proxima.Core.Application` contains use-case services, repository ports, request/result contracts and orchestration logic. This layer owns business workflows, not infrastructure details.
 
 Rules:
 
@@ -63,9 +63,9 @@ Rules:
 
 Specialized modules remain independent service assemblies:
 
-- `Proxima.Analytics` — financial calculations and read-model shaping;
-- `Proxima.Importing` — import parsing/preview logic;
-- `Proxima.Reporting` — PDF/report generation.
+- `Proxima.Core.Application.Analytics` — financial calculations and read-model shaping;
+- `Proxima.Core.Application.Importing` — import parsing/preview logic;
+- `Proxima.Core.Application.Reporting` — PDF/report generation.
 
 These modules must not own persistence schema. Persistent writes go through Application ports and Infrastructure repositories.
 
@@ -73,18 +73,18 @@ These modules must not own persistence schema. Persistent writes go through Appl
 
 The legacy `Proxima.Sync` project was removed from the solution. Snapshot export/import UI and sync settings were deleted. Database cleanup migrations remove legacy sync tables and settings columns:
 
-- `sync_snapshots`;
-- `sync_enabled`;
-- `last_snapshot_at`.
+- `removed legacy table`;
+- `removed legacy setting`;
+- `removed legacy timestamp`.
 
 ## Removed unused persistence tables
 
 The active PostgreSQL schema is now limited to tables that are mapped by the current EF model. Cleanup migrations drop unused empty legacy tables:
 
-- `tax_profiles`;
-- `tax_reports`;
-- `import_sessions`;
-- `import_rows`.
+- `removed legacy tax table`;
+- `removed legacy tax table`;
+- `removed legacy import table`;
+- `removed legacy import table`.
 
 Import and tax flows now use runtime services/read models instead of owning dead persistence tables.
 

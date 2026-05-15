@@ -5,9 +5,9 @@ using Proxima.App.Shell;
 using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
 using Proxima.App.Views.Auth;
-using Proxima.Application.Taxes;
-using Proxima.Application.Transactions;
-using Proxima.Reporting.Reports;
+using Proxima.Core.Application.Taxes;
+using Proxima.Core.Application.Transactions;
+using Proxima.Core.Application.Reporting;
 
 namespace Proxima.App.Views.Taxes;
 
@@ -594,7 +594,7 @@ public sealed class TaxesViewModel : ViewModelBase
             LegalProfileType profile = ResolveProfile(_userContext.UserId);
             TaxProfileDescriptor descriptor = DescribeProfile(profile);
 
-            IReadOnlyList<Proxima.Domain.Transactions.PortfolioTransaction> transactions = await _transactions
+            IReadOnlyList<Proxima.Core.Domain.Transactions.PortfolioTransaction> transactions = await _transactions
                 .ListActiveAsync(_shellState.CurrentPortfolioId, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -701,7 +701,7 @@ public sealed class TaxesViewModel : ViewModelBase
                 LegalDisclaimer: model.LegalDisclaimer,
                 CalculationBreakdown: model.Breakdown.Select(ToReportLine).ToList(),
                 TaxBreakdown: model.TaxBreakdown.Select(ToReportLine).ToList(),
-                OutputDirectory: ProximaReportingComposition.GetDefaultReportDirectory());
+                OutputDirectory: string.Empty);
 
             ReportExportResult export = await _reportService.ExportTaxPdfAsync(request, cancellationToken).ConfigureAwait(false);
             string message = export.Succeeded

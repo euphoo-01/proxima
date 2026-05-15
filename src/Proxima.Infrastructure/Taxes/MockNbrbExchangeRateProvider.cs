@@ -1,4 +1,4 @@
-using Proxima.Application.Taxes;
+using Proxima.Core.Application.Taxes;
 
 namespace Proxima.Infrastructure.Taxes;
 

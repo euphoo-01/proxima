@@ -1,6 +1,6 @@
-using Proxima.Application.Auth;
-using Proxima.Application.Quotes;
-using Proxima.Application.Settings;
+using Proxima.Core.Application.Auth;
+using Proxima.Core.Application.Quotes;
+using Proxima.Core.Application.Settings;
 
 namespace Proxima.Infrastructure.Quotes;
 

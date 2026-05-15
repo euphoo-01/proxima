@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Proxima.Application.Auth;
-using Proxima.Domain.Auth;
-using Proxima.Infrastructure.Persistence.UnitOfWork;
+using Proxima.Core.Application.Auth;
+using Proxima.Core.Domain.Auth;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 

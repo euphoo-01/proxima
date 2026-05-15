@@ -1,5 +1,5 @@
 using System.Globalization;
-using Proxima.Domain.Notifications;
+using Proxima.Core.Domain.Notifications;
 
 namespace Proxima.App.ViewModels;
 

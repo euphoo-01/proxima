@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
-using Proxima.Application.Taxes;
+using Proxima.Core.Application.Taxes;
 
 namespace Proxima.Infrastructure.Taxes;
 
