@@ -37,34 +37,6 @@
                 <StackPanel Spacing="16">
                     <Border Classes="proxima-settings-section">
                         <StackPanel Spacing="12">
-                            <TextBlock Classes="proxima-card-title" Text="Профиль и аккаунт" />
-
-                            <Border Classes="proxima-settings-row">
-                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
-                                    <TextBlock Classes="proxima-caption" Text="Отображаемое имя" VerticalAlignment="Center" />
-                                    <TextBox Grid.Column="1" Classes="proxima-input" Text="{Binding DisplayName}" />
-                                </Grid>
-                            </Border>
-
-                            <Border Classes="proxima-settings-row">
-                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
-                                    <TextBlock Classes="proxima-caption" Text="Логин" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1" Classes="proxima-body" Text="{Binding Login}" VerticalAlignment="Center" />
-                                </Grid>
-                            </Border>
-
-                            <Border Classes="proxima-settings-row">
-                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
-                                    <TextBlock Classes="proxima-caption" Text="Роль" VerticalAlignment="Center" />
-                                    <ComboBox Grid.Column="1" Classes="proxima-input" ItemsSource="{Binding RoleOptions}" SelectedItem="{Binding SelectedRole}" />
-                                </Grid>
-                            </Border>
-
-                        </StackPanel>
-                    </Border>
-
-                    <Border Classes="proxima-settings-section">
-                        <StackPanel Spacing="12">
                             <TextBlock Classes="proxima-card-title" Text="Внешние API и котировки" />
 
                             <Border Classes="proxima-settings-row">

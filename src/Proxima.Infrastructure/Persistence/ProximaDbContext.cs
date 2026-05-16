@@ -125,9 +125,6 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
         {
             e.ToTable("user_settings");
             e.HasKey(x => x.OwnerUserId);
-            e.Property(x => x.DisplayName).HasMaxLength(128);
-            e.Property(x => x.Role).HasMaxLength(64);
-            e.Property(x => x.Login).HasMaxLength(128);
             e.Property(x => x.QuoteProvider).HasMaxLength(64);
             e.Property(x => x.QuoteApiKey).HasMaxLength(2048);
             e.Property(x => x.CurrencyProvider).HasMaxLength(64);

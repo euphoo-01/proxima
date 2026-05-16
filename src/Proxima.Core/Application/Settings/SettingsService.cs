@@ -1,5 +1,3 @@
-using Proxima.Core.Domain.Auth;
-
 namespace Proxima.Core.Application.Settings;
 
 public sealed class SettingsService(IUserSettingsRepository repository) : ISettingsService
@@ -14,9 +12,6 @@ public sealed class SettingsService(IUserSettingsRepository repository) : ISetti
 
         UserSettings settings = new(
             request.OwnerUserId,
-            NormalizeDisplayName(request.DisplayName),
-            request.Role,
-            NormalizeLogin(request.Login),
             QuoteProviderKind.TwelveData,
             string.Empty,
             CurrencyProviderKind.Mock);
@@ -41,7 +36,7 @@ public sealed class SettingsService(IUserSettingsRepository repository) : ISetti
         UserSettings? current = await repository.FindByOwnerAsync(request.OwnerUserId, cancellationToken).ConfigureAwait(false);
         if (current is null)
         {
-            return SettingsOperationResult.Failure("Настройки не инициализированы.");
+            current = await EnsureAsync(new CreateDefaultSettingsRequest(request.OwnerUserId), cancellationToken).ConfigureAwait(false);
         }
 
         string quoteApiKey = current.QuoteApiKey;
@@ -52,9 +47,6 @@ public sealed class SettingsService(IUserSettingsRepository repository) : ISetti
 
         UserSettings updated = current with
         {
-            DisplayName = NormalizeDisplayName(request.DisplayName),
-            Role = request.Role,
-            Login = NormalizeLogin(current.Login),
             QuoteProvider = request.QuoteProvider,
             QuoteApiKey = quoteApiKey,
             CurrencyProvider = request.CurrencyProvider,
@@ -66,16 +58,6 @@ public sealed class SettingsService(IUserSettingsRepository repository) : ISetti
 
     private static string? Validate(UpdateSettingsRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.DisplayName))
-        {
-            return "Display name обязателен.";
-        }
-
-        if (!Enum.IsDefined(request.Role))
-        {
-            return "Недопустимая роль профиля.";
-        }
-
         if (!Enum.IsDefined(request.QuoteProvider))
         {
             return "Недопустимый провайдер котировок.";
@@ -87,16 +69,6 @@ public sealed class SettingsService(IUserSettingsRepository repository) : ISetti
         }
 
         return null;
-    }
-
-    private static string NormalizeDisplayName(string displayName)
-    {
-        return string.IsNullOrWhiteSpace(displayName) ? "Пользователь" : displayName.Trim();
-    }
-
-    private static string NormalizeLogin(string login)
-    {
-        return string.IsNullOrWhiteSpace(login) ? string.Empty : login.Trim().ToLowerInvariant();
     }
 
     private static string Protect(string raw)

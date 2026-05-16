@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Proxima.Core.Application.Settings;
-using Proxima.Core.Domain.Auth;
 
 namespace Proxima.Infrastructure.Persistence.Repositories;
 
@@ -22,8 +21,6 @@ public sealed class PostgresUserSettingsRepository(IProximaUnitOfWorkFactory uow
         await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
         ProximaDbContext ctx = lease.Context;
 
-        await EnsureUserRowAsync(ctx, settings, cancellationToken).ConfigureAwait(false);
-
         UserSettingsEntity? existing = await ctx.UserSettings
             .FirstOrDefaultAsync(i => i.OwnerUserId == settings.OwnerUserId, cancellationToken)
             .ConfigureAwait(false);
@@ -34,9 +31,6 @@ public sealed class PostgresUserSettingsRepository(IProximaUnitOfWorkFactory uow
         }
         else
         {
-            existing.DisplayName = settings.DisplayName;
-            existing.Role = settings.Role.ToString();
-            existing.Login = settings.Login;
             existing.QuoteProvider = settings.QuoteProvider.ToString();
             existing.QuoteApiKey = settings.QuoteApiKey;
             existing.CurrencyProvider = settings.CurrencyProvider.ToString();
@@ -45,75 +39,13 @@ public sealed class PostgresUserSettingsRepository(IProximaUnitOfWorkFactory uow
         await lease.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    private static async Task EnsureUserRowAsync(ProximaDbContext ctx, UserSettings settings, CancellationToken cancellationToken)
-    {
-        UserEntity? user = await ctx.Users
-            .FirstOrDefaultAsync(x => x.Id == settings.OwnerUserId, cancellationToken)
-            .ConfigureAwait(false);
-
-        DateTimeOffset now = DateTimeOffset.UtcNow;
-        string displayName = NormalizeDisplayName(settings.DisplayName);
-        string login = await MakeUniqueLoginAsync(ctx, settings.OwnerUserId, settings.Login, cancellationToken).ConfigureAwait(false);
-
-        if (user is null)
-        {
-            ctx.Users.Add(new UserEntity
-            {
-                Id = settings.OwnerUserId,
-                DisplayName = displayName,
-                Login = login,
-                Role = settings.Role.ToString(),
-                CreatedAt = now,
-                UpdatedAt = now,
-            });
-
-            return;
-        }
-
-        user.DisplayName = displayName;
-        user.Login = login;
-        user.Role = settings.Role.ToString();
-        user.UpdatedAt = now;
-    }
-
-    private static async Task<string> MakeUniqueLoginAsync(
-        ProximaDbContext ctx,
-        Guid ownerUserId,
-        string login,
-        CancellationToken cancellationToken)
-    {
-        string normalized = string.IsNullOrWhiteSpace(login)
-            ? $"user-{ownerUserId:N}"
-            : login.Trim().ToLowerInvariant();
-
-        bool usedByOtherUser = await ctx.Users.AsNoTracking()
-            .AnyAsync(x => x.Id != ownerUserId && x.Login == normalized, cancellationToken)
-            .ConfigureAwait(false);
-
-        if (!usedByOtherUser)
-        {
-            return normalized;
-        }
-
-        string suffix = ownerUserId.ToString("N")[..8];
-        return $"{normalized}-{suffix}";
-    }
-
-    private static string NormalizeDisplayName(string displayName)
-    {
-        return string.IsNullOrWhiteSpace(displayName) ? "Пользователь" : displayName.Trim();
-    }
-
     private static UserSettings ToDomain(UserSettingsEntity x)
     {
         return new UserSettings(
             x.OwnerUserId,
-            x.DisplayName,
-            Enum.Parse<UserRole>(x.Role, true),
-            x.Login,
             ParseQuoteProvider(x.QuoteProvider),
             x.QuoteApiKey,
-            Enum.Parse<CurrencyProviderKind>(x.CurrencyProvider, true));
+            ParseCurrencyProvider(x.CurrencyProvider));
     }
 
     private static QuoteProviderKind ParseQuoteProvider(string value)
@@ -124,14 +56,19 @@ public sealed class PostgresUserSettingsRepository(IProximaUnitOfWorkFactory uow
             : QuoteProviderKind.TwelveData;
     }
 
+    private static CurrencyProviderKind ParseCurrencyProvider(string value)
+    {
+        return Enum.TryParse(value, ignoreCase: true, out CurrencyProviderKind parsed)
+            && Enum.IsDefined(typeof(CurrencyProviderKind), parsed)
+            ? parsed
+            : CurrencyProviderKind.Mock;
+    }
+
     private static UserSettingsEntity ToEntity(UserSettings settings)
     {
         return new UserSettingsEntity
         {
             OwnerUserId = settings.OwnerUserId,
-            DisplayName = NormalizeDisplayName(settings.DisplayName),
-            Role = settings.Role.ToString(),
-            Login = string.IsNullOrWhiteSpace(settings.Login) ? string.Empty : settings.Login.Trim().ToLowerInvariant(),
             QuoteProvider = settings.QuoteProvider.ToString(),
             QuoteApiKey = settings.QuoteApiKey,
             CurrencyProvider = settings.CurrencyProvider.ToString(),

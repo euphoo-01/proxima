@@ -203,9 +203,6 @@ public sealed class DatabaseBootstrapService(DatabaseOptions options)
             context.UserSettings.Add(new UserSettingsEntity
             {
                 OwnerUserId = userId,
-                DisplayName = "Demo Investor",
-                Role = "PrivateInvestor",
-                Login = "demo",
                 QuoteProvider = "TwelveData",
                 QuoteApiKey = string.Empty,
                 CurrencyProvider = "Mock",

@@ -17,9 +17,6 @@ public sealed class SettingsViewModel : ViewModelBase
     private readonly DelegateCommand _reloadCommand;
     private readonly DelegateCommand _changePasswordCommand;
 
-    private UserRole _selectedRole = UserRole.PrivateInvestor;
-    private string _displayName = string.Empty;
-    private string _login = "local";
     private QuoteProviderKind _selectedQuoteProvider = QuoteProviderKind.TwelveData;
     private CurrencyProviderKind _selectedCurrencyProvider = CurrencyProviderKind.Mock;
 
@@ -37,7 +34,6 @@ public sealed class SettingsViewModel : ViewModelBase
         _runtimeUserContext = runtimeUserContext;
         _notificationCenter = notificationCenter;
 
-        RoleOptions = Enum.GetValues<UserRole>();
         QuoteProviderOptions = [QuoteProviderKind.TwelveData];
         CurrencyProviderOptions = Enum.GetValues<CurrencyProviderKind>();
         ThemeOptions = ["Светлая"];
@@ -53,8 +49,6 @@ public sealed class SettingsViewModel : ViewModelBase
 
     public string BreadcrumbText => "Настройки";
 
-    public IReadOnlyList<UserRole> RoleOptions { get; }
-
     public IReadOnlyList<QuoteProviderKind> QuoteProviderOptions { get; }
 
     public IReadOnlyList<CurrencyProviderKind> CurrencyProviderOptions { get; }
@@ -66,24 +60,6 @@ public sealed class SettingsViewModel : ViewModelBase
     public ICommand ReloadCommand => _reloadCommand;
 
     public ICommand ChangePasswordCommand => _changePasswordCommand;
-
-    public string DisplayName
-    {
-        get => _displayName;
-        set => SetProperty(ref _displayName, value);
-    }
-
-    public string Login
-    {
-        get => _login;
-        private set => SetProperty(ref _login, value);
-    }
-
-    public UserRole SelectedRole
-    {
-        get => _selectedRole;
-        set => SetProperty(ref _selectedRole, value);
-    }
 
     public QuoteProviderKind SelectedQuoteProvider
     {
@@ -197,10 +173,7 @@ public sealed class SettingsViewModel : ViewModelBase
             }
 
             UserSettings settings = await _settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
-                _runtimeUserContext.UserId,
-                _runtimeUserContext.DisplayName,
-                _runtimeUserContext.Role,
-                _runtimeUserContext.Login)).ConfigureAwait(true);
+                _runtimeUserContext.UserId)).ConfigureAwait(true);
 
             Apply(settings);
             StatusMessage = "Настройки загружены.";
@@ -234,8 +207,6 @@ public sealed class SettingsViewModel : ViewModelBase
 
             SettingsOperationResult result = await _settingsService.UpdateAsync(new UpdateSettingsRequest(
                 _runtimeUserContext.UserId,
-                DisplayName,
-                SelectedRole,
                 SelectedQuoteProvider,
                 null,
                 SelectedCurrencyProvider)).ConfigureAwait(true);
@@ -269,9 +240,6 @@ public sealed class SettingsViewModel : ViewModelBase
 
     private void Apply(UserSettings settings)
     {
-        DisplayName = settings.DisplayName;
-        Login = settings.Login;
-        SelectedRole = settings.Role;
         SelectedQuoteProvider = QuoteProviderKind.TwelveData;
         SelectedCurrencyProvider = settings.CurrencyProvider;
     }
@@ -295,9 +263,6 @@ public sealed class SettingsViewModel : ViewModelBase
         {
             UserSettings settings = new(
                 request.OwnerUserId,
-                request.DisplayName,
-                request.Role,
-                request.Login,
                 QuoteProviderKind.TwelveData,
                 string.Empty,
                 CurrencyProviderKind.Mock);
@@ -314,9 +279,6 @@ public sealed class SettingsViewModel : ViewModelBase
         {
             UserSettings updated = new(
                 request.OwnerUserId,
-                request.DisplayName,
-                request.Role,
-                "local",
                 request.QuoteProvider,
                 string.Empty,
                 request.CurrencyProvider);

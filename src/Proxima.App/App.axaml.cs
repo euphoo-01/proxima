@@ -106,11 +106,7 @@ public partial class App : global::Avalonia.Application
     private static void EnsureSettingsForProfile(ServiceProvider services, LocalUserProfile profile)
     {
         ISettingsService settingsService = services.GetRequiredService<ISettingsService>();
-        settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
-                profile.Id,
-                profile.DisplayName,
-                profile.Role,
-                profile.Login))
+        settingsService.EnsureAsync(new CreateDefaultSettingsRequest(profile.Id))
             .GetAwaiter()
             .GetResult();
     }

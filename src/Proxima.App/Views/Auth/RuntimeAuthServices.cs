@@ -147,11 +147,7 @@ public sealed class LocalProfileAuthGateService(
         }
 
         runtimeUserContext.SetAuthenticated(result.Profile);
-        await settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
-            result.Profile.Id,
-            result.Profile.DisplayName,
-            result.Profile.Role,
-            result.Profile.Login), cancellationToken).ConfigureAwait(false);
+        await settingsService.EnsureAsync(new CreateDefaultSettingsRequest(result.Profile.Id), cancellationToken).ConfigureAwait(false);
 
         return AuthGateResult.Success();
     }

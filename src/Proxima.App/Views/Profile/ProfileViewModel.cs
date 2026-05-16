@@ -17,6 +17,7 @@ public sealed class ProfileViewModel : ViewModelBase
 {
     private readonly IRuntimeUserContext _userContext;
     private readonly ISettingsService _settingsService;
+    private readonly ILocalUserRepository _localUsers;
     private readonly IPortfolioService _portfolioService;
     private readonly ILocalAuthService _localAuthService;
     private readonly IAccountDeletionService _accountDeletionService;
@@ -51,6 +52,7 @@ public sealed class ProfileViewModel : ViewModelBase
     public ProfileViewModel(
         IRuntimeUserContext userContext,
         ISettingsService settingsService,
+        ILocalUserRepository localUsers,
         IPortfolioService portfolioService,
         ILocalAuthService localAuthService,
         IAccountDeletionService accountDeletionService,
@@ -61,6 +63,7 @@ public sealed class ProfileViewModel : ViewModelBase
     {
         _userContext = userContext;
         _settingsService = settingsService;
+        _localUsers = localUsers;
         _portfolioService = portfolioService;
         _localAuthService = localAuthService;
         _accountDeletionService = accountDeletionService;
@@ -372,20 +375,11 @@ public sealed class ProfileViewModel : ViewModelBase
             }
 
             UserSettings settings = await _settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
-                _userContext.UserId,
-                _userContext.DisplayName,
-                _userContext.Role,
-                _userContext.Login)).ConfigureAwait(true);
+                _userContext.UserId)).ConfigureAwait(true);
 
-            DisplayName = string.IsNullOrWhiteSpace(settings.DisplayName)
-                ? _userContext.DisplayName
-                : settings.DisplayName;
-
-            Login = string.IsNullOrWhiteSpace(settings.Login)
-                ? _userContext.Login
-                : settings.Login;
-
-            SelectedRole = settings.Role;
+            DisplayName = _userContext.DisplayName;
+            Login = _userContext.Login;
+            SelectedRole = _userContext.Role;
             LoadProfileExtrasFromDisk();
             LoadAvatarFromDisk();
             TwelveDataKeyStatus = string.IsNullOrWhiteSpace(settings.QuoteApiKey)
@@ -420,35 +414,32 @@ public sealed class ProfileViewModel : ViewModelBase
                 return;
             }
 
-            UserSettings current = await _settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
-                _userContext.UserId,
-                DisplayName,
-                SelectedRole,
-                _userContext.Login)).ConfigureAwait(true);
+            LocalUserProfile? currentProfile = await _localUsers
+                .FindByLoginAsync(_userContext.Login, CancellationToken.None)
+                .ConfigureAwait(true);
 
-            SettingsOperationResult result = await _settingsService.UpdateAsync(new UpdateSettingsRequest(
-                _userContext.UserId,
-                DisplayName,
-                SelectedRole,
-                current.QuoteProvider,
-                null,
-                current.CurrencyProvider)).ConfigureAwait(true);
-
-            if (!result.Succeeded || result.Settings is null)
+            if (currentProfile is null || currentProfile.Id != _userContext.UserId)
             {
-                ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
-                    ? "Не удалось сохранить профиль."
-                    : result.Message;
-
+                ErrorMessage = "Не удалось найти текущий локальный профиль.";
                 return;
             }
+
+            string normalizedDisplayName = NormalizeDisplayName(DisplayName);
+            await _localUsers.UpdateAsync(currentProfile with
+            {
+                DisplayName = normalizedDisplayName,
+                Role = SelectedRole,
+                UpdatedAt = DateTimeOffset.UtcNow,
+            }, CancellationToken.None).ConfigureAwait(true);
+
+            UserSettings settings = await _settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
+                _userContext.UserId)).ConfigureAwait(true);
 
             SaveProfileExtrasToDisk();
             await SaveDirtyPortfoliosAsync().ConfigureAwait(true);
 
-            DisplayName = result.Settings.DisplayName;
-            SelectedRole = result.Settings.Role;
-            TwelveDataKeyStatus = string.IsNullOrWhiteSpace(result.Settings.QuoteApiKey)
+            DisplayName = normalizedDisplayName;
+            TwelveDataKeyStatus = string.IsNullOrWhiteSpace(settings.QuoteApiKey)
                 ? "Ключ Twelve Data не задан."
                 : "Ключ Twelve Data сохранен.";
 
@@ -484,15 +475,10 @@ public sealed class ProfileViewModel : ViewModelBase
             }
 
             UserSettings current = await _settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
-                _userContext.UserId,
-                DisplayName,
-                SelectedRole,
-                _userContext.Login)).ConfigureAwait(true);
+                _userContext.UserId)).ConfigureAwait(true);
 
             SettingsOperationResult result = await _settingsService.UpdateAsync(new UpdateSettingsRequest(
                 _userContext.UserId,
-                DisplayName,
-                SelectedRole,
                 QuoteProviderKind.TwelveData,
                 TwelveDataApiKey,
                 current.CurrencyProvider)).ConfigureAwait(true);
@@ -610,10 +596,7 @@ public sealed class ProfileViewModel : ViewModelBase
         try
         {
             await _settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
-                _userContext.UserId,
-                DisplayName,
-                SelectedRole,
-                _userContext.Login)).ConfigureAwait(true);
+                _userContext.UserId)).ConfigureAwait(true);
 
             int index = Portfolios.Count + 1;
             string name = $"Портфель {index}";
@@ -949,6 +932,11 @@ public sealed class ProfileViewModel : ViewModelBase
     private static string NormalizePortfolioName(string value)
     {
         return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+    }
+
+    private static string NormalizeDisplayName(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "Пользователь" : value.Trim();
     }
 
     private static string GetProfileExtrasDirectory()
