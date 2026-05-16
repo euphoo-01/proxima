@@ -10,7 +10,6 @@ public sealed class AssetEntity
     public string Currency { get; set; } = "USD";
     public string? Exchange { get; set; }
     public string? Isin { get; set; }
-    public string? EncryptedNotes { get; set; }
     public decimal Quantity { get; set; }
     public decimal AverageBuyPrice { get; set; }
     public decimal CurrentPrice { get; set; }

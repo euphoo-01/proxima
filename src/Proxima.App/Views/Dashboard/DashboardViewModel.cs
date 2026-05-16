@@ -124,7 +124,7 @@ public sealed class DashboardViewModel : ViewModelBase
 
     public ICommand MoreTransactionsCommand => _moreTransactionsCommand;
 
-    public string MoreTransactionsButtonText => _isShowingAllTransactions ? "Скрыть транзакции⌃" : "Все транзакции⌄";
+    public string MoreTransactionsButtonText => _isShowingAllTransactions ? "Скрыть транзакции  ↑" : "Все транзакции  ↓";
 
     public static DashboardViewModel CreateDesignData()
     {

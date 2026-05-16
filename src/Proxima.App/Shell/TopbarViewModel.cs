@@ -171,7 +171,7 @@ public sealed class TopbarViewModel : ViewModelBase
             if (portfolios.Count == 0)
             {
                 PortfolioOperationResult result = await _portfolioService.CreateAsync(
-                    new CreatePortfolioRequest(_userContext.UserId, "Основное портфолио", "USD", null, null),
+                    new CreatePortfolioRequest(_userContext.UserId, "Основное портфолио", null, null),
                     cancellationToken).ConfigureAwait(true);
 
                 if (result.Succeeded && result.Portfolio is not null)
@@ -183,7 +183,7 @@ public sealed class TopbarViewModel : ViewModelBase
             Portfolios.Clear();
             foreach (Portfolio portfolio in portfolios.OrderBy(static portfolio => portfolio.Name, StringComparer.OrdinalIgnoreCase))
             {
-                Portfolios.Add(new PortfolioOption(portfolio.Id, NormalizePortfolioName(portfolio.Name), portfolio.BaseCurrency, portfolio.Description, portfolio.ClientLabel));
+                Portfolios.Add(new PortfolioOption(portfolio.Id, NormalizePortfolioName(portfolio.Name), portfolio.Description, portfolio.ClientLabel));
             }
 
             if (!selectCurrent || Portfolios.Count == 0)
@@ -226,7 +226,7 @@ public sealed class TopbarViewModel : ViewModelBase
             }
 
             PortfolioOperationResult result = await _portfolioService.CreateAsync(
-                new CreatePortfolioRequest(_userContext.UserId, name, "USD", "Клиентский портфель", null),
+                new CreatePortfolioRequest(_userContext.UserId, name, "Клиентский портфель", null),
                 CancellationToken.None).ConfigureAwait(true);
 
             if (!result.Succeeded || result.Portfolio is null)
@@ -237,7 +237,7 @@ public sealed class TopbarViewModel : ViewModelBase
             }
 
             Portfolio portfolio = result.Portfolio;
-            PortfolioOption option = new(portfolio.Id, portfolio.Name, portfolio.BaseCurrency, portfolio.Description, portfolio.ClientLabel);
+            PortfolioOption option = new(portfolio.Id, portfolio.Name, portfolio.Description, portfolio.ClientLabel);
             Portfolios.Add(option);
             SelectedPortfolio = option;
             _runtimeDataInvalidation.Invalidate("portfolio-created");

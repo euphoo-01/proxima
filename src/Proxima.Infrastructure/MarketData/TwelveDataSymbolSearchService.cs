@@ -187,7 +187,7 @@ public sealed class TwelveDataSymbolSearchService(
             return string.Empty;
         }
 
-        return ConfigurableQuoteProvider.UnprotectApiKey(settings.TwelveDataApiKeyProtected);
+        return ConfigurableQuoteProvider.UnprotectApiKey(settings.QuoteApiKey);
     }
 
     private async Task<JsonDocument> ReadJsonAsync(string relativeUrl, string apiKey, CancellationToken cancellationToken)

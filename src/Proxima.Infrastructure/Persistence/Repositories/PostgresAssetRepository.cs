@@ -61,7 +61,6 @@ public sealed class PostgresAssetRepository(IProximaUnitOfWorkFactory uowFactory
         entity.Currency = asset.Currency;
         entity.Exchange = asset.Exchange;
         entity.Isin = asset.Isin;
-        entity.EncryptedNotes = asset.EncryptedNotes;
         entity.Quantity = asset.Quantity;
         entity.AverageBuyPrice = asset.AverageBuyPrice;
         entity.CurrentPrice = asset.CurrentPrice;
@@ -84,7 +83,6 @@ public sealed class PostgresAssetRepository(IProximaUnitOfWorkFactory uowFactory
             x.Exchange,
             x.Isin,
             tags,
-            x.EncryptedNotes,
             x.Quantity,
             x.AverageBuyPrice,
             x.CurrentPrice,
@@ -105,7 +103,6 @@ public sealed class PostgresAssetRepository(IProximaUnitOfWorkFactory uowFactory
             Currency = asset.Currency,
             Exchange = asset.Exchange,
             Isin = asset.Isin,
-            EncryptedNotes = asset.EncryptedNotes,
             Quantity = asset.Quantity,
             AverageBuyPrice = asset.AverageBuyPrice,
             CurrentPrice = asset.CurrentPrice,

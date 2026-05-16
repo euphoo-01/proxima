@@ -12,7 +12,7 @@ public sealed class PortfolioService(IPortfolioRepository repository) : IPortfol
 
     public async Task<PortfolioOperationResult> CreateAsync(CreatePortfolioRequest request, CancellationToken cancellationToken = default)
     {
-        string? validationError = Validate(request.Name, request.BaseCurrency);
+        string? validationError = Validate(request.Name);
         if (validationError is not null)
         {
             return PortfolioOperationResult.Failure(validationError);
@@ -29,7 +29,6 @@ public sealed class PortfolioService(IPortfolioRepository repository) : IPortfol
             Guid.NewGuid(),
             request.OwnerUserId,
             request.Name.Trim(),
-            request.BaseCurrency.Trim().ToUpperInvariant(),
             request.Description?.Trim(),
             request.ClientLabel?.Trim(),
             IsArchived: false,
@@ -42,7 +41,7 @@ public sealed class PortfolioService(IPortfolioRepository repository) : IPortfol
 
     public async Task<PortfolioOperationResult> UpdateAsync(UpdatePortfolioRequest request, CancellationToken cancellationToken = default)
     {
-        string? validationError = Validate(request.Name, request.BaseCurrency);
+        string? validationError = Validate(request.Name);
         if (validationError is not null)
         {
             return PortfolioOperationResult.Failure(validationError);
@@ -65,7 +64,6 @@ public sealed class PortfolioService(IPortfolioRepository repository) : IPortfol
         Portfolio updated = current with
         {
             Name = request.Name.Trim(),
-            BaseCurrency = request.BaseCurrency.Trim().ToUpperInvariant(),
             Description = request.Description?.Trim(),
             ClientLabel = request.ClientLabel?.Trim(),
             UpdatedAt = DateTimeOffset.UtcNow,
@@ -92,16 +90,11 @@ public sealed class PortfolioService(IPortfolioRepository repository) : IPortfol
         return PortfolioOperationResult.Success(archived, "Портфель архивирован.");
     }
 
-    private static string? Validate(string name, string baseCurrency)
+    private static string? Validate(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
             return "Название портфеля обязательно.";
-        }
-
-        if (string.IsNullOrWhiteSpace(baseCurrency))
-        {
-            return "Базовая валюта обязательна.";
         }
 
         return null;

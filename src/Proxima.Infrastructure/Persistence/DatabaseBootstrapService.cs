@@ -65,7 +65,6 @@ public sealed class DatabaseBootstrapService(DatabaseOptions options)
                 Id = portfolioId,
                 OwnerUserId = userId,
                 Name = "Demo Portfolio",
-                BaseCurrency = "USD",
                 Description = "Seed portfolio",
                 ClientLabel = "Demo",
                 CreatedAt = now,
@@ -207,12 +206,8 @@ public sealed class DatabaseBootstrapService(DatabaseOptions options)
                 DisplayName = "Demo Investor",
                 Role = "PrivateInvestor",
                 Login = "demo",
-                PreferredCurrency = "USD",
-                Language = "RU",
-                UiScale = 1m,
                 QuoteProvider = "TwelveData",
-                QuoteRefreshMinutes = 15,
-                TwelveDataApiKeyProtected = string.Empty,
+                QuoteApiKey = string.Empty,
                 CurrencyProvider = "Mock",
             });
         }

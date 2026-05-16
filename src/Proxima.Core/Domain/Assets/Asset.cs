@@ -10,7 +10,6 @@ public sealed record Asset(
     string? Exchange,
     string? Isin,
     IReadOnlyList<string> Tags,
-    string? EncryptedNotes,
     decimal Quantity,
     decimal AverageBuyPrice,
     decimal CurrentPrice,

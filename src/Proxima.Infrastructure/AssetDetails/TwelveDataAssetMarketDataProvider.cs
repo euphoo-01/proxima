@@ -41,7 +41,7 @@ public sealed class TwelveDataAssetMarketDataProvider(
             return null;
         }
 
-        string apiKey = ConfigurableQuoteProvider.UnprotectApiKey(settings.TwelveDataApiKeyProtected);
+        string apiKey = ConfigurableQuoteProvider.UnprotectApiKey(settings.QuoteApiKey);
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             return null;

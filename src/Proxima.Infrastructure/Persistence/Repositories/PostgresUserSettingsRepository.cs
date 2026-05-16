@@ -37,12 +37,8 @@ public sealed class PostgresUserSettingsRepository(IProximaUnitOfWorkFactory uow
             existing.DisplayName = settings.DisplayName;
             existing.Role = settings.Role.ToString();
             existing.Login = settings.Login;
-            existing.PreferredCurrency = settings.PreferredCurrency;
-            existing.Language = settings.Language.ToString();
-            existing.UiScale = settings.UiScale;
             existing.QuoteProvider = settings.QuoteProvider.ToString();
-            existing.QuoteRefreshMinutes = settings.QuoteRefreshMinutes;
-            existing.TwelveDataApiKeyProtected = settings.TwelveDataApiKeyProtected;
+            existing.QuoteApiKey = settings.QuoteApiKey;
             existing.CurrencyProvider = settings.CurrencyProvider.ToString();
         }
 
@@ -115,12 +111,8 @@ public sealed class PostgresUserSettingsRepository(IProximaUnitOfWorkFactory uow
             x.DisplayName,
             Enum.Parse<UserRole>(x.Role, true),
             x.Login,
-            x.PreferredCurrency,
-            Enum.Parse<AppLanguage>(x.Language, true),
-            x.UiScale,
             ParseQuoteProvider(x.QuoteProvider),
-            x.QuoteRefreshMinutes,
-            x.TwelveDataApiKeyProtected,
+            x.QuoteApiKey,
             Enum.Parse<CurrencyProviderKind>(x.CurrencyProvider, true));
     }
 
@@ -140,12 +132,8 @@ public sealed class PostgresUserSettingsRepository(IProximaUnitOfWorkFactory uow
             DisplayName = NormalizeDisplayName(settings.DisplayName),
             Role = settings.Role.ToString(),
             Login = string.IsNullOrWhiteSpace(settings.Login) ? string.Empty : settings.Login.Trim().ToLowerInvariant(),
-            PreferredCurrency = settings.PreferredCurrency,
-            Language = settings.Language.ToString(),
-            UiScale = settings.UiScale,
             QuoteProvider = settings.QuoteProvider.ToString(),
-            QuoteRefreshMinutes = settings.QuoteRefreshMinutes,
-            TwelveDataApiKeyProtected = settings.TwelveDataApiKeyProtected,
+            QuoteApiKey = settings.QuoteApiKey,
             CurrencyProvider = settings.CurrencyProvider.ToString(),
         };
     }

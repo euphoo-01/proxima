@@ -14,7 +14,6 @@ public sealed class AddGoalDialogViewModel : ViewModelBase
     private bool _isEditMode;
     private string _name = string.Empty;
     private decimal _targetAmount;
-    private string _currency = "USD";
     private decimal _monthlyContribution;
     private decimal? _expectedAnnualReturnPercent = 8m;
     private string _validationMessage = string.Empty;
@@ -64,11 +63,7 @@ public sealed class AddGoalDialogViewModel : ViewModelBase
         set => SetProperty(ref _targetAmount, value);
     }
 
-    public string Currency
-    {
-        get => _currency;
-        set => SetProperty(ref _currency, value);
-    }
+    public string Currency => "USD";
 
     public decimal MonthlyContribution
     {
@@ -94,7 +89,6 @@ public sealed class AddGoalDialogViewModel : ViewModelBase
         IsEditMode = false;
         Name = string.Empty;
         TargetAmount = 0m;
-        Currency = "USD";
         MonthlyContribution = monthlyContribution;
         ExpectedAnnualReturnPercent = expectedAnnualReturnPercent;
         ValidationMessage = string.Empty;
@@ -109,7 +103,6 @@ public sealed class AddGoalDialogViewModel : ViewModelBase
         IsEditMode = true;
         Name = goal.Name;
         TargetAmount = goal.TargetAmount;
-        Currency = goal.Currency;
         MonthlyContribution = monthlyContribution;
         ExpectedAnnualReturnPercent = expectedAnnualReturnPercent;
         ValidationMessage = string.Empty;
@@ -138,18 +131,12 @@ public sealed class AddGoalDialogViewModel : ViewModelBase
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(Currency))
-        {
-            ValidationMessage = "Укажите валюту.";
-            return;
-        }
-
         ValidationMessage = string.Empty;
         SaveRequested?.Invoke(this, new GoalDialogSaveRequest(
             _goalId,
             Name.Trim(),
             TargetAmount,
-            Currency.Trim().ToUpperInvariant(),
+            "USD",
             MonthlyContribution,
             ExpectedAnnualReturnPercent));
     }

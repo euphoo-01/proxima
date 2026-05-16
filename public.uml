@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>DATABASE</ID>
+  <OriginalElement>4ca581a4-d15d-40fc-9eac-afeddf7a2087.SCHEMA:proxima.public</OriginalElement>
+  <nodes>
+    <node x="143.0" y="104.5">4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.user_settings</node>
+    <node x="573.0" y="723.5">4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.__EFMigrationsHistory</node>
+    <node x="500.0" y="137.5">4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.notifications</node>
+    <node x="-149.5" y="1458.5">4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.transactions</node>
+    <node x="-149.5" y="406.5">4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.portfolios</node>
+    <node x="475.5" y="1324.0">4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.asset_tags</node>
+    <node x="285.5" y="723.5">4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.tags</node>
+    <node x="230.5" y="-202.5">4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.users</node>
+    <node x="272.0" y="1568.5">4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.quote_cache</node>
+    <node x="352.0" y="450.5">4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.audit_log</node>
+    <node x="132.0" y="1290.5">4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.asset_prices</node>
+    <node x="376.0" y="864.5">4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.goals</node>
+    <node x="10.5" y="820.5">4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.assets</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.asset_tags" target="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.assets" relationship="REFERENCES">
+      <point x="-28.75" y="-37.0" />
+      <point x="504.25" y="1261.0" />
+      <point x="253.0" y="1261.0" />
+      <point x="253.0" y="1221.0" />
+      <point x="133.0" y="1221.0" />
+      <point x="0.0" y="180.5" />
+    </edge>
+    <edge source="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.notifications" target="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.users" relationship="REFERENCES">
+      <point x="0.0" y="-103.5" />
+      <point x="633.0" y="101.0" />
+      <point x="473.0" y="101.0" />
+      <point x="473.0" y="41.0" />
+      <point x="414.25" y="41.0" />
+      <point x="61.25" y="103.5" />
+    </edge>
+    <edge source="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.audit_log" target="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.users" relationship="REFERENCES">
+      <point x="0.0" y="-70.5" />
+      <point x="473.0" y="41.0" />
+      <point x="414.25" y="41.0" />
+      <point x="61.25" y="103.5" />
+    </edge>
+    <edge source="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.assets" target="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.portfolios" relationship="REFERENCES">
+      <point x="0.0" y="-180.5" />
+      <point x="133.0" y="701.0" />
+      <point x="-27.0" y="701.0" />
+      <point x="0.0" y="114.5" />
+    </edge>
+    <edge source="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.user_settings" target="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.users" relationship="REFERENCES">
+      <point x="0.0" y="-136.5" />
+      <point x="293.0" y="41.0" />
+      <point x="291.75" y="41.0" />
+      <point x="-61.25" y="103.5" />
+    </edge>
+    <edge source="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.transactions" target="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.assets" relationship="REFERENCES">
+      <point x="61.25" y="-202.5" />
+      <point x="34.25" y="1261.0" />
+      <point x="253.0" y="1261.0" />
+      <point x="253.0" y="1221.0" />
+      <point x="133.0" y="1221.0" />
+      <point x="0.0" y="180.5" />
+    </edge>
+    <edge source="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.goals" target="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.portfolios" relationship="REFERENCES">
+      <point x="0.0" y="-136.5" />
+      <point x="513.0" y="701.0" />
+      <point x="-27.0" y="701.0" />
+      <point x="0.0" y="114.5" />
+    </edge>
+    <edge source="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.portfolios" target="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.users" relationship="REFERENCES">
+      <point x="0.0" y="-114.5" />
+      <point x="-27.0" y="81.0" />
+      <point x="293.0" y="81.0" />
+      <point x="293.0" y="41.0" />
+      <point x="291.75" y="41.0" />
+      <point x="-61.25" y="103.5" />
+    </edge>
+    <edge source="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.asset_prices" target="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.assets" relationship="REFERENCES">
+      <point x="0.0" y="-70.5" />
+      <point x="253.0" y="1221.0" />
+      <point x="133.0" y="1221.0" />
+      <point x="0.0" y="180.5" />
+    </edge>
+    <edge source="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.asset_tags" target="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.tags" relationship="REFERENCES">
+      <point x="28.75" y="-37.0" />
+      <point x="561.75" y="1241.0" />
+      <point x="353.0" y="1241.0" />
+      <point x="0.0" y="37.5" />
+    </edge>
+    <edge source="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.quote_cache" target="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.assets" relationship="REFERENCES">
+      <point x="0.0" y="-92.5" />
+      <point x="393.0" y="1261.0" />
+      <point x="253.0" y="1261.0" />
+      <point x="253.0" y="1221.0" />
+      <point x="133.0" y="1221.0" />
+      <point x="0.0" y="180.5" />
+    </edge>
+    <edge source="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.transactions" target="4ca581a4-d15d-40fc-9eac-afeddf7a2087.TABLE:proxima.public.portfolios" relationship="REFERENCES">
+      <point x="-61.25" y="-202.5" />
+      <point x="-88.25" y="1421.0" />
+      <point x="-27.0" y="1421.0" />
+      <point x="0.0" y="114.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Compact" zoom="0.7786588572861765" showDependencies="false" x="353.76894805633736" y="321.547264" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Columns</Category>
+    <Category>Comments</Category>
+    <Category>Key columns</Category>
+    <Category>Virtual foreign keys</Category>
+  </Categories>
+</Diagram>
+

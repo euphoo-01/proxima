@@ -50,10 +50,6 @@ namespace Proxima.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(20,8)")
                         .HasColumnName("current_price");
 
-                    b.Property<string>("EncryptedNotes")
-                        .HasColumnType("text")
-                        .HasColumnName("encrypted_notes");
-
                     b.Property<string>("Exchange")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
@@ -304,12 +300,6 @@ namespace Proxima.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<string>("BaseCurrency")
-                        .IsRequired()
-                        .HasMaxLength(8)
-                        .HasColumnType("character varying(8)")
-                        .HasColumnName("base_currency");
-
                     b.Property<string>("ClientLabel")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
@@ -440,9 +430,9 @@ namespace Proxima.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(8)")
                         .HasColumnName("currency");
 
-                    b.Property<string>("EncryptedNotes")
+                    b.Property<string>("Notes")
                         .HasColumnType("text")
-                        .HasColumnName("encrypted_notes");
+                        .HasColumnName("notes");
 
                     b.Property<string>("ExternalId")
                         .HasMaxLength(128)
@@ -572,23 +562,11 @@ namespace Proxima.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(128)")
                         .HasColumnName("display_name");
 
-                    b.Property<string>("Language")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)")
-                        .HasColumnName("language");
-
                     b.Property<string>("Login")
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
                         .HasColumnName("login");
-
-                    b.Property<string>("PreferredCurrency")
-                        .IsRequired()
-                        .HasMaxLength(8)
-                        .HasColumnType("character varying(8)")
-                        .HasColumnName("preferred_currency");
 
                     b.Property<string>("QuoteProvider")
                         .IsRequired()
@@ -596,26 +574,17 @@ namespace Proxima.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("quote_provider");
 
-                    b.Property<int>("QuoteRefreshMinutes")
-                        .HasColumnType("integer")
-                        .HasColumnName("quote_refresh_minutes");
-
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
                         .HasColumnName("role");
 
-                    b.Property<string>("TwelveDataApiKeyProtected")
+                    b.Property<string>("QuoteApiKey")
                         .IsRequired()
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)")
-                        .HasColumnName("twelve_data_api_key_protected");
-
-                    b.Property<decimal>("UiScale")
-                        .HasPrecision(10, 4)
-                        .HasColumnType("numeric(10,4)")
-                        .HasColumnName("ui_scale");
+                        .HasColumnName("quote_api_key");
 
                     b.HasKey("OwnerUserId");
 

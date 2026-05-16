@@ -360,6 +360,8 @@
         </Style>
 
         <Style Selector="Button.more-assets">
+            <Setter Property="MinWidth" Value="132" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -425,7 +427,7 @@
                             <TextBlock Classes="block-description" Text="{Binding ManualDescription}" />
                         </StackPanel>
 
-                        <Grid ColumnDefinitions="1.15*,1*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="10">
+                        <Grid ColumnDefinitions="1.15*,1*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="10">
                             <StackPanel Grid.Column="0" Spacing="7">
                                 <TextBlock Classes="field-label" Text="АКТИВ" />
                                 <TextBox Classes="manual-input" Text="{Binding ManualAssetName, Mode=TwoWay}" Watermark="AAPL, Apple, BTC..." />
@@ -455,6 +457,11 @@
                             </StackPanel>
 
                             <StackPanel Grid.Row="1" Grid.Column="0" Spacing="7">
+                                <TextBlock Classes="field-label" Text="ISIN" />
+                                <TextBox Classes="manual-input" Text="{Binding ManualIsinText, Mode=TwoWay}" Watermark="US0378331005" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Grid.Column="1" Spacing="7">
                                 <TextBlock Classes="field-label" Text="ТИП ОПЕРАЦИИ" />
                                 <Grid ColumnDefinitions="*,8,*" Height="40">
                                     <Button
@@ -473,17 +480,17 @@
                                 </Grid>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="1" Grid.Column="1" Spacing="7">
+                            <StackPanel Grid.Row="2" Grid.Column="0" Spacing="7">
                                 <TextBlock Classes="field-label" Text="ДАТА" />
                                 <TextBox Classes="manual-input" Text="{Binding ManualDateText, Mode=TwoWay}" Watermark="дд.мм.гг" />
                             </StackPanel>
 
-                            <StackPanel Grid.Row="2" Grid.Column="0" Spacing="7">
+                            <StackPanel Grid.Row="2" Grid.Column="1" Spacing="7">
                                 <TextBlock Classes="field-label" Text="ЦЕНА" />
                                 <TextBox Classes="manual-input" Text="{Binding ManualPriceText, Mode=TwoWay}" Watermark="0.00" />
                             </StackPanel>
 
-                            <StackPanel Grid.Row="2" Grid.Column="1" Spacing="7">
+                            <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Spacing="7">
                                 <TextBlock Classes="field-label" Text="КОЛИЧЕСТВО" />
                                 <TextBox Classes="manual-input" Text="{Binding ManualQuantityText, Mode=TwoWay}" Watermark="1" />
                             </StackPanel>
@@ -606,16 +613,16 @@
                                             </Border>
                                             <StackPanel VerticalAlignment="Center" Spacing="1">
                                                 <TextBlock Classes="asset-name" Text="{Binding Ticker}" />
-                                                <TextBlock Classes="field-label" Text="{Binding Name}" />
+                                                <TextBlock Classes="field-label" Text="{Binding AssetSubtitle}" />
                                             </StackPanel>
                                         </StackPanel>
 
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="5">
-                                            <Border Classes="share-track">
-                                                <Border Classes="share-fill" Width="{Binding ShareBarWidth}" />
+                                        <Grid Grid.Column="1" RowDefinitions="Auto,5,Auto" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                            <Border Grid.Row="0" Classes="share-track" VerticalAlignment="Center">
+                                                <Border Classes="share-fill" Width="{Binding ShareBarWidth}" VerticalAlignment="Center" />
                                             </Border>
-                                            <TextBlock Classes="asset-cell" FontSize="11" Text="{Binding ShareText}" />
-                                        </StackPanel>
+                                            <TextBlock Grid.Row="2" Classes="asset-cell" FontSize="11" Text="{Binding ShareText}" VerticalAlignment="Center" />
+                                        </Grid>
 
                                         <TextBlock Grid.Column="2" Classes="asset-cell" VerticalAlignment="Center" Text="{Binding CurrentPriceText}" />
                                         <TextBlock Grid.Column="3" Classes="asset-cell" VerticalAlignment="Center" Text="{Binding QuantityText}" />

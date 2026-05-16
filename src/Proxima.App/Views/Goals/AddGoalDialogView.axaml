@@ -18,16 +18,10 @@
                         <TextBox Classes="proxima-input" Text="{Binding Name}" Watermark="Например, Дворец" />
                     </StackPanel>
 
-                    <Grid ColumnDefinitions="*,116" ColumnSpacing="12">
-                        <StackPanel Spacing="8">
-                            <TextBlock Classes="proxima-caption" Text="Целевая сумма" />
-                            <TextBox Classes="proxima-input" Text="{Binding TargetAmount}" Watermark="2250000" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Spacing="8">
-                            <TextBlock Classes="proxima-caption" Text="Валюта" />
-                            <TextBox Classes="proxima-input" Text="{Binding Currency}" Watermark="USD" />
-                        </StackPanel>
-                    </Grid>
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="proxima-caption" Text="Целевая сумма, USD" />
+                        <TextBox Classes="proxima-input" Text="{Binding TargetAmount}" Watermark="2250000" />
+                    </StackPanel>
 
                     <Border Classes="proxima-goals-dialog-note">
                         <TextBlock Classes="proxima-caption" TextWrapping="Wrap">

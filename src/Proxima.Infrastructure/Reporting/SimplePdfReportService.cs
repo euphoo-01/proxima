@@ -898,7 +898,7 @@ public sealed class SimplePdfReportService : IReportService
 
         private void DrawInfoCell(InfoCell cell, double x, double y, double width, double height)
         {
-            int valueLines = IsRateInfoCell(cell) ? 4 : 1;
+            int valueLines = IsRateInfoCell(cell) ? 6 : 2;
             DrawRect(x, y, width, height, ReportRgb.White, ReportRgb.Border);
             DrawText(cell.Label, x + 11d, y + 8d, 7.5d, ReportRgb.Muted, width - 22d);
             DrawWrappedText(cell.Value, x + 11d, y + 21d, width - 22d, 8.8d, ReportRgb.Navy, valueLines);
@@ -911,9 +911,9 @@ public sealed class SimplePdfReportService : IReportService
                 return 40d;
             }
 
-            int valueLines = IsRateInfoCell(cell) ? 4 : 1;
+            int valueLines = IsRateInfoCell(cell) ? 6 : 2;
             double valueHeight = EstimateTextHeight(cell.Value, width - 22d, 8.8d, 1, valueLines);
-            return Math.Max(40d, 26d + valueHeight);
+            return Math.Max(42d, 26d + valueHeight);
         }
 
         private static bool IsRateInfoCell(InfoCell cell)
@@ -923,16 +923,14 @@ public sealed class SimplePdfReportService : IReportService
 
         public void DrawCallout(string title, string text, ReportRgb background)
         {
-            bool isRateCallout = string.Equals(title, "Курсы валют", StringComparison.OrdinalIgnoreCase);
-            int maxLines = isRateCallout ? 5 : 3;
             double textWidth = PageWidth - Margin * 2d - 28d;
-            double textHeight = EstimateTextHeight(text, textWidth, 8.8d, 1, maxLines);
+            double textHeight = EstimateTextHeight(text, textWidth, 8.8d, 1);
             double height = Math.Max(62d, 39d + textHeight);
 
             EnsureSpace(height + 14d);
             DrawRect(Margin, _y, PageWidth - Margin * 2d, height, background, ReportRgb.Border);
             DrawText(title, Margin + 14d, _y + 11d, 9.5d, ReportRgb.Navy, textWidth);
-            DrawWrappedText(text, Margin + 14d, _y + 29d, textWidth, 8.8d, ReportRgb.Text, maxLines);
+            DrawWrappedText(text, Margin + 14d, _y + 29d, textWidth, 8.8d, ReportRgb.Text, int.MaxValue);
             _y += height + 18d;
         }
 
@@ -967,13 +965,15 @@ public sealed class SimplePdfReportService : IReportService
                 string kind = SafeText(row.Kind, "Info");
                 string note = SafeText(row.Note, string.Empty);
                 string label = SafeText(row.Label);
-                double rowHeight = Math.Max(42d, EstimateTextHeight(note, noteWidth - 24d, 7.5d, 2) + 22d);
+                double labelHeight = EstimateTextHeight(label, labelWidth - 20d, 8.8d, 1);
+                double noteHeight = EstimateTextHeight(note, noteWidth - 20d, 7.5d, 1);
+                double rowHeight = Math.Max(42d, Math.Max(labelHeight, noteHeight) + 22d);
                 EnsureSpace(rowHeight);
                 ReportRgb amountColor = row.Amount < 0m ? ReportRgb.Danger : kind.Equals("Benefit", StringComparison.OrdinalIgnoreCase) ? ReportRgb.Success : ReportRgb.Navy;
                 DrawRect(Margin, _y, tableWidth, rowHeight - 1d, ReportRgb.White, ReportRgb.Border);
-                DrawWrappedText(label, Margin + 12d, _y + 12d, labelWidth - 20d, 8.8d, ReportRgb.Text, 2);
+                DrawWrappedText(label, Margin + 12d, _y + 12d, labelWidth - 20d, 8.8d, ReportRgb.Text, int.MaxValue);
                 DrawText(kind.Equals("Info", StringComparison.OrdinalIgnoreCase) ? "-" : FormatMoney(row.Amount, currency), Margin + labelWidth, _y + 12d, 8.5d, amountColor, amountWidth - 10d, TextAlign.Right);
-                DrawWrappedText(note, Margin + labelWidth + amountWidth + 12d, _y + 10d, noteWidth - 20d, 7.5d, ReportRgb.Muted, Math.Max(1, Convert.ToInt32((rowHeight - 18d) / 11d)));
+                DrawWrappedText(note, Margin + labelWidth + amountWidth + 12d, _y + 10d, noteWidth - 20d, 7.5d, ReportRgb.Muted, int.MaxValue);
                 _y += rowHeight;
             }
 
@@ -982,13 +982,15 @@ public sealed class SimplePdfReportService : IReportService
 
         public void DrawDisclaimer(string disclaimer)
         {
-            EnsureSpace(76d);
+            double textWidth = PageWidth - Margin * 2d;
+            double textHeight = EstimateTextHeight(disclaimer, textWidth, 7.2d, 1);
+            EnsureSpace(34d + textHeight);
             DrawLine(Margin, _y, PageWidth - Margin, _y, ReportRgb.Border);
             _y += 12d;
-            DrawText("Юридическая оговорка", Margin, _y, 8.8d, ReportRgb.Muted, PageWidth - Margin * 2d);
+            DrawText("Юридическая оговорка", Margin, _y, 8.8d, ReportRgb.Muted, textWidth);
             _y += 17d;
-            DrawWrappedText(disclaimer, Margin, _y, PageWidth - Margin * 2d, 7.2d, ReportRgb.Muted, 4);
-            _y += 54d;
+            DrawWrappedText(disclaimer, Margin, _y, textWidth, 7.2d, ReportRgb.Muted, int.MaxValue);
+            _y += textHeight + 16d;
         }
 
         private void StartPage()

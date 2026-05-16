@@ -305,6 +305,8 @@
         </Style>
 
         <Style Selector="Button.more-transactions">
+            <Setter Property="MinWidth" Value="164" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -469,7 +471,6 @@
                                         <Button Grid.Column="4" Classes="more-button" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <Button.Flyout>
                                                 <MenuFlyout>
-                                                    <MenuItem Header="Редактировать" Command="{Binding EditCommand}" />
                                                     <MenuItem Header="Удалить" Command="{Binding DeleteCommand}" />
                                                 </MenuFlyout>
                                             </Button.Flyout>

@@ -74,12 +74,6 @@
                                 </Grid>
                             </Border>
 
-                            <Border Classes="proxima-settings-row">
-                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
-                                    <TextBlock Classes="proxima-caption" Text="Интервал обновления (мин)" VerticalAlignment="Center" />
-                                    <TextBox Grid.Column="1" Classes="proxima-input" Text="{Binding QuoteRefreshMinutes}" />
-                                </Grid>
-                            </Border>
 
                             <Border Classes="proxima-settings-row">
                                 <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
@@ -118,19 +112,7 @@
                         <StackPanel Spacing="12">
                             <TextBlock Classes="proxima-card-title" Text="Внешний вид" />
 
-                            <Border Classes="proxima-settings-row">
-                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
-                                    <TextBlock Classes="proxima-caption" Text="Язык" VerticalAlignment="Center" />
-                                    <ComboBox Grid.Column="1" Classes="proxima-input proxima-language-selector" ItemsSource="{Binding LanguageOptions}" SelectedItem="{Binding SelectedLanguage}" />
-                                </Grid>
-                            </Border>
 
-                            <Border Classes="proxima-settings-row">
-                                <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">
-                                    <TextBlock Classes="proxima-caption" Text="UI scale" VerticalAlignment="Center" />
-                                    <TextBox Grid.Column="1" Classes="proxima-input" Text="{Binding UiScale}" />
-                                </Grid>
-                            </Border>
 
                             <Border Classes="proxima-settings-row">
                                 <Grid ColumnDefinitions="*,2*" ColumnSpacing="16">

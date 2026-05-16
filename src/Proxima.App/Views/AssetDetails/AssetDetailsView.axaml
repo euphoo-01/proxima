@@ -59,7 +59,6 @@
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel Spacing="3">
                                 <TextBlock Classes="asset-section-title" Text="↗ Market Performance" />
-                                <TextBlock Classes="proxima-caption" Text="Свечной график. Колесо мыши — масштаб, drag — перемещение." />
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top">

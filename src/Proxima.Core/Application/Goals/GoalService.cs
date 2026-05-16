@@ -22,7 +22,7 @@ public sealed class GoalService(IGoalRepository repository) : IGoalService
             request.PortfolioId,
             request.Title.Trim(),
             request.TargetAmount,
-            request.Currency.Trim().ToUpperInvariant(),
+            "USD",
             request.MonthlyContribution,
             request.ExpectedAnnualReturnPercent,
             request.TargetDate,
@@ -51,7 +51,7 @@ public sealed class GoalService(IGoalRepository repository) : IGoalService
         {
             Title = request.Title.Trim(),
             TargetAmount = request.TargetAmount,
-            Currency = request.Currency.Trim().ToUpperInvariant(),
+            Currency = "USD",
             MonthlyContribution = request.MonthlyContribution,
             ExpectedAnnualReturnPercent = request.ExpectedAnnualReturnPercent,
             TargetDate = request.TargetDate,
@@ -119,9 +119,9 @@ public sealed class GoalService(IGoalRepository repository) : IGoalService
             return "Ежемесячный взнос не может быть отрицательным.";
         }
 
-        if (string.IsNullOrWhiteSpace(currency))
+        if (string.IsNullOrWhiteSpace(currency) || !currency.Equals("USD", StringComparison.OrdinalIgnoreCase))
         {
-            return "Валюта обязательна.";
+            return "Финансовые цели в текущей версии ведутся только в USD.";
         }
 
         return null;

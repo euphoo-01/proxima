@@ -15,7 +15,7 @@ public sealed class TransactionEntity
     public string Currency { get; set; } = "USD";
     public string? Broker { get; set; }
     public string? ExternalId { get; set; }
-    public string? EncryptedNotes { get; set; }
+    public string? Notes { get; set; }
     public bool IsArchived { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }

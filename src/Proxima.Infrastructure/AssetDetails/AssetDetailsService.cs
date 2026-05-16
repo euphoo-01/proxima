@@ -47,9 +47,12 @@ public sealed class AssetDetailsService(
             .FindLatestByAssetIdAsync(asset.Id, cancellationToken)
             .ConfigureAwait(false);
 
-        QuoteProviderResult latestQuote = await quoteProvider
-            .GetLatestQuoteAsync(asset.Ticker, asset.Currency, cancellationToken)
-            .ConfigureAwait(false);
+        string quoteSymbol = ResolveQuoteSymbol(asset);
+        string quotePair = ResolveQuotePair(asset);
+        QuoteProviderResult latestQuote = ResolveBaseCurrencyQuote(asset, quoteSymbol)
+            ?? await quoteProvider
+                .GetLatestQuoteAsync(quoteSymbol, "USD", cancellationToken)
+                .ConfigureAwait(false);
 
         if (!latestQuote.Succeeded)
         {
@@ -82,6 +85,7 @@ public sealed class AssetDetailsService(
 
             asset = asset with
             {
+                Ticker = asset.Ticker,
                 CurrentPrice = latestQuote.Quote.Price,
                 UpdatedAt = DateTimeOffset.UtcNow
             };
@@ -92,7 +96,7 @@ public sealed class AssetDetailsService(
         }
 
         TwelveDataAssetMarketData? marketData = await marketDataProvider
-            .TryLoadAsync(asset.Ticker, NormalizeTimeframe(timeframe), cancellationToken)
+            .TryLoadAsync(quoteSymbol, NormalizeTimeframe(timeframe), cancellationToken)
             .ConfigureAwait(false);
 
         string currency = cachedQuote?.Currency
@@ -175,11 +179,15 @@ public sealed class AssetDetailsService(
                 ? asset.Name
                 : asset.Ticker.ToUpperInvariant();
 
-        string source = marketData is not null
+        string sourcePrefix = asset.Type is AssetType.Cash or AssetType.Currency
+            ? $"Пара курса: {quotePair}. "
+            : string.Empty;
+
+        string source = sourcePrefix + (marketData is not null
             ? "Источник: Twelve Data + PostgreSQL"
             : cachedQuote is not null
                 ? $"Источник: {cachedQuote.Source} + PostgreSQL"
-                : "Источник: PostgreSQL + локальная оценка";
+                : "Источник: PostgreSQL + локальная оценка");
 
         return new AssetDetailsReadModel(
             asset.Id,
@@ -225,6 +233,69 @@ public sealed class AssetDetailsService(
             transaction.FeeAmount,
             transaction.Currency,
             transaction.IsArchived ? "Archived" : "Completed");
+    }
+
+    private static QuoteProviderResult? ResolveBaseCurrencyQuote(Asset asset, string quoteSymbol)
+    {
+        if (asset.Type is not (AssetType.Cash or AssetType.Currency))
+        {
+            return null;
+        }
+
+        string cashCode = NormalizeCashTicker(quoteSymbol, asset.Currency);
+        if (!cashCode.Equals("USD", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        return QuoteProviderResult.Success(new QuoteData(
+            "USD/USD",
+            1m,
+            "USD",
+            DateTimeOffset.UtcNow,
+            "base-currency",
+            Ohlc: null,
+            Volume: null));
+    }
+
+    private static string ResolveQuoteSymbol(Asset asset)
+    {
+        if (asset.Type is not (AssetType.Cash or AssetType.Currency))
+        {
+            return asset.Ticker;
+        }
+
+        string cashCode = NormalizeCashTicker(asset.Ticker, asset.Currency);
+        return cashCode.Equals("USD", StringComparison.OrdinalIgnoreCase)
+            ? "USD/USD"
+            : $"{cashCode}/USD";
+    }
+
+    private static string ResolveQuotePair(Asset asset)
+    {
+        if (asset.Type is not (AssetType.Cash or AssetType.Currency))
+        {
+            return asset.Ticker.ToUpperInvariant();
+        }
+
+        string cashCode = NormalizeCashTicker(asset.Ticker, asset.Currency);
+        return cashCode.Equals("USD", StringComparison.OrdinalIgnoreCase)
+            ? "USD/USD"
+            : $"{cashCode}/USD";
+    }
+
+    private static string NormalizeCashTicker(string ticker, string currency)
+    {
+        string value = string.IsNullOrWhiteSpace(ticker) ? currency : ticker;
+        value = value.Trim().ToUpperInvariant();
+
+        int slashIndex = value.IndexOf('/', StringComparison.Ordinal);
+        if (slashIndex > 0)
+        {
+            value = value[..slashIndex];
+        }
+
+        return value;
     }
 
     private static string NormalizeTimeframe(string? value)

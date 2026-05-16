@@ -110,8 +110,7 @@ public partial class App : global::Avalonia.Application
                 profile.Id,
                 profile.DisplayName,
                 profile.Role,
-                profile.Login,
-                "USD"))
+                profile.Login))
             .GetAwaiter()
             .GetResult();
     }

@@ -27,7 +27,6 @@ public sealed class AssetService(IAssetRepository repository) : IAssetService
             NormalizeOptional(request.Exchange),
             NormalizeOptional(request.Isin),
             NormalizeTags(request.Tags),
-            EncryptNotes(request.Notes),
             request.Quantity,
             request.AverageBuyPrice,
             request.CurrentPrice,
@@ -62,7 +61,6 @@ public sealed class AssetService(IAssetRepository repository) : IAssetService
             Exchange = NormalizeOptional(request.Exchange),
             Isin = NormalizeOptional(request.Isin),
             Tags = NormalizeTags(request.Tags),
-            EncryptedNotes = EncryptNotes(request.Notes),
             Quantity = request.Quantity,
             AverageBuyPrice = request.AverageBuyPrice,
             CurrentPrice = request.CurrentPrice,
@@ -153,17 +151,6 @@ public sealed class AssetService(IAssetRepository repository) : IAssetService
             .Where(static item => !string.IsNullOrWhiteSpace(item))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
-    }
-
-    private static string? EncryptNotes(string? notes)
-    {
-        if (string.IsNullOrWhiteSpace(notes))
-        {
-            return null;
-        }
-
-        byte[] bytes = System.Text.Encoding.UTF8.GetBytes(notes.Trim());
-        return Convert.ToBase64String(bytes);
     }
 
     private readonly record struct ValidationResult(bool IsValid, string Message)

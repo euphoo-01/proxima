@@ -22,7 +22,6 @@ public sealed class PostgresPortfolioRepository(IProximaUnitOfWorkFactory uowFac
                 x.Id,
                 x.OwnerUserId,
                 x.Name,
-                x.BaseCurrency,
                 x.Description,
                 x.ClientLabel,
                 x.IsArchived,
@@ -42,7 +41,7 @@ public sealed class PostgresPortfolioRepository(IProximaUnitOfWorkFactory uowFac
 
         return entity is null
             ? null
-            : new Portfolio(entity.Id, entity.OwnerUserId, entity.Name, entity.BaseCurrency, entity.Description, entity.ClientLabel, entity.IsArchived, entity.CreatedAt, entity.UpdatedAt);
+            : new Portfolio(entity.Id, entity.OwnerUserId, entity.Name, entity.Description, entity.ClientLabel, entity.IsArchived, entity.CreatedAt, entity.UpdatedAt);
     }
 
     public async Task AddAsync(Portfolio portfolio, CancellationToken cancellationToken)
@@ -54,7 +53,6 @@ public sealed class PostgresPortfolioRepository(IProximaUnitOfWorkFactory uowFac
             Id = portfolio.Id,
             OwnerUserId = portfolio.OwnerUserId,
             Name = portfolio.Name,
-            BaseCurrency = portfolio.BaseCurrency,
             Description = portfolio.Description,
             ClientLabel = portfolio.ClientLabel,
             IsArchived = portfolio.IsArchived,
@@ -73,7 +71,6 @@ public sealed class PostgresPortfolioRepository(IProximaUnitOfWorkFactory uowFac
             cancellationToken).ConfigureAwait(false);
 
         entity.Name = portfolio.Name;
-        entity.BaseCurrency = portfolio.BaseCurrency;
         entity.Description = portfolio.Description;
         entity.ClientLabel = portfolio.ClientLabel;
         entity.IsArchived = portfolio.IsArchived;

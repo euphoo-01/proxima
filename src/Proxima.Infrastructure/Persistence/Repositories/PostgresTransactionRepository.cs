@@ -31,7 +31,7 @@ public sealed class PostgresTransactionRepository(IProximaUnitOfWorkFactory uowF
                 x.Currency,
                 x.Broker,
                 x.ExternalId,
-                x.EncryptedNotes,
+                x.Notes,
                 x.IsArchived,
                 x.CreatedAt,
                 x.UpdatedAt))
@@ -63,7 +63,7 @@ public sealed class PostgresTransactionRepository(IProximaUnitOfWorkFactory uowF
                 x.Currency,
                 x.Broker,
                 x.ExternalId,
-                x.EncryptedNotes,
+                x.Notes,
                 x.IsArchived,
                 x.CreatedAt,
                 x.UpdatedAt);
@@ -88,7 +88,7 @@ public sealed class PostgresTransactionRepository(IProximaUnitOfWorkFactory uowF
             Currency = transaction.Currency,
             Broker = transaction.Broker,
             ExternalId = transaction.ExternalId,
-            EncryptedNotes = transaction.EncryptedNotes,
+            Notes = transaction.Notes,
             IsArchived = transaction.IsArchived,
             CreatedAt = transaction.CreatedAt,
             UpdatedAt = transaction.UpdatedAt,
@@ -115,7 +115,7 @@ public sealed class PostgresTransactionRepository(IProximaUnitOfWorkFactory uowF
         entity.Currency = transaction.Currency;
         entity.Broker = transaction.Broker;
         entity.ExternalId = transaction.ExternalId;
-        entity.EncryptedNotes = transaction.EncryptedNotes;
+        entity.Notes = transaction.Notes;
         entity.IsArchived = transaction.IsArchived;
         entity.UpdatedAt = transaction.UpdatedAt;
 

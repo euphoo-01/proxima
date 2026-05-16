@@ -8,6 +8,8 @@ public sealed class LocalAuthService(
     PasswordPolicyValidator passwordPolicy)
     : ILocalAuthService
 {
+    private const int MaxFailedUnlockAttempts = 3;
+    private static readonly TimeSpan UnlockLockoutDuration = TimeSpan.FromMinutes(3);
     private const string GenericAuthError = "Не удалось разблокировать Proxima. Проверьте логин и пароль.";
 
     public async Task<bool> NeedsFirstRunSetupAsync(CancellationToken cancellationToken = default)
@@ -85,15 +87,44 @@ public sealed class LocalAuthService(
         try
         {
             LocalUserProfile? profile = await users.FindByLoginAsync(NormalizeLogin(login), cancellationToken).ConfigureAwait(false);
-            if (profile is null || !passwordHasher.Verify(password, profile.Credential))
+            if (profile is null)
             {
-                if (profile is not null)
+                return AuthResult.Failure(AuthFailureReason.GenericAuthenticationFailed, GenericAuthError);
+            }
+
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            if (IsLockedOut(profile, now, out TimeSpan remaining))
+            {
+                return AuthResult.Failure(
+                    AuthFailureReason.GenericAuthenticationFailed,
+                    $"Вход временно заблокирован после 3 неверных попыток. Повторите через {FormatRemaining(remaining)}.");
+            }
+
+            if (profile.FailedUnlockAttempts >= MaxFailedUnlockAttempts)
+            {
+                profile = profile with
                 {
-                    await users.UpdateAsync(profile with
-                    {
-                        FailedUnlockAttempts = profile.FailedUnlockAttempts + 1,
-                        UpdatedAt = DateTimeOffset.UtcNow,
-                    }, cancellationToken).ConfigureAwait(false);
+                    FailedUnlockAttempts = 0,
+                    UpdatedAt = now,
+                };
+
+                await users.UpdateAsync(profile, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (!passwordHasher.Verify(password, profile.Credential))
+            {
+                int failedAttempts = Math.Min(profile.FailedUnlockAttempts + 1, MaxFailedUnlockAttempts);
+                await users.UpdateAsync(profile with
+                {
+                    FailedUnlockAttempts = failedAttempts,
+                    UpdatedAt = now,
+                }, cancellationToken).ConfigureAwait(false);
+
+                if (failedAttempts >= MaxFailedUnlockAttempts)
+                {
+                    return AuthResult.Failure(
+                        AuthFailureReason.GenericAuthenticationFailed,
+                        "Вход временно заблокирован после 3 неверных попыток. Повторите через 3 минуты.");
                 }
 
                 return AuthResult.Failure(AuthFailureReason.GenericAuthenticationFailed, GenericAuthError);
@@ -102,7 +133,7 @@ public sealed class LocalAuthService(
             LocalUserProfile unlocked = profile with
             {
                 FailedUnlockAttempts = 0,
-                UpdatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = now,
             };
 
             await users.UpdateAsync(unlocked, cancellationToken).ConfigureAwait(false);
@@ -126,6 +157,31 @@ public sealed class LocalAuthService(
         }
 
         await users.DeleteAsync(profileId, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static bool IsLockedOut(LocalUserProfile profile, DateTimeOffset now, out TimeSpan remaining)
+    {
+        remaining = TimeSpan.Zero;
+        if (profile.FailedUnlockAttempts < MaxFailedUnlockAttempts)
+        {
+            return false;
+        }
+
+        DateTimeOffset lockoutEndsAt = profile.UpdatedAt.Add(UnlockLockoutDuration);
+        if (now >= lockoutEndsAt)
+        {
+            return false;
+        }
+
+        remaining = lockoutEndsAt - now;
+        return true;
+    }
+
+    private static string FormatRemaining(TimeSpan remaining)
+    {
+        int seconds = Math.Max(1, (int)Math.Ceiling(remaining.TotalSeconds));
+        int minutes = (seconds + 59) / 60;
+        return minutes == 1 ? "1 минуту" : $"{minutes} минуты";
     }
 
     private static string NormalizeLogin(string login) => login.Trim().ToLowerInvariant();

@@ -7,10 +7,6 @@ public sealed record UserSettings(
     string DisplayName,
     UserRole Role,
     string Login,
-    string PreferredCurrency,
-    AppLanguage Language,
-    decimal UiScale,
     QuoteProviderKind QuoteProvider,
-    int QuoteRefreshMinutes,
-    string TwelveDataApiKeyProtected,
+    string QuoteApiKey,
     CurrencyProviderKind CurrencyProvider);

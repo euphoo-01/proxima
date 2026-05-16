@@ -6,17 +6,12 @@ public sealed record CreateDefaultSettingsRequest(
     Guid OwnerUserId,
     string DisplayName,
     UserRole Role,
-    string Login,
-    string PreferredCurrency);
+    string Login);
 
 public sealed record UpdateSettingsRequest(
     Guid OwnerUserId,
     string DisplayName,
     UserRole Role,
-    string PreferredCurrency,
-    AppLanguage Language,
-    decimal UiScale,
     QuoteProviderKind QuoteProvider,
-    int QuoteRefreshMinutes,
-    string? TwelveDataApiKeyRaw,
+    string? QuoteApiKeyRaw,
     CurrencyProviderKind CurrencyProvider);

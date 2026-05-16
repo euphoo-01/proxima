@@ -41,7 +41,7 @@ public sealed class TransactionService(ITransactionRepository repository, IAsset
             request.Currency.Trim().ToUpperInvariant(),
             NormalizeOptional(request.Broker),
             NormalizeOptional(request.ExternalId),
-            ObfuscateNotes(request.Notes),
+            NormalizeNotes(request.Notes),
             false,
             DateTimeOffset.UtcNow,
             DateTimeOffset.UtcNow);
@@ -86,7 +86,7 @@ public sealed class TransactionService(ITransactionRepository repository, IAsset
             Currency = request.Currency.Trim().ToUpperInvariant(),
             Broker = NormalizeOptional(request.Broker),
             ExternalId = NormalizeOptional(request.ExternalId),
-            EncryptedNotes = ObfuscateNotes(request.Notes),
+            Notes = NormalizeNotes(request.Notes),
             UpdatedAt = DateTimeOffset.UtcNow,
         };
 
@@ -193,14 +193,9 @@ public sealed class TransactionService(ITransactionRepository repository, IAsset
         return value.Trim();
     }
 
-    private static string? ObfuscateNotes(string? notes)
+    private static string? NormalizeNotes(string? notes)
     {
-        if (string.IsNullOrWhiteSpace(notes))
-        {
-            return null;
-        }
-
-        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(notes.Trim()));
+        return string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
     }
 
     private readonly record struct ValidationResult(bool IsValid, string Message)

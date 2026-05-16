@@ -121,7 +121,7 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
                         FeeAmount = row.FeeAmount,
                         TaxAmount = 0m,
                         Currency = storageCurrency,
-                        EncryptedNotes = string.IsNullOrWhiteSpace(row.Notes) ? null : row.Notes.Trim(),
+                        Notes = string.IsNullOrWhiteSpace(row.Notes) ? null : row.Notes.Trim(),
                         IsArchived = false,
                         CreatedAt = now,
                         UpdatedAt = now,

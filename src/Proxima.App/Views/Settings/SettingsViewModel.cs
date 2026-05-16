@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
-using Proxima.App.Views.Auth;
 using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
+using Proxima.App.Views.Auth;
 using Proxima.Core.Application.Settings;
 using Proxima.Core.Domain.Auth;
 
@@ -18,13 +18,9 @@ public sealed class SettingsViewModel : ViewModelBase
     private readonly DelegateCommand _changePasswordCommand;
 
     private UserRole _selectedRole = UserRole.PrivateInvestor;
-    private AppLanguage _selectedLanguage = AppLanguage.RU;
     private string _displayName = string.Empty;
     private string _login = "local";
-    private string _preferredCurrency = "USD";
-    private decimal _uiScale = 1m;
     private QuoteProviderKind _selectedQuoteProvider = QuoteProviderKind.TwelveData;
-    private int _quoteRefreshMinutes = 15;
     private CurrencyProviderKind _selectedCurrencyProvider = CurrencyProviderKind.Mock;
 
     private bool _isLoading;
@@ -41,8 +37,6 @@ public sealed class SettingsViewModel : ViewModelBase
         _runtimeUserContext = runtimeUserContext;
         _notificationCenter = notificationCenter;
 
-        CurrencyOptions = ["USD"];
-        LanguageOptions = Enum.GetValues<AppLanguage>();
         RoleOptions = Enum.GetValues<UserRole>();
         QuoteProviderOptions = [QuoteProviderKind.TwelveData];
         CurrencyProviderOptions = Enum.GetValues<CurrencyProviderKind>();
@@ -59,10 +53,6 @@ public sealed class SettingsViewModel : ViewModelBase
 
     public string BreadcrumbText => "Настройки";
 
-    public IReadOnlyList<string> CurrencyOptions { get; }
-
-    public IReadOnlyList<AppLanguage> LanguageOptions { get; }
-
     public IReadOnlyList<UserRole> RoleOptions { get; }
 
     public IReadOnlyList<QuoteProviderKind> QuoteProviderOptions { get; }
@@ -70,6 +60,7 @@ public sealed class SettingsViewModel : ViewModelBase
     public IReadOnlyList<CurrencyProviderKind> CurrencyProviderOptions { get; }
 
     public IReadOnlyList<string> ThemeOptions { get; }
+
     public ICommand SaveCommand => _saveCommand;
 
     public ICommand ReloadCommand => _reloadCommand;
@@ -94,34 +85,10 @@ public sealed class SettingsViewModel : ViewModelBase
         set => SetProperty(ref _selectedRole, value);
     }
 
-    public string PreferredCurrency
-    {
-        get => _preferredCurrency;
-        set => SetProperty(ref _preferredCurrency, "USD");
-    }
-
-    public AppLanguage SelectedLanguage
-    {
-        get => _selectedLanguage;
-        set => SetProperty(ref _selectedLanguage, value);
-    }
-
-    public decimal UiScale
-    {
-        get => _uiScale;
-        set => SetProperty(ref _uiScale, value);
-    }
-
     public QuoteProviderKind SelectedQuoteProvider
     {
         get => _selectedQuoteProvider;
         set => SetProperty(ref _selectedQuoteProvider, value);
-    }
-
-    public int QuoteRefreshMinutes
-    {
-        get => _quoteRefreshMinutes;
-        set => SetProperty(ref _quoteRefreshMinutes, value);
     }
 
     public CurrencyProviderKind SelectedCurrencyProvider
@@ -233,8 +200,7 @@ public sealed class SettingsViewModel : ViewModelBase
                 _runtimeUserContext.UserId,
                 _runtimeUserContext.DisplayName,
                 _runtimeUserContext.Role,
-                _runtimeUserContext.Login,
-                "USD")).ConfigureAwait(true);
+                _runtimeUserContext.Login)).ConfigureAwait(true);
 
             Apply(settings);
             StatusMessage = "Настройки загружены.";
@@ -270,11 +236,7 @@ public sealed class SettingsViewModel : ViewModelBase
                 _runtimeUserContext.UserId,
                 DisplayName,
                 SelectedRole,
-                "USD",
-                SelectedLanguage,
-                UiScale,
                 SelectedQuoteProvider,
-                QuoteRefreshMinutes,
                 null,
                 SelectedCurrencyProvider)).ConfigureAwait(true);
 
@@ -310,11 +272,7 @@ public sealed class SettingsViewModel : ViewModelBase
         DisplayName = settings.DisplayName;
         Login = settings.Login;
         SelectedRole = settings.Role;
-        PreferredCurrency = "USD";
-        SelectedLanguage = settings.Language;
-        UiScale = settings.UiScale;
         SelectedQuoteProvider = QuoteProviderKind.TwelveData;
-        QuoteRefreshMinutes = settings.QuoteRefreshMinutes;
         SelectedCurrencyProvider = settings.CurrencyProvider;
     }
 
@@ -335,18 +293,16 @@ public sealed class SettingsViewModel : ViewModelBase
     {
         public Task<UserSettings> EnsureAsync(CreateDefaultSettingsRequest request, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(new UserSettings(
+            UserSettings settings = new(
                 request.OwnerUserId,
-                "Андрей К.",
+                request.DisplayName,
                 request.Role,
                 request.Login,
-                "USD",
-                AppLanguage.RU,
-                1m,
                 QuoteProviderKind.TwelveData,
-                15,
                 string.Empty,
-                CurrencyProviderKind.Mock));
+                CurrencyProviderKind.Mock);
+
+            return Task.FromResult(settings);
         }
 
         public Task<UserSettings?> GetAsync(Guid ownerUserId, CancellationToken cancellationToken = default)
@@ -361,11 +317,7 @@ public sealed class SettingsViewModel : ViewModelBase
                 request.DisplayName,
                 request.Role,
                 "local",
-                "USD",
-                request.Language,
-                request.UiScale,
                 request.QuoteProvider,
-                request.QuoteRefreshMinutes,
                 string.Empty,
                 request.CurrencyProvider);
 

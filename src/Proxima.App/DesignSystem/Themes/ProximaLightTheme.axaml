@@ -45,7 +45,6 @@
     <StyleInclude Source="avares://Proxima.App/DesignSystem/CustomControlThemes/SettingsSection.axaml" />
     <StyleInclude Source="avares://Proxima.App/DesignSystem/CustomControlThemes/SettingsRow.axaml" />
     <StyleInclude Source="avares://Proxima.App/DesignSystem/CustomControlThemes/SecurityStatusCard.axaml" />
-    <StyleInclude Source="avares://Proxima.App/DesignSystem/CustomControlThemes/LanguageSelector.axaml" />
     <StyleInclude Source="avares://Proxima.App/DesignSystem/CustomControlThemes/ThemeSelector.axaml" />
     <StyleInclude Source="avares://Proxima.App/DesignSystem/CustomControlThemes/PageHeader.axaml" />
     <StyleInclude Source="avares://Proxima.App/DesignSystem/CustomControlThemes/AssetDetails.axaml" />

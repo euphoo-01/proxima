@@ -151,8 +151,7 @@ public sealed class LocalProfileAuthGateService(
             result.Profile.Id,
             result.Profile.DisplayName,
             result.Profile.Role,
-            result.Profile.Login,
-            "USD"), cancellationToken).ConfigureAwait(false);
+            result.Profile.Login), cancellationToken).ConfigureAwait(false);
 
         return AuthGateResult.Success();
     }

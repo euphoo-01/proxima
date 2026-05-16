@@ -15,8 +15,6 @@ namespace Proxima.App.Views.Profile;
 
 public sealed class ProfileViewModel : ViewModelBase
 {
-    private const string ForcedBaseCurrency = "USD";
-
     private readonly IRuntimeUserContext _userContext;
     private readonly ISettingsService _settingsService;
     private readonly IPortfolioService _portfolioService;
@@ -38,7 +36,6 @@ public sealed class ProfileViewModel : ViewModelBase
     private string _displayName = string.Empty;
     private string _login = string.Empty;
     private string _location = "Минск, Беларусь";
-    private string _preferredCurrency = ForcedBaseCurrency;
     private UserRole _selectedRole = UserRole.PrivateInvestor;
     private LegalProfileKind _selectedLegalProfile = LegalProfileKind.PhysicalPerson;
     private Bitmap? _avatarBitmap;
@@ -82,8 +79,6 @@ public sealed class ProfileViewModel : ViewModelBase
 
         SelectPrivateInvestorCommand = new DelegateCommand(_ => SelectedRole = UserRole.PrivateInvestor);
         SelectFinancialConsultantCommand = new DelegateCommand(_ => SelectedRole = UserRole.FinancialAnalyst);
-        SelectUsdCommand = new DelegateCommand(_ => PreferredCurrency = ForcedBaseCurrency);
-        SelectBynCommand = new DelegateCommand(_ => PreferredCurrency = ForcedBaseCurrency);
         SelectPhysicalPersonCommand = new DelegateCommand(_ => SelectedLegalProfile = LegalProfileKind.PhysicalPerson);
         SelectSelfEmployedCommand = new DelegateCommand(_ => SelectedLegalProfile = LegalProfileKind.SelfEmployed);
         SelectSoleProprietorCommand = new DelegateCommand(_ => SelectedLegalProfile = LegalProfileKind.SoleProprietor);
@@ -127,10 +122,6 @@ public sealed class ProfileViewModel : ViewModelBase
 
     public ICommand SelectFinancialConsultantCommand { get; }
 
-    public ICommand SelectUsdCommand { get; }
-
-    public ICommand SelectBynCommand { get; }
-
     public ICommand SelectPhysicalPersonCommand { get; }
 
     public ICommand SelectSelfEmployedCommand { get; }
@@ -165,19 +156,6 @@ public sealed class ProfileViewModel : ViewModelBase
     {
         get => _location;
         set => SetProperty(ref _location, value);
-    }
-
-    public string PreferredCurrency
-    {
-        get => _preferredCurrency;
-        set
-        {
-            if (SetProperty(ref _preferredCurrency, ForcedBaseCurrency))
-            {
-                OnPropertyChanged(nameof(IsUsdSelected));
-                OnPropertyChanged(nameof(IsBynSelected));
-            }
-        }
     }
 
     public UserRole SelectedRole
@@ -397,8 +375,7 @@ public sealed class ProfileViewModel : ViewModelBase
                 _userContext.UserId,
                 _userContext.DisplayName,
                 _userContext.Role,
-                _userContext.Login,
-                ForcedBaseCurrency)).ConfigureAwait(true);
+                _userContext.Login)).ConfigureAwait(true);
 
             DisplayName = string.IsNullOrWhiteSpace(settings.DisplayName)
                 ? _userContext.DisplayName
@@ -408,11 +385,10 @@ public sealed class ProfileViewModel : ViewModelBase
                 ? _userContext.Login
                 : settings.Login;
 
-            PreferredCurrency = ForcedBaseCurrency;
             SelectedRole = settings.Role;
             LoadProfileExtrasFromDisk();
             LoadAvatarFromDisk();
-            TwelveDataKeyStatus = string.IsNullOrWhiteSpace(settings.TwelveDataApiKeyProtected)
+            TwelveDataKeyStatus = string.IsNullOrWhiteSpace(settings.QuoteApiKey)
                 ? "Ключ Twelve Data не задан."
                 : "Ключ Twelve Data сохранен.";
 
@@ -448,18 +424,13 @@ public sealed class ProfileViewModel : ViewModelBase
                 _userContext.UserId,
                 DisplayName,
                 SelectedRole,
-                _userContext.Login,
-                ForcedBaseCurrency)).ConfigureAwait(true);
+                _userContext.Login)).ConfigureAwait(true);
 
             SettingsOperationResult result = await _settingsService.UpdateAsync(new UpdateSettingsRequest(
                 _userContext.UserId,
                 DisplayName,
                 SelectedRole,
-                ForcedBaseCurrency,
-                current.Language,
-                current.UiScale,
                 current.QuoteProvider,
-                current.QuoteRefreshMinutes,
                 null,
                 current.CurrencyProvider)).ConfigureAwait(true);
 
@@ -476,9 +447,8 @@ public sealed class ProfileViewModel : ViewModelBase
             await SaveDirtyPortfoliosAsync().ConfigureAwait(true);
 
             DisplayName = result.Settings.DisplayName;
-            PreferredCurrency = ForcedBaseCurrency;
             SelectedRole = result.Settings.Role;
-            TwelveDataKeyStatus = string.IsNullOrWhiteSpace(result.Settings.TwelveDataApiKeyProtected)
+            TwelveDataKeyStatus = string.IsNullOrWhiteSpace(result.Settings.QuoteApiKey)
                 ? "Ключ Twelve Data не задан."
                 : "Ключ Twelve Data сохранен.";
 
@@ -517,18 +487,13 @@ public sealed class ProfileViewModel : ViewModelBase
                 _userContext.UserId,
                 DisplayName,
                 SelectedRole,
-                _userContext.Login,
-                ForcedBaseCurrency)).ConfigureAwait(true);
+                _userContext.Login)).ConfigureAwait(true);
 
             SettingsOperationResult result = await _settingsService.UpdateAsync(new UpdateSettingsRequest(
                 _userContext.UserId,
                 DisplayName,
                 SelectedRole,
-                ForcedBaseCurrency,
-                current.Language,
-                current.UiScale,
                 QuoteProviderKind.TwelveData,
-                current.QuoteRefreshMinutes,
                 TwelveDataApiKey,
                 current.CurrencyProvider)).ConfigureAwait(true);
 
@@ -616,8 +581,7 @@ public sealed class ProfileViewModel : ViewModelBase
             ProfilePortfolioItem item = new(
                 portfolio.Id,
                 NormalizePortfolioName(portfolio.Name),
-                string.IsNullOrWhiteSpace(portfolio.Description) ? "Клиентский портфель" : portfolio.Description,
-                ForcedBaseCurrency)
+                string.IsNullOrWhiteSpace(portfolio.Description) ? "Клиентский портфель" : portfolio.Description)
             {
                 IsSelected = portfolio.Id == _shellState.CurrentPortfolioId,
             };
@@ -649,8 +613,7 @@ public sealed class ProfileViewModel : ViewModelBase
                 _userContext.UserId,
                 DisplayName,
                 SelectedRole,
-                _userContext.Login,
-                ForcedBaseCurrency)).ConfigureAwait(true);
+                _userContext.Login)).ConfigureAwait(true);
 
             int index = Portfolios.Count + 1;
             string name = $"Портфель {index}";
@@ -664,7 +627,6 @@ public sealed class ProfileViewModel : ViewModelBase
             PortfolioOperationResult result = await _portfolioService.CreateAsync(new CreatePortfolioRequest(
                 _userContext.UserId,
                 name,
-                ForcedBaseCurrency,
                 "Клиентский портфель",
                 null)).ConfigureAwait(true);
 
@@ -807,7 +769,6 @@ public sealed class ProfileViewModel : ViewModelBase
             _userContext.UserId,
             item.Id,
             normalizedName,
-            ForcedBaseCurrency,
             item.Description,
             null)).ConfigureAwait(true);
 
@@ -820,7 +781,7 @@ public sealed class ProfileViewModel : ViewModelBase
             return false;
         }
 
-        item.AcceptChanges(NormalizePortfolioName(result.Portfolio.Name), result.Portfolio.Description ?? "Клиентский портфель", ForcedBaseCurrency);
+        item.AcceptChanges(NormalizePortfolioName(result.Portfolio.Name), result.Portfolio.Description ?? "Клиентский портфель");
 
         if (item.IsSelected || result.Portfolio.Id == _shellState.CurrentPortfolioId)
         {
@@ -1104,14 +1065,11 @@ public sealed class ProfilePortfolioItem : ViewModelBase
     private bool _isDirty;
     private string _name;
     private string _description;
-    private string _baseCurrency;
-
-    public ProfilePortfolioItem(Guid id, string name, string description, string baseCurrency)
+    public ProfilePortfolioItem(Guid id, string name, string description)
     {
         Id = id;
         _name = name;
         _description = description;
-        _baseCurrency = baseCurrency;
     }
 
     public Guid Id { get; }
@@ -1134,12 +1092,6 @@ public sealed class ProfilePortfolioItem : ViewModelBase
         private set => SetProperty(ref _description, value);
     }
 
-    public string BaseCurrency
-    {
-        get => _baseCurrency;
-        private set => SetProperty(ref _baseCurrency, value);
-    }
-
     public bool IsSelected
     {
         get => _isSelected;
@@ -1152,15 +1104,13 @@ public sealed class ProfilePortfolioItem : ViewModelBase
         private set => SetProperty(ref _isDirty, value);
     }
 
-    public void AcceptChanges(string name, string description, string baseCurrency)
+    public void AcceptChanges(string name, string description)
     {
         _name = name;
         _description = description;
-        _baseCurrency = baseCurrency;
         _isDirty = false;
         OnPropertyChanged(nameof(Name));
         OnPropertyChanged(nameof(Description));
-        OnPropertyChanged(nameof(BaseCurrency));
         OnPropertyChanged(nameof(IsDirty));
     }
 }

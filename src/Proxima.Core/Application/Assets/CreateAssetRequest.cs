@@ -11,7 +11,6 @@ public sealed record CreateAssetRequest(
     string? Exchange,
     string? Isin,
     IReadOnlyList<string>? Tags,
-    string? Notes,
     decimal Quantity,
     decimal AverageBuyPrice,
     decimal CurrentPrice);

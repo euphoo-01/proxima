@@ -14,7 +14,7 @@ public sealed record PortfolioTransaction(
     string Currency,
     string? Broker,
     string? ExternalId,
-    string? EncryptedNotes,
+    string? Notes,
     bool IsArchived,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);

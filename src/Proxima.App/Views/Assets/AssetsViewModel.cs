@@ -59,6 +59,7 @@ public sealed class AssetsViewModel : ViewModelBase
     private string _manualAssetName = string.Empty;
     private string _manualPriceText = string.Empty;
     private string _manualQuantityText = "1";
+    private string _manualIsinText = string.Empty;
     private string _manualDateText = DateTimeOffset.Now.ToString("dd.MM.yyyy", RuCulture);
     private string _formMessage = string.Empty;
     private bool _hasFormError;
@@ -248,6 +249,18 @@ public sealed class AssetsViewModel : ViewModelBase
         }
     }
 
+    public string ManualIsinText
+    {
+        get => _manualIsinText;
+        set
+        {
+            if (SetProperty(ref _manualIsinText, value))
+            {
+                ClearFormMessage();
+            }
+        }
+    }
+
     public string ManualPriceText
     {
         get => _manualPriceText;
@@ -360,7 +373,7 @@ public sealed class AssetsViewModel : ViewModelBase
 
     public string TaxesMetric { get; private set; } = "$0.00";
 
-    public string MoreAssetsButtonText => _isShowingAllAssets ? "Скрыть активы⌃" : "Больше активов⌄";
+    public string MoreAssetsButtonText => _isShowingAllAssets ? "Скрыть активы  ↑" : "Больше активов  ↓";
 
     public ICommand LoadCommand => _loadCommand;
 
@@ -458,6 +471,7 @@ public sealed class AssetsViewModel : ViewModelBase
             asset.Id,
             asset.Name,
             asset.Ticker,
+            asset.Isin,
             asset.Type,
             asset.Currency,
             asset.Quantity,
@@ -710,6 +724,21 @@ public sealed class AssetsViewModel : ViewModelBase
         return string.IsNullOrWhiteSpace(symbol.Description) ? symbol.PrimaryText : symbol.Description;
     }
 
+    private static string? NormalizeManualIsin(string rawIsin, AssetType assetType)
+    {
+        if (assetType is AssetType.Cash or AssetType.Currency)
+        {
+            return null;
+        }
+
+        string normalized = new(rawIsin
+            .Where(static character => !char.IsWhiteSpace(character) && character != '-')
+            .Select(static character => char.ToUpperInvariant(character))
+            .ToArray());
+
+        return normalized.Length == 0 ? null : normalized;
+    }
+
     private static decimal ResolveManualStoragePrice(string ticker, AssetType assetType, decimal enteredPrice)
     {
         if (assetType is AssetType.Cash && ticker.Equals("USD", StringComparison.OrdinalIgnoreCase))
@@ -806,6 +835,7 @@ public sealed class AssetsViewModel : ViewModelBase
             string currency = ResolveManualCurrency(symbol, ticker, assetType);
             string resolvedAssetName = ResolveManualAssetName(symbol, ticker, assetType);
             decimal storagePrice = ResolveManualStoragePrice(ticker, assetType, price);
+            string? normalizedIsin = NormalizeManualIsin(ManualIsinText, assetType);
             Asset? existing = assets.FirstOrDefault(asset =>
                 string.Equals(asset.Ticker, ticker, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(asset.Name, resolvedAssetName, StringComparison.OrdinalIgnoreCase));
@@ -826,9 +856,8 @@ public sealed class AssetsViewModel : ViewModelBase
                     assetType,
                     currency,
                     symbol.Exchange,
-                    null,
+                    normalizedIsin,
                     [tag],
-                    null,
                     quantity,
                     storagePrice,
                     storagePrice), CancellationToken.None).ConfigureAwait(true);
@@ -872,9 +901,8 @@ public sealed class AssetsViewModel : ViewModelBase
                     existing.Type,
                     existing.Currency,
                     existing.Exchange,
-                    existing.Isin,
+                    normalizedIsin ?? existing.Isin,
                     tags,
-                    null,
                     newQuantity,
                     newAverage,
                     storagePrice), CancellationToken.None).ConfigureAwait(true);
@@ -914,6 +942,7 @@ public sealed class AssetsViewModel : ViewModelBase
             ManualAssetName = string.Empty;
             ManualPriceText = string.Empty;
             ManualQuantityText = "1";
+            ManualIsinText = string.Empty;
             ManualTagText = tag;
             ManualDateText = DateTimeOffset.Now.ToString("dd.MM.yyyy", RuCulture);
 
@@ -977,6 +1006,7 @@ public sealed class AssetsViewModel : ViewModelBase
         ManualAssetName = asset.Ticker;
         ManualPriceText = asset.CurrentPrice.ToString(CultureInfo.InvariantCulture);
         ManualQuantityText = asset.Quantity.ToString(CultureInfo.InvariantCulture);
+        ManualIsinText = asset.Isin ?? string.Empty;
         ManualTagText = asset.Tags.FirstOrDefault() ?? asset.Type switch
         {
             AssetType.Crypto => "Криптовалюта",
@@ -1387,6 +1417,7 @@ public sealed class AssetListItemViewModel : ViewModelBase
         Guid id,
         string name,
         string ticker,
+        string? isin,
         AssetType type,
         string currency,
         decimal quantity,
@@ -1401,6 +1432,7 @@ public sealed class AssetListItemViewModel : ViewModelBase
         Id = id;
         Name = name;
         Ticker = ticker;
+        Isin = isin;
         Type = type;
         Currency = currency;
         Quantity = quantity;
@@ -1421,6 +1453,12 @@ public sealed class AssetListItemViewModel : ViewModelBase
     public string Name { get; }
 
     public string Ticker { get; }
+
+    public string? Isin { get; }
+
+    public string AssetSubtitle => string.IsNullOrWhiteSpace(Isin)
+        ? Name
+        : $"{Name} · ISIN: {Isin}";
 
     public AssetType Type { get; }
 

@@ -44,7 +44,7 @@ public sealed class ConfigurableQuoteProvider(
                 "Провайдер котировок должен быть Twelve Data. Сохраните Twelve Data API key в профиле.");
         }
 
-        string apiKey = UnprotectApiKey(settings.TwelveDataApiKeyProtected);
+        string apiKey = UnprotectApiKey(settings.QuoteApiKey);
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             return QuoteProviderResult.Failure(

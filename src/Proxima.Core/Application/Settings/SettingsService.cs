@@ -14,14 +14,10 @@ public sealed class SettingsService(IUserSettingsRepository repository) : ISetti
 
         UserSettings settings = new(
             request.OwnerUserId,
-            request.DisplayName.Trim(),
+            NormalizeDisplayName(request.DisplayName),
             request.Role,
-            request.Login.Trim().ToLowerInvariant(),
-            NormalizeCurrency(request.PreferredCurrency),
-            AppLanguage.RU,
-            1m,
+            NormalizeLogin(request.Login),
             QuoteProviderKind.TwelveData,
-            15,
             string.Empty,
             CurrencyProviderKind.Mock);
 
@@ -48,22 +44,19 @@ public sealed class SettingsService(IUserSettingsRepository repository) : ISetti
             return SettingsOperationResult.Failure("Настройки не инициализированы.");
         }
 
-        string protectedKey = current.TwelveDataApiKeyProtected;
-        if (request.TwelveDataApiKeyRaw is not null)
+        string quoteApiKey = current.QuoteApiKey;
+        if (request.QuoteApiKeyRaw is not null)
         {
-            protectedKey = Protect(request.TwelveDataApiKeyRaw);
+            quoteApiKey = Protect(request.QuoteApiKeyRaw);
         }
 
         UserSettings updated = current with
         {
-            DisplayName = request.DisplayName.Trim(),
+            DisplayName = NormalizeDisplayName(request.DisplayName),
             Role = request.Role,
-            PreferredCurrency = NormalizeCurrency(request.PreferredCurrency),
-            Language = request.Language,
-            UiScale = request.UiScale,
+            Login = NormalizeLogin(current.Login),
             QuoteProvider = request.QuoteProvider,
-            QuoteRefreshMinutes = request.QuoteRefreshMinutes,
-            TwelveDataApiKeyProtected = protectedKey,
+            QuoteApiKey = quoteApiKey,
             CurrencyProvider = request.CurrencyProvider,
         };
 
@@ -78,31 +71,33 @@ public sealed class SettingsService(IUserSettingsRepository repository) : ISetti
             return "Display name обязателен.";
         }
 
-        if (request.UiScale is < 0.8m or > 1.5m)
-        {
-            return "UI scale должен быть в диапазоне 0.8..1.5.";
-        }
-
-        if (request.QuoteRefreshMinutes is < 1 or > 240)
-        {
-            return "Интервал обновления котировок должен быть 1..240 минут.";
-        }
-
-        string currency = NormalizeCurrency(request.PreferredCurrency);
-        if (currency is not ("USD" or "BYN" or "EUR" or "RUB"))
-        {
-            return "Недопустимая базовая валюта.";
-        }
-
         if (!Enum.IsDefined(request.Role))
         {
             return "Недопустимая роль профиля.";
         }
 
+        if (!Enum.IsDefined(request.QuoteProvider))
+        {
+            return "Недопустимый провайдер котировок.";
+        }
+
+        if (!Enum.IsDefined(request.CurrencyProvider))
+        {
+            return "Недопустимый провайдер курсов валют.";
+        }
+
         return null;
     }
 
-    private static string NormalizeCurrency(string currency) => string.IsNullOrWhiteSpace(currency) ? "USD" : currency.Trim().ToUpperInvariant();
+    private static string NormalizeDisplayName(string displayName)
+    {
+        return string.IsNullOrWhiteSpace(displayName) ? "Пользователь" : displayName.Trim();
+    }
+
+    private static string NormalizeLogin(string login)
+    {
+        return string.IsNullOrWhiteSpace(login) ? string.Empty : login.Trim().ToLowerInvariant();
+    }
 
     private static string Protect(string raw)
     {
