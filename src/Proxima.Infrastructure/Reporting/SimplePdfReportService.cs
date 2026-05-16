@@ -132,7 +132,48 @@ public sealed class SimplePdfReportService : IReportService
             Directory.CreateDirectory(safeRequest.OutputDirectory);
             string path = Path.Combine(safeRequest.OutputDirectory, BuildFileName("tax-report", $"{safeRequest.UserDisplayName}-{safeRequest.Year}"));
 
-            NativeTaxPdfWriter.Export(safeRequest, path);
+            EnsureFontResolver();
+            using PdfDocument document = new();
+            document.Info.Title = $"Proxima Tax Report {safeRequest.Year}";
+            document.Info.Author = "Proxima";
+            document.Info.Subject = safeRequest.UserDisplayName;
+            document.Info.CreationDate = DateTime.Now;
+
+            ReportCanvas canvas = new(document, "Налоговый отчет", safeRequest.UserDisplayName);
+            canvas.DrawTitle($"Налоговый отчет за {safeRequest.Year} год", "Черновик расчета по текущему портфелю");
+            canvas.DrawKpiCards([
+                new KpiCard("Всего налогов", FormatMoney(safeRequest.TotalTaxDue, safeRequest.Currency), "Оценка суммы к уплате", ReportPalette.BlueTint),
+                new KpiCard("Облагаемая база", FormatMoney(safeRequest.TaxableBase, safeRequest.Currency), "После учета расходов и убытков", ReportPalette.GrayTint),
+                new KpiCard("Льготы / зачет", FormatMoney(safeRequest.TaxSaved, safeRequest.Currency), "Иностранный налог и допустимые расходы", ReportPalette.GreenTint),
+            ]);
+
+            canvas.DrawInfoGrid([
+                new InfoCell("Портфель", safeRequest.UserDisplayName),
+                new InfoCell("Профиль", safeRequest.TaxProfile),
+                new InfoCell("Ставка РБ", $"{safeRequest.BaseRatePercent:0.##}%"),
+                new InfoCell("Дивиденды", $"{safeRequest.DividendRatePercent:0.##}%"),
+                new InfoCell("Порог дохода", safeRequest.IncomeThreshold <= 0m ? "не применяется" : FormatMoney(safeRequest.IncomeThreshold, safeRequest.Currency)),
+                new InfoCell("Операции", safeRequest.TransactionCount.ToString(CultureInfo.InvariantCulture)),
+                new InfoCell("Версия расчета", safeRequest.CalculationVersion),
+                new InfoCell("Курсы валют", safeRequest.ExchangeRateNotes),
+            ]);
+
+            canvas.DrawSectionTitle("Финансовая база");
+            canvas.DrawSimpleRows([
+                new SimpleRow("Реализованная прибыль", FormatMoney(safeRequest.RealizedGains, safeRequest.Currency), "Прибыль по закрытым сделкам"),
+                new SimpleRow("Дивиденды", FormatMoney(safeRequest.Dividends, safeRequest.Currency), "Доход по дивидендам"),
+                new SimpleRow("Комиссии", FormatMoney(safeRequest.Fees, safeRequest.Currency), "Расходы брокера и биржи"),
+                new SimpleRow("Курсовая разница", FormatMoney(safeRequest.CurrencyEffect, safeRequest.Currency), "Эффект пересчета валют"),
+                new SimpleRow("Убытки", FormatMoney(safeRequest.Losses, safeRequest.Currency), "Учитываемые убытки периода"),
+            ]);
+
+            canvas.DrawCallout("Налоговый профиль", safeRequest.TaxProfileDescription, ReportPalette.BlueTint);
+            canvas.DrawTaxRows("Детализация расчета", safeRequest.CalculationBreakdown, safeRequest.Currency);
+            canvas.DrawTaxRows("Разбор налога", safeRequest.TaxBreakdown, safeRequest.Currency);
+            canvas.DrawRateNote(safeRequest.ExchangeRateNotes);
+            canvas.DrawDisclaimer(safeRequest.LegalDisclaimer);
+            canvas.Save(path);
+
             await Task.CompletedTask.ConfigureAwait(false);
             return new ReportExportResult(true, "Tax report exported.", path);
         }
@@ -394,8 +435,8 @@ public sealed class SimplePdfReportService : IReportService
                 double x = Margin + i * (width + gap);
                 DrawRoundedRect(x, startY, width, 94d, card.Background, ReportPalette.Border);
                 _gfx.DrawString(SafeText(card.Label), _kpiLabelFont, ReportPalette.Muted, new XRect(x + 14d, startY + 14d, width - 28d, 15d), XStringFormats.TopLeft);
-                _gfx.DrawString(SafeText(card.Value), _kpiValueFont, ReportPalette.Navy, new XRect(x + 14d, startY + 38d, width - 28d, 24d), XStringFormats.TopLeft);
-                DrawText(card.Caption, _smallFont, ReportPalette.Muted, new XRect(x + 14d, startY + 66d, width - 28d, 18d));
+                DrawSingleLineFitted(card.Value, ReportPalette.Navy, new XRect(x + 14d, startY + 38d, width - 28d, 24d), 11d);
+                DrawText(card.Caption, _smallFont, ReportPalette.Muted, new XRect(x + 14d, startY + 74d, width - 28d, 16d));
             }
 
             _y += 120d;
@@ -407,39 +448,53 @@ public sealed class SimplePdfReportService : IReportService
             cells ??= Array.Empty<InfoCell>();
             double gap = 10d;
             double colWidth = (PageWidth - Margin * 2d - gap) / 2d;
-            double rowHeight = 40d;
 
-            for (int i = 0; i < cells.Count; i++)
+            for (int rowStart = 0; rowStart < cells.Count; rowStart += 2)
             {
-                if (i % 2 == 0)
+                InfoCell left = cells[rowStart];
+                InfoCell? right = rowStart + 1 < cells.Count ? cells[rowStart + 1] : null;
+                double rowHeight = Math.Max(EstimateInfoCellHeight(left, colWidth), EstimateInfoCellHeight(right, colWidth));
+
+                EnsureSpace(rowHeight + 8d);
+                DrawInfoCell(left, Margin, _y, colWidth, rowHeight);
+                if (right is not null)
                 {
-                    EnsureSpace(rowHeight + 8d);
+                    DrawInfoCell(right, Margin + colWidth + gap, _y, colWidth, rowHeight);
                 }
 
-                int col = i % 2;
-                double x = Margin + col * (colWidth + gap);
-                double y = _y;
-                DrawRoundedRect(x, y, colWidth, rowHeight, XBrushes.White, ReportPalette.Border);
-                InfoCell? cell = cells[i];
-                _gfx.DrawString(SafeText(cell?.Label), _smallFont, ReportPalette.Muted, new XRect(x + 11d, y + 8d, colWidth - 22d, 12d), XStringFormats.TopLeft);
-                DrawText(cell?.Value, _bodyBoldFont, ReportPalette.Navy, new XRect(x + 11d, y + 21d, colWidth - 22d, 16d));
-
-                if (col == 1 || i == cells.Count - 1)
-                {
-                    _y += rowHeight + 8d;
-                }
+                _y += rowHeight + 8d;
             }
 
             _y += 8d;
         }
 
+        private void DrawInfoCell(InfoCell cell, double x, double y, double width, double height)
+        {
+            DrawRoundedRect(x, y, width, height, XBrushes.White, ReportPalette.Border);
+            _gfx.DrawString(SafeText(cell.Label), _smallFont, ReportPalette.Muted, new XRect(x + 11d, y + 8d, width - 22d, 12d), XStringFormats.TopLeft);
+            DrawText(cell.Value, _bodyBoldFont, ReportPalette.Navy, new XRect(x + 11d, y + 21d, width - 22d, height - 26d));
+        }
+
+        private static double EstimateInfoCellHeight(InfoCell? cell, double width)
+        {
+            if (cell is null)
+            {
+                return 40d;
+            }
+
+            double valueHeight = EstimateTextHeight(cell.Value, width - 22d, new XFont(FontFamily, 9.5, XFontStyleEx.Bold));
+            return Math.Max(42d, 27d + valueHeight);
+        }
+
         public void DrawCallout(string title, string text, XBrush background)
         {
-            EnsureSpace(78d);
-            double height = 62d;
+            double textWidth = PageWidth - Margin * 2d - 28d;
+            double textHeight = EstimateTextHeight(text, textWidth, _bodyFont);
+            double height = Math.Max(62d, 39d + textHeight);
+            EnsureSpace(height + 18d);
             DrawRoundedRect(Margin, _y, PageWidth - Margin * 2d, height, background, ReportPalette.Border);
-            _gfx.DrawString(SafeText(title), _bodyBoldFont, ReportPalette.Navy, new XRect(Margin + 14d, _y + 11d, PageWidth - Margin * 2d - 28d, 14d), XStringFormats.TopLeft);
-            DrawText(text, _bodyFont, ReportPalette.Text, new XRect(Margin + 14d, _y + 29d, PageWidth - Margin * 2d - 28d, 24d));
+            _gfx.DrawString(SafeText(title), _bodyBoldFont, ReportPalette.Navy, new XRect(Margin + 14d, _y + 11d, textWidth, 14d), XStringFormats.TopLeft);
+            DrawText(text, _bodyFont, ReportPalette.Text, new XRect(Margin + 14d, _y + 29d, textWidth, height - 35d));
             _y += height + 18d;
         }
 
@@ -475,12 +530,14 @@ public sealed class SimplePdfReportService : IReportService
                 string kind = SafeText(row.Kind, "Info");
                 string note = SafeText(row.Note, string.Empty);
                 string label = SafeText(row.Label);
-                double rowHeight = Math.Max(42d, EstimateTextHeight(note, noteWidth - 24d, _smallFont) + 22d);
+                double labelHeight = EstimateTextHeight(label, labelWidth - 20d, _bodyBoldFont);
+                double noteHeight = EstimateTextHeight(note, noteWidth - 20d, _smallFont);
+                double rowHeight = Math.Max(42d, Math.Max(labelHeight, noteHeight) + 22d);
                 EnsureSpace(rowHeight);
                 XBrush amountBrush = row.Amount < 0m ? ReportPalette.Red : kind.Equals("Benefit", StringComparison.OrdinalIgnoreCase) ? ReportPalette.Green : ReportPalette.Navy;
                 DrawRoundedRect(Margin, _y, tableWidth, rowHeight - 1d, XBrushes.White, ReportPalette.Border);
                 DrawText(label, _bodyBoldFont, ReportPalette.Text, new XRect(Margin + 12d, _y + 12d, labelWidth - 20d, rowHeight - 18d));
-                _gfx.DrawString(kind.Equals("Info", StringComparison.OrdinalIgnoreCase) ? "-" : FormatMoney(row.Amount, currency), _bodyBoldFont, amountBrush, new XRect(Margin + labelWidth, _y + 12d, amountWidth - 10d, 14d), XStringFormats.TopRight);
+                DrawTextRight(kind.Equals("Info", StringComparison.OrdinalIgnoreCase) ? "-" : FormatMoney(row.Amount, currency), _bodyBoldFont, amountBrush, new XRect(Margin + labelWidth, _y + 12d, amountWidth - 10d, rowHeight - 18d));
                 DrawText(note, _smallFont, ReportPalette.Muted, new XRect(Margin + labelWidth + amountWidth + 12d, _y + 10d, noteWidth - 20d, rowHeight - 18d));
                 _y += rowHeight;
             }
@@ -507,7 +564,7 @@ public sealed class SimplePdfReportService : IReportService
                 EnsureSpace(38d);
                 DrawRoundedRect(Margin, _y, PageWidth - Margin * 2d, 34d, XBrushes.White, ReportPalette.Border);
                 _gfx.DrawString(SafeText(row.Label), _bodyBoldFont, ReportPalette.Text, new XRect(Margin + 12d, _y + 10d, 220d, 14d), XStringFormats.TopLeft);
-                _gfx.DrawString(SafeText(row.Value), _bodyBoldFont, ReportPalette.Navy, new XRect(Margin + 240d, _y + 10d, 120d, 14d), XStringFormats.TopRight);
+                DrawTextRight(row.Value, _bodyBoldFont, ReportPalette.Navy, new XRect(Margin + 240d, _y + 8d, 120d, 20d));
                 DrawText(row.Note, _smallFont, ReportPalette.Muted, new XRect(Margin + 375d, _y + 9d, 120d, 16d));
                 _y += 40d;
             }
@@ -660,6 +717,31 @@ public sealed class SimplePdfReportService : IReportService
             return page;
         }
 
+        private void DrawSingleLineFitted(string? text, XBrush brush, XRect rect, double minimumFontSize)
+        {
+            string value = SafeText(text, string.Empty);
+            if (string.IsNullOrWhiteSpace(value) || rect.Width <= 0d || rect.Height <= 0d)
+            {
+                return;
+            }
+
+            double size = _kpiValueFont.Size;
+            XFont font = _kpiValueFont;
+            while (size > minimumFontSize && _gfx.MeasureString(value, font).Width > rect.Width)
+            {
+                size -= 0.5d;
+                font = new XFont(FontFamily, size, XFontStyleEx.Bold);
+            }
+
+            string fitted = value;
+            while (fitted.Length > 1 && _gfx.MeasureString(fitted, font).Width > rect.Width)
+            {
+                fitted = fitted[..^1];
+            }
+
+            _gfx.DrawString(fitted, font, brush, rect, XStringFormats.TopLeft);
+        }
+
         private void DrawText(string? text, XFont font, XBrush brush, XRect rect)
         {
             string value = SafeText(text, string.Empty);
@@ -672,7 +754,7 @@ public sealed class SimplePdfReportService : IReportService
             double y = rect.Top;
             foreach (string paragraph in value.Split('\n'))
             {
-                IReadOnlyList<string> lines = WrapText(paragraph, rect.Width, font.Size);
+                IReadOnlyList<string> lines = WrapText(paragraph, rect.Width, font);
                 if (lines.Count == 0)
                 {
                     lines = [string.Empty];
@@ -691,7 +773,29 @@ public sealed class SimplePdfReportService : IReportService
             }
         }
 
-        private static IReadOnlyList<string> WrapText(string? text, double width, double fontSize)
+        private void DrawTextRight(string? text, XFont font, XBrush brush, XRect rect)
+        {
+            string value = SafeText(text, string.Empty);
+            if (string.IsNullOrEmpty(value) || rect.Width <= 0d || rect.Height <= 0d)
+            {
+                return;
+            }
+
+            double lineHeight = Math.Max(font.Size + 3d, 10d);
+            double y = rect.Top;
+            foreach (string line in WrapText(value, rect.Width, font))
+            {
+                if (y + lineHeight > rect.Bottom)
+                {
+                    return;
+                }
+
+                _gfx.DrawString(line, font, brush, new XRect(rect.Left, y, rect.Width, lineHeight), XStringFormats.TopRight);
+                y += lineHeight;
+            }
+        }
+
+        private IReadOnlyList<string> WrapText(string? text, double width, XFont font)
         {
             string value = SafeText(text, string.Empty);
             if (string.IsNullOrWhiteSpace(value))
@@ -699,13 +803,12 @@ public sealed class SimplePdfReportService : IReportService
                 return [];
             }
 
-            int maxChars = Math.Max(12, Convert.ToInt32(width / Math.Max(4d, fontSize * 0.45d)));
             List<string> lines = [];
             string current = string.Empty;
 
             foreach (string word in value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
             {
-                if (word.Length > maxChars)
+                if (_gfx.MeasureString(word, font).Width > width)
                 {
                     if (!string.IsNullOrWhiteSpace(current))
                     {
@@ -713,18 +816,36 @@ public sealed class SimplePdfReportService : IReportService
                         current = string.Empty;
                     }
 
-                    for (int i = 0; i < word.Length; i += maxChars)
+                    string chunk = string.Empty;
+                    foreach (char ch in word)
                     {
-                        lines.Add(word.Substring(i, Math.Min(maxChars, word.Length - i)));
+                        string candidate = chunk + ch;
+                        if (candidate.Length > 0 && _gfx.MeasureString(candidate, font).Width <= width)
+                        {
+                            chunk = candidate;
+                            continue;
+                        }
+
+                        if (!string.IsNullOrEmpty(chunk))
+                        {
+                            lines.Add(chunk);
+                        }
+
+                        chunk = ch.ToString();
+                    }
+
+                    if (!string.IsNullOrEmpty(chunk))
+                    {
+                        current = chunk;
                     }
 
                     continue;
                 }
 
-                string candidate = string.IsNullOrWhiteSpace(current) ? word : $"{current} {word}";
-                if (candidate.Length <= maxChars)
+                string candidateLine = string.IsNullOrWhiteSpace(current) ? word : $"{current} {word}";
+                if (_gfx.MeasureString(candidateLine, font).Width <= width)
                 {
-                    current = candidate;
+                    current = candidateLine;
                 }
                 else
                 {

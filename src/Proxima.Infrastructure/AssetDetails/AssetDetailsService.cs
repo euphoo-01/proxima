@@ -95,9 +95,11 @@ public sealed class AssetDetailsService(
                 .ConfigureAwait(false);
         }
 
-        TwelveDataAssetMarketData? marketData = await marketDataProvider
-            .TryLoadAsync(quoteSymbol, NormalizeTimeframe(timeframe), cancellationToken)
-            .ConfigureAwait(false);
+        TwelveDataAssetMarketData? marketData = IsBaseCurrencyPair(quoteSymbol)
+            ? null
+            : await marketDataProvider
+                .TryLoadAsync(quoteSymbol, NormalizeTimeframe(timeframe), cancellationToken)
+                .ConfigureAwait(false);
 
         string currency = cachedQuote?.Currency
             ?? marketData?.Currency
@@ -256,6 +258,11 @@ public sealed class AssetDetailsService(
             "base-currency",
             Ohlc: null,
             Volume: null));
+    }
+
+    private static bool IsBaseCurrencyPair(string quoteSymbol)
+    {
+        return string.Equals(quoteSymbol, "USD/USD", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string ResolveQuoteSymbol(Asset asset)

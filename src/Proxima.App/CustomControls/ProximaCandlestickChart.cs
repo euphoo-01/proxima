@@ -36,10 +36,6 @@ public sealed class ProximaCandlestickChart : Control
     private const double ChartBottomPad = 56;
 
     private int _hoverIndex = -1;
-    private bool _isPanning;
-    private Point _panStartPointer;
-    private int _panStartVisibleStart;
-    private int _panStartVisibleEnd;
 
     public IReadOnlyList<CandlestickPointViewModel>? Candles
     {
@@ -86,48 +82,12 @@ public sealed class ProximaCandlestickChart : Control
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
         base.OnPointerWheelChanged(e);
-        IReadOnlyList<CandlestickPointViewModel>? candles = Candles;
-        if (candles is null || candles.Count < 3)
-        {
-            return;
-        }
-
-        (int start, int end) = NormalizeVisibleRange(candles.Count);
-        int width = end - start + 1;
-        int minWidth = 3;
-        int nextWidth = e.Delta.Y > 0 ? Math.Max(minWidth, width - 1) : Math.Min(candles.Count, width + 1);
-        if (nextWidth == width)
-        {
-            return;
-        }
-
-        int anchor = ToVisibleIndex(e.GetPosition(this).X, start, end);
-        double ratio = width > 1 ? (anchor - start) / (double)(width - 1) : 0.5d;
-        int newStart = anchor - (int)Math.Round((nextWidth - 1) * ratio);
-        int newEnd = newStart + nextWidth - 1;
-        ClampAndSetVisibleRange(candles.Count, newStart, newEnd);
+        e.Handled = false;
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-        {
-            return;
-        }
-
-        IReadOnlyList<CandlestickPointViewModel>? candles = Candles;
-        if (candles is null || candles.Count == 0)
-        {
-            return;
-        }
-
-        (int start, int end) = NormalizeVisibleRange(candles.Count);
-        _isPanning = true;
-        _panStartPointer = e.GetPosition(this);
-        _panStartVisibleStart = start;
-        _panStartVisibleEnd = end;
-        e.Pointer.Capture(this);
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)
@@ -151,34 +111,18 @@ public sealed class ProximaCandlestickChart : Control
         int localIndex = (int)Math.Floor(x / Math.Max(1, slot));
         _hoverIndex = Math.Clamp(visibleStart + localIndex, visibleStart, visibleEnd);
 
-        if (_isPanning)
-        {
-            double deltaX = e.GetPosition(this).X - _panStartPointer.X;
-            int shift = (int)Math.Round(deltaX / Math.Max(1, slot));
-            int panStart = _panStartVisibleStart - shift;
-            int panEnd = _panStartVisibleEnd - shift;
-            ClampAndSetVisibleRange(candles.Count, panStart, panEnd);
-        }
-
         InvalidateVisual();
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
-        if (_isPanning)
-        {
-            _isPanning = false;
-            e.Pointer.Capture(null);
-        }
     }
 
     protected override void OnPointerExited(PointerEventArgs e)
     {
         base.OnPointerExited(e);
         _hoverIndex = -1;
-        _isPanning = false;
-        e.Pointer.Capture(null);
         InvalidateVisual();
     }
 
