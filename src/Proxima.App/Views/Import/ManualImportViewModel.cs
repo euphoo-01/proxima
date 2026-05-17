@@ -21,7 +21,7 @@ public sealed class ManualImportViewModel : ViewModelBase
     private readonly IImportCommitService? _importCommitService;
     private readonly IShellState? _shellState;
     private readonly IRuntimeDataInvalidation? _runtimeDataInvalidation;
-    private readonly IImportPreviewGateway? _importPreviewGateway;
+    private readonly IImportService? _importService;
     private readonly IMarketSymbolSearchService? _symbolSearchService;
     private readonly IAppNotificationCenter? _notificationCenter;
 
@@ -36,7 +36,7 @@ public sealed class ManualImportViewModel : ViewModelBase
     private readonly AsyncCommand _parseFileCommand;
     private readonly AsyncCommand _saveCommand;
 
-    private string _statusMessage = "Перетащите CSV-файл или добавьте транзакцию вручную.";
+    private string _statusMessage = "Выберите CSV-файл или добавьте транзакцию вручную.";
     private string _errorMessage = string.Empty;
     private bool _hasWarnings;
     private bool _isParsing;
@@ -62,14 +62,14 @@ public sealed class ManualImportViewModel : ViewModelBase
         IImportCommitService? importCommitService,
         IShellState? shellState,
         IRuntimeDataInvalidation? runtimeDataInvalidation,
-        IImportPreviewGateway? importPreviewGateway,
+        IImportService? importService,
         IMarketSymbolSearchService? symbolSearchService = null,
         IAppNotificationCenter? notificationCenter = null)
     {
         _importCommitService = importCommitService;
         _shellState = shellState;
         _runtimeDataInvalidation = runtimeDataInvalidation;
-        _importPreviewGateway = importPreviewGateway;
+        _importService = importService;
         _symbolSearchService = symbolSearchService;
         _notificationCenter = notificationCenter;
 
@@ -353,13 +353,13 @@ public sealed class ManualImportViewModel : ViewModelBase
                 return;
             }
 
-            if (_importPreviewGateway is null)
+            if (_importService is null)
             {
-                ShowError("Модуль импорта не подключен. Проверьте регистрацию IImportPreviewGateway.");
+                ShowError("Модуль импорта не подключен. Проверьте регистрацию IImportService.");
                 return;
             }
 
-            ImportPreview preview = await _importPreviewGateway.PreviewAsync(FilePath).ConfigureAwait(true);
+            ImportPreview preview = await _importService.PreviewAsync(normalizedPath, CancellationToken.None).ConfigureAwait(true);
             if (!preview.Succeeded)
             {
                 ShowError(string.IsNullOrWhiteSpace(preview.Message)
@@ -639,7 +639,7 @@ public sealed class ManualImportViewModel : ViewModelBase
     {
         FilePath = string.Empty;
         ErrorMessage = string.Empty;
-        StatusMessage = "Файл очищен. Перетащите новый CSV или добавьте транзакцию вручную.";
+        StatusMessage = "Файл очищен. Выберите новый CSV или добавьте транзакцию вручную.";
     }
 
     private async Task SaveImportAsync()

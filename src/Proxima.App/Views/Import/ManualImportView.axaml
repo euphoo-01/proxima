@@ -315,7 +315,7 @@
                     </Border>
 
                     <StackPanel HorizontalAlignment="Center" Spacing="7">
-                        <TextBlock Classes="page-title" FontSize="34" HorizontalAlignment="Center" Text="Перетащите отчёт" />
+                        <TextBlock Classes="page-title" FontSize="34" HorizontalAlignment="Center" Text="Выберите отчёт" />
                         <TextBlock Classes="section-subtitle" FontSize="16" TextAlignment="Center" MaxWidth="430" Text="Загрузите файл в формате .csv до 5 МБ для автоматического импорта" />
                         <TextBlock Classes="section-subtitle" FontSize="12" TextAlignment="Center" MaxWidth="560" Text="Поддерживаются только CSV-файлы. При неверной структуре будет показана ошибка." />
                     </StackPanel>
@@ -446,7 +446,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <TextBlock Grid.Row="4" Classes="section-subtitle" IsVisible="{Binding HasNoRows}" Text="Пока нет транзакций. Перетащите CSV-файл или добавьте строку вручную." />
+                    <TextBlock Grid.Row="4" Classes="section-subtitle" IsVisible="{Binding HasNoRows}" Text="Пока нет транзакций. Выберите CSV-файл или добавьте строку вручную." />
 
                     <Grid Grid.Row="6" ColumnDefinitions="Auto,12,Auto,*,Auto,12,Auto">
                         <Button Classes="secondary-light" Command="{Binding AddRowCommand}" Content="Добавить пустую строку" />

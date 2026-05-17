@@ -85,9 +85,6 @@ public static class AppComposition
 
         services.AddScoped<IRuntimeDataInvalidation, RuntimeDataInvalidation>();
 
-        services.AddScoped<IImportPreviewGateway>(provider =>
-            new ImportPreviewGateway(provider.GetRequiredService<IImportService>()));
-
         services.AddScoped<IDashboardDataProvider, RuntimeDashboardDataProvider>();
 
         services.AddSingleton<TwelveDataAssetMarketDataProvider>();
