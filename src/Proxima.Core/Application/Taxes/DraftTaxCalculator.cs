@@ -210,7 +210,7 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
         }
         catch
         {
-            // The USD/BYN line is informational and must not invalidate the tax calculation.
+            //
         }
 
         string fallback = string.IsNullOrWhiteSpace(currentRateSource)

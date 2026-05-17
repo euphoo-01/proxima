@@ -141,6 +141,7 @@ public sealed class AssetDetailsService(
 
         decimal? pe = marketData?.PeRatio;
         decimal? beta = marketData?.Beta;
+        decimal depthUsd = EstimateDepthForOnePercentMove(marketCap, volumeUsd, riskSpreadFallback: currentPrice > 0m ? volumeUsd / currentPrice : 0m);
 
         AssetDetailsAnalyticsResult risk = AssetDetailsCalculator.Calculate(
             candles.Select(item => item.Close).ToArray(),
@@ -169,6 +170,12 @@ public sealed class AssetDetailsService(
             new("Z-Score", FormatSignedNumber(risk.ZScore), "Отклонение цены от средней", Math.Abs(risk.ZScore) > 2m ? AssetDetailsMetricSeverity.Warning : AssetDetailsMetricSeverity.Neutral),
             new("Beta", FormatNumber(risk.Beta), "Чувствительность к рынку", risk.Beta > 1.5m ? AssetDetailsMetricSeverity.Warning : AssetDetailsMetricSeverity.Neutral),
             new("Spread", risk.SpreadPct > 0m ? FormatPercent(risk.SpreadPct) : "—", "Оценка торгового спреда", AssetDetailsMetricSeverity.Neutral),
+            new("Correlation", FormatSignedNumber(risk.Correlation), "Автокорреляция доходностей по истории свечей", Math.Abs(risk.Correlation) > 0.65m ? AssetDetailsMetricSeverity.Warning : AssetDetailsMetricSeverity.Neutral),
+            new("Skew", FormatSignedNumber(risk.Skewness), "Асимметрия распределения доходностей", Math.Abs(risk.Skewness) > 1m ? AssetDetailsMetricSeverity.Warning : AssetDetailsMetricSeverity.Neutral),
+            new("Kurtosis", FormatSignedNumber(risk.Kurtosis), "Эксцесс: выраженность толстых хвостов", risk.Kurtosis > 3m ? AssetDetailsMetricSeverity.Warning : AssetDetailsMetricSeverity.Neutral),
+            new("HV", risk.HistoricalVolatilityPct > 0m ? FormatPercent(risk.HistoricalVolatilityPct) : "—", "Историческая годовая волатильность", risk.HistoricalVolatilityPct > 60m ? AssetDetailsMetricSeverity.Warning : AssetDetailsMetricSeverity.Neutral),
+            new("IV", risk.ImpliedVolatilityPct > 0m ? FormatPercent(risk.ImpliedVolatilityPct) : "—", "Оценочная ожидаемая волатильность без опционного стакана", risk.ImpliedVolatilityPct > 70m ? AssetDetailsMetricSeverity.Warning : AssetDetailsMetricSeverity.Neutral),
+            new("Depth", depthUsd > 0m ? FormatCompactUsd(depthUsd) : "—", "Оценка объема для сдвига цены на 1%", AssetDetailsMetricSeverity.Neutral),
         ];
 
         IReadOnlyList<AssetDetailsTransaction> transactionRows = assetTransactions
@@ -352,6 +359,19 @@ public sealed class AssetDetailsService(
         return previous?.Price > 0m
             ? previous.Price
             : fallback;
+    }
+
+    private static decimal EstimateDepthForOnePercentMove(decimal marketCapUsd, decimal volumeUsd, decimal riskSpreadFallback)
+    {
+        if (marketCapUsd <= 0m || volumeUsd <= 0m)
+        {
+            return 0m;
+        }
+
+        decimal liquidityFloor = Math.Max(1m, riskSpreadFallback);
+        decimal volumeBasedDepth = volumeUsd * 0.05m;
+        decimal capBasedDepth = marketCapUsd * 0.01m;
+        return Math.Max(liquidityFloor, Math.Min(volumeBasedDepth, capBasedDepth));
     }
 
     private static decimal EstimateMarketCap(Asset asset, decimal currentPrice, decimal positionValue)

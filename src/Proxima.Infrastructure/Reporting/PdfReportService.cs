@@ -7,7 +7,7 @@ using PdfSharp.Pdf;
 
 namespace Proxima.Infrastructure.Reporting;
 
-public sealed class SimplePdfReportService : IReportService
+public sealed class PdfReportService : IReportService
 {
     private static readonly CultureInfo MoneyCulture = CultureInfo.GetCultureInfo("ru-RU");
     private static readonly object FontResolverLock = new();
@@ -185,86 +185,6 @@ public sealed class SimplePdfReportService : IReportService
         }
     }
 
-
-    private static void ExportCompactTaxPdf(TaxReportRequest request, string path)
-    {
-        EnsureFontResolver();
-        using PdfDocument document = new();
-        document.Info.Title = $"Proxima Tax Report {request.Year}";
-        document.Info.Author = "Proxima";
-        document.Info.Subject = request.UserDisplayName;
-        document.Info.CreationDate = DateTime.Now;
-
-        PdfPage page = document.AddPage();
-        page.Width = XUnit.FromPoint(595d);
-        page.Height = XUnit.FromPoint(842d);
-
-        using XGraphics gfx = XGraphics.FromPdfPage(page);
-        XFont titleFont = new(ProximaFontResolver.ReportFontFamily, 22, XFontStyleEx.Bold);
-        XFont headerFont = new(ProximaFontResolver.ReportFontFamily, 12, XFontStyleEx.Bold);
-        XFont bodyFont = new(ProximaFontResolver.ReportFontFamily, 9.5, XFontStyleEx.Regular);
-        XFont smallFont = new(ProximaFontResolver.ReportFontFamily, 8, XFontStyleEx.Regular);
-
-        double y = 42d;
-        DrawCompactLine(gfx, "Proxima", headerFont, ReportPalette.Navy, 42d, y, 511d, 16d);
-        y += 34d;
-        DrawCompactLine(gfx, $"Налоговый отчет за {request.Year} год", titleFont, ReportPalette.Navy, 42d, y, 511d, 26d);
-        y += 38d;
-        DrawCompactLine(gfx, $"Портфель: {request.UserDisplayName}", bodyFont, ReportPalette.Text, 42d, y, 511d, 14d);
-        y += 18d;
-        DrawCompactLine(gfx, $"Профиль: {request.TaxProfile}", bodyFont, ReportPalette.Text, 42d, y, 511d, 14d);
-        y += 18d;
-        DrawCompactLine(gfx, $"Курсы валют: {request.ExchangeRateNotes}", bodyFont, ReportPalette.Text, 42d, y, 511d, 14d);
-        y += 30d;
-
-        DrawCompactLine(gfx, "Итоги", headerFont, ReportPalette.Navy, 42d, y, 511d, 16d);
-        y += 22d;
-        foreach (string line in new[]
-        {
-            $"Всего налогов: {FormatMoney(request.TotalTaxDue, request.Currency)}",
-            $"Облагаемая база: {FormatMoney(request.TaxableBase, request.Currency)}",
-            $"Льготы / зачет: {FormatMoney(request.TaxSaved, request.Currency)}",
-            $"Реализованная прибыль: {FormatMoney(request.RealizedGains, request.Currency)}",
-            $"Дивиденды: {FormatMoney(request.Dividends, request.Currency)}",
-            $"Комиссии: {FormatMoney(request.Fees, request.Currency)}",
-            $"Курсовая разница: {FormatMoney(request.CurrencyEffect, request.Currency)}",
-            $"Убытки: {FormatMoney(request.Losses, request.Currency)}",
-            $"Операции: {request.TransactionCount.ToString(CultureInfo.InvariantCulture)}",
-        })
-        {
-            DrawCompactLine(gfx, line, bodyFont, ReportPalette.Text, 42d, y, 511d, 14d);
-            y += 17d;
-        }
-
-        y += 14d;
-        DrawCompactLine(gfx, "Детализация расчета", headerFont, ReportPalette.Navy, 42d, y, 511d, 16d);
-        y += 22d;
-        foreach (TaxReportLine line in request.CalculationBreakdown.Concat(request.TaxBreakdown).Take(18))
-        {
-            string amount = string.Equals(line.Kind, "Info", StringComparison.OrdinalIgnoreCase) ? "—" : FormatMoney(line.Amount, request.Currency);
-            DrawCompactLine(gfx, $"{SafeText(line.Label)}: {amount}. {SafeText(line.Note, string.Empty)}", bodyFont, ReportPalette.Text, 42d, y, 511d, 14d);
-            y += 17d;
-            if (y > 750d)
-            {
-                break;
-            }
-        }
-
-        y = Math.Min(y + 18d, 760d);
-        DrawCompactLine(gfx, request.LegalDisclaimer, smallFont, ReportPalette.Muted, 42d, y, 511d, 28d);
-        document.Save(path);
-    }
-
-    private static void DrawCompactLine(XGraphics gfx, string? text, XFont font, XBrush brush, double x, double y, double width, double height)
-    {
-        string value = NormalizePdfText(SafeText(text, string.Empty));
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return;
-        }
-
-        gfx.DrawString(TrimToFit(value, width, font.Size), font, brush, new XRect(x, y, width, height), XStringFormats.TopLeft);
-    }
 
     private static string TrimToFit(string value, double width, double fontSize)
     {

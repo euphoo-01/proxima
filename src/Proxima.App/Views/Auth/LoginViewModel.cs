@@ -101,16 +101,7 @@ public sealed class LoginViewModel : ViewModelBase
 
     public ICommand NavigateToRegisterCommand => _navigateToRegisterCommand;
 
-    public static LoginViewModel CreateDesignData()
-    {
-        return new LoginViewModel(new InMemoryAuthGateService())
-        {
-            LoginOrEmail = string.Empty,
-            Password = "Proxima2026!"
-        };
-    }
-
-    private async Task UnlockAsync()
+private async Task UnlockAsync()
     {
         if (!CanSubmit)
         {
@@ -204,32 +195,3 @@ public sealed record AuthGateResult(bool Succeeded, string ErrorMessage)
     public static AuthGateResult Fail(string message) => new(false, message);
 }
 
-public sealed class InMemoryAuthGateService : IAuthGateService
-{
-    private const int Iterations = 120_000;
-    private static readonly byte[] Salt = Encoding.UTF8.GetBytes("proxima.local.auth.salt.v1");
-    private static readonly byte[] SeedHash = ComputeHash("Proxima123!", Salt);
-
-    public Task<AuthGateResult> UnlockAsync(string loginOrEmail, string password, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        string normalized = loginOrEmail.Trim().ToLowerInvariant();
-        if (normalized is not ("local" or "local@proxima"))
-        {
-            return Task.FromResult(AuthGateResult.Fail("Не удалось войти. Проверьте логин и пароль."));
-        }
-
-        byte[] passwordHash = ComputeHash(password, Salt);
-        bool isValid = CryptographicOperations.FixedTimeEquals(passwordHash, SeedHash);
-
-        return Task.FromResult(isValid
-            ? AuthGateResult.Success()
-            : AuthGateResult.Fail("Не удалось войти. Проверьте логин и пароль."));
-    }
-
-    private static byte[] ComputeHash(string password, byte[] salt)
-    {
-        return Rfc2898DeriveBytes.Pbkdf2(password, salt, Iterations, HashAlgorithmName.SHA256, 32);
-    }
-}

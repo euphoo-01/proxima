@@ -9,7 +9,7 @@ using Proxima.Core.Domain.Auth;
 
 namespace Proxima.App.Shell;
 
-public sealed class SidebarViewModel : ViewModelBase
+public sealed class SidebarViewModel : ViewModelBase, IDisposable
 {
     private readonly IAppNavigationService _navigation;
     private readonly IRuntimeUserContext _userContext;
@@ -48,13 +48,7 @@ public sealed class SidebarViewModel : ViewModelBase
 
         LoadAvatarFromDisk();
 
-        _userContext.ProfileChanged += (_, _) =>
-        {
-            LoadAvatarFromDisk();
-            OnPropertyChanged(nameof(UserDisplayName));
-            OnPropertyChanged(nameof(UserInitial));
-            OnPropertyChanged(nameof(UserRoleDisplayName));
-        };
+        _userContext.ProfileChanged += HandleProfileChanged;
     }
 
     public ObservableCollection<SidebarItemViewModel> Items { get; }
@@ -95,6 +89,21 @@ public sealed class SidebarViewModel : ViewModelBase
     public bool HasAvatar => AvatarBitmap is not null;
 
     public bool ShowInitialAvatar => !HasAvatar;
+
+    public void Dispose()
+    {
+        _navigation.RouteChanged -= OnRouteChanged;
+        _userContext.ProfileChanged -= HandleProfileChanged;
+        AvatarBitmap = null;
+    }
+
+    private void HandleProfileChanged(object? sender, EventArgs e)
+    {
+        LoadAvatarFromDisk();
+        OnPropertyChanged(nameof(UserDisplayName));
+        OnPropertyChanged(nameof(UserInitial));
+        OnPropertyChanged(nameof(UserRoleDisplayName));
+    }
 
     private void ExecuteNavigate(object? parameter)
     {

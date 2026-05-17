@@ -392,12 +392,7 @@ public sealed class TaxesViewModel : ViewModelBase
 
     public string TaxCalculationNote => $"Профиль: {CurrentTaxProfileName}. Данные берутся из текущего портфеля: сделки, комиссии, дивиденды и удержанные налоги.";
 
-    public static TaxesViewModel CreateDesignData()
-    {
-        return new TaxesViewModel(new DesignTaxesReadModelProvider(), new NoOpAppNotificationCenter());
-    }
-
-    public Task RefreshOnPageEnterAsync()
+public Task RefreshOnPageEnterAsync()
     {
         if (IsLoading || IsExporting)
         {
@@ -798,68 +793,7 @@ public sealed class TaxesViewModel : ViewModelBase
         }
     }
 
-    private sealed class DesignTaxesReadModelProvider : ITaxesReadModelProvider
-    {
-        public Task<TaxScreenReadModel> GetAsync(int year, CancellationToken cancellationToken)
-        {
-            TaxProfileDescriptor descriptor = new("Физическое лицо", "Подоходный налог: 13%, 25% после 350 000 BYN, 30% после 600 000 BYN.", "Инвестиционный доход физического лица-резидента РБ.");
-            IReadOnlyList<TaxBreakdownRow> rows =
-            [
-                new TaxBreakdownRow("Реализованная прибыль", 97_850m, "FIFO-оценка продаж активов за выбранный год", TaxBreakdownKind.Income),
-                new TaxBreakdownRow("Дивиденды и доходы", 11_200m, "Дивиденды, купоны, airdrop и staking reward", TaxBreakdownKind.Income),
-                new TaxBreakdownRow("Курсовая разница", 800m, "Конвертация операций в BYN", TaxBreakdownKind.Currency),
-                new TaxBreakdownRow("Комиссии и удержания", -1_420m, "Комиссии брокера и удержанные налоги", TaxBreakdownKind.Deduction),
-                new TaxBreakdownRow("Льготы / зачет", 4_215m, "Зачет иностранного налога и расходы", TaxBreakdownKind.Benefit),
-                new TaxBreakdownRow("Убытки текущего года", -640m, "Отрицательный результат продаж", TaxBreakdownKind.Deduction)
-            ];
-
-            IReadOnlyList<TaxBreakdownRow> taxRows =
-            [
-                new TaxBreakdownRow("Профиль", 0m, descriptor.Name, TaxBreakdownKind.Info),
-                new TaxBreakdownRow("База", 109_850m, descriptor.TaxBaseNote, TaxBreakdownKind.Income),
-                new TaxBreakdownRow("Налог до зачета", 18_495.50m, "Оценка по ставкам выбранного профиля", TaxBreakdownKind.Income),
-                new TaxBreakdownRow("Зачет / льготы", -4_215m, "Удержанный иностранный налог и расходы", TaxBreakdownKind.Benefit),
-                new TaxBreakdownRow("К уплате", 14_280.50m, "Итоговая оценка налога", TaxBreakdownKind.Income)
-            ];
-
-            TaxScreenReadModel model = new(
-                IsEmpty: false,
-                Message: "Черновик расчета обновлен.",
-                Status: "Ожидается",
-                Currency: BaseCurrency,
-                TaxableBase: 109_850m,
-                TotalTaxDue: 14_280.50m,
-                TaxSaved: 4_215m,
-                RealizedGains: 97_850m,
-                Dividends: 11_200m,
-                Fees: 1_420m,
-                CurrencyEffect: 800m,
-                Losses: -640m,
-                BaseRatePercent: 13m,
-                DividendRatePercent: 13m,
-                ExemptionAmount: 0m,
-                IncomeThreshold: 350_000m,
-                TransactionCount: 42,
-                RateSourceText: "Курс: nbrb, дата 09.05.2026",
-                CalculationVersion: "BY-PIT-2026.01",
-                ProfileName: descriptor.Name,
-                ProfileDescription: descriptor.Description,
-                IsOfflineRate: false,
-                OfflineRateMessage: string.Empty,
-                Breakdown: rows,
-                TaxBreakdown: taxRows,
-                LegalDisclaimer: "Расчет носит информационный характер и не является юридической консультацией.");
-
-            return Task.FromResult(model);
-        }
-
-        public Task<TaxExportResult> ExportPdfAsync(int year, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(new TaxExportResult(true, "PDF-черновик сформирован (design data)."));
-        }
-    }
-
-    private sealed class DelegateCommand(Action<object?> execute, Predicate<object?>? canExecute = null) : ICommand
+private sealed class DelegateCommand(Action<object?> execute, Predicate<object?>? canExecute = null) : ICommand
     {
         private readonly Action<object?> _execute = execute;
         private readonly Predicate<object?>? _canExecute = canExecute;

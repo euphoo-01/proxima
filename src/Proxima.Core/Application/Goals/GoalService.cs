@@ -4,6 +4,7 @@ namespace Proxima.Core.Application.Goals;
 
 public sealed class GoalService(IGoalRepository repository) : IGoalService
 {
+    private const string GoalCurrency = "USD";
     public Task<IReadOnlyList<Goal>> ListActiveAsync(Guid portfolioId, CancellationToken cancellationToken = default)
     {
         return repository.ListByPortfolioAsync(portfolioId, includeArchived: false, cancellationToken);
@@ -11,7 +12,7 @@ public sealed class GoalService(IGoalRepository repository) : IGoalService
 
     public async Task<GoalOperationResult> CreateAsync(CreateGoalRequest request, CancellationToken cancellationToken = default)
     {
-        string? validation = Validate(request.Title, request.TargetAmount, request.MonthlyContribution, request.Currency);
+        string? validation = Validate(request.Title, request.TargetAmount, request.MonthlyContribution);
         if (validation is not null)
         {
             return GoalOperationResult.Failure(validation);
@@ -22,7 +23,7 @@ public sealed class GoalService(IGoalRepository repository) : IGoalService
             request.PortfolioId,
             request.Title.Trim(),
             request.TargetAmount,
-            "USD",
+            GoalCurrency,
             request.MonthlyContribution,
             request.ExpectedAnnualReturnPercent,
             request.TargetDate,
@@ -35,7 +36,7 @@ public sealed class GoalService(IGoalRepository repository) : IGoalService
 
     public async Task<GoalOperationResult> UpdateAsync(UpdateGoalRequest request, CancellationToken cancellationToken = default)
     {
-        string? validation = Validate(request.Title, request.TargetAmount, request.MonthlyContribution, request.Currency);
+        string? validation = Validate(request.Title, request.TargetAmount, request.MonthlyContribution);
         if (validation is not null)
         {
             return GoalOperationResult.Failure(validation);
@@ -51,7 +52,7 @@ public sealed class GoalService(IGoalRepository repository) : IGoalService
         {
             Title = request.Title.Trim(),
             TargetAmount = request.TargetAmount,
-            Currency = "USD",
+            Currency = GoalCurrency,
             MonthlyContribution = request.MonthlyContribution,
             ExpectedAnnualReturnPercent = request.ExpectedAnnualReturnPercent,
             TargetDate = request.TargetDate,
@@ -102,7 +103,7 @@ public sealed class GoalService(IGoalRepository repository) : IGoalService
         return new GoalForecast(false, 600, null, value, "При текущих параметрах цель не достигается за 50 лет.");
     }
 
-    private static string? Validate(string title, decimal target, decimal monthlyContribution, string currency)
+    private static string? Validate(string title, decimal target, decimal monthlyContribution)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -117,11 +118,6 @@ public sealed class GoalService(IGoalRepository repository) : IGoalService
         if (monthlyContribution < 0m)
         {
             return "Ежемесячный взнос не может быть отрицательным.";
-        }
-
-        if (string.IsNullOrWhiteSpace(currency) || !currency.Equals("USD", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Финансовые цели в текущей версии ведутся только в USD.";
         }
 
         return null;

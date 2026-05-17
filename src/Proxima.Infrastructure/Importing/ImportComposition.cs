@@ -15,6 +15,6 @@ public static class ImportComposition
     {
         return new ImportService(
             new ImportFileValidator(maxBytes ?? ImportFileValidator.DefaultMaxBytes),
-            [new CsvImportParser(), new PdfStubImportParser()]);
+            [new CsvImportParser()]);
     }
 }

@@ -281,27 +281,7 @@ public sealed class AssetDetailsViewModel : ViewModelBase
 
     public bool HasRiskMetrics => HasData && RiskMetrics.Count > 0;
 
-    public static AssetDetailsViewModel CreateDesignData()
-    {
-        AppNavigationService navigation = new();
-        RuntimeDataInvalidation invalidation = new();
-        AssetDetailsViewModel viewModel = new(navigation, new DesignAssetDetailsService(), invalidation);
-
-        navigation.Register(new AppRoute(AppRoutes.AssetDetails, "Детальная информация", "Все активы / NVIDIA"));
-        navigation.Register(new AppRoute(AppRoutes.ManualImport, "Ручной импорт", "Все активы / Ручной импорт"));
-        navigation.Navigate(
-            AppRoutes.AssetDetails,
-            new Dictionary<string, string>
-            {
-                ["assetId"] = DesignAssetDetailsService.PrimaryAssetId.ToString()
-            },
-            "NVIDIA",
-            "Все активы / Основной портфель / NVIDIA");
-
-        return viewModel;
-    }
-
-    private async Task LoadByRouteAsync(AppRoute route)
+private async Task LoadByRouteAsync(AppRoute route)
     {
         if (!string.Equals(route.Key, AppRoutes.AssetDetails, StringComparison.OrdinalIgnoreCase))
         {
@@ -443,6 +423,18 @@ public sealed class AssetDetailsViewModel : ViewModelBase
             ?? new AssetMetricItemViewModel("Beta", "—", "Чувствительность к рынку", "neutral");
         AssetMetricItemViewModel spread = FindMetric(RiskMetrics, "Spread", "Спред")
             ?? new AssetMetricItemViewModel("Spread", "—", "Оценка торгового спреда", "neutral");
+        AssetMetricItemViewModel correlation = FindMetric(RiskMetrics, "Correlation", "Корреляция")
+            ?? new AssetMetricItemViewModel("Correlation", "—", "Связь с базовым рынком", "neutral");
+        AssetMetricItemViewModel skew = FindMetric(RiskMetrics, "Skew")
+            ?? new AssetMetricItemViewModel("Skew", "—", "Асимметрия распределения", "neutral");
+        AssetMetricItemViewModel kurtosis = FindMetric(RiskMetrics, "Kurtosis")
+            ?? new AssetMetricItemViewModel("Kurtosis", "—", "Толстые хвосты риска", "neutral");
+        AssetMetricItemViewModel historicalVolatility = FindMetric(RiskMetrics, "HV")
+            ?? new AssetMetricItemViewModel("HV", "—", "Историческая волатильность", "neutral");
+        AssetMetricItemViewModel impliedVolatility = FindMetric(RiskMetrics, "IV")
+            ?? new AssetMetricItemViewModel("IV", "—", "Ожидаемая волатильность", "neutral");
+        AssetMetricItemViewModel depth = FindMetric(RiskMetrics, "Depth", "Глубина")
+            ?? new AssetMetricItemViewModel("Depth", "—", "Глубина рынка", "neutral");
 
         BlackSwanDropText = ToNegativePercentText(maxDrawdown.Value);
         VarText = var.Value;
@@ -452,25 +444,31 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         CalmarText = calmar.Value;
         HurstText = hurst.Value;
         ZScoreText = zScore.Value;
+        CorrelationText = correlation.Value;
         BetaText = beta.Value;
         SpreadText = spread.Value;
+        HistoricalVolatilityText = historicalVolatility.Value;
+        ImpliedVolatilityText = impliedVolatility.Value;
+        SkewnessText = skew.Value;
+        KurtosisText = kurtosis.Value;
+        DepthText = depth.Value;
 
         RiskManagementMetrics.Add(maxDrawdown);
         RiskManagementMetrics.Add(var);
         RiskManagementMetrics.Add(cvar);
-        RiskManagementMetrics.Add(new AssetMetricItemViewModel("Skew", SkewnessText, "Асимметрия распределения", "neutral"));
-        RiskManagementMetrics.Add(new AssetMetricItemViewModel("Kurtosis", KurtosisText, "Толстые хвосты риска", "neutral"));
+        RiskManagementMetrics.Add(skew);
+        RiskManagementMetrics.Add(kurtosis);
 
         ContextMetrics.Add(hurst);
         ContextMetrics.Add(zScore);
-        ContextMetrics.Add(new AssetMetricItemViewModel("Корреляция", CorrelationText, "Связь с базовым рынком", "neutral"));
+        ContextMetrics.Add(correlation);
 
         MarketDynamicsMetrics.Add(new AssetMetricItemViewModel("Оборот", turnover.Value, turnover.Hint, turnover.Severity));
         MarketDynamicsMetrics.Add(spread);
         MarketDynamicsMetrics.Add(beta);
-        MarketDynamicsMetrics.Add(new AssetMetricItemViewModel("HV", HistoricalVolatilityText, "Историческая волатильность", "neutral"));
-        MarketDynamicsMetrics.Add(new AssetMetricItemViewModel("IV", ImpliedVolatilityText, "Ожидаемая волатильность", "neutral"));
-        MarketDynamicsMetrics.Add(new AssetMetricItemViewModel("Depth", DepthText, "Глубина рынка", "neutral"));
+        MarketDynamicsMetrics.Add(historicalVolatility);
+        MarketDynamicsMetrics.Add(impliedVolatility);
+        MarketDynamicsMetrics.Add(depth);
 
         NotifyMetricHighlightPropertiesChanged();
     }
@@ -738,89 +736,6 @@ public sealed class AssetDetailsViewModel : ViewModelBase
         public void Execute(object? parameter) => _execute(parameter);
     }
 
-    private sealed class DesignAssetDetailsService : IAssetDetailsService
-    {
-        public static readonly Guid PrimaryAssetId = Guid.Parse("0a896663-ec39-4ebc-9b28-bf537f8f2fe0");
-
-        public Task<AssetDetailsReadModel?> GetAsync(
-            Guid assetId,
-            string timeframe,
-            CancellationToken cancellationToken = default)
-        {
-            DateTimeOffset start = DateTimeOffset.UtcNow.AddDays(-45);
-
-            AssetDetailsCandle[] candles = Enumerable.Range(0, 96)
-                .Select(index =>
-                {
-                    decimal basePrice = 760m + index * 1.05m + (decimal)Math.Sin(index * 0.42d) * 18.5m;
-                    decimal open = basePrice;
-                    decimal close = basePrice + (index % 3 == 0 ? 13.6m : -8.2m);
-                    decimal high = Math.Max(open, close) + 15.7m;
-                    decimal low = Math.Min(open, close) - 13.3m;
-
-                    return new AssetDetailsCandle(
-                        start.AddHours(index * 8),
-                        open,
-                        high,
-                        low,
-                        close,
-                        25_000_000m + index * 900_000m);
-                })
-                .ToArray();
-
-            AssetDetailsMetric[] basic =
-            [
-                new("SMA 50/200", "Золотой крест", "Тренд по скользящим средним", AssetDetailsMetricSeverity.Good),
-                new("RSI", "68.2", "Перекупленность", AssetDetailsMetricSeverity.Warning),
-                new("ATR", "24.15", "Высокая волатильность", AssetDetailsMetricSeverity.Neutral),
-                new("Turnover", "2.4%", "Объем торгов / капитализация", AssetDetailsMetricSeverity.Neutral)
-            ];
-
-            AssetDetailsMetric[] risk =
-            [
-                new("Max Drawdown", "14.2%", "Максимальная историческая просадка", AssetDetailsMetricSeverity.Warning),
-                new("VaR 95%", "3.14%", "Ожидаемый дневной убыток в нормальных условиях", AssetDetailsMetricSeverity.Warning),
-                new("CVaR", "4.82%", "Ожидаемый убыток в хвостовых сценариях", AssetDetailsMetricSeverity.Warning),
-                new("Sharpe", "2.84", "Доходность на единицу риска", AssetDetailsMetricSeverity.Good),
-                new("Sortino", "3.12", "Доходность на негативную волатильность", AssetDetailsMetricSeverity.Good),
-                new("Calmar", "1.45", "Доходность относительно максимальной просадки", AssetDetailsMetricSeverity.Good),
-                new("Hurst", "0.68", "Оценка трендовости актива", AssetDetailsMetricSeverity.Good),
-                new("Z-Score", "+2.14", "Отклонение цены от средней", AssetDetailsMetricSeverity.Warning),
-                new("Beta", "1.68", "Чувствительность к рынку", AssetDetailsMetricSeverity.Warning),
-                new("Spread", "0.02%", "Оценка торгового спреда", AssetDetailsMetricSeverity.Good)
-            ];
-
-            AssetDetailsTransaction[] transactions =
-            [
-                new(Guid.NewGuid(), new DateTimeOffset(2026, 3, 26, 12, 0, 0, TimeSpan.Zero), "Покупка", 842.10m, 120m, 101_052m, 12.40m, "USD", "Completed"),
-                new(Guid.NewGuid(), new DateTimeOffset(2026, 3, 25, 12, 0, 0, TimeSpan.Zero), "Покупка", 815.45m, 50m, 40_772.50m, 8.20m, "USD", "Completed"),
-                new(Guid.NewGuid(), new DateTimeOffset(2026, 3, 24, 12, 0, 0, TimeSpan.Zero), "Продажа", 732.18m, 45m, 32_948.10m, 14.50m, "USD", "Completed")
-            ];
-
-            AssetDetailsReadModel model = new(
-                PrimaryAssetId,
-                "NVIDIA Corp.",
-                "NVDA",
-                AssetType.Stock,
-                "NV",
-                "$875.28",
-                "↗ +4.21%",
-                true,
-                "USD",
-                "$2.16T",
-                "$2.21T",
-                "74.2",
-                "$42.8B",
-                "2.47B NVDA",
-                "Источник: Twelve Data + PostgreSQL",
-                candles,
-                basic,
-                risk,
-                transactions);
-
-            return Task.FromResult<AssetDetailsReadModel?>(model);
-        }
-    }
 }
 
 public sealed class TimeframeOptionViewModel(string label, bool isSelected) : ViewModelBase

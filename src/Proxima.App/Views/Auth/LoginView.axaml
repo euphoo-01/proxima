@@ -2,12 +2,9 @@
     x:Class="Proxima.App.Views.Auth.LoginView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:auth="using:Proxima.App.Views.Auth"
     x:DataType="auth:LoginViewModel"
-    d:DataContext="{x:Static auth:LoginDesignData.Sample}"
-    mc:Ignorable="d">
+>
 
     <UserControl.Styles>
         <Style Selector="Grid.auth-page">

@@ -96,16 +96,7 @@ public sealed class RegisterViewModel : ViewModelBase
 
     public ICommand NavigateToLoginCommand => _navigateToLoginCommand;
 
-    public static RegisterViewModel CreateDesignData()
-    {
-        return new RegisterViewModel(new DesignAuthService())
-        {
-            Login = string.Empty,
-            Password = "Proxima2026!"
-        };
-    }
-
-    private async Task RegisterAsync()
+private async Task RegisterAsync()
     {
         if (!CanSubmit)
         {
@@ -224,46 +215,4 @@ public sealed class RegisterViewModel : ViewModelBase
         public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private sealed class DesignAuthService : ILocalAuthService
-    {
-        public Task<bool> NeedsFirstRunSetupAsync(CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(true);
-        }
-
-        public Task<AuthResult> CreateProfileAsync(CreateProfileRequest request, CancellationToken cancellationToken = default)
-        {
-            LocalUserProfile profile = new(
-                Guid.NewGuid(),
-                request.DisplayName,
-                request.Login,
-                request.Role,
-                new PasswordCredential("$design$v=1$i=1$salt$hash"),
-                DateTimeOffset.UtcNow,
-                DateTimeOffset.UtcNow,
-                0);
-
-            return Task.FromResult(AuthResult.Success(profile));
-        }
-
-        public Task<AuthResult> UnlockAsync(string login, string password, CancellationToken cancellationToken = default)
-        {
-            LocalUserProfile profile = new(
-                Guid.NewGuid(),
-                "Design",
-                login,
-                UserRole.PrivateInvestor,
-                new PasswordCredential("$design$v=1$i=1$salt$hash"),
-                DateTimeOffset.UtcNow,
-                DateTimeOffset.UtcNow,
-                0);
-
-            return Task.FromResult(AuthResult.Success(profile));
-        }
-
-        public Task DeleteProfileAsync(Guid profileId, CancellationToken cancellationToken = default)
-        {
-            return Task.CompletedTask;
-        }
-    }
 }

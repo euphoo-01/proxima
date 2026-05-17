@@ -257,12 +257,7 @@ public sealed class GoalsViewModel : ViewModelBase
 
     public bool HasContent => !IsLoading && !HasError;
 
-    public static GoalsViewModel CreateDesignData()
-    {
-        return new GoalsViewModel(new DesignGoalService(), new DesignShellState(), new GoalProjectionService(), new DesignGoalProgressBaselineService(), new DesignHistoricalPortfolioReturnService(), new RuntimeDataInvalidation());
-    }
-
-    private async Task LoadAsync()
+private async Task LoadAsync()
     {
         IsLoading = true;
         HasError = false;
@@ -425,7 +420,6 @@ public sealed class GoalsViewModel : ViewModelBase
                     _shellState.CurrentPortfolioId,
                     request.Name,
                     request.TargetAmount,
-                    request.Currency,
                     MonthlyContribution,
                     ExpectedAnnualReturnPercent,
                     null)).ConfigureAwait(true)
@@ -434,7 +428,6 @@ public sealed class GoalsViewModel : ViewModelBase
                     request.GoalId.Value,
                     request.Name,
                     request.TargetAmount,
-                    request.Currency,
                     MonthlyContribution,
                     ExpectedAnnualReturnPercent,
                     null)).ConfigureAwait(true);
@@ -757,81 +750,3 @@ public sealed record GoalMilestoneEstimate(bool IsReachable, int MonthsToGoal, i
     }
 }
 
-file sealed class DesignShellState : IShellState
-{
-    public event EventHandler<ShellPortfolioChangedEventArgs>? PortfolioChanged
-    {
-        add { }
-        remove { }
-    }
-
-    public Guid CurrentPortfolioId { get; } = Guid.Parse("1df177b8-b3f6-4d80-9f0d-3027d4f4a149");
-
-    public string CurrentPortfolioName => "Основной портфель";
-
-    public decimal CurrentPortfolioValue => 955000m;
-}
-
-file sealed class DesignGoalService : IGoalService
-{
-    public Task<IReadOnlyList<Goal>> ListActiveAsync(Guid portfolioId, CancellationToken cancellationToken = default)
-    {
-        IReadOnlyList<Goal> goals =
-        [
-            new Goal(Guid.Parse("9a3f6f95-cd82-4901-9d98-211f5bd7b7da"), portfolioId, "Дворец", 2_250_000m, "USD", 2500m, 8m, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
-            new Goal(Guid.Parse("24a0f746-bb19-4a80-a55d-1886fbdf2e84"), portfolioId, "Яйца", 999_999m, "USD", 2500m, 8m, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
-            new Goal(Guid.Parse("c277a4f7-3d42-42d3-8d5a-1789bfc8378d"), portfolioId, "Дом", 4_800_000m, "USD", 2500m, 8m, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
-        ];
-
-        return Task.FromResult(goals);
-    }
-
-    public Task<GoalOperationResult> CreateAsync(CreateGoalRequest request, CancellationToken cancellationToken = default)
-    {
-        Goal goal = new(Guid.NewGuid(), request.PortfolioId, request.Title, request.TargetAmount, request.Currency, request.MonthlyContribution, request.ExpectedAnnualReturnPercent, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
-        return Task.FromResult(GoalOperationResult.Success(goal));
-    }
-
-    public Task<GoalOperationResult> UpdateAsync(UpdateGoalRequest request, CancellationToken cancellationToken = default)
-    {
-        Goal goal = new(request.GoalId, request.PortfolioId, request.Title, request.TargetAmount, request.Currency, request.MonthlyContribution, request.ExpectedAnnualReturnPercent, null, false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
-        return Task.FromResult(GoalOperationResult.Success(goal));
-    }
-
-    public Task<GoalOperationResult> ArchiveAsync(Guid portfolioId, Guid goalId, CancellationToken cancellationToken = default)
-    {
-        Goal goal = new(goalId, portfolioId, "Archived", 1m, "USD", 0m, null, null, true, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
-        return Task.FromResult(GoalOperationResult.Success(goal));
-    }
-
-    public GoalForecast Forecast(Goal goal, decimal currentPortfolioValue)
-    {
-        return new GoalForecast(true, 168, DateTimeOffset.UtcNow.AddYears(14), goal.TargetAmount, "OK");
-    }
-}
-
-file sealed class DesignGoalProgressBaselineService : IGoalProgressBaselineService
-{
-    public IReadOnlyDictionary<Guid, decimal> CalculateCurrentAmounts(Guid portfolioId, IReadOnlyList<Goal> goals)
-    {
-        return goals.ToDictionary(goal => goal.Id, _ => 955000m);
-    }
-}
-
-file sealed class DesignHistoricalPortfolioReturnService : IHistoricalPortfolioReturnService
-{
-    public Task<HistoricalPortfolioReturn> CalculateAsync(Guid portfolioId, CancellationToken cancellationToken = default)
-    {
-        HistoricalPortfolioReturn result = new(
-            11.8m,
-            34.2m,
-            955000m,
-            711624m,
-            916,
-            DateTimeOffset.UtcNow.AddDays(-916),
-            IsFallback: false,
-            "CAGR по текущей истории портфеля за 916 дн. ROI: +34.2%.");
-
-        return Task.FromResult(result);
-    }
-}

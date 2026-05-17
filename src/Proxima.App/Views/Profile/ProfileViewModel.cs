@@ -13,14 +13,13 @@ using Proxima.Core.Domain.Portfolios;
 
 namespace Proxima.App.Views.Profile;
 
-public sealed class ProfileViewModel : ViewModelBase
+public sealed class ProfileViewModel : ViewModelBase, IDisposable
 {
     private readonly IRuntimeUserContext _userContext;
     private readonly ISettingsService _settingsService;
     private readonly ILocalUserRepository _localUsers;
     private readonly IPortfolioService _portfolioService;
     private readonly ILocalAuthService _localAuthService;
-    private readonly IAccountDeletionService _accountDeletionService;
     private readonly IShellState _shellState;
     private readonly IShellPortfolioCoordinator _portfolioCoordinator;
     private readonly IRuntimeDataInvalidation _runtimeDataInvalidation;
@@ -55,7 +54,6 @@ public sealed class ProfileViewModel : ViewModelBase
         ILocalUserRepository localUsers,
         IPortfolioService portfolioService,
         ILocalAuthService localAuthService,
-        IAccountDeletionService accountDeletionService,
         IShellState shellState,
         IShellPortfolioCoordinator portfolioCoordinator,
         IRuntimeDataInvalidation runtimeDataInvalidation,
@@ -66,7 +64,6 @@ public sealed class ProfileViewModel : ViewModelBase
         _localUsers = localUsers;
         _portfolioService = portfolioService;
         _localAuthService = localAuthService;
-        _accountDeletionService = accountDeletionService;
         _shellState = shellState;
         _portfolioCoordinator = portfolioCoordinator;
         _runtimeDataInvalidation = runtimeDataInvalidation;
@@ -91,18 +88,37 @@ public sealed class ProfileViewModel : ViewModelBase
 
         Portfolios = [];
 
-        _userContext.ProfileChanged += (_, _) => RefreshComputedProfileProperties();
-        _runtimeDataInvalidation.DataInvalidated += (_, args) =>
-        {
-            if (args.Reason.Contains("portfolio", StringComparison.OrdinalIgnoreCase))
-            {
-                _ = ReloadPortfoliosAsync();
-            }
-        };
-
-        _shellState.PortfolioChanged += (_, args) => MarkSelectedPortfolio(args.PortfolioId);
+        _userContext.ProfileChanged += HandleProfileChanged;
+        _runtimeDataInvalidation.DataInvalidated += HandleDataInvalidated;
+        _shellState.PortfolioChanged += HandlePortfolioChanged;
 
         _ = LoadAsync();
+    }
+
+    public void Dispose()
+    {
+        _userContext.ProfileChanged -= HandleProfileChanged;
+        _runtimeDataInvalidation.DataInvalidated -= HandleDataInvalidated;
+        _shellState.PortfolioChanged -= HandlePortfolioChanged;
+        AvatarBitmap = null;
+    }
+
+    private void HandleProfileChanged(object? sender, EventArgs e)
+    {
+        RefreshComputedProfileProperties();
+    }
+
+    private void HandleDataInvalidated(object? sender, RuntimeDataInvalidatedEventArgs args)
+    {
+        if (args.Reason.Contains("portfolio", StringComparison.OrdinalIgnoreCase))
+        {
+            _ = ReloadPortfoliosAsync();
+        }
+    }
+
+    private void HandlePortfolioChanged(object? sender, ShellPortfolioChangedEventArgs args)
+    {
+        MarkSelectedPortfolio(args.PortfolioId);
     }
 
     public ObservableCollection<ProfilePortfolioItem> Portfolios { get; }
@@ -530,7 +546,6 @@ public sealed class ProfileViewModel : ViewModelBase
                 return;
             }
 
-            await _accountDeletionService.DeleteAccountAsync(userId).ConfigureAwait(true);
             await _localAuthService.DeleteProfileAsync(userId).ConfigureAwait(true);
             DeleteProfileExtras(userId);
             _userContext.ClearAuthentication();

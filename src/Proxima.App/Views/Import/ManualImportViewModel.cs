@@ -33,15 +33,12 @@ public sealed class ManualImportViewModel : ViewModelBase
     private readonly AsyncCommand _addManualTransactionCommand;
     private readonly DelegateCommand _selectNewSymbolCommand;
     private readonly DelegateCommand _clearFileCommand;
-    private readonly DelegateCommand _markDragOverCommand;
-    private readonly DelegateCommand _clearDragOverCommand;
     private readonly AsyncCommand _parseFileCommand;
     private readonly AsyncCommand _saveCommand;
 
     private string _statusMessage = "Перетащите CSV-файл или добавьте транзакцию вручную.";
     private string _errorMessage = string.Empty;
     private bool _hasWarnings;
-    private bool _isDragOver;
     private bool _isParsing;
     private string _filePath = string.Empty;
 
@@ -50,7 +47,7 @@ public sealed class ManualImportViewModel : ViewModelBase
     private bool _isApplyingNewSymbolSelection;
     private CancellationTokenSource? _newSymbolSearchCts;
     private MarketSymbolCandidate? _selectedNewSymbol;
-    private string _newTag = "Акция";
+    private string _newTag = "Акции";
     private TransactionType _newTransactionType = TransactionType.Buy;
     private string _newPrice = "0.00";
     private string _newQuantity = "1";
@@ -78,9 +75,7 @@ public sealed class ManualImportViewModel : ViewModelBase
 
         Rows = [];
         NewSymbolSuggestions = [];
-        OperationTypes = Enum.GetNames<TransactionType>();
         OperationTypeLabels = ["Купить", "Продать"];
-        TagOptions = ["Акция", "ETF", "Криптовалюта", "Облигация", "Валюта", "Наличность", "Дивиденды"];
 
         _addRowCommand = new DelegateCommand(_ => AddEmptyRow());
         _removeRowCommand = new DelegateCommand(row => RemoveRow(row as ManualTransactionRowViewModel));
@@ -90,8 +85,6 @@ public sealed class ManualImportViewModel : ViewModelBase
         _addManualTransactionCommand = new AsyncCommand(AddManualTransactionAsync, () => !IsParsing);
         _selectNewSymbolCommand = new DelegateCommand(SelectNewSymbol);
         _clearFileCommand = new DelegateCommand(_ => ClearFile());
-        _markDragOverCommand = new DelegateCommand(_ => IsDragOver = true);
-        _clearDragOverCommand = new DelegateCommand(_ => IsDragOver = false);
         _parseFileCommand = new AsyncCommand(ParseSelectedFileAsync, () => !IsParsing && HasFileSelected);
         _saveCommand = new AsyncCommand(SaveImportAsync, () => !IsParsing && Rows.Count > 0);
     }
@@ -100,11 +93,7 @@ public sealed class ManualImportViewModel : ViewModelBase
 
     public ObservableCollection<MarketSymbolCandidate> NewSymbolSuggestions { get; }
 
-    public IReadOnlyList<string> OperationTypes { get; }
-
     public IReadOnlyList<string> OperationTypeLabels { get; }
-
-    public IReadOnlyList<string> TagOptions { get; }
 
     public ICommand AddRowCommand => _addRowCommand;
 
@@ -126,10 +115,6 @@ public sealed class ManualImportViewModel : ViewModelBase
 
     public ICommand ClearFileCommand => _clearFileCommand;
 
-    public ICommand MarkDragOverCommand => _markDragOverCommand;
-
-    public ICommand ClearDragOverCommand => _clearDragOverCommand;
-
     public string StatusMessage
     {
         get => _statusMessage;
@@ -144,7 +129,6 @@ public sealed class ManualImportViewModel : ViewModelBase
             if (SetProperty(ref _errorMessage, value))
             {
                 OnPropertyChanged(nameof(HasError));
-                OnPropertyChanged(nameof(CurrentDropStateLabel));
             }
         }
     }
@@ -157,18 +141,6 @@ public sealed class ManualImportViewModel : ViewModelBase
         private set => SetProperty(ref _hasWarnings, value);
     }
 
-    public bool IsDragOver
-    {
-        get => _isDragOver;
-        set
-        {
-            if (SetProperty(ref _isDragOver, value))
-            {
-                OnPropertyChanged(nameof(CurrentDropStateLabel));
-            }
-        }
-    }
-
     public bool IsParsing
     {
         get => _isParsing;
@@ -179,7 +151,6 @@ public sealed class ManualImportViewModel : ViewModelBase
                 _parseFileCommand.RaiseCanExecuteChanged();
                 _saveCommand.RaiseCanExecuteChanged();
                 _addManualTransactionCommand.RaiseCanExecuteChanged();
-                OnPropertyChanged(nameof(CurrentDropStateLabel));
                 OnPropertyChanged(nameof(ImportButtonText));
             }
         }
@@ -195,7 +166,6 @@ public sealed class ManualImportViewModel : ViewModelBase
                 _parseFileCommand.RaiseCanExecuteChanged();
                 OnPropertyChanged(nameof(HasFileSelected));
                 OnPropertyChanged(nameof(SelectedFileName));
-                OnPropertyChanged(nameof(CurrentDropStateLabel));
                 OnPropertyChanged(nameof(SelectedFileBadge));
             }
         }
@@ -206,16 +176,6 @@ public sealed class ManualImportViewModel : ViewModelBase
     public string SelectedFileName => HasFileSelected ? Path.GetFileName(FilePath) : "Файл не выбран";
 
     public string SelectedFileBadge => HasFileSelected ? "CSV выбран" : "CSV до 5 МБ";
-
-    public string CurrentDropStateLabel => IsParsing
-        ? "Файл разбирается"
-        : HasError
-            ? "Есть ошибка импорта"
-            : IsDragOver
-                ? "Отпустите файл здесь"
-                : HasFileSelected
-                    ? "Файл готов к проверке"
-                    : "Ожидаем CSV-файл";
 
     public string ImportButtonText => IsParsing ? "Проверяем..." : "Проверить файл";
 
@@ -362,14 +322,19 @@ public sealed class ManualImportViewModel : ViewModelBase
             return;
         }
 
-        IsDragOver = false;
         IsParsing = true;
         ErrorMessage = string.Empty;
         StatusMessage = "Проверяем размер, расширение и структуру CSV-файла...";
 
         try
         {
-            FileInfo file = new(FilePath);
+            string normalizedPath = ExpandLocalPath(FilePath);
+            if (!string.Equals(FilePath, normalizedPath, StringComparison.Ordinal))
+            {
+                FilePath = normalizedPath;
+            }
+
+            FileInfo file = new(normalizedPath);
             if (!file.Exists)
             {
                 ShowError("Файл не найден. Проверьте путь или выберите файл заново.");
@@ -610,10 +575,10 @@ public sealed class ManualImportViewModel : ViewModelBase
         {
             Proxima.Core.Domain.Assets.AssetType.Crypto => "Криптовалюта",
             Proxima.Core.Domain.Assets.AssetType.Etf => "ETF",
-            Proxima.Core.Domain.Assets.AssetType.Bond => "Облигация",
+            Proxima.Core.Domain.Assets.AssetType.Bond => "Облигации",
             Proxima.Core.Domain.Assets.AssetType.Currency => "Валюта",
             Proxima.Core.Domain.Assets.AssetType.Cash => "Наличность",
-            _ => "Акция",
+            _ => "Акции",
         };
     }
 
@@ -626,7 +591,7 @@ public sealed class ManualImportViewModel : ViewModelBase
             Currency = "USD",
             Quantity = "1",
             Price = "0",
-            TagOrCategory = "Акция",
+            TagOrCategory = "Акции",
         };
 
         AttachRow(row);
@@ -673,7 +638,6 @@ public sealed class ManualImportViewModel : ViewModelBase
     private void ClearFile()
     {
         FilePath = string.Empty;
-        IsDragOver = false;
         ErrorMessage = string.Empty;
         StatusMessage = "Файл очищен. Перетащите новый CSV или добавьте транзакцию вручную.";
     }
@@ -754,6 +718,25 @@ public sealed class ManualImportViewModel : ViewModelBase
         }
     }
 
+    private static string ExpandLocalPath(string path)
+    {
+        string trimmed = path.Trim().Trim('"');
+        if (trimmed.StartsWith("~/", StringComparison.Ordinal) || trimmed.Equals("~", StringComparison.Ordinal))
+        {
+            string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            return trimmed.Length == 1 ? home : Path.Combine(home, trimmed[2..]);
+        }
+
+        if (trimmed.StartsWith("file://", StringComparison.OrdinalIgnoreCase)
+            && Uri.TryCreate(trimmed, UriKind.Absolute, out Uri? uri)
+            && uri.IsFile)
+        {
+            return uri.LocalPath;
+        }
+
+        return trimmed;
+    }
+
     private static DateTimeOffset NormalizeTradeDateForStorage(DateTimeOffset value)
     {
         if (value.TimeOfDay == TimeSpan.Zero)
@@ -830,7 +813,6 @@ public sealed class ManualImportViewModel : ViewModelBase
         {
             _ = _notificationCenter?.NotifyAsync(AppNotificationLevel.Error, "Ошибка импорта", message, "Ручной импорт");
         }
-        OnPropertyChanged(nameof(CurrentDropStateLabel));
     }
 
     private static bool TryParseDecimal(string value, out decimal result)

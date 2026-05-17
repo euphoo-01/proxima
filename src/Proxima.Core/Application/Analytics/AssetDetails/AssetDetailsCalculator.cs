@@ -1,3 +1,5 @@
+using Proxima.Core.Application.Analytics.Engine;
+
 namespace Proxima.Core.Application.Analytics.AssetDetails;
 
 public static class AssetDetailsCalculator
@@ -24,18 +26,17 @@ public static class AssetDetailsCalculator
 
         decimal mean = returns.Average();
         decimal std = StandardDeviation(returns);
-        decimal downside = StandardDeviation(returns.Where(static item => item < 0m).DefaultIfEmpty(0m).ToArray());
-        decimal percentile5 = Percentile(returns, 0.05m);
+        double[] returnsAsDouble = returns.Select(static item => (double)item).ToArray();
+        double[] closesAsDouble = normalizedCloses.Select(static item => (double)item).ToArray();
 
-        decimal maxDrawdown = MaxDrawdown(normalizedCloses) * 100m;
-        decimal var = percentile5 * 100m;
-        decimal cvar = returns
-            .Where(item => item <= percentile5)
-            .DefaultIfEmpty(0m)
-            .Average() * 100m;
-
-        decimal sharpe = std > 0m ? mean / std * Sqrt(252m) : 0m;
-        decimal sortino = downside > 0m ? mean / downside * Sqrt(252m) : 0m;
+        decimal volatilityPct = MetricValue(PortfolioAnalyticsEngine.Volatility(returnsAsDouble));
+        decimal skewness = Skewness(returns, mean, std);
+        decimal kurtosis = Kurtosis(returns, mean, std);
+        decimal maxDrawdown = -MetricValue(PortfolioAnalyticsEngine.MaxDrawdown(closesAsDouble));
+        decimal var = MetricValue(PortfolioAnalyticsEngine.VaR(returnsAsDouble));
+        decimal cvar = MetricValue(PortfolioAnalyticsEngine.CVaR(returnsAsDouble));
+        decimal sharpe = MetricValue(PortfolioAnalyticsEngine.Sharpe(returnsAsDouble));
+        decimal sortino = MetricValue(PortfolioAnalyticsEngine.Sortino(returnsAsDouble));
         decimal annualReturn = mean * 252m;
         decimal calmar = maxDrawdown < 0m ? annualReturn / Math.Abs(maxDrawdown / 100m) : 0m;
         decimal atr = AverageTrueRange(normalizedHighs, normalizedLows, normalizedCloses);
@@ -77,6 +78,10 @@ public static class AssetDetailsCalculator
             correlation,
             beta ?? 1m,
             spread,
+            skewness,
+            kurtosis,
+            volatilityPct,
+            volatilityPct * 1.15m,
             smaStatus,
             smaShort >= smaLong,
             rsiHint,
@@ -95,47 +100,12 @@ public static class AssetDetailsCalculator
         return (decimal)Math.Sqrt(variance);
     }
 
-    private static decimal MaxDrawdown(decimal[] closes)
+
+    private static decimal MetricValue(MetricResult result)
     {
-        decimal peak = closes[0];
-        decimal maxDrawdown = 0m;
-
-        foreach (decimal close in closes)
-        {
-            if (close > peak)
-            {
-                peak = close;
-            }
-
-            if (peak <= 0m)
-            {
-                continue;
-            }
-
-            decimal drawdown = (close - peak) / peak;
-            if (drawdown < maxDrawdown)
-            {
-                maxDrawdown = drawdown;
-            }
-        }
-
-        return maxDrawdown;
-    }
-
-    private static decimal Percentile(decimal[] values, decimal p)
-    {
-        if (values.Length == 0)
-        {
-            return 0m;
-        }
-
-        decimal[] sorted = values.Order().ToArray();
-        int index = Math.Clamp(
-            (int)Math.Floor((double)(p * (sorted.Length - 1))),
-            0,
-            sorted.Length - 1);
-
-        return sorted[index];
+        return result.Value is double value && !double.IsNaN(value) && !double.IsInfinity(value)
+            ? (decimal)value
+            : 0m;
     }
 
     private static decimal AverageTrueRange(decimal[] highs, decimal[] lows, decimal[] closes)
@@ -207,6 +177,31 @@ public static class AssetDetailsCalculator
         return denominator > 0m ? numerator / denominator : 0m;
     }
 
+    private static decimal Skewness(decimal[] values, decimal mean, decimal std)
+    {
+        if (values.Length < 3 || std <= 0m)
+        {
+            return 0m;
+        }
+
+        return values.Select(value => Pow((value - mean) / std, 3)).Average();
+    }
+
+    private static decimal Kurtosis(decimal[] values, decimal mean, decimal std)
+    {
+        if (values.Length < 4 || std <= 0m)
+        {
+            return 0m;
+        }
+
+        return values.Select(value => Pow((value - mean) / std, 4)).Average() - 3m;
+    }
+
+    private static decimal Pow(decimal value, int power)
+    {
+        return (decimal)Math.Pow((double)value, power);
+    }
+
     private static decimal Sqrt(decimal value) => value <= 0m ? 0m : (decimal)Math.Sqrt((double)value);
 }
 
@@ -224,6 +219,10 @@ public sealed record AssetDetailsAnalyticsResult(
     decimal Correlation,
     decimal Beta,
     decimal SpreadPct,
+    decimal Skewness,
+    decimal Kurtosis,
+    decimal HistoricalVolatilityPct,
+    decimal ImpliedVolatilityPct,
     string SmaStatus,
     bool IsSmaPositive,
     string RsiHint,
@@ -244,6 +243,10 @@ public sealed record AssetDetailsAnalyticsResult(
             0m,
             0m,
             beta,
+            0m,
+            0m,
+            0m,
+            0m,
             0m,
             "Недостаточно данных",
             false,

@@ -243,7 +243,7 @@ internal static class Program
 
         IImportService importService = new ImportService(
             new ImportFileValidator(5 * 1024 * 1024),
-            [new CsvImportParser(), new PdfStubImportParser()]);
+            [new CsvImportParser()]);
 
         ImportPreview preview = await importService.PreviewAsync(path, CancellationToken.None).ConfigureAwait(false);
         Assert(preview.Succeeded, "CSV preview should succeed.");
@@ -254,7 +254,7 @@ internal static class Program
     private static async Task Reporting_PdfExporterProducesNonEmptyFile()
     {
         string outputDirectory = Path.Combine(Path.GetTempPath(), "proxima-report-tests", Guid.NewGuid().ToString("N"));
-        IReportService service = new SimplePdfReportService();
+        IReportService service = new PdfReportService();
         PortfolioReportRequest request = new(
             PortfolioName: "Demo Portfolio",
             PeriodLabel: "2026",

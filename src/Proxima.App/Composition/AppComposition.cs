@@ -47,7 +47,7 @@ public static class AppComposition
         DatabaseOptions databaseOptions = DatabaseConnectionStringProvider.Resolve();
         DatabaseBootstrapService db = new(databaseOptions);
 
-        services.AddSingleton<IAppNavigationService, AppNavigationService>();
+        services.AddScoped<IAppNavigationService, AppNavigationService>();
 
         services.AddSingleton<RuntimeUserContext>();
         services.AddSingleton<IRuntimeUserContext>(provider => provider.GetRequiredService<RuntimeUserContext>());
@@ -76,33 +76,32 @@ public static class AppComposition
             .AddAuditModule()
             .AddNotificationModule();
 
-        services.AddSingleton<IAppNotificationCenter, AppNotificationCenter>();
+        services.AddScoped<IAppNotificationCenter, AppNotificationCenter>();
 
-        services.AddSingleton<RuntimeShellState>();
-        services.AddSingleton<IShellState>(provider => provider.GetRequiredService<RuntimeShellState>());
-        services.AddSingleton<IShellPortfolioCoordinator>(provider => provider.GetRequiredService<RuntimeShellState>());
-        services.AddSingleton<ICurrentPortfolioContext>(provider => provider.GetRequiredService<RuntimeShellState>());
+        services.AddScoped<RuntimeShellState>();
+        services.AddScoped<IShellState>(provider => provider.GetRequiredService<RuntimeShellState>());
+        services.AddScoped<IShellPortfolioCoordinator>(provider => provider.GetRequiredService<RuntimeShellState>());
+        services.AddScoped<ICurrentPortfolioContext>(provider => provider.GetRequiredService<RuntimeShellState>());
 
-        services.AddSingleton<IRuntimeDataInvalidation, RuntimeDataInvalidation>();
+        services.AddScoped<IRuntimeDataInvalidation, RuntimeDataInvalidation>();
 
-        services.AddSingleton<IImportPreviewGateway>(provider =>
+        services.AddScoped<IImportPreviewGateway>(provider =>
             new ImportPreviewGateway(provider.GetRequiredService<IImportService>()));
 
-        services.AddSingleton<IDashboardDataProvider, RuntimeDashboardDataProvider>();
+        services.AddScoped<IDashboardDataProvider, RuntimeDashboardDataProvider>();
 
         services.AddSingleton<TwelveDataAssetMarketDataProvider>();
-        services.AddSingleton<IAssetDetailsService, AssetDetailsService>();
+        services.AddScoped<IAssetDetailsService, AssetDetailsService>();
 
-        services.AddSingleton<DashboardViewModel>();
+        services.AddScoped<DashboardViewModel>();
         services.AddTransient<LoginViewModel>();
         services.AddTransient<RegisterViewModel>();
-        services.AddSingleton<ManualImportViewModel>();
-        services.AddSingleton<ImportDialogViewModel>();
-        services.AddSingleton<AssetsViewModel>();
-        services.AddSingleton<AssetDetailsViewModel>();
-        services.AddSingleton<GoalsViewModel>();
+        services.AddScoped<ManualImportViewModel>();
+        services.AddScoped<AssetsViewModel>();
+        services.AddScoped<AssetDetailsViewModel>();
+        services.AddScoped<GoalsViewModel>();
 
-        services.AddSingleton<TaxesViewModel.ITaxesReadModelProvider>(provider =>
+        services.AddScoped<TaxesViewModel.ITaxesReadModelProvider>(provider =>
             new TaxesViewModel.AppTaxesReadModelProvider(
                 provider.GetRequiredService<ITransactionService>(),
                 provider.GetRequiredService<ITaxCalculator>(),
@@ -110,18 +109,18 @@ public static class AppComposition
                 provider.GetRequiredService<IShellState>(),
                 provider.GetRequiredService<IRuntimeUserContext>()));
 
-        services.AddSingleton<TaxesViewModel>();
-        services.AddSingleton<SettingsViewModel>();
-        services.AddSingleton<SupportViewModel>();
-        services.AddSingleton<NotificationsViewModel>();
-        services.AddSingleton<ProfileViewModel>();
-        services.AddSingleton<IGoalProjectionService, GoalProjectionService>();
-        services.AddSingleton<IHistoricalPortfolioReturnService, HistoricalPortfolioReturnService>();
-        services.AddSingleton<IGoalProgressBaselineService, GoalProgressBaselineService>();
+        services.AddScoped<TaxesViewModel>();
+        services.AddScoped<SettingsViewModel>();
+        services.AddScoped<SupportViewModel>();
+        services.AddScoped<NotificationsViewModel>();
+        services.AddScoped<ProfileViewModel>();
+        services.AddScoped<IGoalProjectionService, GoalProjectionService>();
+        services.AddScoped<IHistoricalPortfolioReturnService, HistoricalPortfolioReturnService>();
+        services.AddScoped<IGoalProgressBaselineService, GoalProgressBaselineService>();
 
-        services.AddSingleton<SidebarViewModel>();
-        services.AddSingleton<TopbarViewModel>();
-        services.AddSingleton<AppShellViewModel>();
+        services.AddScoped<SidebarViewModel>();
+        services.AddScoped<TopbarViewModel>();
+        services.AddScoped<AppShellViewModel>();
         services.AddTransient<AppShellView>();
 
         return services.BuildServiceProvider();

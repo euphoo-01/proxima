@@ -141,22 +141,7 @@ public sealed class SettingsViewModel : ViewModelBase
         private set => SetProperty(ref _securityStatus, value);
     }
 
-    public static SettingsViewModel CreateDesignData()
-    {
-        RuntimeUserContext context = new();
-        context.SetAuthenticated(new Proxima.Core.Domain.Auth.LocalUserProfile(
-            Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            "Андрей К.",
-            "local",
-            UserRole.PrivateInvestor,
-            new Proxima.Core.Domain.Auth.PasswordCredential("$design$v=1$i=1$salt$hash"),
-            DateTimeOffset.UtcNow,
-            DateTimeOffset.UtcNow,
-            0));
-        return new SettingsViewModel(new DesignSettingsService(), context, new NoOpAppNotificationCenter());
-    }
-
-    private async Task LoadAsync()
+private async Task LoadAsync()
     {
         IsLoading = true;
         HasError = false;
@@ -257,33 +242,4 @@ public sealed class SettingsViewModel : ViewModelBase
         public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private sealed class DesignSettingsService : ISettingsService
-    {
-        public Task<UserSettings> EnsureAsync(CreateDefaultSettingsRequest request, CancellationToken cancellationToken = default)
-        {
-            UserSettings settings = new(
-                request.OwnerUserId,
-                QuoteProviderKind.TwelveData,
-                string.Empty,
-                CurrencyProviderKind.Mock);
-
-            return Task.FromResult(settings);
-        }
-
-        public Task<UserSettings?> GetAsync(Guid ownerUserId, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult<UserSettings?>(null);
-        }
-
-        public Task<SettingsOperationResult> UpdateAsync(UpdateSettingsRequest request, CancellationToken cancellationToken = default)
-        {
-            UserSettings updated = new(
-                request.OwnerUserId,
-                request.QuoteProvider,
-                string.Empty,
-                request.CurrencyProvider);
-
-            return Task.FromResult(SettingsOperationResult.Success(updated));
-        }
-    }
 }

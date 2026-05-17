@@ -266,10 +266,10 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
     {
         List<string> tags = [];
 
-        string? explicitTag = NormalizeTag(row.Tag);
-        if (!string.IsNullOrWhiteSpace(explicitTag))
+        string[] explicitTags = SplitAndNormalizeTags(row.Tag);
+        if (explicitTags.Length > 0)
         {
-            tags.Add(explicitTag);
+            tags.AddRange(explicitTags);
         }
         else
         {
@@ -286,6 +286,22 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
         }
 
         return tags.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    private static string[] SplitAndNormalizeTags(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return [];
+        }
+
+        char[] separators = [',', ';', '|'];
+        return value
+            .Split(separators, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Select(NormalizeTag)
+            .Where(static tag => !string.IsNullOrWhiteSpace(tag))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 
     private static string BuildInferenceText(ImportTransactionDraft row)
@@ -325,10 +341,10 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
         string tag = Regex.Replace(value.Trim(), "\\s+", " ", RegexOptions.None, TimeSpan.FromMilliseconds(50));
         return tag.ToLowerInvariant() switch
         {
-            "stock" or "stocks" or "equity" or "equities" or "share" or "shares" or "акции" or "акция" => "Акция",
+            "stock" or "stocks" or "equity" or "equities" or "share" or "shares" or "акции" or "акция" => "Акции",
             "etf" or "фонды" or "фонд" => "ETF",
             "crypto" or "cryptocurrency" or "крипта" or "криптовалюта" or "криптовалюты" => "Криптовалюта",
-            "bond" or "bonds" or "облигация" or "облигации" => "Облигация",
+            "bond" or "bonds" or "облигация" or "облигации" => "Облигации",
             "currency" or "currencies" or "fx" or "валюта" or "валюты" => "Валюта",
             "cash" or "наличные" or "наличность" => "Наличность",
             "dividend" or "dividends" or "дивиденд" or "дивиденды" => "Дивиденды",
@@ -338,7 +354,7 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
 
     private static bool IsKnownTag(string tag)
     {
-        return tag is "Акция" or "ETF" or "Криптовалюта" or "Облигация" or "Валюта" or "Наличность" or "Дивиденды";
+        return tag is "Акции" or "ETF" or "Криптовалюта" or "Облигации" or "Валюта" or "Наличность" or "Дивиденды";
     }
 
     private static string DefaultTagFor(AssetType assetType)
@@ -347,10 +363,10 @@ public sealed class PostgresImportCommitService(IProximaUnitOfWorkFactory uowFac
         {
             AssetType.Etf => "ETF",
             AssetType.Crypto => "Криптовалюта",
-            AssetType.Bond => "Облигация",
+            AssetType.Bond => "Облигации",
             AssetType.Currency => "Валюта",
             AssetType.Cash => "Наличность",
-            _ => "Акция",
+            _ => "Акции",
         };
     }
 

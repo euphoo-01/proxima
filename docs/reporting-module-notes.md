@@ -4,7 +4,7 @@
 
 - `Proxima.Core.Application.Reporting` report abstraction:
   - `IReportService`
-  - `SimplePdfReportService`
+  - `PdfReportService`
   - portfolio/tax report request+preview/export DTOs
 - Export is independent from Avalonia views and does not rely on UI screenshots.
 - PDF files are generated to a safe default directory:

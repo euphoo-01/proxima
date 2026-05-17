@@ -2,13 +2,9 @@
     x:Class="Proxima.App.Views.Goals.GoalsView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:Proxima.App.CustomControls"
     xmlns:goals="using:Proxima.App.Views.Goals"
-    x:DataType="goals:GoalsViewModel"
-    mc:Ignorable="d"
-    d:DataContext="{x:Static goals:GoalsDesignData.Sample}">
+    x:DataType="goals:GoalsViewModel">
     <Grid RowDefinitions="*,Auto">
         <ScrollViewer Grid.Row="0" Background="{StaticResource ProximaBrush.Sidebar}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <Grid Margin="24,24,34,64" RowDefinitions="Auto,24,*">

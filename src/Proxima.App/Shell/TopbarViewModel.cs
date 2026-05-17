@@ -10,7 +10,7 @@ using Proxima.Core.Domain.Portfolios;
 
 namespace Proxima.App.Shell;
 
-public sealed class TopbarViewModel : ViewModelBase
+public sealed class TopbarViewModel : ViewModelBase, IDisposable
 {
     private readonly IPortfolioService _portfolioService;
     private readonly IRuntimeUserContext _userContext;
@@ -47,23 +47,8 @@ public sealed class TopbarViewModel : ViewModelBase
         _createPortfolioCommand = new AsyncCommand(CreatePortfolioAsync, () => CanCreatePortfolio && !IsBusy);
         _notificationsCommand = new DelegateCommand(_ => _navigation.Navigate(AppRoutes.Notifications));
 
-        _userContext.ProfileChanged += (_, _) =>
-        {
-            OnPropertyChanged(nameof(IsFinancialConsultant));
-            OnPropertyChanged(nameof(ShowPortfolioSelector));
-            OnPropertyChanged(nameof(ShowPortfolioText));
-            OnPropertyChanged(nameof(CanCreatePortfolio));
-            _createPortfolioCommand.RaiseCanExecuteChanged();
-            _ = ReloadPortfoliosAsync(selectCurrent: true);
-        };
-
-        _runtimeDataInvalidation.DataInvalidated += (_, args) =>
-        {
-            if (args.Reason.Contains("portfolio", StringComparison.OrdinalIgnoreCase))
-            {
-                _ = ReloadPortfoliosAsync(selectCurrent: true);
-            }
-        };
+        _userContext.ProfileChanged += HandleProfileChanged;
+        _runtimeDataInvalidation.DataInvalidated += HandleDataInvalidated;
 
         Portfolios = [];
         _ = InitializeAsync();
@@ -140,6 +125,30 @@ public sealed class TopbarViewModel : ViewModelBase
         if (SelectedPortfolio is null)
         {
             CurrentPortfolio = currentPortfolio;
+        }
+    }
+
+    public void Dispose()
+    {
+        _userContext.ProfileChanged -= HandleProfileChanged;
+        _runtimeDataInvalidation.DataInvalidated -= HandleDataInvalidated;
+    }
+
+    private void HandleProfileChanged(object? sender, EventArgs e)
+    {
+        OnPropertyChanged(nameof(IsFinancialConsultant));
+        OnPropertyChanged(nameof(ShowPortfolioSelector));
+        OnPropertyChanged(nameof(ShowPortfolioText));
+        OnPropertyChanged(nameof(CanCreatePortfolio));
+        _createPortfolioCommand.RaiseCanExecuteChanged();
+        _ = ReloadPortfoliosAsync(selectCurrent: true);
+    }
+
+    private void HandleDataInvalidated(object? sender, RuntimeDataInvalidatedEventArgs args)
+    {
+        if (args.Reason.Contains("portfolio", StringComparison.OrdinalIgnoreCase))
+        {
+            _ = ReloadPortfoliosAsync(selectCurrent: true);
         }
     }
 

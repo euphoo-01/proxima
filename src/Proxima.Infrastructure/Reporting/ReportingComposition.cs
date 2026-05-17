@@ -7,7 +7,7 @@ public static class ReportingComposition
 {
     public static IServiceCollection AddReportingModule(this IServiceCollection services)
     {
-        services.AddSingleton<IReportService>(_ => new SimplePdfReportService());
+        services.AddSingleton<IReportService>(_ => new PdfReportService());
         return services;
     }
 }

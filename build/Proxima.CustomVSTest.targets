@@ -1,6 +1,0 @@
-<Project>
-  <Target Name="VSTest" Condition="'$(IsTestProject)' != 'true'" DependsOnTargets="Build" />
-  <Target Name="VSTest" Condition="'$(IsTestProject)' == 'true'" DependsOnTargets="Build">
-    <Exec Command="dotnet &quot;$(TargetPath)&quot;" />
-  </Target>
-</Project>

@@ -399,7 +399,7 @@
                         </Border>
 
                         <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="14" Margin="28,8,0,0">
-                            <Button Classes="primary-dark" Command="{Binding OpenImportDialogCommand}">
+                            <Button Classes="primary-dark" Command="{Binding OpenImportCommand}">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <Canvas Width="18" Height="18" VerticalAlignment="Center">
                                         <Path Data="M5,2 H12 L16,6 V16 H5 Z M12,2 V7 H16 M8,12 H13 M10.5,9.5 V14.5" Fill="Transparent" Stroke="#FFFFFF" StrokeThickness="1.8" StrokeLineCap="Round" StrokeJoin="Round" />
@@ -452,8 +452,8 @@
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Spacing="7">
-                                <TextBlock Classes="field-label" Text="ТЕГ" />
-                                <ComboBox Classes="manual-input" ItemsSource="{Binding ManualTagOptions}" SelectedItem="{Binding ManualTagText, Mode=TwoWay}" />
+                                <TextBlock Classes="field-label" Text="ТЕГИ" />
+                                <TextBox Classes="manual-input" Text="{Binding ManualTagText, Mode=TwoWay}" Watermark="Акции, Дивиденды, AI..." />
                             </StackPanel>
 
                             <StackPanel Grid.Row="1" Grid.Column="0" Spacing="7">

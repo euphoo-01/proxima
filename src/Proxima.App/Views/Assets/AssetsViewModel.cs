@@ -37,7 +37,7 @@ public sealed class AssetsViewModel : ViewModelBase
     private readonly AsyncCommand _addManualTransactionCommand;
     private readonly AsyncCommand _refreshQuotesCommand;
     private readonly AsyncCommand _exportReportCommand;
-    private readonly DelegateCommand _openImportDialogCommand;
+    private readonly DelegateCommand _openImportCommand;
     private readonly DelegateCommand _moreAssetsCommand;
     private readonly DelegateCommand _sortByNameCommand;
     private readonly DelegateCommand _sortByShareCommand;
@@ -111,7 +111,7 @@ public sealed class AssetsViewModel : ViewModelBase
         _addManualTransactionCommand = new AsyncCommand(AddManualTransactionAsync, () => !IsBusy);
         _refreshQuotesCommand = new AsyncCommand(RefreshQuotesAsync, () => !IsBusy);
         _exportReportCommand = new AsyncCommand(ExportPortfolioReportAsync, () => CanExportReport);
-        _openImportDialogCommand = new DelegateCommand(_ => _navigation.Navigate(AppRoutes.ImportPreview));
+        _openImportCommand = new DelegateCommand(_ => _navigation.Navigate(AppRoutes.ImportPreview));
         _moreAssetsCommand = new DelegateCommand(_ => ToggleAssetsLimit());
         _sortByNameCommand = new DelegateCommand(_ => SetSort(AssetSortMode.Name));
         _sortByShareCommand = new DelegateCommand(_ => SetSort(AssetSortMode.Share));
@@ -133,7 +133,7 @@ public sealed class AssetsViewModel : ViewModelBase
 
     public ObservableCollection<ManualTransactionTypeOption> ManualTransactionTypeOptions { get; }
 
-    public IReadOnlyList<string> ManualTagOptions { get; }
+    public ObservableCollection<string> ManualTagOptions { get; }
 
     public ICommand SelectManualBuyCommand => _selectManualBuyCommand;
 
@@ -304,6 +304,11 @@ public sealed class AssetsViewModel : ViewModelBase
         {
             if (SetProperty(ref _manualTagText, value))
             {
+                foreach (string tag in ParseTagList(value))
+                {
+                    EnsureManualTagOption(tag);
+                }
+
                 ClearFormMessage();
             }
         }
@@ -381,7 +386,7 @@ public sealed class AssetsViewModel : ViewModelBase
 
     public ICommand RefreshQuotesCommand => _refreshQuotesCommand;
 
-    public ICommand OpenImportDialogCommand => _openImportDialogCommand;
+    public ICommand OpenImportCommand => _openImportCommand;
 
     public ICommand ExportReportCommand => _exportReportCommand;
 
@@ -479,6 +484,7 @@ public sealed class AssetsViewModel : ViewModelBase
             value,
             share,
             change,
+            asset.Tags,
             () => OpenAssetDetails(asset.Id, asset.Name),
             () => EditAsset(asset),
             () => _ = DeleteAssetAsync(asset.Id));
@@ -668,14 +674,14 @@ public sealed class AssetsViewModel : ViewModelBase
         return _selectedManualSymbol;
     }
 
-    private static AssetType ResolveManualAssetType(MarketSymbolCandidate symbol, string tag)
+    private static AssetType ResolveManualAssetType(MarketSymbolCandidate symbol, IReadOnlyList<string> tags)
     {
-        if (symbol.AssetType is AssetType.Cash || IsCashTag(tag))
+        if (symbol.AssetType is AssetType.Cash || tags.Any(IsCashTag))
         {
             return AssetType.Cash;
         }
 
-        if (IsCurrencyTag(tag))
+        if (tags.Any(IsCurrencyTag))
         {
             return AssetType.Currency;
         }
@@ -751,16 +757,72 @@ public sealed class AssetsViewModel : ViewModelBase
 
     private static bool IsCashTag(string tag)
     {
-        string normalized = tag.Trim();
-        return normalized.Equals("Наличность", StringComparison.OrdinalIgnoreCase)
-            || normalized.Equals("Cash", StringComparison.OrdinalIgnoreCase);
+        string normalized = NormalizeTagForComparison(tag);
+        return normalized.Equals("наличность", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("наличные", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("cash", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsCurrencyTag(string tag)
     {
+        string normalized = NormalizeTagForComparison(tag);
+        return normalized.Equals("валюта", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("валюты", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("currency", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("fx", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string[] ParseTagList(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return [];
+        }
+
+        char[] separators = [',', ';', '|'];
+        return raw
+            .Split(separators, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Select(NormalizeTag)
+            .Where(static item => !string.IsNullOrWhiteSpace(item))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static string NormalizeTag(string value)
+    {
+        string normalized = string.Join(' ', value.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries));
+        return normalized.ToLowerInvariant() switch
+        {
+            "stock" or "stocks" or "equity" or "equities" or "share" or "shares" or "акции" or "акция" => "Акции",
+            "etf" or "фонды" or "фонд" => "ETF",
+            "crypto" or "cryptocurrency" or "крипта" or "криптовалюта" or "криптовалюты" => "Криптовалюта",
+            "bond" or "bonds" or "облигация" or "облигации" => "Облигации",
+            "currency" or "currencies" or "fx" or "валюта" or "валюты" => "Валюта",
+            "cash" or "наличные" or "наличность" => "Наличность",
+            "dividend" or "dividends" or "дивиденд" or "дивиденды" => "Дивиденды",
+            _ => normalized,
+        };
+    }
+
+    private static string NormalizeTagForComparison(string value)
+    {
+        return string.Join(' ', value.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
+    }
+
+    private void EnsureManualTagOption(string? tag)
+    {
+        if (string.IsNullOrWhiteSpace(tag))
+        {
+            return;
+        }
+
         string normalized = tag.Trim();
-        return normalized.Equals("Валюта", StringComparison.OrdinalIgnoreCase)
-            || normalized.Equals("Currency", StringComparison.OrdinalIgnoreCase);
+        if (ManualTagOptions.Any(item => string.Equals(item, normalized, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        ManualTagOptions.Add(normalized);
     }
 
     private void SelectManualTransactionType(TransactionType type)
@@ -794,10 +856,10 @@ public sealed class AssetsViewModel : ViewModelBase
             return;
         }
 
-        string tag = ManualTagText.Trim();
-        if (string.IsNullOrWhiteSpace(tag))
+        string[] tags = ParseTagList(ManualTagText);
+        if (tags.Length == 0)
         {
-            SetFormError("Введите тег актива, например Акции, Криптовалюта или Наличность.");
+            SetFormError("Введите хотя бы один тег актива, например Акции, Дивиденды или AI. Несколько тегов разделяйте запятыми.");
             return;
         }
 
@@ -830,7 +892,7 @@ public sealed class AssetsViewModel : ViewModelBase
             }
 
             IReadOnlyList<Asset> assets = await _assetService.ListActiveAsync(_shellState.CurrentPortfolioId, CancellationToken.None).ConfigureAwait(true);
-            AssetType assetType = ResolveManualAssetType(symbol, tag);
+            AssetType assetType = ResolveManualAssetType(symbol, tags);
             string ticker = ResolveManualTicker(symbol, assetName, assetType);
             string currency = ResolveManualCurrency(symbol, ticker, assetType);
             string resolvedAssetName = ResolveManualAssetName(symbol, ticker, assetType);
@@ -857,7 +919,7 @@ public sealed class AssetsViewModel : ViewModelBase
                     currency,
                     symbol.Exchange,
                     normalizedIsin,
-                    [tag],
+                    tags,
                     quantity,
                     storagePrice,
                     storagePrice), CancellationToken.None).ConfigureAwait(true);
@@ -886,8 +948,8 @@ public sealed class AssetsViewModel : ViewModelBase
                     newAverage = existing.AverageBuyPrice;
                 }
 
-                string[] tags = existing.Tags
-                    .Concat([tag])
+                string[] mergedTags = existing.Tags
+                    .Concat(tags)
                     .Where(static item => !string.IsNullOrWhiteSpace(item))
                     .Select(static item => item.Trim())
                     .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -902,7 +964,7 @@ public sealed class AssetsViewModel : ViewModelBase
                     existing.Currency,
                     existing.Exchange,
                     normalizedIsin ?? existing.Isin,
-                    tags,
+                    mergedTags,
                     newQuantity,
                     newAverage,
                     storagePrice), CancellationToken.None).ConfigureAwait(true);
@@ -928,7 +990,7 @@ public sealed class AssetsViewModel : ViewModelBase
                 assetResult.Asset.Currency,
                 null,
                 null,
-                $"Ручной ввод через экран активов. Тег: {tag}"), CancellationToken.None).ConfigureAwait(true);
+                $"Ручной ввод через экран активов. Теги: {string.Join(", ", tags)}"), CancellationToken.None).ConfigureAwait(true);
 
             if (!txResult.Succeeded)
             {
@@ -943,7 +1005,11 @@ public sealed class AssetsViewModel : ViewModelBase
             ManualPriceText = string.Empty;
             ManualQuantityText = "1";
             ManualIsinText = string.Empty;
-            ManualTagText = tag;
+            ManualTagText = string.Join(", ", tags);
+            foreach (string item in tags)
+            {
+                EnsureManualTagOption(item);
+            }
             ManualDateText = DateTimeOffset.Now.ToString("dd.MM.yyyy", RuCulture);
 
             string actionText = transactionType == TransactionType.Buy ? "Покупка добавлена" : "Продажа добавлена";
@@ -1007,14 +1073,16 @@ public sealed class AssetsViewModel : ViewModelBase
         ManualPriceText = asset.CurrentPrice.ToString(CultureInfo.InvariantCulture);
         ManualQuantityText = asset.Quantity.ToString(CultureInfo.InvariantCulture);
         ManualIsinText = asset.Isin ?? string.Empty;
-        ManualTagText = asset.Tags.FirstOrDefault() ?? asset.Type switch
-        {
-            AssetType.Crypto => "Криптовалюта",
-            AssetType.Currency or AssetType.Cash => "Наличность",
-            AssetType.Bond => "Облигации",
-            AssetType.Etf => "ETF",
-            _ => "Акции",
-        };
+        ManualTagText = asset.Tags.Count > 0
+            ? string.Join(", ", asset.Tags)
+            : asset.Type switch
+            {
+                AssetType.Crypto => "Криптовалюта",
+                AssetType.Currency or AssetType.Cash => "Наличность",
+                AssetType.Bond => "Облигации",
+                AssetType.Etf => "ETF",
+                _ => "Акции",
+            };
         SelectedManualTransactionType = ManualTransactionTypeOptions[0];
         SetFormSuccess("Данные актива перенесены в форму. Измените значения и добавьте корректирующую транзакцию.");
     }
@@ -1425,6 +1493,7 @@ public sealed class AssetListItemViewModel : ViewModelBase
         decimal value,
         decimal share,
         decimal change24H,
+        IReadOnlyList<string> tags,
         Action open,
         Action edit,
         Action delete)
@@ -1440,6 +1509,7 @@ public sealed class AssetListItemViewModel : ViewModelBase
         Value = value;
         Share = share;
         Change24H = change24H;
+        Tags = tags;
         _open = open;
         _edit = edit;
         _delete = delete;
@@ -1456,9 +1526,24 @@ public sealed class AssetListItemViewModel : ViewModelBase
 
     public string? Isin { get; }
 
-    public string AssetSubtitle => string.IsNullOrWhiteSpace(Isin)
-        ? Name
-        : $"{Name} · ISIN: {Isin}";
+    public string AssetSubtitle
+    {
+        get
+        {
+            List<string> parts = [Name];
+            if (!string.IsNullOrWhiteSpace(Isin))
+            {
+                parts.Add($"ISIN: {Isin}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(TagsText))
+            {
+                parts.Add(TagsText);
+            }
+
+            return string.Join(" · ", parts);
+        }
+    }
 
     public AssetType Type { get; }
 
@@ -1473,6 +1558,10 @@ public sealed class AssetListItemViewModel : ViewModelBase
     public decimal Share { get; }
 
     public decimal Change24H { get; }
+
+    public IReadOnlyList<string> Tags { get; }
+
+    public string TagsText => Tags.Count == 0 ? string.Empty : string.Join(", ", Tags.Select(static tag => $"#{tag}"));
 
     public ICommand OpenCommand { get; }
 

@@ -368,41 +368,5 @@ public sealed class ProximaCandlestickChart : Control
         return (start, end);
     }
 
-    private void ClampAndSetVisibleRange(int count, int start, int end)
-    {
-        int width = end - start + 1;
-        if (width <= 0)
-        {
-            return;
-        }
 
-        if (start < 0)
-        {
-            start = 0;
-            end = width - 1;
-        }
-
-        if (end >= count)
-        {
-            end = count - 1;
-            start = Math.Max(0, end - width + 1);
-        }
-
-        VisibleStartIndex = Math.Clamp(start, 0, count - 1);
-        VisibleEndIndex = Math.Clamp(end, 0, count - 1);
-        InvalidateVisual();
-    }
-
-    private int ToVisibleIndex(double pointerX, int start, int end)
-    {
-        int visibleCount = end - start + 1;
-        const double leftPad = ChartLeftPad;
-        const double rightPad = ChartRightPad;
-        double plotWidth = Math.Max(8, Bounds.Width - leftPad - rightPad);
-        double localX = pointerX - leftPad;
-        double slot = plotWidth / Math.Max(1, visibleCount);
-        int local = (int)Math.Floor(localX / Math.Max(1, slot));
-        local = Math.Clamp(local, 0, Math.Max(0, visibleCount - 1));
-        return start + local;
-    }
 }

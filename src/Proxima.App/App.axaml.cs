@@ -113,10 +113,13 @@ public partial class App : global::Avalonia.Application
 
     private static Window CreateAppShellWindow(ServiceProvider services)
     {
-        AppShellView appShellView = services.GetRequiredService<AppShellView>();
-        appShellView.DataContext = services.GetRequiredService<AppShellViewModel>();
+        IServiceScope shellScope = services.CreateScope();
+        IServiceProvider shellServices = shellScope.ServiceProvider;
 
-        return new Window
+        AppShellView appShellView = shellServices.GetRequiredService<AppShellView>();
+        appShellView.DataContext = shellServices.GetRequiredService<AppShellViewModel>();
+
+        Window window = new()
         {
             Title = "Proxima",
             Width = 1280,
@@ -127,6 +130,9 @@ public partial class App : global::Avalonia.Application
             Background = Brushes.White,
             Content = appShellView,
         };
+
+        window.Closed += (_, _) => shellScope.Dispose();
+        return window;
     }
 
     private static Window CreateDatabaseUnavailableWindow(string message)

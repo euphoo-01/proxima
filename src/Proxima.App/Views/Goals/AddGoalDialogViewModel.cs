@@ -63,7 +63,6 @@ public sealed class AddGoalDialogViewModel : ViewModelBase
         set => SetProperty(ref _targetAmount, value);
     }
 
-    public string Currency => "USD";
 
     public decimal MonthlyContribution
     {
@@ -136,7 +135,6 @@ public sealed class AddGoalDialogViewModel : ViewModelBase
             _goalId,
             Name.Trim(),
             TargetAmount,
-            "USD",
             MonthlyContribution,
             ExpectedAnnualReturnPercent));
     }
@@ -167,6 +165,5 @@ public sealed record GoalDialogSaveRequest(
     Guid? GoalId,
     string Name,
     decimal TargetAmount,
-    string Currency,
     decimal MonthlyContribution,
     decimal? ExpectedAnnualReturnPercent);

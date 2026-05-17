@@ -91,11 +91,100 @@ public sealed class PostgresLocalUserRepository(
             return;
         }
 
-        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
-        await lease.Context.Users
-            .Where(x => x.Id == profileId)
-            .ExecuteDeleteAsync(cancellationToken)
-            .ConfigureAwait(false);
+        await uowFactory.ExecuteInTransactionAsync(async uow =>
+        {
+            ProximaDbContext ctx = uow.Context;
+
+            Guid[] portfolioIds = await ctx.Portfolios
+                .Where(x => x.OwnerUserId == profileId)
+                .Select(x => x.Id)
+                .ToArrayAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            Guid[] assetIds = portfolioIds.Length == 0
+                ? []
+                : await ctx.Assets
+                    .Where(x => portfolioIds.Contains(x.PortfolioId))
+                    .Select(x => x.Id)
+                    .ToArrayAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+            if (assetIds.Length > 0)
+            {
+                Guid[] tagIds = await ctx.AssetTags
+                    .Where(x => assetIds.Contains(x.AssetId))
+                    .Select(x => x.TagId)
+                    .Distinct()
+                    .ToArrayAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+                await ctx.AssetTags
+                    .Where(x => assetIds.Contains(x.AssetId))
+                    .ExecuteDeleteAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (tagIds.Length > 0)
+                {
+                    await ctx.Tags
+                        .Where(x => tagIds.Contains(x.Id) && !ctx.AssetTags.Any(link => link.TagId == x.Id))
+                        .ExecuteDeleteAsync(cancellationToken)
+                        .ConfigureAwait(false);
+                }
+
+                await ctx.QuoteCache
+                    .Where(x => assetIds.Contains(x.AssetId))
+                    .ExecuteDeleteAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+                await ctx.AssetPrices
+                    .Where(x => assetIds.Contains(x.AssetId))
+                    .ExecuteDeleteAsync(cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            if (portfolioIds.Length > 0)
+            {
+                await ctx.Goals
+                    .Where(x => portfolioIds.Contains(x.PortfolioId))
+                    .ExecuteDeleteAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+                await ctx.Transactions
+                    .Where(x => portfolioIds.Contains(x.PortfolioId))
+                    .ExecuteDeleteAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+                await ctx.Assets
+                    .Where(x => portfolioIds.Contains(x.PortfolioId))
+                    .ExecuteDeleteAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+                await ctx.Portfolios
+                    .Where(x => x.OwnerUserId == profileId)
+                    .ExecuteDeleteAsync(cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            await ctx.UserSettings
+                .Where(x => x.OwnerUserId == profileId)
+                .ExecuteDeleteAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            await ctx.Notifications
+                .Where(x => x.UserId == profileId)
+                .ExecuteDeleteAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            await ctx.AuditLog
+                .Where(x => x.UserId == profileId)
+                .ExecuteDeleteAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            await ctx.Users
+                .Where(x => x.Id == profileId)
+                .ExecuteDeleteAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     private static LocalUserProfile ToDomain(UserEntity entity)

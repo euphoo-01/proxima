@@ -12,7 +12,6 @@ public static class AuthComposition
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<PasswordPolicyValidator>();
         services.AddSingleton<ILocalAuthService, LocalAuthService>();
-        services.AddSingleton<IAccountDeletionService, PostgresAccountDeletionService>();
         return services;
     }
 }

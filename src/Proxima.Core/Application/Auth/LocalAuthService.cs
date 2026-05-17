@@ -2,7 +2,7 @@ using Proxima.Core.Domain.Auth;
 
 namespace Proxima.Core.Application.Auth;
 
-public sealed class LocalAuthService(
+public sealed class LocalAuthService (
     ILocalUserRepository users,
     IPasswordHasher passwordHasher,
     PasswordPolicyValidator passwordPolicy)

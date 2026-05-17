@@ -126,17 +126,7 @@ public sealed class DashboardViewModel : ViewModelBase
 
     public string MoreTransactionsButtonText => _isShowingAllTransactions ? "Скрыть транзакции  ↑" : "Все транзакции  ↓";
 
-    public static DashboardViewModel CreateDesignData()
-    {
-        return new DashboardViewModel(
-            new DesignDashboardDataProvider(),
-            new MockShellState(),
-            new RuntimeDataInvalidation(),
-            new DesignNavigationService(),
-            new DesignTransactionService());
-    }
-
-    private void Load()
+private void Load()
     {
         try
         {
@@ -571,67 +561,6 @@ public sealed class DashboardViewModel : ViewModelBase
         public void Execute(object? parameter) => _execute(parameter);
     }
 
-    private sealed class DesignNavigationService : IAppNavigationService
-    {
-        public event Action<AppRoute>? RouteChanged;
-
-        public AppRoute Current { get; private set; } = new(AppRoutes.Dashboard, "Дешборд", "Дешборд");
-
-        public IReadOnlyList<AppRoute> Routes => [Current];
-
-        public void Register(AppRoute route) { }
-
-        public void Navigate(
-            string routeKey,
-            IReadOnlyDictionary<string, string>? parameters = null,
-            string? titleOverride = null,
-            string? breadcrumbOverride = null)
-        {
-            Current = new AppRoute(routeKey, titleOverride ?? routeKey, breadcrumbOverride ?? routeKey) { Parameters = parameters };
-            RouteChanged?.Invoke(Current);
-        }
-    }
-}
-
-internal sealed class DesignTransactionService : ITransactionService
-{
-    public Task<IReadOnlyList<PortfolioTransaction>> ListActiveAsync(Guid portfolioId, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult<IReadOnlyList<PortfolioTransaction>>([]);
-    }
-
-    public Task<TransactionOperationResult> CreateAsync(CreateTransactionRequest request, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(TransactionOperationResult.Failure("Design-time service."));
-    }
-
-    public Task<TransactionOperationResult> UpdateAsync(UpdateTransactionRequest request, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(TransactionOperationResult.Failure("Design-time service."));
-    }
-
-    public Task<TransactionOperationResult> ArchiveAsync(Guid portfolioId, Guid transactionId, CancellationToken cancellationToken = default)
-    {
-        PortfolioTransaction transaction = new(
-            transactionId,
-            portfolioId,
-            null,
-            TransactionType.Fee,
-            DateTimeOffset.UtcNow,
-            0m,
-            0m,
-            0m,
-            0m,
-            0m,
-            "USD",
-            null,
-            null,
-            null,
-            true,
-            DateTimeOffset.UtcNow,
-            DateTimeOffset.UtcNow);
-        return Task.FromResult(TransactionOperationResult.Success(transaction));
-    }
 }
 
 public interface IDashboardDataProvider
@@ -647,40 +576,6 @@ public sealed record DashboardSnapshot(
     IReadOnlyList<decimal> FallbackSeries)
 {
     public static DashboardSnapshot Empty(string currency) => new(currency, [], [], [], []);
-}
-
-public sealed class DesignDashboardDataProvider : IDashboardDataProvider
-{
-    public DashboardSnapshot GetSnapshot()
-    {
-        Guid stockId = Guid.Parse("0a896663-ec39-4ebc-9b28-bf537f8f2fe0");
-        Guid cryptoId = Guid.Parse("f3b4b129-5478-4965-923f-03ef74ca7c07");
-        Guid cashId = Guid.Parse("59440f63-edfd-4655-8cb2-7f5f788a3df4");
-
-        DashboardAssetSnapshot[] assets =
-        [
-            new(stockId, "Apple Inc.", "AAPL", 8m, 227.8m, 1822.4m, ["Акции"]),
-            new(cryptoId, "Bitcoin", "BTC", 0.52m, 68000m, 35360m, ["Криптовалюта"]),
-            new(cashId, "USD Cash", "USD", 1m, 12400m, 12400m, ["Наличность"])
-        ];
-
-        DashboardQuoteSnapshot[] previousQuotes =
-        [
-            new(stockId, 220m, DateTimeOffset.UtcNow.AddDays(-1)),
-            new(cryptoId, 66500m, DateTimeOffset.UtcNow.AddDays(-1)),
-            new(cashId, 12400m, DateTimeOffset.UtcNow.AddDays(-1))
-        ];
-
-        DashboardTransactionSnapshot[] transactions =
-        [
-            new(Guid.NewGuid(), "Apple Inc.", "AAPL", "Ордер покупки", new DateTimeOffset(2026, 3, 24, 12, 0, 0, TimeSpan.Zero), 227.8m, -12400m),
-            new(Guid.NewGuid(), "Bitcoin", "BTC", "Дивиденд", new DateTimeOffset(2026, 3, 23, 12, 0, 0, TimeSpan.Zero), 68000m, 420.15m),
-            new(Guid.NewGuid(), "S&P 500 ETF", "SPY", "Ордер продажи", new DateTimeOffset(2026, 3, 21, 12, 0, 0, TimeSpan.Zero), 520m, 55000m)
-        ];
-
-        decimal[] series = [42000m, 43500m, 42800m, 44700m, 46200m, 47100m, 48600m, 49800m, 49300m, 49582.4m];
-        return new DashboardSnapshot("USD", assets, previousQuotes, transactions, series);
-    }
 }
 
 public sealed class DashboardTimeframeViewModel : ViewModelBase

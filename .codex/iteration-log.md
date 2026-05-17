@@ -843,7 +843,7 @@ Implement reporting abstraction and generate portfolio/tax draft PDF exports fro
 
 | ID | Status | Evidence |
 | --- | --- | --- |
-| AC-16.1 | Done | `IReportService` + `SimplePdfReportService` in `Proxima.Reporting`; PDF generation independent of Avalonia views and uses safe output path composition. |
+| AC-16.1 | Done | `IReportService` + `PdfReportService` in `Proxima.Reporting`; PDF generation independent of Avalonia views and uses safe output path composition. |
 | AC-16.2 | Done | Portfolio report includes required sections (portfolio, period, total, P&L, allocation, top assets, risk metrics, tx summary, timestamp, disclaimer). |
 | AC-16.3 | Done | Tax report includes required sections (profile/year/base/due/rate notes/dividends/tx summary/version/disclaimer). |
 | AC-16.4 | Partial | Export buttons are wired and show success/failure status; long-running progress indicator, manual destination picker and overwrite confirmation are deferred. |

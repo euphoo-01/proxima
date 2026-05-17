@@ -301,7 +301,6 @@
             <Border Grid.Row="2"
                     Classes="dropzone"
                     HorizontalAlignment="Stretch"
-                    Classes.dragover="{Binding IsDragOver}"
                     Classes.parsing="{Binding IsParsing}"
                     Classes.error="{Binding HasError}">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
@@ -363,8 +362,8 @@
                         </StackPanel>
 
                         <StackPanel Grid.Column="2" Spacing="7">
-                            <TextBlock Classes="field-label" Text="ТЕГ" />
-                            <ComboBox Classes="input" ItemsSource="{Binding TagOptions}" SelectedItem="{Binding NewTag, Mode=TwoWay}" />
+                            <TextBlock Classes="field-label" Text="ТЕГИ" />
+                            <TextBox Classes="input" Text="{Binding NewTag, Mode=TwoWay}" Watermark="Акции, Дивиденды, AI..." />
                         </StackPanel>
 
                         <StackPanel Grid.Column="4" Spacing="7">
@@ -415,7 +414,7 @@
                         <TextBlock Grid.Column="2" Classes="table-head" Text="ТИП" />
                         <TextBlock Grid.Column="3" Classes="table-head" Text="КОЛ-ВО" />
                         <TextBlock Grid.Column="4" Classes="table-head" Text="ЦЕНА" />
-                        <TextBlock Grid.Column="5" Classes="table-head" Text="ТЕГ" />
+                        <TextBlock Grid.Column="5" Classes="table-head" Text="ТЕГИ" />
                         <TextBlock Grid.Column="6" Classes="table-head" Text="СУММА" />
                         <TextBlock Grid.Column="7" Classes="table-head" Text="ДЕЙСТВИЯ" />
                     </Grid>
@@ -431,7 +430,7 @@
                                             <ComboBox Grid.Column="2" Classes="table-combo" ItemsSource="{Binding DataContext.OperationTypeLabels, RelativeSource={RelativeSource AncestorType=import:ManualImportView}}" SelectedItem="{Binding OperationTypeLabel, Mode=TwoWay}" />
                                             <TextBox Grid.Column="3" Classes="table-input" Text="{Binding Quantity, Mode=TwoWay}" Watermark="1" />
                                             <TextBox Grid.Column="4" Classes="table-input" Text="{Binding Price, Mode=TwoWay}" Watermark="0.00" />
-                                            <ComboBox Grid.Column="5" Classes="table-combo" ItemsSource="{Binding DataContext.TagOptions, RelativeSource={RelativeSource AncestorType=import:ManualImportView}}" SelectedItem="{Binding TagOrCategory, Mode=TwoWay}" />
+                                            <TextBox Grid.Column="5" Classes="table-input" Text="{Binding TagOrCategory, Mode=TwoWay}" Watermark="Теги" />
                                             <TextBlock Grid.Column="6" Classes="table-amount" Classes.positive="{Binding IsPositiveAmount}" Text="{Binding SignedAmountDisplay}" />
 
                                             <StackPanel Grid.Column="7" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Spacing="4">

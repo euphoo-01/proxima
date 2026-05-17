@@ -26,8 +26,7 @@ public sealed class ImportFileValidator(long maxBytes) : IImportFileValidator
         return extension switch
         {
             ".csv" => new ImportFileValidationResult(true, string.Empty, ImportFileType.Csv),
-            ".pdf" => new ImportFileValidationResult(true, string.Empty, ImportFileType.Pdf),
-            _ => new ImportFileValidationResult(false, "Поддерживаются только .csv и .pdf.", null),
+            _ => new ImportFileValidationResult(false, "Поддерживается только .csv.", null),
         };
     }
 }

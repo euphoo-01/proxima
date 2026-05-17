@@ -2,12 +2,8 @@
     x:Class="Proxima.App.Views.Taxes.TaxesView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:taxes="using:Proxima.App.Views.Taxes"
-    x:DataType="taxes:TaxesViewModel"
-    mc:Ignorable="d"
-    d:DataContext="{x:Static taxes:TaxesDesignData.Sample}">
+    x:DataType="taxes:TaxesViewModel">
 
     <UserControl.Styles>
         <Style Selector="TextBlock.tax-page-title">

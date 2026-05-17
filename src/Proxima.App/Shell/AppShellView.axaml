@@ -31,7 +31,6 @@
     <UserControl.DataTemplates>
         <DataTemplate x:DataType="dashboard:DashboardViewModel"><dashboardViews:DashboardView /></DataTemplate>
         <DataTemplate x:DataType="assets:AssetsViewModel"><assetsViews:AssetsView /></DataTemplate>
-        <DataTemplate x:DataType="import:ImportDialogViewModel"><importViews:ImportDialogView /></DataTemplate>
         <DataTemplate x:DataType="assetDetails:AssetDetailsViewModel"><assetDetailsViews:AssetDetailsView /></DataTemplate>
         <DataTemplate x:DataType="import:ManualImportViewModel"><importViews:ManualImportView /></DataTemplate>
         <DataTemplate x:DataType="goals:GoalsViewModel"><goalsViews:GoalsView /></DataTemplate>

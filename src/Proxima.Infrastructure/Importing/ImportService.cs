@@ -31,7 +31,7 @@ public sealed class ImportService(
         }
         catch
         {
-            return new ImportPreview(false, "Ошибка разбора файла. Проверьте формат и попробуйте ручной ввод.", [], validation.FileType == ImportFileType.Pdf);
+            return new ImportPreview(false, "Ошибка разбора файла. Проверьте формат CSV и попробуйте ручной ввод.", [], false);
         }
     }
 }
