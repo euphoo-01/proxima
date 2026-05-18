@@ -188,6 +188,7 @@ public sealed class SidebarItemViewModel : ViewModelBase
 {
     private bool _isActive;
 
+
     public SidebarItemViewModel(string routeKey, string label, string iconData)
     {
         RouteKey = routeKey;

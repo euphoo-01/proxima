@@ -434,7 +434,6 @@
                                             <TextBlock Grid.Column="6" Classes="table-amount" Classes.positive="{Binding IsPositiveAmount}" Text="{Binding SignedAmountDisplay}" />
 
                                             <StackPanel Grid.Column="7" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Spacing="4">
-                                                <Button Classes="icon-action" Content="✎" />
                                                 <Button Classes="icon-action" Content="⌫" Command="{Binding DataContext.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=import:ManualImportView}}" CommandParameter="{Binding .}" />
                                             </StackPanel>
                                         </Grid>
