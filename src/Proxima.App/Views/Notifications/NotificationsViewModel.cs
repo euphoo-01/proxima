@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
+using Proxima.App.Common.Commands;
 
 namespace Proxima.App.Views.Notifications;
 
@@ -136,37 +137,5 @@ public sealed class NotificationsViewModel : ViewModelBase
         _clearAllCommand.RaiseCanExecuteChanged();
     }
 
-    private sealed class AsyncCommand(Func<Task> execute, Func<bool> canExecute) : ICommand
-    {
-        private readonly Func<Task> _execute = execute;
-        private readonly Func<bool> _canExecute = canExecute;
 
-        public event EventHandler? CanExecuteChanged;
-
-        public bool CanExecute(object? parameter) => _canExecute();
-
-        public async void Execute(object? parameter)
-        {
-            await _execute().ConfigureAwait(true);
-        }
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    private sealed class AsyncParameterCommand(Func<object?, Task> execute, Func<object?, bool> canExecute) : ICommand
-    {
-        private readonly Func<object?, Task> _execute = execute;
-        private readonly Func<object?, bool> _canExecute = canExecute;
-
-        public event EventHandler? CanExecuteChanged;
-
-        public bool CanExecute(object? parameter) => _canExecute(parameter);
-
-        public async void Execute(object? parameter)
-        {
-            await _execute(parameter).ConfigureAwait(true);
-        }
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-    }
 }

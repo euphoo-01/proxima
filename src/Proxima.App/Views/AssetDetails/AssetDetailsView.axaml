@@ -55,7 +55,7 @@
                     <Grid RowDefinitions="Auto,18,*">
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel Spacing="3">
-                                <TextBlock Classes="asset-section-title" Text="↗ Market Performance" />
+                                <TextBlock Classes="asset-section-title" Text="Market Performance" />
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top">

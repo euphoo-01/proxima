@@ -4,13 +4,22 @@ namespace Proxima.Core.Application.AssetDetails;
 
 public interface IAssetDetailsService
 {
-    Task<AssetDetailsReadModel?> GetAsync(
+    Task<AssetDetailsOverview?> GetOverviewAsync(
+        Guid portfolioId,
         Guid assetId,
         string timeframe,
         CancellationToken cancellationToken = default);
 }
 
-public sealed record AssetDetailsReadModel(
+public interface IAssetMarketDataProvider
+{
+    Task<AssetMarketData?> GetAsync(
+        string symbol,
+        string timeframe,
+        CancellationToken cancellationToken = default);
+}
+
+public sealed record AssetDetailsOverview(
     Guid AssetId,
     string AssetName,
     string AssetTicker,
@@ -30,6 +39,28 @@ public sealed record AssetDetailsReadModel(
     IReadOnlyList<AssetDetailsMetric> BasicMetrics,
     IReadOnlyList<AssetDetailsMetric> RiskMetrics,
     IReadOnlyList<AssetDetailsTransaction> Transactions);
+
+public sealed record AssetMarketData(
+    string? Name,
+    string? Currency,
+    decimal? MarketCapUsd,
+    decimal? FdvUsd,
+    decimal? PeRatio,
+    decimal? Beta,
+    decimal? VolumeUnits,
+    decimal? VolumeUsd,
+    decimal? ShareOutstanding,
+    IReadOnlyList<AssetDetailsCandle> Candles)
+{
+    public bool HasAnyData =>
+        !string.IsNullOrWhiteSpace(Name)
+        || MarketCapUsd.HasValue
+        || FdvUsd.HasValue
+        || PeRatio.HasValue
+        || Beta.HasValue
+        || VolumeUnits.HasValue
+        || Candles.Count > 0;
+}
 
 public sealed record AssetDetailsCandle(
     DateTimeOffset Timestamp,

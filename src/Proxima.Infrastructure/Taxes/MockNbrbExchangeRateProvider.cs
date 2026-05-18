@@ -1,9 +1,12 @@
 using Proxima.Core.Application.Taxes;
+using Proxima.Core.Application.Settings;
 
 namespace Proxima.Infrastructure.Taxes;
 
-public sealed class MockNbrbExchangeRateProvider : IExchangeRateProvider
+public sealed class MockNbrbExchangeRateProvider : IExchangeRateSource
 {
+    public CurrencyProviderKind Kind => CurrencyProviderKind.Mock;
+
     public Task<ExchangeRateResult> GetRateAsync(string fromCurrency, string toCurrency, DateOnly date, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

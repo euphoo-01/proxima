@@ -4,8 +4,9 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Proxima.App.Navigation;
 using Proxima.App.ViewModels;
-using Proxima.App.Views.Auth;
+using Proxima.App.Auth;
 using Proxima.Core.Domain.Auth;
+using Proxima.App.Common.Commands;
 
 namespace Proxima.App.Shell;
 
@@ -168,20 +169,6 @@ public sealed class SidebarViewModel : ViewModelBase, IDisposable
         return Path.Combine(GetProfileExtrasDirectory(), $"{userId:N}.avatar");
     }
 
-    private sealed class DelegateCommand(Action<object?> execute) : ICommand
-    {
-        private readonly Action<object?> _execute = execute;
-
-        public event EventHandler? CanExecuteChanged
-        {
-            add { }
-            remove { }
-        }
-
-        public bool CanExecute(object? parameter) => true;
-
-        public void Execute(object? parameter) => _execute(parameter);
-    }
 }
 
 public sealed class SidebarItemViewModel : ViewModelBase

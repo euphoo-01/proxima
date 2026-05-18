@@ -1,4 +1,4 @@
-using Proxima.Core.Application.Analytics.Engine;
+using Proxima.Core.Application.Analytics;
 
 namespace Proxima.Core.Application.Analytics.AssetDetails;
 
@@ -29,14 +29,14 @@ public static class AssetDetailsCalculator
         double[] returnsAsDouble = returns.Select(static item => (double)item).ToArray();
         double[] closesAsDouble = normalizedCloses.Select(static item => (double)item).ToArray();
 
-        decimal volatilityPct = MetricValue(PortfolioAnalyticsEngine.Volatility(returnsAsDouble));
+        decimal volatilityPct = MetricValue(PortfolioMetricsCalculator.Volatility(returnsAsDouble));
         decimal skewness = Skewness(returns, mean, std);
         decimal kurtosis = Kurtosis(returns, mean, std);
-        decimal maxDrawdown = -MetricValue(PortfolioAnalyticsEngine.MaxDrawdown(closesAsDouble));
-        decimal var = MetricValue(PortfolioAnalyticsEngine.VaR(returnsAsDouble));
-        decimal cvar = MetricValue(PortfolioAnalyticsEngine.CVaR(returnsAsDouble));
-        decimal sharpe = MetricValue(PortfolioAnalyticsEngine.Sharpe(returnsAsDouble));
-        decimal sortino = MetricValue(PortfolioAnalyticsEngine.Sortino(returnsAsDouble));
+        decimal maxDrawdown = -MetricValue(PortfolioMetricsCalculator.MaxDrawdown(closesAsDouble));
+        decimal var = MetricValue(PortfolioMetricsCalculator.VaR(returnsAsDouble));
+        decimal cvar = MetricValue(PortfolioMetricsCalculator.CVaR(returnsAsDouble));
+        decimal sharpe = MetricValue(PortfolioMetricsCalculator.Sharpe(returnsAsDouble));
+        decimal sortino = MetricValue(PortfolioMetricsCalculator.Sortino(returnsAsDouble));
         decimal annualReturn = mean * 252m;
         decimal calmar = maxDrawdown < 0m ? annualReturn / Math.Abs(maxDrawdown / 100m) : 0m;
         decimal atr = AverageTrueRange(normalizedHighs, normalizedLows, normalizedCloses);

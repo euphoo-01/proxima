@@ -2,11 +2,14 @@ using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using Proxima.Core.Application.Taxes;
+using Proxima.Core.Application.Settings;
 
 namespace Proxima.Infrastructure.Taxes;
 
-public sealed class NbrbExchangeRateProvider(HttpClient httpClient) : IExchangeRateProvider
+public sealed class NbrbExchangeRateProvider(HttpClient httpClient) : IExchangeRateSource
 {
+    public CurrencyProviderKind Kind => CurrencyProviderKind.Nbrb;
+
     private const int MaxPreviousDaysToProbe = 10;
 
     private static readonly IReadOnlySet<string> SupportedCurrencies = new HashSet<string>(StringComparer.OrdinalIgnoreCase)

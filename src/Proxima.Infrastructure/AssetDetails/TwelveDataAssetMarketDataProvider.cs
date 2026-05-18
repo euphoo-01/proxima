@@ -13,11 +13,11 @@ namespace Proxima.Infrastructure.AssetDetails;
 public sealed class TwelveDataAssetMarketDataProvider(
     ICurrentUserContext currentUser,
     ISettingsService settingsService,
-    HttpClient httpClient)
+    HttpClient httpClient) : IAssetMarketDataProvider
 {
     private static readonly Uri BaseUri = new("https://api.twelvedata.com/");
 
-    public async Task<TwelveDataAssetMarketData?> TryLoadAsync(
+    public async Task<AssetMarketData?> GetAsync(
         string ticker,
         string timeframe,
         CancellationToken cancellationToken = default)
@@ -65,7 +65,7 @@ public sealed class TwelveDataAssetMarketDataProvider(
                     ? volumeUnits.Value * quote.Close
                     : null;
 
-            TwelveDataAssetMarketData data = new(
+            AssetMarketData data = new(
                 quote?.Name,
                 quote?.Currency,
                 null,
@@ -274,24 +274,3 @@ public sealed class TwelveDataAssetMarketDataProvider(
     private sealed record TwelveDataQuoteSnapshot(string Name, string Currency, decimal Close, decimal Volume);
 }
 
-public sealed record TwelveDataAssetMarketData(
-    string? Name,
-    string? Currency,
-    decimal? MarketCapUsd,
-    decimal? FdvUsd,
-    decimal? PeRatio,
-    decimal? Beta,
-    decimal? VolumeUnits,
-    decimal? VolumeUsd,
-    decimal? ShareOutstanding,
-    IReadOnlyList<AssetDetailsCandle> Candles)
-{
-    public bool HasAnyData =>
-        !string.IsNullOrWhiteSpace(Name)
-        || MarketCapUsd.HasValue
-        || FdvUsd.HasValue
-        || PeRatio.HasValue
-        || Beta.HasValue
-        || VolumeUnits.HasValue
-        || Candles.Count > 0;
-}

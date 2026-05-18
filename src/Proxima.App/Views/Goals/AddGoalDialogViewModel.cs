@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using Proxima.App.ViewModels;
+using Proxima.App.Common.Commands;
 
 namespace Proxima.App.Views.Goals;
 
@@ -147,18 +148,6 @@ public sealed class AddGoalDialogViewModel : ViewModelBase
         }
     }
 
-    private sealed class DelegateCommand(Action<object?> execute) : ICommand
-    {
-        private readonly Action<object?> _execute = execute;
-
-        public event EventHandler? CanExecuteChanged;
-
-        public bool CanExecute(object? parameter) => true;
-
-        public void Execute(object? parameter) => _execute(parameter);
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-    }
 }
 
 public sealed record GoalDialogSaveRequest(

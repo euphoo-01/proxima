@@ -2,9 +2,10 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
-using Proxima.App.Views.Auth;
+using Proxima.App.Auth;
 using Proxima.Core.Application.Settings;
 using Proxima.Core.Domain.Auth;
+using Proxima.App.Common.Commands;
 
 namespace Proxima.App.Views.Settings;
 
@@ -229,17 +230,5 @@ private async Task LoadAsync()
         SelectedCurrencyProvider = settings.CurrencyProvider;
     }
 
-    private sealed class DelegateCommand(Action<object?> execute) : ICommand
-    {
-        private readonly Action<object?> _execute = execute;
-
-        public event EventHandler? CanExecuteChanged;
-
-        public bool CanExecute(object? parameter) => true;
-
-        public void Execute(object? parameter) => _execute(parameter);
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-    }
 
 }

@@ -2,7 +2,7 @@ using System.Reflection;
 using System.Text;
 using Proxima.Core.Application.Analytics.AssetDetails;
 using Microsoft.EntityFrameworkCore;
-using Proxima.Core.Application.Analytics.Engine;
+using Proxima.Core.Application.Analytics;
 using Proxima.Core.Application.Importing;
 using Proxima.Core.Application.Reporting;
 using Proxima.Core.Domain.Auth;
@@ -210,13 +210,13 @@ internal static class Program
             new(1m, 50m, 70m, 0m),
         ];
 
-        Assert(PortfolioAnalyticsEngine.TotalValue(positions, 10m) == 320m, "Total value should include positions and cash.");
-        Assert(PortfolioAnalyticsEngine.UnrealizedPnl(positions[0]) == 39m, "PnL should include fees.");
-        Assert(PortfolioAnalyticsEngine.Roi(100m, 20m) == 20m, "ROI should calculate percentage return.");
-        Assert(PortfolioAnalyticsEngine.Roi(0m, 20m) is null, "ROI should be unavailable for zero denominator.");
-        Assert(PortfolioAnalyticsEngine.MaxDrawdown([100d, 95d, 110d, 90d]).Availability == MetricAvailability.Available, "Max drawdown should compute.");
-        Assert(PortfolioAnalyticsEngine.Volatility([0.01d, -0.02d, 0.015d]).Availability == MetricAvailability.Available, "Volatility should compute.");
-        Assert(PortfolioAnalyticsEngine.Sharpe([0.01d, -0.02d, 0.015d]).Availability == MetricAvailability.Available, "Sharpe should compute.");
+        Assert(PortfolioMetricsCalculator.TotalValue(positions, 10m) == 320m, "Total value should include positions and cash.");
+        Assert(PortfolioMetricsCalculator.UnrealizedPnl(positions[0]) == 39m, "PnL should include fees.");
+        Assert(PortfolioMetricsCalculator.Roi(100m, 20m) == 20m, "ROI should calculate percentage return.");
+        Assert(PortfolioMetricsCalculator.Roi(0m, 20m) is null, "ROI should be unavailable for zero denominator.");
+        Assert(PortfolioMetricsCalculator.MaxDrawdown([100d, 95d, 110d, 90d]).Availability == MetricAvailability.Available, "Max drawdown should compute.");
+        Assert(PortfolioMetricsCalculator.Volatility([0.01d, -0.02d, 0.015d]).Availability == MetricAvailability.Available, "Volatility should compute.");
+        Assert(PortfolioMetricsCalculator.Sharpe([0.01d, -0.02d, 0.015d]).Availability == MetricAvailability.Available, "Sharpe should compute.");
     }
 
     private static void AssetDetailsCalculator_ComputesRiskMetricsInCore()

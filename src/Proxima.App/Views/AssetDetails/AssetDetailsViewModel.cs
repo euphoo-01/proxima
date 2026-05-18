@@ -6,6 +6,7 @@ using Proxima.App.Shell;
 using Proxima.App.ViewModels;
 using Proxima.Core.Application.AssetDetails;
 using Proxima.Core.Domain.Assets;
+using Proxima.App.Common.Commands;
 
 namespace Proxima.App.Views.AssetDetails;
 
@@ -15,6 +16,7 @@ public sealed class AssetDetailsViewModel : ViewModelBase
 
     private readonly IAppNavigationService _navigation;
     private readonly IAssetDetailsService _assetDetailsService;
+    private readonly IShellState _shellState;
 
     private readonly DelegateCommand _sortByDateCommand;
     private readonly DelegateCommand _sortByTypeCommand;
@@ -42,10 +44,12 @@ public sealed class AssetDetailsViewModel : ViewModelBase
     public AssetDetailsViewModel(
         IAppNavigationService navigation,
         IAssetDetailsService assetDetailsService,
+        IShellState shellState,
         IRuntimeDataInvalidation dataInvalidation)
     {
         _navigation = navigation;
         _assetDetailsService = assetDetailsService;
+        _shellState = shellState;
 
         Timeframes = new ObservableCollection<string> { "1ч", "1д", "7д", "30д", "1г" };
         TimeframeOptions = new ObservableCollection<TimeframeOptionViewModel>(
@@ -304,8 +308,8 @@ private async Task LoadByRouteAsync(AppRoute route)
                 return;
             }
 
-            AssetDetailsReadModel? model = await _assetDetailsService
-                .GetAsync(assetId, SelectedTimeframe)
+            AssetDetailsOverview? model = await _assetDetailsService
+                .GetOverviewAsync(_shellState.CurrentPortfolioId, assetId, SelectedTimeframe)
                 .ConfigureAwait(true);
 
             if (model is null)
@@ -329,7 +333,7 @@ private async Task LoadByRouteAsync(AppRoute route)
         }
     }
 
-    private void ApplyModel(AssetDetailsReadModel model)
+    private void ApplyModel(AssetDetailsOverview model)
     {
         AssetName = model.AssetName;
         AssetTicker = model.AssetTicker;
@@ -721,20 +725,6 @@ private async Task LoadByRouteAsync(AppRoute route)
         OnPropertyChanged(nameof(HasRiskMetrics));
     }
 
-    private sealed class DelegateCommand(Action<object?> execute) : ICommand
-    {
-        private readonly Action<object?> _execute = execute;
-
-        public event EventHandler? CanExecuteChanged
-        {
-            add { }
-            remove { }
-        }
-
-        public bool CanExecute(object? parameter) => true;
-
-        public void Execute(object? parameter) => _execute(parameter);
-    }
 
 }
 

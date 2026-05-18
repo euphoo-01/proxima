@@ -1,24 +1,30 @@
 using Proxima.Core.Application.Assets;
-using Proxima.Core.Domain.Goals;
 using Proxima.Core.Domain.Assets;
+using Proxima.Core.Domain.Goals;
 
-namespace Proxima.App.Views.Goals;
+namespace Proxima.Core.Application.Goals;
 
 public interface IGoalProgressBaselineService
 {
-    IReadOnlyDictionary<Guid, decimal> CalculateCurrentAmounts(Guid portfolioId, IReadOnlyList<Goal> goals);
+    Task<IReadOnlyDictionary<Guid, decimal>> CalculateCurrentAmountsAsync(
+        Guid portfolioId,
+        IReadOnlyList<Goal> goals,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class GoalProgressBaselineService(IAssetService assets) : IGoalProgressBaselineService
 {
-    public IReadOnlyDictionary<Guid, decimal> CalculateCurrentAmounts(Guid portfolioId, IReadOnlyList<Goal> goals)
+    public async Task<IReadOnlyDictionary<Guid, decimal>> CalculateCurrentAmountsAsync(
+        Guid portfolioId,
+        IReadOnlyList<Goal> goals,
+        CancellationToken cancellationToken = default)
     {
         if (goals.Count == 0)
         {
             return new Dictionary<Guid, decimal>();
         }
 
-        decimal portfolioValue = ResolvePortfolioValue(portfolioId);
+        decimal portfolioValue = await ResolvePortfolioValueAsync(portfolioId, cancellationToken).ConfigureAwait(false);
         decimal totalTarget = goals.Sum(goal => Math.Max(0m, goal.TargetAmount));
         if (portfolioValue <= 0m || totalTarget <= 0m)
         {
@@ -35,12 +41,11 @@ public sealed class GoalProgressBaselineService(IAssetService assets) : IGoalPro
         return result;
     }
 
-    private decimal ResolvePortfolioValue(Guid portfolioId)
+    private async Task<decimal> ResolvePortfolioValueAsync(Guid portfolioId, CancellationToken cancellationToken)
     {
-        IReadOnlyList<Asset> portfolioAssets = assets
-            .ListActiveAsync(portfolioId, CancellationToken.None)
-            .GetAwaiter()
-            .GetResult();
+        IReadOnlyList<Asset> portfolioAssets = await assets
+            .ListActiveAsync(portfolioId, cancellationToken)
+            .ConfigureAwait(false);
 
         return portfolioAssets
             .Where(item => !item.IsArchived)

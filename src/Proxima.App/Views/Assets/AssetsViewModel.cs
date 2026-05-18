@@ -5,7 +5,7 @@ using Proxima.App.Navigation;
 using Proxima.App.Notifications;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
-using Proxima.App.Views.Taxes;
+using Proxima.App.Auth;
 using Proxima.Core.Application.Assets;
 using Proxima.Core.Application.MarketData;
 using Proxima.Core.Application.Quotes;
@@ -14,6 +14,7 @@ using Proxima.Core.Application.Taxes;
 using Proxima.Core.Application.Transactions;
 using Proxima.Core.Domain.Assets;
 using Proxima.Core.Domain.Transactions;
+using Proxima.App.Common.Commands;
 
 namespace Proxima.App.Views.Assets;
 
@@ -31,7 +32,8 @@ public sealed class AssetsViewModel : ViewModelBase
     private readonly IMarketSymbolSearchService _symbolSearchService;
     private readonly IAppNotificationCenter _notificationCenter;
     private readonly IReportService _reportService;
-    private readonly TaxesViewModel.ITaxesReadModelProvider _taxesProvider;
+    private readonly ITaxService _taxService;
+    private readonly IRuntimeUserContext _userContext;
     private readonly IExchangeRateProvider _exchangeRateProvider;
     private readonly AsyncCommand _loadCommand;
     private readonly AsyncCommand _addManualTransactionCommand;
@@ -81,7 +83,8 @@ public sealed class AssetsViewModel : ViewModelBase
         IMarketSymbolSearchService symbolSearchService,
         IAppNotificationCenter notificationCenter,
         IReportService reportService,
-        TaxesViewModel.ITaxesReadModelProvider taxesProvider,
+        ITaxService taxService,
+        IRuntimeUserContext userContext,
         IExchangeRateProvider exchangeRateProvider)
     {
         _navigation = navigation;
@@ -93,7 +96,8 @@ public sealed class AssetsViewModel : ViewModelBase
         _symbolSearchService = symbolSearchService;
         _notificationCenter = notificationCenter;
         _reportService = reportService;
-        _taxesProvider = taxesProvider;
+        _taxService = taxService;
+        _userContext = userContext;
         _exchangeRateProvider = exchangeRateProvider;
 
         ManualTransactionTypeOptions =
@@ -1210,7 +1214,9 @@ public sealed class AssetsViewModel : ViewModelBase
     {
         try
         {
-            TaxScreenReadModel taxModel = await _taxesProvider.GetAsync(DateTime.UtcNow.Year, CancellationToken.None).ConfigureAwait(true);
+            TaxOverview taxModel = await _taxService
+                .GetOverviewAsync(_shellState.CurrentPortfolioId, _userContext.UserId, DateTime.UtcNow.Year, CancellationToken.None)
+                .ConfigureAwait(true);
             if (taxModel.IsEmpty || taxModel.TotalTaxDue <= 0m)
             {
                 return 0m;
@@ -1433,37 +1439,7 @@ public sealed class AssetsViewModel : ViewModelBase
         Change24H,
     }
 
-    private sealed class DelegateCommand(Action<object?> execute) : ICommand
-    {
-        private readonly Action<object?> _execute = execute;
 
-        public event EventHandler? CanExecuteChanged
-        {
-            add { }
-            remove { }
-        }
-
-        public bool CanExecute(object? parameter) => true;
-
-        public void Execute(object? parameter) => _execute(parameter);
-    }
-
-    private sealed class AsyncCommand(Func<Task> execute, Func<bool> canExecute) : ICommand
-    {
-        private readonly Func<Task> _execute = execute;
-        private readonly Func<bool> _canExecute = canExecute;
-
-        public event EventHandler? CanExecuteChanged;
-
-        public bool CanExecute(object? parameter) => _canExecute();
-
-        public async void Execute(object? parameter)
-        {
-            await _execute().ConfigureAwait(true);
-        }
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-    }
 }
 
 public sealed class ManualTransactionTypeOption(string label, TransactionType type)
@@ -1513,9 +1489,9 @@ public sealed class AssetListItemViewModel : ViewModelBase
         _open = open;
         _edit = edit;
         _delete = delete;
-        OpenCommand = new RowCommand(_ => _open());
-        EditCommand = new RowCommand(_ => _edit());
-        DeleteCommand = new RowCommand(_ => _delete());
+        OpenCommand = new DelegateCommand(_ => _open());
+        EditCommand = new DelegateCommand(_ => _edit());
+        DeleteCommand = new DelegateCommand(_ => _delete());
     }
 
     public Guid Id { get; }
@@ -1669,18 +1645,4 @@ public sealed class AssetListItemViewModel : ViewModelBase
         return string.Create(CultureInfo.InvariantCulture, $"{symbol}{value:N2}");
     }
 
-    private sealed class RowCommand(Action<object?> execute) : ICommand
-    {
-        private readonly Action<object?> _execute = execute;
-
-        public event EventHandler? CanExecuteChanged
-        {
-            add { }
-            remove { }
-        }
-
-        public bool CanExecute(object? parameter) => true;
-
-        public void Execute(object? parameter) => _execute(parameter);
-    }
 }

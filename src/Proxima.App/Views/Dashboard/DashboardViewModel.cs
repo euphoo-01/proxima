@@ -1,8 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Input;
-using Avalonia.Media;
 using Proxima.Core.Application.Analytics.Dashboard;
+using Proxima.Core.Application.Dashboard;
+using Proxima.App.Common.Commands;
 using Proxima.App.Navigation;
 using Proxima.App.Shell;
 using Proxima.App.ViewModels;
@@ -15,36 +16,36 @@ public sealed class DashboardViewModel : ViewModelBase
 {
     private static readonly string[] AllocationPalette = ["#003658", "#1D7329", "#B7D5E4", "#A67C00", "#7158E2", "#7D8793"];
 
-    private readonly IDashboardDataProvider _dataProvider;
+    private readonly IDashboardService _dashboardService;
     private readonly IShellState _shellState;
     private readonly IAppNavigationService _navigation;
     private readonly ITransactionService _transactionService;
     private readonly IRuntimeDataInvalidation _dataInvalidation;
-    private readonly DelegateCommand _selectTimeframeCommand;
-    private readonly DelegateCommand _rowMoreCommand;
-    private readonly DelegateCommand _moreTransactionsCommand;
+    private readonly RelayCommand _selectTimeframeCommand;
+    private readonly RelayCommand _rowMoreCommand;
+    private readonly RelayCommand _moreTransactionsCommand;
     private IReadOnlyList<DashboardTransactionRowViewModel> _allTransactions = [];
-    private DashboardSnapshot _snapshot = DashboardSnapshot.Empty("USD");
+    private DashboardOverview _overview = DashboardOverview.Empty("USD");
     private bool _isShowingAllTransactions;
     private string _searchQuery = string.Empty;
     private string _selectedTimeframe = "1д";
 
     public DashboardViewModel(
-        IDashboardDataProvider dataProvider,
+        IDashboardService dashboardService,
         IShellState shellState,
         IRuntimeDataInvalidation dataInvalidation,
         IAppNavigationService navigation,
         ITransactionService transactionService)
     {
-        _dataProvider = dataProvider;
+        _dashboardService = dashboardService;
         _shellState = shellState;
         _navigation = navigation;
         _transactionService = transactionService;
         _dataInvalidation = dataInvalidation;
 
-        _selectTimeframeCommand = new DelegateCommand(SelectTimeframe);
-        _rowMoreCommand = new DelegateCommand(_ => { });
-        _moreTransactionsCommand = new DelegateCommand(_ => ToggleTransactionsLimit());
+        _selectTimeframeCommand = new RelayCommand(SelectTimeframe);
+        _rowMoreCommand = new RelayCommand(_ => { });
+        _moreTransactionsCommand = new RelayCommand(_ => ToggleTransactionsLimit());
 
         Timeframes =
         [
@@ -57,10 +58,10 @@ public sealed class DashboardViewModel : ViewModelBase
         AllocationRows = [];
         VisibleTransactions = [];
 
-        _shellState.PortfolioChanged += (_, _) => Load();
-        dataInvalidation.DataInvalidated += (_, _) => Load();
+        _shellState.PortfolioChanged += (_, _) => _ = LoadAsync();
+        dataInvalidation.DataInvalidated += (_, _) => _ = LoadAsync();
 
-        Load();
+        _ = LoadAsync();
     }
 
     public ObservableCollection<DashboardTimeframeViewModel> Timeframes { get; }
@@ -111,8 +112,8 @@ public sealed class DashboardViewModel : ViewModelBase
                     item.IsSelected = string.Equals(item.Label, normalized, StringComparison.OrdinalIgnoreCase);
                 }
 
-                BuildBars(_snapshot);
-                MonthlyGrowthText = FormatMoney(CalculatePeriodGrowth(SliceSeries(_snapshot.FallbackSeries, SelectedTimeframe)), _snapshot.Currency, showPlus: true);
+                BuildBars(_overview);
+                MonthlyGrowthText = FormatMoney(CalculatePeriodGrowth(SliceSeries(_overview.FallbackSeries, SelectedTimeframe)), _overview.Currency, showPlus: true);
                 OnPropertyChanged(nameof(MonthlyGrowthText));
             }
         }
@@ -126,29 +127,31 @@ public sealed class DashboardViewModel : ViewModelBase
 
     public string MoreTransactionsButtonText => _isShowingAllTransactions ? "Скрыть транзакции  ↑" : "Все транзакции  ↓";
 
-private void Load()
+    private async Task LoadAsync()
     {
         try
         {
-            _snapshot = _dataProvider.GetSnapshot();
+            _overview = await _dashboardService
+                .GetOverviewAsync(_shellState.CurrentPortfolioId)
+                .ConfigureAwait(true);
         }
         catch
         {
-            _snapshot = DashboardSnapshot.Empty("USD");
+            _overview = DashboardOverview.Empty("USD");
         }
 
-        decimal total = PortfolioDashboardCalculator.CalculateTotalValue(_snapshot.Assets);
-        TotalPortfolioValueText = FormatMoney(total, _snapshot.Currency);
+        decimal total = PortfolioDashboardCalculator.CalculateTotalValue(_overview.Assets);
+        TotalPortfolioValueText = FormatMoney(total, _overview.Currency);
 
-        Delta24h delta = PortfolioDashboardCalculator.Calculate24hDelta(_snapshot.Assets, _snapshot.PreviousQuotes);
+        Delta24h delta = PortfolioDashboardCalculator.Calculate24hDelta(_overview.Assets, _overview.PreviousQuotes);
         GrowthPillText = FormatDelta(delta);
-        MonthlyGrowthText = FormatMoney(CalculatePeriodGrowth(SliceSeries(_snapshot.FallbackSeries, SelectedTimeframe)), _snapshot.Currency, showPlus: true);
+        MonthlyGrowthText = FormatMoney(CalculatePeriodGrowth(SliceSeries(_overview.FallbackSeries, SelectedTimeframe)), _overview.Currency, showPlus: true);
 
-        BuildBars(_snapshot);
-        BuildAllocation(_snapshot);
-        BuildTransactions(_snapshot);
+        BuildBars(_overview);
+        BuildAllocation(_overview);
+        BuildTransactions(_overview);
         ApplyTransactionFilter();
-        BuildRiskAndBalanceSummary(_snapshot);
+        BuildRiskAndBalanceSummary(_overview);
 
         OnPropertyChanged(nameof(TotalPortfolioValueText));
         OnPropertyChanged(nameof(GrowthPillText));
@@ -159,7 +162,7 @@ private void Load()
         OnPropertyChanged(nameof(AllocationValues));
     }
 
-    private void BuildBars(DashboardSnapshot snapshot)
+    private void BuildBars(DashboardOverview snapshot)
     {
         Bars.Clear();
 
@@ -212,7 +215,7 @@ private void Load()
         return series.Skip(Math.Max(0, series.Count - take)).ToArray();
     }
 
-    private void BuildAllocation(DashboardSnapshot snapshot)
+    private void BuildAllocation(DashboardOverview snapshot)
     {
         AllocationRows.Clear();
 
@@ -239,7 +242,7 @@ private void Load()
         OnPropertyChanged(nameof(AllocationValues));
     }
 
-    private void BuildTransactions(DashboardSnapshot snapshot)
+    private void BuildTransactions(DashboardOverview snapshot)
     {
         _allTransactions = snapshot.Transactions
             .OrderByDescending(static item => item.TradeDate)
@@ -274,7 +277,7 @@ private void Load()
         }
     }
 
-    private void BuildRiskAndBalanceSummary(DashboardSnapshot snapshot)
+    private void BuildRiskAndBalanceSummary(DashboardOverview snapshot)
     {
         decimal total = snapshot.Assets.Sum(static asset => asset.Value);
         if (total <= 0m)
@@ -340,7 +343,7 @@ private void Load()
             : $"Крупнейшая доля: {allocation[0].Tag} — {topShare:0}%";
     }
 
-    private DashboardTransactionRowViewModel MapTransaction(DashboardTransactionSnapshot item)
+    private DashboardTransactionRowViewModel MapTransaction(DashboardTransactionRow item)
     {
         bool positive = item.GrossAmount >= 0m;
         string iconKind = ResolveIconKind(item.AssetName, item.Ticker);
@@ -349,7 +352,7 @@ private void Load()
             item.AssetName,
             FormatDate(item.TradeDate),
             item.TypeLabel,
-            FormatMoney(item.GrossAmount, _snapshot.Currency, showPlus: true),
+            FormatMoney(item.GrossAmount, _overview.Currency, showPlus: true),
             iconKind,
             positive,
             () => EditTransaction(item),
@@ -363,7 +366,7 @@ private void Load()
         ApplyTransactionFilter();
     }
 
-    private void EditTransaction(DashboardTransactionSnapshot transaction)
+    private void EditTransaction(DashboardTransactionRow transaction)
     {
         SearchQuery = transaction.AssetName;
     }
@@ -380,7 +383,7 @@ private void Load()
         }
 
         _dataInvalidation.Invalidate("dashboard-transaction-deleted");
-        Load();
+        _ = LoadAsync();
     }
 
     private void SelectTimeframe(object? parameter)
@@ -546,165 +549,4 @@ private void Load()
         };
     }
 
-    private sealed class DelegateCommand(Action<object?> execute) : ICommand
-    {
-        private readonly Action<object?> _execute = execute;
-
-        public event EventHandler? CanExecuteChanged
-        {
-            add { }
-            remove { }
-        }
-
-        public bool CanExecute(object? parameter) => true;
-
-        public void Execute(object? parameter) => _execute(parameter);
-    }
-
-}
-
-public interface IDashboardDataProvider
-{
-    DashboardSnapshot GetSnapshot();
-}
-
-public sealed record DashboardSnapshot(
-    string Currency,
-    IReadOnlyList<DashboardAssetSnapshot> Assets,
-    IReadOnlyList<DashboardQuoteSnapshot> PreviousQuotes,
-    IReadOnlyList<DashboardTransactionSnapshot> Transactions,
-    IReadOnlyList<decimal> FallbackSeries)
-{
-    public static DashboardSnapshot Empty(string currency) => new(currency, [], [], [], []);
-}
-
-public sealed class DashboardTimeframeViewModel : ViewModelBase
-{
-    private bool _isSelected;
-
-    public DashboardTimeframeViewModel(string label, bool isSelected)
-    {
-        Label = label;
-        _isSelected = isSelected;
-    }
-
-    public string Label { get; }
-
-    public bool IsSelected
-    {
-        get => _isSelected;
-        set => SetProperty(ref _isSelected, value);
-    }
-}
-
-public sealed record DashboardBarViewModel(
-    string Label,
-    double Height,
-    bool IsActive,
-    bool IsTooltipVisible,
-    string TooltipText);
-
-public sealed class DashboardAllocationRowViewModel
-{
-    public DashboardAllocationRowViewModel(string label, decimal value, decimal percent, string markerColor)
-    {
-        Label = label;
-        Value = value;
-        Percent = percent;
-        MarkerBrush = new SolidColorBrush(Color.Parse(markerColor));
-    }
-
-    public string Label { get; }
-
-    public decimal Value { get; }
-
-    public decimal Percent { get; }
-
-    public string PercentText => $"{Percent:0}%";
-
-    public IBrush MarkerBrush { get; }
-}
-
-public sealed class DashboardTransactionRowViewModel
-{
-    private readonly Action _edit;
-    private readonly Action _delete;
-
-    public DashboardTransactionRowViewModel(
-        Guid id,
-        string assetName,
-        string dateText,
-        string typeText,
-        string amountText,
-        string iconKind,
-        bool isPositiveAmount,
-        Action edit,
-        Action delete)
-    {
-        Id = id;
-        AssetName = assetName;
-        DateText = dateText;
-        TypeText = typeText;
-        AmountText = amountText;
-        IconKind = iconKind;
-        IsPositiveAmount = isPositiveAmount;
-        _edit = edit;
-        _delete = delete;
-        EditCommand = new RowCommand(_ => _edit());
-        DeleteCommand = new RowCommand(_ => _delete());
-    }
-
-    public Guid Id { get; }
-
-    public string AssetName { get; }
-
-    public string DateText { get; }
-
-    public string TypeText { get; }
-
-    public string AmountText { get; }
-
-    public string IconKind { get; }
-
-    public bool IsPositiveAmount { get; }
-
-    public ICommand EditCommand { get; }
-
-    public ICommand DeleteCommand { get; }
-
-    public bool IsBitcoin => IconKind.Equals("bitcoin", StringComparison.OrdinalIgnoreCase);
-
-    public bool IsSp => IconKind.Equals("sp", StringComparison.OrdinalIgnoreCase);
-
-    public bool IsBuy => TypeText.Contains("покуп", StringComparison.OrdinalIgnoreCase);
-
-    public bool IsDividend => TypeText.Contains("дивид", StringComparison.OrdinalIgnoreCase)
-        || TypeText.Contains("staking", StringComparison.OrdinalIgnoreCase)
-        || TypeText.Contains("airdrop", StringComparison.OrdinalIgnoreCase);
-
-    public bool IsSell => TypeText.Contains("продаж", StringComparison.OrdinalIgnoreCase)
-        || TypeText.Contains("комисс", StringComparison.OrdinalIgnoreCase)
-        || TypeText.Contains("налог", StringComparison.OrdinalIgnoreCase);
-
-    public string IconText => IconKind.ToLowerInvariant() switch
-    {
-        "bitcoin" => "₿",
-        "sp" => "S&P",
-        _ => IconKind.Length <= 3 ? IconKind : IconKind[..3]
-    };
-
-    private sealed class RowCommand(Action<object?> execute) : ICommand
-    {
-        private readonly Action<object?> _execute = execute;
-
-        public event EventHandler? CanExecuteChanged
-        {
-            add { }
-            remove { }
-        }
-
-        public bool CanExecute(object? parameter) => true;
-
-        public void Execute(object? parameter) => _execute(parameter);
-    }
 }

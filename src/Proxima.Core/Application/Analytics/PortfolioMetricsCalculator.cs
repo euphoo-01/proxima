@@ -1,6 +1,6 @@
-namespace Proxima.Core.Application.Analytics.Engine;
+namespace Proxima.Core.Application.Analytics;
 
-public static class PortfolioAnalyticsEngine
+public static class PortfolioMetricsCalculator
 {
     public static decimal TotalValue(IEnumerable<PositionInput> positions, decimal cash = 0m)
     {

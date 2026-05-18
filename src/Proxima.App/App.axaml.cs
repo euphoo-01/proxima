@@ -7,6 +7,7 @@ using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Proxima.App.Composition;
 using Proxima.App.Shell;
+using Proxima.App.Auth;
 using Proxima.App.Views.Auth;
 using Proxima.Core.Application.Auth;
 using Proxima.Core.Application.Settings;

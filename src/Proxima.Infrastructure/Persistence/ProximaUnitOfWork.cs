@@ -72,10 +72,6 @@ public sealed class ProximaUnitOfWorkFactory(DatabaseBootstrapService db, IProxi
             await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
             return result;
         }
-        catch
-        {
-            throw;
-        }
         finally
         {
             accessor.Current = previous;

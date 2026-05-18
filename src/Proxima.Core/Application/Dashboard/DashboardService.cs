@@ -1,50 +1,49 @@
 using Proxima.Core.Application.Analytics.Dashboard;
-using Proxima.App.Shell;
 using Proxima.Core.Application.Assets;
 using Proxima.Core.Application.Quotes;
 using Proxima.Core.Application.Transactions;
 using Proxima.Core.Domain.Assets;
 using Proxima.Core.Domain.Transactions;
 
-namespace Proxima.App.Views.Dashboard;
+namespace Proxima.Core.Application.Dashboard;
 
-public sealed class RuntimeDashboardDataProvider(
+public sealed class DashboardService(
     IAssetService assetService,
     ITransactionService transactionService,
-    IQuoteCacheRepository quoteCacheRepository,
-    IShellState shellState)
-    : IDashboardDataProvider
+    IQuoteCacheRepository quoteCacheRepository) : IDashboardService
 {
-    public DashboardSnapshot GetSnapshot()
+    public async Task<DashboardOverview> GetOverviewAsync(Guid portfolioId, CancellationToken cancellationToken = default)
     {
-        return GetSnapshotAsync(CancellationToken.None).GetAwaiter().GetResult();
-    }
-
-    private async Task<DashboardSnapshot> GetSnapshotAsync(CancellationToken cancellationToken)
-    {
-        Guid portfolioId = shellState.CurrentPortfolioId;
         if (portfolioId == Guid.Empty)
         {
-            return DashboardSnapshot.Empty("USD");
+            return DashboardOverview.Empty("USD");
         }
 
-        IReadOnlyList<Asset> assets = await assetService.ListActiveAsync(portfolioId, cancellationToken).ConfigureAwait(false);
-        IReadOnlyList<PortfolioTransaction> transactions = await transactionService.ListActiveAsync(portfolioId, cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<Asset> assets = await assetService
+            .ListActiveAsync(portfolioId, cancellationToken)
+            .ConfigureAwait(false);
+
+        IReadOnlyList<PortfolioTransaction> transactions = await transactionService
+            .ListActiveAsync(portfolioId, cancellationToken)
+            .ConfigureAwait(false);
 
         Dictionary<Guid, Asset> assetById = assets.ToDictionary(static asset => asset.Id, static asset => asset);
-        List<DashboardQuoteSnapshot> previousQuotes = [];
+        List<DashboardQuoteRow> previousQuotes = [];
 
         foreach (Asset asset in assets)
         {
-            QuoteCacheEntry? quote = await quoteCacheRepository.FindLatestByAssetIdAsync(asset.Id, cancellationToken).ConfigureAwait(false);
+            QuoteCacheEntry? quote = await quoteCacheRepository
+                .FindLatestByAssetIdAsync(asset.Id, cancellationToken)
+                .ConfigureAwait(false);
+
             if (quote is not null)
             {
-                previousQuotes.Add(new DashboardQuoteSnapshot(asset.Id, quote.Price, quote.Timestamp));
+                previousQuotes.Add(new DashboardQuoteRow(asset.Id, quote.Price, quote.Timestamp));
             }
         }
 
-        DashboardAssetSnapshot[] assetSnapshots = assets
-            .Select(asset => new DashboardAssetSnapshot(
+        DashboardAssetRow[] assetSnapshots = assets
+            .Select(asset => new DashboardAssetRow(
                 asset.Id,
                 string.IsNullOrWhiteSpace(asset.Name) ? asset.Ticker : asset.Name,
                 MapAssetType(asset.Type),
@@ -54,7 +53,7 @@ public sealed class RuntimeDashboardDataProvider(
                 NormalizeTags(asset)))
             .ToArray();
 
-        DashboardTransactionSnapshot[] transactionSnapshots = transactions
+        DashboardTransactionRow[] transactionSnapshots = transactions
             .OrderByDescending(static tx => tx.TradeDate)
             .Select(tx => MapTransaction(tx, assetById))
             .ToArray();
@@ -62,10 +61,10 @@ public sealed class RuntimeDashboardDataProvider(
         IReadOnlyList<decimal> series = BuildPortfolioSeries(assetSnapshots, transactions);
         string currency = assets.FirstOrDefault()?.Currency ?? "USD";
 
-        return new DashboardSnapshot(currency, assetSnapshots, previousQuotes, transactionSnapshots, series);
+        return new DashboardOverview(currency, assetSnapshots, previousQuotes, transactionSnapshots, series);
     }
 
-    private static DashboardTransactionSnapshot MapTransaction(PortfolioTransaction tx, IReadOnlyDictionary<Guid, Asset> assetById)
+    private static DashboardTransactionRow MapTransaction(PortfolioTransaction tx, IReadOnlyDictionary<Guid, Asset> assetById)
     {
         Asset? asset = tx.AssetId is null ? null : assetById.GetValueOrDefault(tx.AssetId.Value);
         string name = asset?.Name ?? tx.Type switch
@@ -80,7 +79,7 @@ public sealed class RuntimeDashboardDataProvider(
         string ticker = asset?.Ticker ?? tx.Currency;
         decimal signedAmount = ToSignedAmount(tx);
 
-        return new DashboardTransactionSnapshot(
+        return new DashboardTransactionRow(
             tx.Id,
             name,
             ticker,
@@ -106,7 +105,7 @@ public sealed class RuntimeDashboardDataProvider(
         };
     }
 
-    private static IReadOnlyList<decimal> BuildPortfolioSeries(IReadOnlyList<DashboardAssetSnapshot> assets, IReadOnlyList<PortfolioTransaction> transactions)
+    private static IReadOnlyList<decimal> BuildPortfolioSeries(IReadOnlyList<DashboardAssetRow> assets, IReadOnlyList<PortfolioTransaction> transactions)
     {
         decimal currentTotal = assets.Sum(static asset => asset.Value);
         if (currentTotal <= 0m)

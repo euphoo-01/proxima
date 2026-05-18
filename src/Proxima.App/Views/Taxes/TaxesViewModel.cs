@@ -4,10 +4,9 @@ using System.Windows.Input;
 using Proxima.App.Shell;
 using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
-using Proxima.App.Views.Auth;
+using Proxima.App.Auth;
 using Proxima.Core.Application.Taxes;
-using Proxima.Core.Application.Transactions;
-using Proxima.Core.Application.Reporting;
+using Proxima.App.Common.Commands;
 
 namespace Proxima.App.Views.Taxes;
 
@@ -19,9 +18,9 @@ public enum TaxRecalculationNotificationMode
 
 public sealed class TaxesViewModel : ViewModelBase
 {
-    private const string BaseCurrency = "BYN";
-
-    private readonly ITaxesReadModelProvider _provider;
+    private readonly ITaxService _taxService;
+    private readonly IShellState _shellState;
+    private readonly IRuntimeUserContext _userContext;
     private readonly IAppNotificationCenter _notificationCenter;
     private readonly DelegateCommand _recalculateCommand;
     private readonly DelegateCommand _exportPdfCommand;
@@ -49,7 +48,7 @@ public sealed class TaxesViewModel : ViewModelBase
     private decimal _exemptionAmount;
     private decimal _incomeThreshold = 350_000m;
     private int _transactionCount;
-    private string _currency = BaseCurrency;
+    private string _currency = "BYN";
     private string _summaryStatus = "Ожидается";
     private string _rateSourceText = "Источник курса не выбран";
     private string _calculationVersion = "tax-draft-v1";
@@ -57,9 +56,15 @@ public sealed class TaxesViewModel : ViewModelBase
     private string _currentTaxProfileDescription = "Подтягивается из профиля пользователя";
     private string _taxDisclaimer = "Расчет носит информационный характер и не является юридической консультацией.";
 
-    public TaxesViewModel(ITaxesReadModelProvider provider, IAppNotificationCenter notificationCenter)
+    public TaxesViewModel(
+        ITaxService taxService,
+        IShellState shellState,
+        IRuntimeUserContext userContext,
+        IAppNotificationCenter notificationCenter)
     {
-        _provider = provider;
+        _taxService = taxService;
+        _shellState = shellState;
+        _userContext = userContext;
         _notificationCenter = notificationCenter;
 
         Years = BuildYears(DateTime.UtcNow.Year);
@@ -413,7 +418,9 @@ public Task RefreshOnPageEnterAsync()
 
         try
         {
-            TaxScreenReadModel model = await _provider.GetAsync(SelectedYear, CancellationToken.None).ConfigureAwait(true);
+            TaxOverview model = await _taxService
+                .GetOverviewAsync(_shellState.CurrentPortfolioId, _userContext.UserId, SelectedYear, CancellationToken.None)
+                .ConfigureAwait(true);
 
             BreakdownRows.Clear();
             foreach (TaxBreakdownRow row in model.Breakdown)
@@ -492,7 +499,9 @@ public Task RefreshOnPageEnterAsync()
 
         try
         {
-            TaxExportResult result = await _provider.ExportPdfAsync(SelectedYear, CancellationToken.None).ConfigureAwait(true);
+            TaxExportResult result = await _taxService
+                .ExportPdfAsync(_shellState.CurrentPortfolioId, _shellState.CurrentPortfolioName, _userContext.UserId, SelectedYear, CancellationToken.None)
+                .ConfigureAwait(true);
             ExportStatusMessage = result.Message;
             StatusMessage = result.Message;
             await _notificationCenter.NotifyAsync(
@@ -515,7 +524,7 @@ public Task RefreshOnPageEnterAsync()
     }
 
 
-    private static bool ShouldNotifySuccessfulCalculation(TaxRecalculationNotificationMode mode, TaxScreenReadModel model)
+    private static bool ShouldNotifySuccessfulCalculation(TaxRecalculationNotificationMode mode, TaxOverview model)
     {
         if (model.IsEmpty)
         {
@@ -555,332 +564,4 @@ public Task RefreshOnPageEnterAsync()
         return string.Create(CultureInfo.InvariantCulture, $"{value:N2} {currency}");
     }
 
-    public interface ITaxesReadModelProvider
-    {
-        Task<TaxScreenReadModel> GetAsync(int year, CancellationToken cancellationToken);
-
-        Task<TaxExportResult> ExportPdfAsync(int year, CancellationToken cancellationToken);
-    }
-
-    public sealed class AppTaxesReadModelProvider : ITaxesReadModelProvider
-    {
-        private readonly ITransactionService _transactions;
-        private readonly ITaxCalculator _taxCalculator;
-        private readonly IReportService _reportService;
-        private readonly IShellState _shellState;
-        private readonly IRuntimeUserContext _userContext;
-
-        public AppTaxesReadModelProvider(
-            ITransactionService transactions,
-            ITaxCalculator taxCalculator,
-            IReportService reportService,
-            IShellState shellState,
-            IRuntimeUserContext userContext)
-        {
-            _transactions = transactions;
-            _taxCalculator = taxCalculator;
-            _reportService = reportService;
-            _shellState = shellState;
-            _userContext = userContext;
-        }
-
-        public async Task<TaxScreenReadModel> GetAsync(int year, CancellationToken cancellationToken)
-        {
-            LegalProfileType profile = ResolveProfile(_userContext.UserId);
-            TaxProfileDescriptor descriptor = DescribeProfile(profile);
-
-            IReadOnlyList<Proxima.Core.Domain.Transactions.PortfolioTransaction> transactions = await _transactions
-                .ListActiveAsync(_shellState.CurrentPortfolioId, cancellationToken)
-                .ConfigureAwait(false);
-
-            if (transactions.Count == 0)
-            {
-                return TaxScreenReadModel.Empty("Нет транзакций для расчета налогов. Добавьте сделки, дивиденды или комиссии в портфель.", descriptor);
-            }
-
-            List<TaxTransactionSnapshot> snapshots = transactions
-                .Select(item => new TaxTransactionSnapshot(
-                    item.AssetId,
-                    item.TradeDate,
-                    item.Type,
-                    item.Quantity,
-                    item.Price,
-                    item.GrossAmount,
-                    item.FeeAmount,
-                    item.TaxAmount,
-                    item.Currency))
-                .ToList();
-
-            int yearTransactionCount = snapshots.Count(item => item.TradeDate.Year == year);
-            if (yearTransactionCount == 0)
-            {
-                return TaxScreenReadModel.Empty($"За {year} год нет транзакций для расчета налогов.", descriptor);
-            }
-
-            TaxCalculationResult calculation = await _taxCalculator
-                .CalculateAsync(snapshots, year, profile, BaseCurrency, cancellationToken)
-                .ConfigureAwait(false);
-
-            bool offlineRate = !calculation.Succeeded || calculation.RateSource.Contains("mock", StringComparison.OrdinalIgnoreCase);
-            string offlineRateMessage = offlineRate
-                ? "НБРБ и Belarusbank не вернули курс для части операций. В расчете использован fallback — перепроверьте суммы перед подачей декларации."
-                : string.Empty;
-
-            IReadOnlyList<TaxBreakdownRow> rows = BuildBreakdownRows(calculation);
-            IReadOnlyList<TaxBreakdownRow> taxRows = BuildTaxBreakdownRows(calculation, descriptor);
-
-            string status = calculation.Succeeded ? "Ожидается" : "Требуется проверка";
-            string rateText = BuildRateSourceText(calculation);
-
-            return new TaxScreenReadModel(
-                IsEmpty: false,
-                Message: calculation.Message,
-                Status: status,
-                Currency: BaseCurrency,
-                TaxableBase: calculation.TaxableBase,
-                TotalTaxDue: calculation.TaxDue,
-                TaxSaved: calculation.TaxSaved,
-                RealizedGains: calculation.RealizedGains,
-                Dividends: calculation.Dividends,
-                Fees: calculation.Fees,
-                CurrencyEffect: calculation.CurrencyEffect,
-                Losses: calculation.Losses,
-                BaseRatePercent: calculation.RuleSet.BaseRatePercent,
-                DividendRatePercent: calculation.RuleSet.DividendRatePercent,
-                ExemptionAmount: calculation.RuleSet.ExemptionAmount,
-                IncomeThreshold: calculation.RuleSet.FirstThreshold,
-                TransactionCount: yearTransactionCount,
-                RateSourceText: rateText,
-                CalculationVersion: calculation.RuleSet.Version,
-                ProfileName: descriptor.Name,
-                ProfileDescription: descriptor.Description,
-                IsOfflineRate: offlineRate,
-                OfflineRateMessage: offlineRateMessage,
-                Breakdown: rows,
-                TaxBreakdown: taxRows,
-                LegalDisclaimer: calculation.RuleSet.Disclaimer);
-        }
-
-        public async Task<TaxExportResult> ExportPdfAsync(int year, CancellationToken cancellationToken)
-        {
-            TaxScreenReadModel model = await GetAsync(year, cancellationToken).ConfigureAwait(false);
-            if (model.IsEmpty)
-            {
-                return new TaxExportResult(false, model.Message);
-            }
-
-            string portfolioName = string.IsNullOrWhiteSpace(_shellState.CurrentPortfolioName)
-                ? "Основной портфель"
-                : _shellState.CurrentPortfolioName;
-
-            TaxReportRequest request = new(
-                UserDisplayName: portfolioName,
-                TaxProfile: model.ProfileName,
-                TaxProfileDescription: model.ProfileDescription,
-                Year: year,
-                TaxableBase: model.TaxableBase,
-                TotalTaxDue: model.TotalTaxDue,
-                TaxSaved: model.TaxSaved,
-                Dividends: model.Dividends,
-                RealizedGains: model.RealizedGains,
-                Fees: model.Fees,
-                Losses: model.Losses,
-                CurrencyEffect: model.CurrencyEffect,
-                BaseRatePercent: model.BaseRatePercent,
-                DividendRatePercent: model.DividendRatePercent,
-                IncomeThreshold: model.IncomeThreshold,
-                TransactionCount: model.TransactionCount,
-                Currency: model.Currency,
-                ExchangeRateNotes: model.RateSourceText,
-                CalculationVersion: model.CalculationVersion,
-                LegalDisclaimer: model.LegalDisclaimer,
-                CalculationBreakdown: model.Breakdown.Select(ToReportLine).ToList(),
-                TaxBreakdown: model.TaxBreakdown.Select(ToReportLine).ToList(),
-                OutputDirectory: string.Empty);
-
-            ReportExportResult export = await _reportService.ExportTaxPdfAsync(request, cancellationToken).ConfigureAwait(false);
-            string message = export.Succeeded
-                ? $"Отчет сохранен: {export.OutputPath}"
-                : export.Message;
-
-            return new TaxExportResult(export.Succeeded, message);
-        }
-
-
-        private static TaxReportLine ToReportLine(TaxBreakdownRow row)
-        {
-            return new TaxReportLine(row.Name, row.Value, row.Note, row.Kind.ToString());
-        }
-
-        private static IReadOnlyList<TaxBreakdownRow> BuildBreakdownRows(TaxCalculationResult calculation)
-        {
-            return
-            [
-                new TaxBreakdownRow("Реализованная прибыль", calculation.RealizedGains, "FIFO-оценка продаж активов за выбранный год", TaxBreakdownKind.Income),
-                new TaxBreakdownRow("Дивиденды и доходы", calculation.Dividends, "Дивиденды, купоны, airdrop и staking reward", TaxBreakdownKind.Income),
-                new TaxBreakdownRow("Курсовая разница", calculation.CurrencyEffect, "Конвертация операций в BYN по курсу на дату операции", TaxBreakdownKind.Currency),
-                new TaxBreakdownRow("Комиссии и удержания", -calculation.Fees, "Комиссии брокера и удержанный за рубежом налог", TaxBreakdownKind.Deduction),
-                new TaxBreakdownRow("Льготы / зачет", calculation.TaxSaved, "Зачет иностранного налога и расходы текущего периода", TaxBreakdownKind.Benefit),
-                new TaxBreakdownRow("Убытки текущего года", calculation.Losses, "Отрицательный результат продаж, уменьшающий базу в черновике", TaxBreakdownKind.Deduction)
-            ];
-        }
-
-        private static IReadOnlyList<TaxBreakdownRow> BuildTaxBreakdownRows(TaxCalculationResult calculation, TaxProfileDescriptor descriptor)
-        {
-            decimal grossTaxBeforeBenefits = calculation.TaxDue + calculation.TaxSaved;
-            return
-            [
-                new TaxBreakdownRow("Профиль", 0m, descriptor.Name, TaxBreakdownKind.Info),
-                new TaxBreakdownRow("База", calculation.TaxableBase, descriptor.TaxBaseNote, TaxBreakdownKind.Income),
-                new TaxBreakdownRow("Налог до зачета", grossTaxBeforeBenefits, "Оценка по ставкам выбранного профиля", TaxBreakdownKind.Income),
-                new TaxBreakdownRow("Зачет / льготы", -calculation.TaxSaved, "Удержанный иностранный налог и допустимые расходы", TaxBreakdownKind.Benefit),
-                new TaxBreakdownRow("К уплате", calculation.TaxDue, "Итоговая оценка налога по текущему портфелю", TaxBreakdownKind.Income)
-            ];
-        }
-
-        private static string BuildRateSourceText(TaxCalculationResult calculation)
-        {
-            string source = string.IsNullOrWhiteSpace(calculation.RateSource)
-                ? "источник не указан"
-                : calculation.RateSource;
-
-            return calculation.RateDate is null
-                ? $"Курс: {source}"
-                : $"Курс: {source}, дата {calculation.RateDate.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture)}";
-        }
-
-        private static LegalProfileType ResolveProfile(Guid userId)
-        {
-            if (userId == Guid.Empty)
-            {
-                return LegalProfileType.PhysicalPerson;
-            }
-
-            string path = Path.Combine(GetProfileExtrasDirectory(), $"{userId:N}.legal-profile");
-            if (!File.Exists(path))
-            {
-                return LegalProfileType.PhysicalPerson;
-            }
-
-            string raw = File.ReadAllText(path).Trim();
-            return raw switch
-            {
-                "PhysicalPerson" => LegalProfileType.PhysicalPerson,
-                "SelfEmployed" => LegalProfileType.SelfEmployed,
-                "SoleProprietor" => LegalProfileType.IndividualEntrepreneur,
-                "Company" => LegalProfileType.LLC,
-                _ => LegalProfileType.PhysicalPerson,
-            };
-        }
-
-        private static TaxProfileDescriptor DescribeProfile(LegalProfileType profile)
-        {
-            return profile switch
-            {
-                LegalProfileType.SelfEmployed => new TaxProfileDescriptor("Самозанятый", "Налог на профессиональный доход: 10%, затем 20% после 60 000 BYN.", "Профессиональный доход, рассчитанный по поступлениям портфеля."),
-                LegalProfileType.IndividualEntrepreneur => new TaxProfileDescriptor("Индивидуальный предприниматель", "Подоходный налог ИП: 20%, повышенная зона после 500 000 BYN.", "Предпринимательский доход за вычетом расходов и убытков."),
-                LegalProfileType.LLC or LegalProfileType.JSC => new TaxProfileDescriptor("ООО", "Налог на прибыль организаций: базовая ставка 20%.", "Прибыль организации от операций портфеля."),
-                _ => new TaxProfileDescriptor("Физическое лицо", "Подоходный налог: 13%, 25% после 350 000 BYN, 30% после 600 000 BYN.", "Инвестиционный доход физического лица-резидента РБ."),
-            };
-        }
-
-        private static string GetProfileExtrasDirectory()
-        {
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Proxima",
-                "Profile");
-        }
-    }
-
-private sealed class DelegateCommand(Action<object?> execute, Predicate<object?>? canExecute = null) : ICommand
-    {
-        private readonly Action<object?> _execute = execute;
-        private readonly Predicate<object?>? _canExecute = canExecute;
-
-        public event EventHandler? CanExecuteChanged;
-
-        public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
-
-        public void Execute(object? parameter) => _execute(parameter);
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-    }
 }
-
-public enum TaxBreakdownKind
-{
-    Income,
-    Currency,
-    Deduction,
-    Benefit,
-    Info,
-}
-
-public sealed record TaxProfileDescriptor(string Name, string Description, string TaxBaseNote);
-
-public sealed record TaxScreenReadModel(
-    bool IsEmpty,
-    string Message,
-    string Status,
-    string Currency,
-    decimal TaxableBase,
-    decimal TotalTaxDue,
-    decimal TaxSaved,
-    decimal RealizedGains,
-    decimal Dividends,
-    decimal Fees,
-    decimal CurrencyEffect,
-    decimal Losses,
-    decimal BaseRatePercent,
-    decimal DividendRatePercent,
-    decimal ExemptionAmount,
-    decimal IncomeThreshold,
-    int TransactionCount,
-    string RateSourceText,
-    string CalculationVersion,
-    string ProfileName,
-    string ProfileDescription,
-    bool IsOfflineRate,
-    string OfflineRateMessage,
-    IReadOnlyList<TaxBreakdownRow> Breakdown,
-    IReadOnlyList<TaxBreakdownRow> TaxBreakdown,
-    string LegalDisclaimer)
-{
-    public static TaxScreenReadModel Empty(string message, TaxProfileDescriptor descriptor)
-    {
-        return new TaxScreenReadModel(
-            true,
-            message,
-            "Нет данных",
-            "BYN",
-            0m,
-            0m,
-            0m,
-            0m,
-            0m,
-            0m,
-            0m,
-            0m,
-            13m,
-            13m,
-            0m,
-            350_000m,
-            0,
-            "Курс: не требуется",
-            "tax-draft-v1",
-            descriptor.Name,
-            descriptor.Description,
-            false,
-            string.Empty,
-            [],
-            [],
-            "Расчет носит информационный характер и не является юридической консультацией.");
-    }
-}
-
-public sealed record TaxBreakdownRow(string Name, decimal Value, string Note, TaxBreakdownKind Kind);
-
-public sealed record TaxBreakdownRowViewModel(string Name, string ValueText, string Note, TaxBreakdownKind Kind);
-
-public sealed record TaxExportResult(bool Succeeded, string Message);

@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using Proxima.App.ViewModels;
-using Proxima.App.Views.Auth;
+using Proxima.App.Auth;
 using Proxima.Core.Application.Notifications;
 using Proxima.Core.Domain.Notifications;
 

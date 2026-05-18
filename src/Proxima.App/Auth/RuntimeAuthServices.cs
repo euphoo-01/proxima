@@ -2,7 +2,7 @@ using Proxima.Core.Application.Auth;
 using Proxima.Core.Application.Settings;
 using Proxima.Core.Domain.Auth;
 
-namespace Proxima.App.Views.Auth;
+namespace Proxima.App.Auth;
 
 public interface IRuntimeUserContext
 {
@@ -121,6 +121,18 @@ public sealed record RuntimeAuthBootstrapResult(bool IsFirstRunRequired)
     public static RuntimeAuthBootstrapResult ReadyForUnlock() => new(false);
 
     public static RuntimeAuthBootstrapResult FirstRunRequired() => new(true);
+}
+
+public interface IAuthGateService
+{
+    Task<AuthGateResult> UnlockAsync(string loginOrEmail, string password, CancellationToken cancellationToken = default);
+}
+
+public sealed record AuthGateResult(bool Succeeded, string ErrorMessage)
+{
+    public static AuthGateResult Success() => new(true, string.Empty);
+
+    public static AuthGateResult Fail(string message) => new(false, message);
 }
 
 public sealed class LocalProfileAuthGateService(

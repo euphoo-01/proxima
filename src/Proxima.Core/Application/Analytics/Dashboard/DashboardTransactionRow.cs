@@ -1,6 +1,6 @@
 namespace Proxima.Core.Application.Analytics.Dashboard;
 
-public sealed record DashboardTransactionSnapshot(
+public sealed record DashboardTransactionRow(
     Guid TransactionId,
     string AssetName,
     string Ticker,

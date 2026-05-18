@@ -2,28 +2,26 @@ using System.Globalization;
 using Proxima.Core.Application.Analytics.AssetDetails;
 using Proxima.Core.Application.AssetDetails;
 using Proxima.Core.Application.Assets;
-using Proxima.Core.Application.Portfolios;
 using Proxima.Core.Application.Quotes;
 using Proxima.Core.Application.Transactions;
 using Proxima.Core.Domain.Assets;
 using Proxima.Core.Domain.Transactions;
 
-namespace Proxima.Infrastructure.AssetDetails;
+namespace Proxima.Core.Application.AssetDetails;
 
 public sealed class AssetDetailsService(
-    ICurrentPortfolioContext portfolioContext,
     IAssetRepository assetRepository,
     ITransactionRepository transactionRepository,
     IQuoteCacheRepository quoteCacheRepository,
     IQuoteProvider quoteProvider,
-    TwelveDataAssetMarketDataProvider marketDataProvider) : IAssetDetailsService
+    IAssetMarketDataProvider marketDataProvider) : IAssetDetailsService
 {
-    public async Task<AssetDetailsReadModel?> GetAsync(
+    public async Task<AssetDetailsOverview?> GetOverviewAsync(
+        Guid portfolioId,
         Guid assetId,
         string timeframe,
         CancellationToken cancellationToken = default)
     {
-        Guid portfolioId = portfolioContext.CurrentPortfolioId;
 
         Asset? asset = await assetRepository
             .FindByIdAsync(portfolioId, assetId, cancellationToken)
@@ -95,10 +93,10 @@ public sealed class AssetDetailsService(
                 .ConfigureAwait(false);
         }
 
-        TwelveDataAssetMarketData? marketData = IsBaseCurrencyPair(quoteSymbol)
+        AssetMarketData? marketData = IsBaseCurrencyPair(quoteSymbol)
             ? null
             : await marketDataProvider
-                .TryLoadAsync(quoteSymbol, NormalizeTimeframe(timeframe), cancellationToken)
+                .GetAsync(quoteSymbol, NormalizeTimeframe(timeframe), cancellationToken)
                 .ConfigureAwait(false);
 
         string currency = cachedQuote?.Currency
@@ -198,7 +196,7 @@ public sealed class AssetDetailsService(
                 ? $"Источник: {cachedQuote.Source} + PostgreSQL"
                 : "Источник: PostgreSQL + локальная оценка");
 
-        return new AssetDetailsReadModel(
+        return new AssetDetailsOverview(
             asset.Id,
             assetName,
             asset.Ticker.ToUpperInvariant(),

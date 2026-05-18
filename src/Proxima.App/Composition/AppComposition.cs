@@ -4,6 +4,7 @@ using Proxima.App.Notifications;
 using Proxima.App.Shell;
 using Proxima.App.Views.Assets;
 using Proxima.App.Views.AssetDetails;
+using Proxima.App.Auth;
 using Proxima.App.Views.Auth;
 using Proxima.App.Views.Dashboard;
 using Proxima.App.Views.Goals;
@@ -14,6 +15,7 @@ using Proxima.App.Views.Settings;
 using Proxima.App.Views.Support;
 using Proxima.App.Views.Taxes;
 using Proxima.Core.Application.AssetDetails;
+using Proxima.Core.Application.Dashboard;
 using Proxima.Core.Application.Auth;
 using Proxima.Core.Application.Goals;
 using Proxima.Core.Application.Importing;
@@ -85,9 +87,8 @@ public static class AppComposition
 
         services.AddScoped<IRuntimeDataInvalidation, RuntimeDataInvalidation>();
 
-        services.AddScoped<IDashboardDataProvider, RuntimeDashboardDataProvider>();
-
-        services.AddSingleton<TwelveDataAssetMarketDataProvider>();
+        services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IAssetMarketDataProvider, TwelveDataAssetMarketDataProvider>();
         services.AddScoped<IAssetDetailsService, AssetDetailsService>();
 
         services.AddScoped<DashboardViewModel>();
@@ -97,14 +98,6 @@ public static class AppComposition
         services.AddScoped<AssetsViewModel>();
         services.AddScoped<AssetDetailsViewModel>();
         services.AddScoped<GoalsViewModel>();
-
-        services.AddScoped<TaxesViewModel.ITaxesReadModelProvider>(provider =>
-            new TaxesViewModel.AppTaxesReadModelProvider(
-                provider.GetRequiredService<ITransactionService>(),
-                provider.GetRequiredService<ITaxCalculator>(),
-                provider.GetRequiredService<IReportService>(),
-                provider.GetRequiredService<IShellState>(),
-                provider.GetRequiredService<IRuntimeUserContext>()));
 
         services.AddScoped<TaxesViewModel>();
         services.AddScoped<SettingsViewModel>();

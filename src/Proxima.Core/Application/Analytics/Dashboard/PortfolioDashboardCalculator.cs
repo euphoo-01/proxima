@@ -2,22 +2,22 @@ namespace Proxima.Core.Application.Analytics.Dashboard;
 
 public static class PortfolioDashboardCalculator
 {
-    public static decimal CalculateTotalValue(IEnumerable<DashboardAssetSnapshot> assets)
+    public static decimal CalculateTotalValue(IEnumerable<DashboardAssetRow> assets)
     {
         return assets.Sum(static asset => asset.Value);
     }
 
-    public static Delta24h Calculate24hDelta(IEnumerable<DashboardAssetSnapshot> assets, IEnumerable<DashboardQuoteSnapshot> previousQuotes)
+    public static Delta24h Calculate24hDelta(IEnumerable<DashboardAssetRow> assets, IEnumerable<DashboardQuoteRow> previousQuotes)
     {
-        Dictionary<Guid, DashboardQuoteSnapshot> byAsset = previousQuotes.ToDictionary(static item => item.AssetId, static item => item);
+        Dictionary<Guid, DashboardQuoteRow> byAsset = previousQuotes.ToDictionary(static item => item.AssetId, static item => item);
         decimal currentTotal = 0m;
         decimal previousTotal = 0m;
         int seen = 0;
 
-        foreach (DashboardAssetSnapshot asset in assets)
+        foreach (DashboardAssetRow asset in assets)
         {
             currentTotal += asset.Value;
-            if (!byAsset.TryGetValue(asset.AssetId, out DashboardQuoteSnapshot? previous))
+            if (!byAsset.TryGetValue(asset.AssetId, out DashboardQuoteRow? previous))
             {
                 continue;
             }
@@ -36,7 +36,7 @@ public static class PortfolioDashboardCalculator
         return new Delta24h(absolute, percent, true);
     }
 
-    public static IReadOnlyList<AllocationSlice> BuildAllocationByTag(IEnumerable<DashboardAssetSnapshot> assets)
+    public static IReadOnlyList<AllocationSlice> BuildAllocationByTag(IEnumerable<DashboardAssetRow> assets)
     {
         return assets
             .SelectMany(static asset =>
@@ -51,13 +51,13 @@ public static class PortfolioDashboardCalculator
             .ToArray();
     }
 
-    public static IReadOnlyList<DashboardTransactionSnapshot> LatestTransactions(
-        IEnumerable<DashboardTransactionSnapshot> transactions,
+    public static IReadOnlyList<DashboardTransactionRow> LatestTransactions(
+        IEnumerable<DashboardTransactionRow> transactions,
         string search,
         string sort,
         int take = 10)
     {
-        IEnumerable<DashboardTransactionSnapshot> query = transactions;
+        IEnumerable<DashboardTransactionRow> query = transactions;
         if (!string.IsNullOrWhiteSpace(search))
         {
             string term = search.Trim();
@@ -79,7 +79,7 @@ public static class PortfolioDashboardCalculator
     }
 
     public static IReadOnlyList<(DateTimeOffset Time, decimal Value)> BuildHistorySeries(
-        IEnumerable<DashboardTransactionSnapshot> transactions,
+        IEnumerable<DashboardTransactionRow> transactions,
         string timeframe)
     {
         TimeSpan window = timeframe switch

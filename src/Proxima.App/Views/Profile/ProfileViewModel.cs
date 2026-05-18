@@ -4,12 +4,13 @@ using Avalonia.Media.Imaging;
 using Proxima.App.Shell;
 using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
-using Proxima.App.Views.Auth;
+using Proxima.App.Auth;
 using Proxima.Core.Application.Auth;
 using Proxima.Core.Application.Portfolios;
 using Proxima.Core.Application.Settings;
 using Proxima.Core.Domain.Auth;
 using Proxima.Core.Domain.Portfolios;
+using Proxima.App.Common.Commands;
 
 namespace Proxima.App.Views.Profile;
 
@@ -1011,47 +1012,8 @@ public sealed class ProfileViewModel : ViewModelBase, IDisposable
             : $"{ex.Message} Внутренняя ошибка: {root.Message}";
     }
 
-    private sealed class DelegateCommand(Action<object?> execute, Func<object?, bool>? canExecute = null) : ICommand
-    {
-        private readonly Action<object?> _execute = execute;
-        private readonly Func<object?, bool>? _canExecute = canExecute;
 
-        public event EventHandler? CanExecuteChanged;
 
-        public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
-
-        public void Execute(object? parameter) => _execute(parameter);
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    private sealed class AsyncCommand(Func<Task> execute, Func<bool>? canExecute = null) : ICommand
-    {
-        private readonly Func<Task> _execute = execute;
-        private readonly Func<bool>? _canExecute = canExecute;
-
-        public event EventHandler? CanExecuteChanged;
-
-        public bool CanExecute(object? parameter) => _canExecute?.Invoke() ?? true;
-
-        public async void Execute(object? parameter) => await _execute().ConfigureAwait(true);
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    private sealed class AsyncParameterCommand(Func<object?, Task> execute, Func<object?, bool>? canExecute = null) : ICommand
-    {
-        private readonly Func<object?, Task> _execute = execute;
-        private readonly Func<object?, bool>? _canExecute = canExecute;
-
-        public event EventHandler? CanExecuteChanged;
-
-        public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
-
-        public async void Execute(object? parameter) => await _execute(parameter).ConfigureAwait(true);
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-    }
 }
 
 public enum LegalProfileKind

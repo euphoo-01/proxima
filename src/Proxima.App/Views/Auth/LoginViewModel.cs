@@ -1,7 +1,7 @@
-using System.Security.Cryptography;
-using System.Text;
 using System.Windows.Input;
 using Proxima.App.ViewModels;
+using Proxima.App.Auth;
+using Proxima.App.Common.Commands;
 
 namespace Proxima.App.Views.Auth;
 
@@ -101,7 +101,7 @@ public sealed class LoginViewModel : ViewModelBase
 
     public ICommand NavigateToRegisterCommand => _navigateToRegisterCommand;
 
-private async Task UnlockAsync()
+    private async Task UnlockAsync()
     {
         if (!CanSubmit)
         {
@@ -151,47 +151,5 @@ private async Task UnlockAsync()
         _unlockCommand.RaiseCanExecuteChanged();
     }
 
-    private sealed class DelegateCommand(Action<object?> execute, Func<object?, bool>? canExecute = null) : ICommand
-    {
-        private readonly Action<object?> _execute = execute;
-        private readonly Func<object?, bool>? _canExecute = canExecute;
 
-        public event EventHandler? CanExecuteChanged;
-
-        public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
-
-        public void Execute(object? parameter) => _execute(parameter);
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    private sealed class AsyncCommand(Func<Task> execute, Func<bool> canExecute) : ICommand
-    {
-        private readonly Func<Task> _execute = execute;
-        private readonly Func<bool> _canExecute = canExecute;
-
-        public event EventHandler? CanExecuteChanged;
-
-        public bool CanExecute(object? parameter) => _canExecute();
-
-        public async void Execute(object? parameter)
-        {
-            await _execute().ConfigureAwait(true);
-        }
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-    }
 }
-
-public interface IAuthGateService
-{
-    Task<AuthGateResult> UnlockAsync(string loginOrEmail, string password, CancellationToken cancellationToken = default);
-}
-
-public sealed record AuthGateResult(bool Succeeded, string ErrorMessage)
-{
-    public static AuthGateResult Success() => new(true, string.Empty);
-
-    public static AuthGateResult Fail(string message) => new(false, message);
-}
-

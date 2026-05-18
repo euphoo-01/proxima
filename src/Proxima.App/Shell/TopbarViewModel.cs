@@ -3,10 +3,11 @@ using System.Windows.Input;
 using Proxima.App.Navigation;
 using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
-using Proxima.App.Views.Auth;
+using Proxima.App.Auth;
 using Proxima.Core.Application.Portfolios;
 using Proxima.Core.Domain.Auth;
 using Proxima.Core.Domain.Portfolios;
+using Proxima.App.Common.Commands;
 
 namespace Proxima.App.Shell;
 
@@ -269,35 +270,5 @@ public sealed class TopbarViewModel : ViewModelBase, IDisposable
         return value.Trim();
     }
 
-    private sealed class DelegateCommand(Action<object?> execute) : ICommand
-    {
-        private readonly Action<object?> _execute = execute;
 
-        public event EventHandler? CanExecuteChanged
-        {
-            add { }
-            remove { }
-        }
-
-        public bool CanExecute(object? parameter) => true;
-
-        public void Execute(object? parameter) => _execute(parameter);
-    }
-
-    private sealed class AsyncCommand(Func<Task> execute, Func<bool> canExecute) : ICommand
-    {
-        private readonly Func<Task> _execute = execute;
-        private readonly Func<bool> _canExecute = canExecute;
-
-        public event EventHandler? CanExecuteChanged;
-
-        public bool CanExecute(object? parameter) => _canExecute();
-
-        public async void Execute(object? parameter)
-        {
-            await _execute().ConfigureAwait(true);
-        }
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-    }
 }

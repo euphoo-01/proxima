@@ -7,11 +7,11 @@ namespace Proxima.Infrastructure.Taxes;
 public sealed class ConfigurableExchangeRateProvider(
     ICurrentUserContext currentUser,
     ISettingsService settingsService,
-    HttpClient httpClient) : IExchangeRateProvider
+    IEnumerable<IExchangeRateSource> sources) : IExchangeRateProvider
 {
-    private readonly NbrbExchangeRateProvider _nbrb = new(httpClient);
-    private readonly BelarusbankExchangeRateProvider _belarusbank = new(httpClient);
-    private readonly MockNbrbExchangeRateProvider _mock = new();
+    private readonly IReadOnlyDictionary<CurrencyProviderKind, IExchangeRateSource> _sources = sources
+        .GroupBy(source => source.Kind)
+        .ToDictionary(group => group.Key, group => group.First());
 
     public async Task<ExchangeRateResult> GetRateAsync(
         string fromCurrency,
@@ -27,30 +27,37 @@ public sealed class ConfigurableExchangeRateProvider(
         }
 
         CurrencyProviderKind providerKind = await ResolveProviderKindAsync(cancellationToken).ConfigureAwait(false);
-        bool preferBelarusbank = providerKind == CurrencyProviderKind.Belarusbank;
+        CurrencyProviderKind[] officialOrder = providerKind == CurrencyProviderKind.Belarusbank
+            ? [CurrencyProviderKind.Belarusbank, CurrencyProviderKind.Nbrb]
+            : [CurrencyProviderKind.Nbrb, CurrencyProviderKind.Belarusbank];
 
-        ExchangeRateResult first = preferBelarusbank
-            ? await _belarusbank.GetRateAsync(from, to, date, cancellationToken).ConfigureAwait(false)
-            : await _nbrb.GetRateAsync(from, to, date, cancellationToken).ConfigureAwait(false);
-
-        if (first.Succeeded)
+        List<ExchangeRateResult> failures = [];
+        foreach (CurrencyProviderKind kind in officialOrder)
         {
-            return first;
+            if (!_sources.TryGetValue(kind, out IExchangeRateSource? source))
+            {
+                continue;
+            }
+
+            ExchangeRateResult result = await source.GetRateAsync(from, to, date, cancellationToken).ConfigureAwait(false);
+            if (result.Succeeded)
+            {
+                return result;
+            }
+
+            failures.Add(result);
         }
 
-        ExchangeRateResult second = preferBelarusbank
-            ? await _nbrb.GetRateAsync(from, to, date, cancellationToken).ConfigureAwait(false)
-            : await _belarusbank.GetRateAsync(from, to, date, cancellationToken).ConfigureAwait(false);
-
-        if (second.Succeeded)
+        if (!_sources.TryGetValue(CurrencyProviderKind.Mock, out IExchangeRateSource? fallbackSource))
         {
-            return second;
+            string failureMessage = string.Join("; ", failures.Select(item => item.Message));
+            return ExchangeRateResult.Failure($"Ни один источник курсов не вернул курс {from}->{to} за {date:dd.MM.yyyy}: {failureMessage}");
         }
 
-        ExchangeRateResult fallback = await _mock.GetRateAsync(from, to, date, cancellationToken).ConfigureAwait(false);
+        ExchangeRateResult fallback = await fallbackSource.GetRateAsync(from, to, date, cancellationToken).ConfigureAwait(false);
         return fallback with
         {
-            Source = $"mock-fallback after official providers failed: {first.Message}; {second.Message}",
+            Source = $"mock-fallback after official providers failed: {string.Join("; ", failures.Select(item => item.Message))}",
             Message = $"НБРБ и Belarusbank не вернули курс {from}->{to} за {date:dd.MM.yyyy}. Использован аварийный fallback.",
         };
     }

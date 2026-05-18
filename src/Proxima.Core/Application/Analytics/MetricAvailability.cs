@@ -1,4 +1,4 @@
-namespace Proxima.Core.Application.Analytics.Engine;
+namespace Proxima.Core.Application.Analytics;
 
 public enum MetricAvailability
 {

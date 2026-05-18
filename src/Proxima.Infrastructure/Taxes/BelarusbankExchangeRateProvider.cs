@@ -2,11 +2,14 @@ using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using Proxima.Core.Application.Taxes;
+using Proxima.Core.Application.Settings;
 
 namespace Proxima.Infrastructure.Taxes;
 
-public sealed class BelarusbankExchangeRateProvider(HttpClient httpClient) : IExchangeRateProvider
+public sealed class BelarusbankExchangeRateProvider(HttpClient httpClient) : IExchangeRateSource
 {
+    public CurrencyProviderKind Kind => CurrencyProviderKind.Belarusbank;
+
     private static readonly IReadOnlyDictionary<string, BelarusbankCurrencyDescriptor> CurrencyDescriptors =
         new Dictionary<string, BelarusbankCurrencyDescriptor>(StringComparer.OrdinalIgnoreCase)
         {

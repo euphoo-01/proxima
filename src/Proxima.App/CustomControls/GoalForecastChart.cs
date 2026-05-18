@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using Proxima.App.DesignSystem.Charts;
+using Proxima.Core.Application.Goals;
 
 namespace Proxima.App.CustomControls;
 
@@ -534,13 +535,3 @@ public sealed class GoalForecastChart : Control
         public double Height => Bottom - Top;
     }
 }
-
-public sealed record GoalForecastChartPoint(int MonthIndex, decimal Amount);
-
-public sealed record GoalForecastMilestone(
-    Guid GoalId,
-    string Title,
-    string Currency,
-    decimal TargetAmount,
-    int MonthIndex,
-    int EstimatedYear);
