@@ -63,8 +63,6 @@ public sealed class TwelveDataSymbolSearchService(
         int normalizedLimit = Math.Clamp(limit, 1, 50);
         MarketSymbolCandidate[] localMatches = FindLocalSymbols(normalizedQuery, normalizedLimit);
 
-        // Local cash/major crypto symbols must remain available even before an API key is configured.
-        // This keeps manual cash input usable and avoids treating USD/EUR/BYN as stock tickers.
         if (IsExactLocalOnlyQuery(normalizedQuery, localMatches))
         {
             return MarketSymbolSearchResult.Success(localMatches.Take(normalizedLimit).ToArray());

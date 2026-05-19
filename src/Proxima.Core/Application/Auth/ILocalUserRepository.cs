@@ -8,6 +8,8 @@ public interface ILocalUserRepository
 
     Task<LocalUserProfile?> FindByLoginAsync(string login, CancellationToken cancellationToken);
 
+    Task<LocalUserProfile?> FindByIdAsync(Guid profileId, CancellationToken cancellationToken);
+
     Task AddAsync(LocalUserProfile profile, CancellationToken cancellationToken);
 
     Task UpdateAsync(LocalUserProfile profile, CancellationToken cancellationToken);

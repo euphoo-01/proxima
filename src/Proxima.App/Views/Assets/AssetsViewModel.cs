@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Input;
+using Avalonia.Threading;
 using Proxima.App.Navigation;
 using Proxima.App.Notifications;
 using Proxima.App.Shell;
@@ -50,6 +51,7 @@ public sealed class AssetsViewModel : ViewModelBase
     private readonly DelegateCommand _selectManualSymbolCommand;
     private IReadOnlyList<AssetListItemViewModel> _allAssets = [];
     private CancellationTokenSource? _manualSymbolSearchCts;
+    private CancellationTokenSource? _taxMetricLoadCts;
     private MarketSymbolCandidate? _selectedManualSymbol;
     private IReadOnlyList<PortfolioTransaction> _transactions = [];
     private bool _isLoading;
@@ -433,11 +435,10 @@ public sealed class AssetsViewModel : ViewModelBase
 
             _currentPortfolioProfitLoss = totalValue - totalCost;
             decimal growth = totalCost <= 0m ? 0m : _currentPortfolioProfitLoss / totalCost * 100m;
-            decimal taxesUsd = await LoadCurrentTaxDueUsdAsync().ConfigureAwait(true);
 
             GrowthMetricValue = FormatPercent(growth, includeArrow: false);
             TotalValueMetric = FormatMoney(totalValue, "USD");
-            TaxesMetric = FormatMoney(taxesUsd, "USD");
+            StartCurrentTaxDueLoad(portfolioId);
 
             _allAssets = assets
                 .Select(asset =>
@@ -614,6 +615,7 @@ public sealed class AssetsViewModel : ViewModelBase
         }
         catch (OperationCanceledException)
         {
+            return;
         }
         catch (Exception ex)
         {
@@ -708,8 +710,6 @@ public sealed class AssetsViewModel : ViewModelBase
 
     private static string ResolveManualCurrency(MarketSymbolCandidate symbol, string ticker, AssetType assetType)
     {
-        // Base currency of every portfolio is USD.
-        // Cash positions keep the foreign currency in Ticker/Quantity, but their price and total value are stored in USD.
         if (assetType is AssetType.Cash)
         {
             return "USD";
@@ -1210,13 +1210,95 @@ public sealed class AssetsViewModel : ViewModelBase
         _exportReportCommand.RaiseCanExecuteChanged();
     }
 
-    private async Task<decimal> LoadCurrentTaxDueUsdAsync()
+    private void StartCurrentTaxDueLoad(Guid portfolioId)
+    {
+        CancellationTokenSource? previous = _taxMetricLoadCts;
+        previous?.Cancel();
+
+        CancellationTokenSource cts = new();
+        _taxMetricLoadCts = cts;
+
+        TaxesMetric = "Расчёт...";
+        OnPropertyChanged(nameof(TaxesMetric));
+
+        _ = LoadCurrentTaxDueUsdInBackgroundAsync(portfolioId, _userContext.UserId, DateTime.UtcNow.Year, cts);
+    }
+
+    private async Task LoadCurrentTaxDueUsdInBackgroundAsync(
+        Guid portfolioId,
+        Guid userId,
+        int year,
+        CancellationTokenSource cts)
+    {
+        CancellationToken cancellationToken = cts.Token;
+
+        try
+        {
+            decimal taxesUsd = await LoadCurrentTaxDueUsdAsync(portfolioId, userId, year, cancellationToken).ConfigureAwait(false);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (cancellationToken.IsCancellationRequested ||
+                    !ReferenceEquals(_taxMetricLoadCts, cts) ||
+                    _shellState.CurrentPortfolioId != portfolioId)
+                {
+                    return;
+                }
+
+                TaxesMetric = FormatMoney(taxesUsd, "USD");
+                OnPropertyChanged(nameof(TaxesMetric));
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        catch (Exception)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (cancellationToken.IsCancellationRequested ||
+                    !ReferenceEquals(_taxMetricLoadCts, cts) ||
+                    _shellState.CurrentPortfolioId != portfolioId)
+                {
+                    return;
+                }
+
+                TaxesMetric = "Недоступно";
+                OnPropertyChanged(nameof(TaxesMetric));
+            });
+        }
+        finally
+        {
+            if (ReferenceEquals(_taxMetricLoadCts, cts))
+            {
+                _taxMetricLoadCts = null;
+            }
+
+            cts.Dispose();
+        }
+    }
+
+    private async Task<decimal> LoadCurrentTaxDueUsdAsync(
+        Guid portfolioId,
+        Guid userId,
+        int year,
+        CancellationToken cancellationToken)
     {
         try
         {
             TaxOverview taxModel = await _taxService
-                .GetOverviewAsync(_shellState.CurrentPortfolioId, _userContext.UserId, DateTime.UtcNow.Year, CancellationToken.None)
-                .ConfigureAwait(true);
+                .GetOverviewAsync(portfolioId, userId, year, cancellationToken)
+                .ConfigureAwait(false);
             if (taxModel.IsEmpty || taxModel.TotalTaxDue <= 0m)
             {
                 return 0m;
@@ -1229,8 +1311,8 @@ public sealed class AssetsViewModel : ViewModelBase
 
             DateOnly rateDate = DateOnly.FromDateTime(DateTime.UtcNow.Date);
             ExchangeRateResult usdRate = await _exchangeRateProvider
-                .GetRateAsync("USD", taxModel.Currency, rateDate, CancellationToken.None)
-                .ConfigureAwait(true);
+                .GetRateAsync("USD", taxModel.Currency, rateDate, cancellationToken)
+                .ConfigureAwait(false);
 
             if (!usdRate.Succeeded || usdRate.Rate <= 0m)
             {
@@ -1239,7 +1321,7 @@ public sealed class AssetsViewModel : ViewModelBase
 
             return decimal.Round(taxModel.TotalTaxDue / usdRate.Rate, 2);
         }
-        catch
+        catch (Exception)
         {
             return 0m;
         }

@@ -9,7 +9,7 @@ public static class DatabaseConnectionStringProvider
         string? raw = Environment.GetEnvironmentVariable(EnvName);
         string fallback = "Host=localhost;Port=55432;Database=proxima;Username=proxima;Password=proxima";
         string conn = string.IsNullOrWhiteSpace(raw) ? fallback : raw.Trim();
-        bool seed = !string.Equals(Environment.GetEnvironmentVariable("PROXIMA_DB_SEED"), "false", StringComparison.OrdinalIgnoreCase);
+        bool seed = string.Equals(Environment.GetEnvironmentVariable("PROXIMA_DB_SEED"), "true", StringComparison.OrdinalIgnoreCase);
         return new DatabaseOptions(conn, seed);
     }
 }

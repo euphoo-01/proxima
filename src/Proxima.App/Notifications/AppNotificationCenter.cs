@@ -58,7 +58,7 @@ public sealed class AppNotificationCenter : IAppNotificationCenter
                 toast = AppNotificationViewModel.FromDomain(notification);
                 persisted = true;
             }
-            catch
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 toast = new AppNotificationViewModel(
                     Guid.NewGuid(),

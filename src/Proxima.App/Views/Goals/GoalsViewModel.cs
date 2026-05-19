@@ -73,8 +73,6 @@ public sealed class GoalsViewModel : ViewModelBase
         AddGoalDialog.ArchiveRequested += HandleArchiveRequested;
         _shellState.PortfolioChanged += (_, _) => _ = LoadAsync();
         dataInvalidation.DataInvalidated += (_, _) => _ = LoadAsync();
-
-        _ = LoadAsync();
     }
 
     public string PageTitle => "Цели";
@@ -256,6 +254,8 @@ public sealed class GoalsViewModel : ViewModelBase
     public bool IsEmpty => !IsLoading && !HasError && Goals.Count == 0;
 
     public bool HasContent => !IsLoading && !HasError;
+
+    public Task RefreshOnPageEnterAsync() => LoadAsync();
 
     private async Task LoadAsync()
     {

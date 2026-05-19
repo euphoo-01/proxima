@@ -29,9 +29,13 @@ public sealed class ImportService(
         {
             return await parser.ParseAsync(filePath, cancellationToken).ConfigureAwait(false);
         }
-        catch
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            return new ImportPreview(false, "Ошибка разбора файла. Проверьте формат CSV и попробуйте ручной ввод.", [], false);
+            string message = string.IsNullOrWhiteSpace(ex.Message)
+                ? "Ошибка разбора файла. Проверьте формат CSV и попробуйте ручной ввод."
+                : $"Ошибка разбора файла: {ex.Message}";
+
+            return new ImportPreview(false, message, [], false);
         }
     }
 }

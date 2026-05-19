@@ -22,7 +22,6 @@ public sealed class DashboardViewModel : ViewModelBase
     private readonly ITransactionService _transactionService;
     private readonly IRuntimeDataInvalidation _dataInvalidation;
     private readonly RelayCommand _selectTimeframeCommand;
-    private readonly RelayCommand _rowMoreCommand;
     private readonly RelayCommand _moreTransactionsCommand;
     private IReadOnlyList<DashboardTransactionRowViewModel> _allTransactions = [];
     private DashboardOverview _overview = DashboardOverview.Empty("USD");
@@ -44,7 +43,6 @@ public sealed class DashboardViewModel : ViewModelBase
         _dataInvalidation = dataInvalidation;
 
         _selectTimeframeCommand = new RelayCommand(SelectTimeframe);
-        _rowMoreCommand = new RelayCommand(_ => { });
         _moreTransactionsCommand = new RelayCommand(_ => ToggleTransactionsLimit());
 
         Timeframes =
@@ -121,8 +119,6 @@ public sealed class DashboardViewModel : ViewModelBase
 
     public ICommand SelectTimeframeCommand => _selectTimeframeCommand;
 
-    public ICommand RowMoreCommand => _rowMoreCommand;
-
     public ICommand MoreTransactionsCommand => _moreTransactionsCommand;
 
     public string MoreTransactionsButtonText => _isShowingAllTransactions ? "Скрыть транзакции  ↑" : "Все транзакции  ↓";
@@ -135,7 +131,7 @@ public sealed class DashboardViewModel : ViewModelBase
                 .GetOverviewAsync(_shellState.CurrentPortfolioId)
                 .ConfigureAwait(true);
         }
-        catch
+        catch (Exception)
         {
             _overview = DashboardOverview.Empty("USD");
         }

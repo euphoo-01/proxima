@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Proxima.App.Navigation;
 using Proxima.App.Notifications;
+using Proxima.App.Profile;
 using Proxima.App.Shell;
 using Proxima.App.Views.Assets;
 using Proxima.App.Views.AssetDetails;
@@ -79,6 +80,7 @@ public static class AppComposition
             .AddNotificationModule();
 
         services.AddScoped<IAppNotificationCenter, AppNotificationCenter>();
+        services.AddSingleton<IProfileAvatarStore, FileProfileAvatarStore>();
 
         services.AddScoped<RuntimeShellState>();
         services.AddScoped<IShellState>(provider => provider.GetRequiredService<RuntimeShellState>());

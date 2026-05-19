@@ -11,6 +11,8 @@ public sealed class DatabaseBootstrapService(DatabaseOptions options)
         {
             await using ProximaDbContext context = CreateDbContext();
             await context.Database.MigrateAsync(cancellationToken).ConfigureAwait(false);
+            await EnsureUserProfileMetadataColumnsAsync(context, cancellationToken).ConfigureAwait(false);
+            await RemoveLegacyDemoGoalAsync(context, cancellationToken).ConfigureAwait(false);
 
             if (options.EnableSeed)
             {
@@ -23,6 +25,26 @@ public sealed class DatabaseBootstrapService(DatabaseOptions options)
         {
             return $"Database unavailable: {ex.Message}";
         }
+    }
+
+
+    private static async Task EnsureUserProfileMetadataColumnsAsync(ProximaDbContext context, CancellationToken cancellationToken)
+    {
+        await context.Database.ExecuteSqlRawAsync(
+            "ALTER TABLE public.users ADD COLUMN IF NOT EXISTS location character varying(256) NOT NULL DEFAULT 'Минск, Беларусь';",
+            cancellationToken).ConfigureAwait(false);
+
+        await context.Database.ExecuteSqlRawAsync(
+            "ALTER TABLE public.users ADD COLUMN IF NOT EXISTS legal_profile character varying(64) NOT NULL DEFAULT 'PhysicalPerson';",
+            cancellationToken).ConfigureAwait(false);
+    }
+
+
+    private static async Task RemoveLegacyDemoGoalAsync(ProximaDbContext context, CancellationToken cancellationToken)
+    {
+        await context.Database.ExecuteSqlRawAsync(
+            "DELETE FROM public.goals WHERE id = '66666666-6666-6666-6666-666666666661' AND title = 'Retire';",
+            cancellationToken).ConfigureAwait(false);
     }
 
     public ProximaDbContext CreateDbContext()
@@ -181,22 +203,6 @@ public sealed class DatabaseBootstrapService(DatabaseOptions options)
                 new AssetPriceEntity { Id = Guid.Parse("55555555-5555-5555-5555-555555555552"), AssetId = btcId, Price = 60000m, Currency = "USD", Timestamp = now });
         }
 
-        if (!await context.Goals.AnyAsync(x => x.PortfolioId == portfolioId, cancellationToken).ConfigureAwait(false))
-        {
-            context.Goals.Add(new GoalEntity
-            {
-                Id = Guid.Parse("66666666-6666-6666-6666-666666666661"),
-                PortfolioId = portfolioId,
-                Title = "Retire",
-                TargetAmount = 100000m,
-                Currency = "USD",
-                MonthlyContribution = 1000m,
-                ExpectedAnnualReturnPercent = 8m,
-                TargetDate = now.AddYears(5),
-                CreatedAt = now,
-                UpdatedAt = now,
-            });
-        }
 
         if (!await context.UserSettings.AnyAsync(x => x.OwnerUserId == userId, cancellationToken).ConfigureAwait(false))
         {

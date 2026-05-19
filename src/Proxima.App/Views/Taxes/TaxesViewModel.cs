@@ -25,6 +25,14 @@ public sealed class TaxesViewModel : ViewModelBase
     private readonly DelegateCommand _recalculateCommand;
     private readonly DelegateCommand _exportPdfCommand;
 
+    private TaxOverview? _cachedOverview;
+    private Guid _cachedPortfolioId;
+    private Guid _cachedUserId;
+    private int _cachedYear;
+    private bool _taxOverviewDirty = true;
+    private CancellationTokenSource? _recalculationCts;
+    private int _recalculationVersion;
+
     private int _selectedYear = DateTime.UtcNow.Year;
     private bool _isLoading;
     private bool _isExporting;
@@ -60,18 +68,22 @@ public sealed class TaxesViewModel : ViewModelBase
         ITaxService taxService,
         IShellState shellState,
         IRuntimeUserContext userContext,
-        IAppNotificationCenter notificationCenter)
+        IAppNotificationCenter notificationCenter,
+        IRuntimeDataInvalidation dataInvalidation)
     {
         _taxService = taxService;
         _shellState = shellState;
         _userContext = userContext;
         _notificationCenter = notificationCenter;
 
+        _shellState.PortfolioChanged += (_, _) => MarkTaxOverviewDirty();
+        dataInvalidation.DataInvalidated += (_, _) => MarkTaxOverviewDirty();
+
         Years = BuildYears(DateTime.UtcNow.Year);
         BreakdownRows = [];
         TaxBreakdownRows = [];
 
-        _recalculateCommand = new DelegateCommand(_ => _ = RecalculateAsync(TaxRecalculationNotificationMode.UserAction), _ => !IsLoading && !IsExporting);
+        _recalculateCommand = new DelegateCommand(_ => _ = RecalculateAsync(TaxRecalculationNotificationMode.UserAction, forceRefresh: true), _ => !IsLoading && !IsExporting);
         _exportPdfCommand = new DelegateCommand(_ => _ = ExportPdfAsync(), _ => CanExportPdf);
     }
 
@@ -92,7 +104,14 @@ public sealed class TaxesViewModel : ViewModelBase
     public int SelectedYear
     {
         get => _selectedYear;
-        set => SetProperty(ref _selectedYear, value);
+        set
+        {
+            if (SetProperty(ref _selectedYear, value))
+            {
+                MarkTaxOverviewDirty();
+                OnPropertyChanged(nameof(TaxBreakdownTitle));
+            }
+        }
     }
 
     public bool IsLoading
@@ -393,22 +412,54 @@ public sealed class TaxesViewModel : ViewModelBase
 
     public string TransactionCountText => TransactionCount == 1 ? "1 операция" : $"{TransactionCount} операций";
 
-    public string TaxBreakdownTitle => $"Tax breakdown {SelectedYear}";
+    public string TaxBreakdownTitle => $"Детализация расчета за {SelectedYear} год";
 
     public string TaxCalculationNote => $"Профиль: {CurrentTaxProfileName}. Данные берутся из текущего портфеля: сделки, комиссии, дивиденды и удержанные налоги.";
 
-public Task RefreshOnPageEnterAsync()
+    public async Task RefreshOnPageEnterAsync()
     {
         if (IsLoading || IsExporting)
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        return RecalculateAsync(TaxRecalculationNotificationMode.PageEnter);
+        Guid portfolioId = _shellState.CurrentPortfolioId;
+        Guid userId = _userContext.UserId;
+        int year = SelectedYear;
+
+        if (CanUseCachedOverview(portfolioId, userId, year))
+        {
+            await ApplyOverviewAsync(_cachedOverview!, TaxRecalculationNotificationMode.PageEnter, notifySuccess: false)
+                .ConfigureAwait(true);
+            return;
+        }
+
+        await RecalculateAsync(TaxRecalculationNotificationMode.PageEnter).ConfigureAwait(true);
     }
 
-    private async Task RecalculateAsync(TaxRecalculationNotificationMode notificationMode)
+    private async Task RecalculateAsync(TaxRecalculationNotificationMode notificationMode, bool forceRefresh = false)
     {
+        if (IsLoading && !forceRefresh)
+        {
+            return;
+        }
+
+        Guid portfolioId = _shellState.CurrentPortfolioId;
+        Guid userId = _userContext.UserId;
+        int year = SelectedYear;
+
+        if (!forceRefresh && CanUseCachedOverview(portfolioId, userId, year))
+        {
+            await ApplyOverviewAsync(_cachedOverview!, notificationMode, notifySuccess: false).ConfigureAwait(true);
+            return;
+        }
+
+        _recalculationCts?.Cancel();
+        _recalculationCts?.Dispose();
+        _recalculationCts = new CancellationTokenSource();
+        CancellationToken cancellationToken = _recalculationCts.Token;
+        int version = ++_recalculationVersion;
+
         IsLoading = true;
         HasError = false;
         IsEmpty = false;
@@ -419,67 +470,114 @@ public Task RefreshOnPageEnterAsync()
         try
         {
             TaxOverview model = await _taxService
-                .GetOverviewAsync(_shellState.CurrentPortfolioId, _userContext.UserId, SelectedYear, CancellationToken.None)
+                .GetOverviewAsync(portfolioId, userId, year, cancellationToken)
                 .ConfigureAwait(true);
 
-            BreakdownRows.Clear();
-            foreach (TaxBreakdownRow row in model.Breakdown)
+            if (cancellationToken.IsCancellationRequested || version != _recalculationVersion)
             {
-                BreakdownRows.Add(new TaxBreakdownRowViewModel(row.Name, FormatMoney(row.Value, model.Currency), row.Note, row.Kind));
+                return;
             }
 
-            TaxBreakdownRows.Clear();
-            foreach (TaxBreakdownRow row in model.TaxBreakdown)
-            {
-                TaxBreakdownRows.Add(new TaxBreakdownRowViewModel(row.Name, row.Kind == TaxBreakdownKind.Info ? "—" : FormatMoney(row.Value, model.Currency), row.Note, row.Kind));
-            }
+            _cachedOverview = model;
+            _cachedPortfolioId = portfolioId;
+            _cachedUserId = userId;
+            _cachedYear = year;
+            _taxOverviewDirty = false;
 
-            Currency = model.Currency;
-            TaxableBase = model.TaxableBase;
-            TotalTaxDue = model.TotalTaxDue;
-            TaxSaved = model.TaxSaved;
-            RealizedGains = model.RealizedGains;
-            Dividends = model.Dividends;
-            CurrencyEffect = model.CurrencyEffect;
-            Fees = model.Fees;
-            Losses = model.Losses;
-            BaseRatePercent = model.BaseRatePercent;
-            DividendRatePercent = model.DividendRatePercent;
-            ExemptionAmount = model.ExemptionAmount;
-            IncomeThreshold = model.IncomeThreshold;
-            TransactionCount = model.TransactionCount;
-            SummaryStatus = model.Status;
-            StatusMessage = model.Message;
-            if (ShouldNotifySuccessfulCalculation(notificationMode, model) && !string.IsNullOrWhiteSpace(model.Message))
-            {
-                await _notificationCenter.NotifyAsync(
-                    model.IsOfflineRate ? AppNotificationLevel.Warning : AppNotificationLevel.Success,
-                    model.IsOfflineRate ? "Налог рассчитан с резервным курсом" : "Налог рассчитан",
-                    model.Message,
-                    "Налоги").ConfigureAwait(true);
-            }
-            RateSourceText = model.RateSourceText;
-            CalculationVersion = model.CalculationVersion;
-            CurrentTaxProfileName = model.ProfileName;
-            CurrentTaxProfileDescription = model.ProfileDescription;
-            TaxDisclaimer = model.LegalDisclaimer;
-            IsEmpty = model.IsEmpty;
-            IsOfflineRate = model.IsOfflineRate;
-            OfflineRateMessage = model.OfflineRateMessage;
-
-            OnPropertyChanged(nameof(TaxBreakdownTitle));
-            OnPropertyChanged(nameof(TaxCalculationNote));
+            await ApplyOverviewAsync(model, notificationMode, notifySuccess: true).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
         }
         catch (Exception ex)
         {
+            if (version != _recalculationVersion)
+            {
+                return;
+            }
+
             HasError = true;
             StatusMessage = $"Не удалось выполнить расчет: {ex.Message}";
             await _notificationCenter.NotifyAsync(AppNotificationLevel.Error, "Ошибка расчета налогов", StatusMessage, "Налоги").ConfigureAwait(true);
         }
         finally
         {
-            IsLoading = false;
+            if (version == _recalculationVersion)
+            {
+                IsLoading = false;
+            }
         }
+    }
+
+    private async Task ApplyOverviewAsync(
+        TaxOverview model,
+        TaxRecalculationNotificationMode notificationMode,
+        bool notifySuccess)
+    {
+        BreakdownRows.Clear();
+        foreach (TaxBreakdownRow row in model.Breakdown)
+        {
+            BreakdownRows.Add(new TaxBreakdownRowViewModel(row.Name, FormatMoney(row.Value, model.Currency), row.Note, row.Kind));
+        }
+
+        TaxBreakdownRows.Clear();
+        foreach (TaxBreakdownRow row in model.TaxBreakdown)
+        {
+            TaxBreakdownRows.Add(new TaxBreakdownRowViewModel(row.Name, row.Kind == TaxBreakdownKind.Info ? "—" : FormatMoney(row.Value, model.Currency), row.Note, row.Kind));
+        }
+
+        Currency = model.Currency;
+        TaxableBase = model.TaxableBase;
+        TotalTaxDue = model.TotalTaxDue;
+        TaxSaved = model.TaxSaved;
+        RealizedGains = model.RealizedGains;
+        Dividends = model.Dividends;
+        CurrencyEffect = model.CurrencyEffect;
+        Fees = model.Fees;
+        Losses = model.Losses;
+        BaseRatePercent = model.BaseRatePercent;
+        DividendRatePercent = model.DividendRatePercent;
+        ExemptionAmount = model.ExemptionAmount;
+        IncomeThreshold = model.IncomeThreshold;
+        TransactionCount = model.TransactionCount;
+        SummaryStatus = model.Status;
+        StatusMessage = model.Message;
+        RateSourceText = model.RateSourceText;
+        CalculationVersion = model.CalculationVersion;
+        CurrentTaxProfileName = model.ProfileName;
+        CurrentTaxProfileDescription = model.ProfileDescription;
+        TaxDisclaimer = model.LegalDisclaimer;
+        IsEmpty = model.IsEmpty;
+        IsOfflineRate = model.IsOfflineRate;
+        OfflineRateMessage = model.OfflineRateMessage;
+
+        if (notifySuccess && ShouldNotifySuccessfulCalculation(notificationMode, model) && !string.IsNullOrWhiteSpace(model.Message))
+        {
+            await _notificationCenter.NotifyAsync(
+                model.IsOfflineRate ? AppNotificationLevel.Warning : AppNotificationLevel.Success,
+                model.IsOfflineRate ? "Налог рассчитан с резервным курсом" : "Налог рассчитан",
+                model.Message,
+                "Налоги").ConfigureAwait(true);
+        }
+
+        OnPropertyChanged(nameof(TaxBreakdownTitle));
+        OnPropertyChanged(nameof(TaxCalculationNote));
+    }
+
+    private bool CanUseCachedOverview(Guid portfolioId, Guid userId, int year)
+    {
+        return !_taxOverviewDirty
+            && _cachedOverview is not null
+            && _cachedPortfolioId == portfolioId
+            && _cachedUserId == userId
+            && _cachedYear == year;
+    }
+
+    private void MarkTaxOverviewDirty()
+    {
+        _taxOverviewDirty = true;
+        _recalculationCts?.Cancel();
     }
 
     private async Task ExportPdfAsync()

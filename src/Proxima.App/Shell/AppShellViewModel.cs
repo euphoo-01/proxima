@@ -117,12 +117,17 @@ public sealed class AppShellViewModel : ViewModelBase
             AppRoutes.Notifications => _notificationsViewModel,
             AppRoutes.Support => _supportViewModel,
             AppRoutes.Profile => _profileViewModel,
-            _ => new PlaceholderViewModel(route.Title, "Screen is not migrated yet. PlaceholderView is shown by runtime shell.")
+            _ => new PlaceholderViewModel(route.Title, "Раздел временно недоступен.")
         };
 
         if (route.Key == AppRoutes.Taxes)
         {
             _ = _taxesViewModel.RefreshOnPageEnterAsync();
+        }
+
+        if (route.Key == AppRoutes.Goals)
+        {
+            _ = _goalsViewModel.RefreshOnPageEnterAsync();
         }
     }
 

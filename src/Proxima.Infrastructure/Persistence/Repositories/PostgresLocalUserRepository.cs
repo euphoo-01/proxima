@@ -35,6 +35,22 @@ public sealed class PostgresLocalUserRepository(
         return entity is null ? null : ToDomain(entity);
     }
 
+    public async Task<LocalUserProfile?> FindByIdAsync(Guid profileId, CancellationToken cancellationToken)
+    {
+        if (profileId == Guid.Empty)
+        {
+            return null;
+        }
+
+        await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
+        UserEntity? entity = await lease.Context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == profileId && x.PasswordHash != string.Empty, cancellationToken)
+            .ConfigureAwait(false);
+
+        return entity is null ? null : ToDomain(entity);
+    }
+
     public async Task AddAsync(LocalUserProfile profile, CancellationToken cancellationToken)
     {
         await using UowLease lease = UowLease.Create(uowFactory, uowAccessor);
@@ -78,6 +94,8 @@ public sealed class PostgresLocalUserRepository(
         entity.Login = normalizedLogin;
         entity.Role = profile.Role.ToString();
         entity.PasswordHash = profile.Credential.EncodedHash;
+        entity.Location = NormalizeLocation(profile.Location);
+        entity.LegalProfile = profile.LegalProfile.ToString();
         entity.FailedUnlockAttempts = profile.FailedUnlockAttempts;
         entity.UpdatedAt = profile.UpdatedAt;
 
@@ -197,7 +215,9 @@ public sealed class PostgresLocalUserRepository(
             new PasswordCredential(entity.PasswordHash),
             entity.CreatedAt,
             entity.UpdatedAt,
-            entity.FailedUnlockAttempts);
+            entity.FailedUnlockAttempts,
+            NormalizeLocation(entity.Location),
+            ParseLegalProfile(entity.LegalProfile));
     }
 
     private static UserEntity ToEntity(LocalUserProfile profile)
@@ -209,6 +229,8 @@ public sealed class PostgresLocalUserRepository(
             Login = NormalizeLogin(profile.Login),
             Role = profile.Role.ToString(),
             PasswordHash = profile.Credential.EncodedHash,
+            Location = NormalizeLocation(profile.Location),
+            LegalProfile = profile.LegalProfile.ToString(),
             FailedUnlockAttempts = profile.FailedUnlockAttempts,
             CreatedAt = profile.CreatedAt,
             UpdatedAt = profile.UpdatedAt,
@@ -218,5 +240,18 @@ public sealed class PostgresLocalUserRepository(
     private static string NormalizeLogin(string login)
     {
         return string.IsNullOrWhiteSpace(login) ? string.Empty : login.Trim().ToLowerInvariant();
+    }
+
+    private static string NormalizeLocation(string? location)
+    {
+        return string.IsNullOrWhiteSpace(location) ? "Минск, Беларусь" : location.Trim();
+    }
+
+    private static LegalProfileKind ParseLegalProfile(string? value)
+    {
+        return Enum.TryParse(value, ignoreCase: true, out LegalProfileKind parsed)
+            && Enum.IsDefined(typeof(LegalProfileKind), parsed)
+                ? parsed
+                : LegalProfileKind.PhysicalPerson;
     }
 }

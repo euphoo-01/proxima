@@ -502,6 +502,7 @@ public sealed class ManualImportViewModel : ViewModelBase
         }
         catch (OperationCanceledException)
         {
+            return;
         }
     }
 

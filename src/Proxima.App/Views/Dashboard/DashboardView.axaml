@@ -386,28 +386,34 @@
                             </Border>
                         </Grid>
 
-                        <ItemsControl Grid.Row="1" Margin="0,36,0,0" ItemsSource="{Binding Bars}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="dashboard:DashboardBarViewModel">
-                                    <Grid Width="58" Height="292" Margin="0,0,10,0" RowDefinitions="*,34" ClipToBounds="False">
-                                        <Grid Grid.Row="0" Width="58" ClipToBounds="False">
-                                            <StackPanel Width="58" VerticalAlignment="Bottom" HorizontalAlignment="Center" Spacing="8" ClipToBounds="False">
-                                                <Border IsVisible="{Binding IsTooltipVisible}" Background="#001629" CornerRadius="4" Padding="7,5" HorizontalAlignment="Center">
-                                                    <TextBlock FontFamily="{StaticResource ProximaFont.Family}" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Text="{Binding TooltipText}" />
-                                                </Border>
-                                                <Border Classes="bar" Classes.active="{Binding IsActive}" Height="{Binding Height}" Margin="0,0,0,8" HorizontalAlignment="Center" ToolTip.Tip="{Binding TooltipText}" />
-                                            </StackPanel>
+                        <ScrollViewer
+                            Grid.Row="1"
+                            Margin="0,36,0,0"
+                            HorizontalScrollBarVisibility="Auto"
+                            VerticalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding Bars}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="dashboard:DashboardBarViewModel">
+                                        <Grid Width="58" Height="292" Margin="0,0,10,0" RowDefinitions="*,34" ClipToBounds="False">
+                                            <Grid Grid.Row="0" Width="58" ClipToBounds="False">
+                                                <StackPanel Width="58" VerticalAlignment="Bottom" HorizontalAlignment="Center" Spacing="8" ClipToBounds="False">
+                                                    <Border IsVisible="{Binding IsTooltipVisible}" Background="#001629" CornerRadius="4" Padding="7,5" HorizontalAlignment="Center">
+                                                        <TextBlock FontFamily="{StaticResource ProximaFont.Family}" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Text="{Binding TooltipText}" />
+                                                    </Border>
+                                                    <Border Classes="bar" Classes.active="{Binding IsActive}" Height="{Binding Height}" Margin="0,0,0,8" HorizontalAlignment="Center" ToolTip.Tip="{Binding TooltipText}" />
+                                                </StackPanel>
+                                            </Grid>
+                                            <TextBlock Grid.Row="1" Classes="bar-label" Classes.active="{Binding IsActive}" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,8,0,0" Text="{Binding Label}" />
                                         </Grid>
-                                        <TextBlock Grid.Row="1" Classes="bar-label" Classes.active="{Binding IsActive}" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,8,0,0" Text="{Binding Label}" />
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
                     </Grid>
                 </Border>
 

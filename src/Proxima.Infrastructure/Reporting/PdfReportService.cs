@@ -1456,8 +1456,6 @@ public sealed class PdfReportService : IReportService
                 }
                 catch (Exception) when (!System.Diagnostics.Debugger.IsAttached)
                 {
-                    // Some system fonts are collections, variable fonts, or malformed for this minimal writer.
-                    // We intentionally skip them and try the next candidate instead of failing export.
                 }
             }
 

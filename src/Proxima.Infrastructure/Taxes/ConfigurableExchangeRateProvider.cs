@@ -9,9 +9,15 @@ public sealed class ConfigurableExchangeRateProvider(
     ISettingsService settingsService,
     IEnumerable<IExchangeRateSource> sources) : IExchangeRateProvider
 {
+    private static readonly TimeSpan ProviderKindCacheTtl = TimeSpan.FromMinutes(5);
+
     private readonly IReadOnlyDictionary<CurrencyProviderKind, IExchangeRateSource> _sources = sources
         .GroupBy(source => source.Kind)
         .ToDictionary(group => group.Key, group => group.First());
+
+    private Guid _cachedProviderUserId;
+    private CurrencyProviderKind _cachedProviderKind;
+    private DateTimeOffset _cachedProviderKindUntil;
 
     public async Task<ExchangeRateResult> GetRateAsync(
         string fromCurrency,
@@ -69,15 +75,28 @@ public sealed class ConfigurableExchangeRateProvider(
             return CurrencyProviderKind.Mock;
         }
 
+        Guid userId = currentUser.UserId;
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        if (_cachedProviderUserId == userId && now < _cachedProviderKindUntil)
+        {
+            return _cachedProviderKind;
+        }
+
         UserSettings? settings = await settingsService
-            .GetAsync(currentUser.UserId, cancellationToken)
+            .GetAsync(userId, cancellationToken)
             .ConfigureAwait(false);
 
-        // Старое значение Mock больше не выбирает mock-провайдер напрямую.
-        // Оно трактуется как Auto: НБРБ -> Belarusbank -> аварийный fallback.
-        return settings?.CurrencyProvider == CurrencyProviderKind.Belarusbank
-            ? CurrencyProviderKind.Belarusbank
-            : CurrencyProviderKind.Mock;
+        CurrencyProviderKind providerKind = settings?.CurrencyProvider switch
+        {
+            CurrencyProviderKind.Belarusbank => CurrencyProviderKind.Belarusbank,
+            CurrencyProviderKind.Nbrb => CurrencyProviderKind.Nbrb,
+            _ => CurrencyProviderKind.Nbrb,
+        };
+
+        _cachedProviderUserId = userId;
+        _cachedProviderKind = providerKind;
+        _cachedProviderKindUntil = now.Add(ProviderKindCacheTtl);
+        return providerKind;
     }
 
     private static string Normalize(string currency)

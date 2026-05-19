@@ -1,6 +1,8 @@
 using System.Globalization;
+using Proxima.Core.Application.Auth;
 using Proxima.Core.Application.Reporting;
 using Proxima.Core.Application.Transactions;
+using Proxima.Core.Domain.Auth;
 using Proxima.Core.Domain.Transactions;
 
 namespace Proxima.Core.Application.Taxes;
@@ -8,7 +10,8 @@ namespace Proxima.Core.Application.Taxes;
 public sealed class TaxService(
     ITransactionService transactions,
     ITaxCalculator taxCalculator,
-    IReportService reportService) : ITaxService
+    IReportService reportService,
+    ILocalUserRepository localUsers) : ITaxService
 {
     private const string BaseCurrency = "BYN";
 
@@ -18,7 +21,7 @@ public sealed class TaxService(
         int year,
         CancellationToken cancellationToken = default)
     {
-        LegalProfileType profile = ResolveProfile(userId);
+        LegalProfileType profile = await ResolveProfileAsync(userId, cancellationToken).ConfigureAwait(false);
         TaxProfileDescriptor descriptor = DescribeProfile(profile);
 
         IReadOnlyList<PortfolioTransaction> portfolioTransactions = await transactions
@@ -30,7 +33,17 @@ public sealed class TaxService(
             return TaxOverview.Empty("Нет транзакций для расчета налогов. Добавьте сделки, дивиденды или комиссии в портфель.", descriptor);
         }
 
-        List<TaxTransactionSnapshot> snapshots = portfolioTransactions
+        DateTimeOffset reportYearEnd = new(year, 12, 31, 23, 59, 59, TimeSpan.Zero);
+        List<PortfolioTransaction> calculationTransactions = portfolioTransactions
+            .Where(item => item.TradeDate <= reportYearEnd)
+            .ToList();
+
+        if (calculationTransactions.Count == 0)
+        {
+            return TaxOverview.Empty($"До конца {year} года нет транзакций для расчета налогов.", descriptor);
+        }
+
+        List<TaxTransactionSnapshot> snapshots = calculationTransactions
             .Select(item => new TaxTransactionSnapshot(
                 item.AssetId,
                 item.TradeDate,
@@ -185,26 +198,22 @@ public sealed class TaxService(
             : $"Курс: {source}, дата {calculation.RateDate.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture)}";
     }
 
-    private static LegalProfileType ResolveProfile(Guid userId)
+    private async Task<LegalProfileType> ResolveProfileAsync(Guid userId, CancellationToken cancellationToken)
     {
         if (userId == Guid.Empty)
         {
             return LegalProfileType.PhysicalPerson;
         }
 
-        string path = Path.Combine(GetProfileExtrasDirectory(), $"{userId:N}.legal-profile");
-        if (!File.Exists(path))
-        {
-            return LegalProfileType.PhysicalPerson;
-        }
+        LocalUserProfile? profile = await localUsers
+            .FindByIdAsync(userId, cancellationToken)
+            .ConfigureAwait(false);
 
-        string raw = File.ReadAllText(path).Trim();
-        return raw switch
+        return profile?.LegalProfile switch
         {
-            "PhysicalPerson" => LegalProfileType.PhysicalPerson,
-            "SelfEmployed" => LegalProfileType.SelfEmployed,
-            "SoleProprietor" => LegalProfileType.IndividualEntrepreneur,
-            "Company" => LegalProfileType.LLC,
+            LegalProfileKind.SelfEmployed => LegalProfileType.SelfEmployed,
+            LegalProfileKind.SoleProprietor => LegalProfileType.IndividualEntrepreneur,
+            LegalProfileKind.Company => LegalProfileType.LLC,
             _ => LegalProfileType.PhysicalPerson,
         };
     }
@@ -220,11 +229,4 @@ public sealed class TaxService(
         };
     }
 
-    private static string GetProfileExtrasDirectory()
-    {
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "Proxima",
-            "Profile");
-    }
 }

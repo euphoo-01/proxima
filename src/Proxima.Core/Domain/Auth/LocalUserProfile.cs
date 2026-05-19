@@ -8,4 +8,6 @@ public sealed record LocalUserProfile(
     PasswordCredential Credential,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    int FailedUnlockAttempts);
+    int FailedUnlockAttempts,
+    string Location,
+    LegalProfileKind LegalProfile);

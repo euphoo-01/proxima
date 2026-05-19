@@ -6,9 +6,9 @@ public sealed class RuntimeShellState : IShellState, IShellPortfolioCoordinator,
 {
     private readonly object _sync = new();
 
-    private Guid _currentPortfolioId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-    private string _currentPortfolioName = "Demo Portfolio";
-    private decimal _currentPortfolioValue = 18750m;
+    private Guid _currentPortfolioId = Guid.Empty;
+    private string _currentPortfolioName = "Основное портфолио";
+    private decimal _currentPortfolioValue;
 
     public event EventHandler<ShellPortfolioChangedEventArgs>? PortfolioChanged;
 

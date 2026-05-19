@@ -57,7 +57,9 @@ public sealed class LocalAuthService (
                 passwordHasher.Hash(request.Password),
                 now,
                 now,
-                FailedUnlockAttempts: 0);
+                FailedUnlockAttempts: 0,
+                Location: "Минск, Беларусь",
+                LegalProfile: LegalProfileKind.PhysicalPerson);
 
             await users.AddAsync(profile, cancellationToken).ConfigureAwait(false);
             return AuthResult.Success(profile);

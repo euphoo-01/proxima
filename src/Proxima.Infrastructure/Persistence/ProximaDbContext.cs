@@ -29,6 +29,8 @@ public sealed class ProximaDbContext(DbContextOptions<ProximaDbContext> options)
             e.Property(x => x.DisplayName).HasMaxLength(128);
             e.Property(x => x.Login).HasMaxLength(128);
             e.Property(x => x.Role).HasMaxLength(64);
+            e.Property(x => x.Location).HasMaxLength(256);
+            e.Property(x => x.LegalProfile).HasMaxLength(64);
             e.Property(x => x.PasswordHash).HasColumnType("text");
             e.HasIndex(x => x.Login).IsUnique();
         });

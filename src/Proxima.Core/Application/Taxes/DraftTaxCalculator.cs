@@ -55,23 +55,20 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
             foreach (TaxTransactionSnapshot transaction in ordered)
             {
                 bool belongsToReportYear = transaction.TradeDate.Year == reportYear;
-                MoneyParts money = await ConvertAsync(transaction, rateBook).ConfigureAwait(false);
-
-                if (belongsToReportYear)
-                {
-                    AppendRateSource(money.Source, money.Date, ref rateSource, ref rateDate);
-                    decimal originalGross = GetEffectiveGrossAmount(transaction);
-                    if (originalGross > 0m && !transaction.Currency.Equals(Byn, StringComparison.OrdinalIgnoreCase))
-                    {
-                        currencyEffect += Math.Abs(money.Gross - originalGross);
-                    }
-                }
 
                 switch (transaction.Type)
                 {
                     case TransactionType.Buy:
-                        RegisterBuy(lotsByAsset, transaction, money);
-                        break;
+                        {
+                            MoneyParts money = await ConvertAsync(transaction, rateBook).ConfigureAwait(false);
+                            if (belongsToReportYear)
+                            {
+                                TrackReportYearConversion(transaction, money, ref rateSource, ref rateDate, ref currencyEffect);
+                            }
+
+                            RegisterBuy(lotsByAsset, transaction, money);
+                            break;
+                        }
 
                     case TransactionType.Sell:
                         {
@@ -85,6 +82,9 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
                             {
                                 break;
                             }
+
+                            MoneyParts money = await ConvertAsync(transaction, rateBook).ConfigureAwait(false);
+                            TrackReportYearConversion(transaction, money, ref rateSource, ref rateDate, ref currencyEffect);
 
                             decimal proceeds = Math.Max(0m, money.Gross - Math.Abs(money.Fee) - Math.Abs(money.Tax));
                             decimal result = proceeds - cost;
@@ -103,6 +103,9 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
                     case TransactionType.Dividend:
                         if (belongsToReportYear)
                         {
+                            MoneyParts money = await ConvertAsync(transaction, rateBook).ConfigureAwait(false);
+                            TrackReportYearConversion(transaction, money, ref rateSource, ref rateDate, ref currencyEffect);
+
                             dividends += Math.Max(0m, money.Gross);
                             foreignTaxCreditCandidate += Math.Max(0m, money.Tax);
                         }
@@ -113,6 +116,9 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
                     case TransactionType.StakingReward:
                         if (belongsToReportYear)
                         {
+                            MoneyParts money = await ConvertAsync(transaction, rateBook).ConfigureAwait(false);
+                            TrackReportYearConversion(transaction, money, ref rateSource, ref rateDate, ref currencyEffect);
+
                             rewards += Math.Max(0m, money.Gross);
                             foreignTaxCreditCandidate += Math.Max(0m, money.Tax);
                         }
@@ -122,6 +128,9 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
                     case TransactionType.Fee:
                         if (belongsToReportYear)
                         {
+                            MoneyParts money = await ConvertAsync(transaction, rateBook).ConfigureAwait(false);
+                            TrackReportYearConversion(transaction, money, ref rateSource, ref rateDate, ref currencyEffect);
+
                             standaloneFees += Math.Abs(money.Gross) + Math.Abs(money.Fee);
                         }
 
@@ -130,6 +139,9 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
                     case TransactionType.Tax:
                         if (belongsToReportYear)
                         {
+                            MoneyParts money = await ConvertAsync(transaction, rateBook).ConfigureAwait(false);
+                            TrackReportYearConversion(transaction, money, ref rateSource, ref rateDate, ref currencyEffect);
+
                             foreignTaxCreditCandidate += Math.Abs(money.Gross) + Math.Abs(money.Tax);
                         }
 
@@ -208,9 +220,11 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
                 return (BuildRateSourceDetail("USD", usdRate), usdRate.Date);
             }
         }
-        catch
+        catch (ExchangeRateUnavailableException)
         {
-            //
+            return (string.IsNullOrWhiteSpace(currentRateSource)
+                ? "USD/BYN: курс недоступен"
+                : ExtractUsdOnlyOrFallback(currentRateSource), currentRateDate);
         }
 
         string fallback = string.IsNullOrWhiteSpace(currentRateSource)
@@ -223,6 +237,22 @@ public sealed class DraftTaxCalculator(IExchangeRateProvider rates) : ITaxCalcul
                 : null;
 
         return (fallback, fallbackDate);
+    }
+
+    private static void TrackReportYearConversion(
+        TaxTransactionSnapshot transaction,
+        MoneyParts money,
+        ref string rateSource,
+        ref DateOnly? rateDate,
+        ref decimal currencyEffect)
+    {
+        AppendRateSource(money.Source, money.Date, ref rateSource, ref rateDate);
+
+        decimal originalGross = GetEffectiveGrossAmount(transaction);
+        if (originalGross > 0m && !transaction.Currency.Equals(Byn, StringComparison.OrdinalIgnoreCase))
+        {
+            currencyEffect += Math.Abs(money.Gross - originalGross);
+        }
     }
 
     private static void AppendRateSource(string source, DateOnly date, ref string rateSource, ref DateOnly? rateDate)

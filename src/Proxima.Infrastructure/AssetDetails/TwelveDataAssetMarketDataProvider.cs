@@ -91,7 +91,7 @@ public sealed class TwelveDataAssetMarketDataProvider(
         {
             throw;
         }
-        catch
+        catch (Exception)
         {
             return null;
         }

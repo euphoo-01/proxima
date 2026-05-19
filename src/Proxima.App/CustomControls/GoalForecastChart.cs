@@ -317,8 +317,8 @@ public sealed class GoalForecastChart : Control
 
             string label = CompactLabel(visual.Milestone.Title, 16);
             Size size = MeasureText(label, ProximaChartTheme.AxisLabelFontSize);
-            double labelX = Math.Clamp(marker.X - size.Width / 2d, visual.Layout.Left, visual.Layout.Right - size.Width);
-            double labelY = Math.Clamp(marker.Y + 10, visual.Layout.Top + 2, visual.Layout.Bottom - 20);
+            double labelX = SafeClamp(marker.X - size.Width / 2d, visual.Layout.Left, visual.Layout.Right - size.Width);
+            double labelY = SafeClamp(marker.Y + 10, visual.Layout.Top + 2, visual.Layout.Bottom - 20);
             DrawText(context, label, labelBrush, labelX, labelY, ProximaChartTheme.AxisLabelFontSize, FontWeight.Bold);
         }
     }
@@ -335,7 +335,7 @@ public sealed class GoalForecastChart : Control
         Point marker = visualMilestone.Position;
         double boxWidth = 188;
         double boxHeight = 70;
-        double boxX = Math.Clamp(marker.X - boxWidth / 2d, 8, Bounds.Width - boxWidth - 8);
+        double boxX = SafeClamp(marker.X - boxWidth / 2d, 8, Bounds.Width - boxWidth - 8);
         double boxY = marker.Y - boxHeight - 14;
         if (boxY < 8)
         {
@@ -431,6 +431,16 @@ public sealed class GoalForecastChart : Control
             <= 40 => 10,
             _ => 10,
         };
+    }
+
+    private static double SafeClamp(double value, double min, double max)
+    {
+        if (double.IsNaN(value) || double.IsInfinity(value))
+        {
+            return min;
+        }
+
+        return max < min ? min : Math.Clamp(value, min, max);
     }
 
     private static string CompactLabel(string value, int maxLength)

@@ -5,6 +5,7 @@ using Avalonia.Media.Imaging;
 using Proxima.App.Navigation;
 using Proxima.App.ViewModels;
 using Proxima.App.Auth;
+using Proxima.App.Profile;
 using Proxima.Core.Domain.Auth;
 using Proxima.App.Common.Commands;
 
@@ -14,12 +15,14 @@ public sealed class SidebarViewModel : ViewModelBase, IDisposable
 {
     private readonly IAppNavigationService _navigation;
     private readonly IRuntimeUserContext _userContext;
+    private readonly IProfileAvatarStore _avatarStore;
     private Bitmap? _avatarBitmap;
 
-    public SidebarViewModel(IAppNavigationService navigation, IRuntimeUserContext userContext)
+    public SidebarViewModel(IAppNavigationService navigation, IRuntimeUserContext userContext, IProfileAvatarStore avatarStore)
     {
         _navigation = navigation;
         _userContext = userContext;
+        _avatarStore = avatarStore;
 
         Items =
         [
@@ -138,35 +141,21 @@ public sealed class SidebarViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        string path = GetAvatarPath(_userContext.UserId);
-        if (!File.Exists(path))
+        byte[]? bytes = _avatarStore.ReadAvatar(_userContext.UserId);
+        if (bytes is null || bytes.Length == 0)
         {
             return;
         }
 
         try
         {
-            byte[] bytes = File.ReadAllBytes(path);
             using MemoryStream stream = new(bytes);
             AvatarBitmap = new Bitmap(stream);
         }
-        catch
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException)
         {
             AvatarBitmap = null;
         }
-    }
-
-    private static string GetProfileExtrasDirectory()
-    {
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "Proxima",
-            "Profile");
-    }
-
-    private static string GetAvatarPath(Guid userId)
-    {
-        return Path.Combine(GetProfileExtrasDirectory(), $"{userId:N}.avatar");
     }
 
 }

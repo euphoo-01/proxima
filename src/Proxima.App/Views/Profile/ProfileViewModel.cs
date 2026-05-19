@@ -3,6 +3,7 @@ using System.Windows.Input;
 using Avalonia.Media.Imaging;
 using Proxima.App.Shell;
 using Proxima.App.Notifications;
+using Proxima.App.Profile;
 using Proxima.App.ViewModels;
 using Proxima.App.Auth;
 using Proxima.Core.Application.Auth;
@@ -21,6 +22,7 @@ public sealed class ProfileViewModel : ViewModelBase, IDisposable
     private readonly ILocalUserRepository _localUsers;
     private readonly IPortfolioService _portfolioService;
     private readonly ILocalAuthService _localAuthService;
+    private readonly IProfileAvatarStore _avatarStore;
     private readonly IShellState _shellState;
     private readonly IShellPortfolioCoordinator _portfolioCoordinator;
     private readonly IRuntimeDataInvalidation _runtimeDataInvalidation;
@@ -55,6 +57,7 @@ public sealed class ProfileViewModel : ViewModelBase, IDisposable
         ILocalUserRepository localUsers,
         IPortfolioService portfolioService,
         ILocalAuthService localAuthService,
+        IProfileAvatarStore avatarStore,
         IShellState shellState,
         IShellPortfolioCoordinator portfolioCoordinator,
         IRuntimeDataInvalidation runtimeDataInvalidation,
@@ -65,6 +68,7 @@ public sealed class ProfileViewModel : ViewModelBase, IDisposable
         _localUsers = localUsers;
         _portfolioService = portfolioService;
         _localAuthService = localAuthService;
+        _avatarStore = avatarStore;
         _shellState = shellState;
         _portfolioCoordinator = portfolioCoordinator;
         _runtimeDataInvalidation = runtimeDataInvalidation;
@@ -358,16 +362,8 @@ public sealed class ProfileViewModel : ViewModelBase, IDisposable
 
         try
         {
-            Directory.CreateDirectory(GetProfileExtrasDirectory());
-            string targetPath = GetAvatarPath(_userContext.UserId);
-
-            await using (FileStream input = File.OpenRead(sourcePath))
-            await using (FileStream output = File.Create(targetPath))
-            {
-                await input.CopyToAsync(output, cancellationToken).ConfigureAwait(true);
-            }
-
-            LoadAvatarFromDisk();
+            await _avatarStore.SaveAvatarAsync(_userContext.UserId, sourcePath, cancellationToken).ConfigureAwait(true);
+            LoadAvatarFromStore();
             _userContext.UpdateRuntimeProfile(DisplayName, SelectedRole);
             StatusMessage = "Аватар обновлен.";
         }
@@ -394,11 +390,16 @@ public sealed class ProfileViewModel : ViewModelBase, IDisposable
             UserSettings settings = await _settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
                 _userContext.UserId)).ConfigureAwait(true);
 
-            DisplayName = _userContext.DisplayName;
-            Login = _userContext.Login;
-            SelectedRole = _userContext.Role;
-            LoadProfileExtrasFromDisk();
-            LoadAvatarFromDisk();
+            LocalUserProfile? currentProfile = await _localUsers
+                .FindByIdAsync(_userContext.UserId, CancellationToken.None)
+                .ConfigureAwait(true);
+
+            DisplayName = currentProfile?.DisplayName ?? _userContext.DisplayName;
+            Login = currentProfile?.Login ?? _userContext.Login;
+            SelectedRole = currentProfile?.Role ?? _userContext.Role;
+            Location = NormalizeLocation(currentProfile?.Location);
+            SelectedLegalProfile = currentProfile?.LegalProfile ?? LegalProfileKind.PhysicalPerson;
+            LoadAvatarFromStore();
             TwelveDataKeyStatus = string.IsNullOrWhiteSpace(settings.QuoteApiKey)
                 ? "Ключ Twelve Data не задан."
                 : "Ключ Twelve Data сохранен.";
@@ -446,16 +447,18 @@ public sealed class ProfileViewModel : ViewModelBase, IDisposable
             {
                 DisplayName = normalizedDisplayName,
                 Role = SelectedRole,
+                Location = NormalizeLocation(Location),
+                LegalProfile = SelectedLegalProfile,
                 UpdatedAt = DateTimeOffset.UtcNow,
             }, CancellationToken.None).ConfigureAwait(true);
 
             UserSettings settings = await _settingsService.EnsureAsync(new CreateDefaultSettingsRequest(
                 _userContext.UserId)).ConfigureAwait(true);
 
-            SaveProfileExtrasToDisk();
             await SaveDirtyPortfoliosAsync().ConfigureAwait(true);
 
             DisplayName = normalizedDisplayName;
+            Location = NormalizeLocation(Location);
             TwelveDataKeyStatus = string.IsNullOrWhiteSpace(settings.QuoteApiKey)
                 ? "Ключ Twelve Data не задан."
                 : "Ключ Twelve Data сохранен.";
@@ -548,7 +551,7 @@ public sealed class ProfileViewModel : ViewModelBase, IDisposable
             }
 
             await _localAuthService.DeleteProfileAsync(userId).ConfigureAwait(true);
-            DeleteProfileExtras(userId);
+            _avatarStore.DeleteAvatar(userId);
             _userContext.ClearAuthentication();
 
             StatusMessage = "Аккаунт удален. Открываю экран регистрации...";
@@ -817,7 +820,7 @@ public sealed class ProfileViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private void LoadAvatarFromDisk()
+    private void LoadAvatarFromStore()
     {
         AvatarBitmap = null;
 
@@ -826,82 +829,20 @@ public sealed class ProfileViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        string path = GetAvatarPath(_userContext.UserId);
-        if (!File.Exists(path))
+        byte[]? bytes = _avatarStore.ReadAvatar(_userContext.UserId);
+        if (bytes is null || bytes.Length == 0)
         {
             return;
         }
 
         try
         {
-            byte[] bytes = File.ReadAllBytes(path);
             using MemoryStream stream = new(bytes);
             AvatarBitmap = new Bitmap(stream);
         }
-        catch
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException)
         {
             AvatarBitmap = null;
-        }
-    }
-
-    private void LoadProfileExtrasFromDisk()
-    {
-        if (_userContext.UserId == Guid.Empty)
-        {
-            return;
-        }
-
-        string path = GetLocationPath(_userContext.UserId);
-        if (File.Exists(path))
-        {
-            string location = File.ReadAllText(path).Trim();
-            if (!string.IsNullOrWhiteSpace(location))
-            {
-                Location = location;
-            }
-        }
-
-        string legalProfilePath = GetLegalProfilePath(_userContext.UserId);
-        if (File.Exists(legalProfilePath))
-        {
-            string raw = File.ReadAllText(legalProfilePath).Trim();
-            if (Enum.TryParse(raw, ignoreCase: true, out LegalProfileKind parsed) && Enum.IsDefined(typeof(LegalProfileKind), parsed))
-            {
-                SelectedLegalProfile = parsed;
-            }
-        }
-    }
-
-    private void SaveProfileExtrasToDisk()
-    {
-        if (_userContext.UserId == Guid.Empty)
-        {
-            return;
-        }
-
-        Directory.CreateDirectory(GetProfileExtrasDirectory());
-        File.WriteAllText(GetLocationPath(_userContext.UserId), string.IsNullOrWhiteSpace(Location) ? "Минск, Беларусь" : Location.Trim());
-        File.WriteAllText(GetLegalProfilePath(_userContext.UserId), SelectedLegalProfile.ToString());
-    }
-
-    private static void DeleteProfileExtras(Guid userId)
-    {
-        string avatarPath = GetAvatarPath(userId);
-        if (File.Exists(avatarPath))
-        {
-            File.Delete(avatarPath);
-        }
-
-        string locationPath = GetLocationPath(userId);
-        if (File.Exists(locationPath))
-        {
-            File.Delete(locationPath);
-        }
-
-        string legalProfilePath = GetLegalProfilePath(userId);
-        if (File.Exists(legalProfilePath))
-        {
-            File.Delete(legalProfilePath);
         }
     }
 
@@ -955,27 +896,9 @@ public sealed class ProfileViewModel : ViewModelBase, IDisposable
         return string.IsNullOrWhiteSpace(value) ? "Пользователь" : value.Trim();
     }
 
-    private static string GetProfileExtrasDirectory()
+    private static string NormalizeLocation(string? value)
     {
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "Proxima",
-            "Profile");
-    }
-
-    private static string GetAvatarPath(Guid userId)
-    {
-        return Path.Combine(GetProfileExtrasDirectory(), $"{userId:N}.avatar");
-    }
-
-    private static string GetLocationPath(Guid userId)
-    {
-        return Path.Combine(GetProfileExtrasDirectory(), $"{userId:N}.location");
-    }
-
-    private static string GetLegalProfilePath(Guid userId)
-    {
-        return Path.Combine(GetProfileExtrasDirectory(), $"{userId:N}.legal-profile");
+        return string.IsNullOrWhiteSpace(value) ? "Минск, Беларусь" : value.Trim();
     }
 
 
@@ -1016,13 +939,6 @@ public sealed class ProfileViewModel : ViewModelBase, IDisposable
 
 }
 
-public enum LegalProfileKind
-{
-    PhysicalPerson,
-    SelfEmployed,
-    SoleProprietor,
-    Company,
-}
 
 public sealed class ProfilePortfolioItem : ViewModelBase
 {

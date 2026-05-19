@@ -5,10 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Proxima.Infrastructure.Persistence.Migrations;
 
-/// <inheritdoc />
 public partial class InitialCompactSchema : Migration
 {
-    /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
     {
         migrationBuilder.EnsureSchema(
@@ -405,7 +403,6 @@ public partial class InitialCompactSchema : Migration
             unique: true);
     }
 
-    /// <inheritdoc />
     protected override void Down(MigrationBuilder migrationBuilder)
     {
         migrationBuilder.DropTable(

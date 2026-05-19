@@ -1,11 +1,6 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <!--
-        Важно: не задаём ControlTheme для ContextMenu/MenuItem без Template.
-        Такой theme ломает стандартный Fluent template и даёт пустой прямоугольник
-        вместо меню. Оставляем стандартные шаблоны Avalonia и переопределяем
-        только безопасные визуальные свойства через Style.
-    -->
+    
 
     <Style Selector="MenuItem">
         <Setter Property="Background" Value="Transparent" />
