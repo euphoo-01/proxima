@@ -64,6 +64,20 @@ Proxima is a desktop portfolio management application built with .NET and Avalon
   <sub>Minimal local sign-in flow.</sub>
 </p>
 
+## Architecture
+
+<p align="center">
+  <img src="docs/UML%20Proxima-Architecture.drawio.png" alt="Proxima layered architecture diagram" width="900">
+</p>
+
+## Data Model
+
+<p align="center">
+  <img src="docs/UML%20Proxima-DB%20Diagram.drawio.png" alt="Proxima database diagram" width="760">
+</p>
+
+More diagrams, including use cases, domain classes, import flow, and tax sequence, are available in [`docs/`](docs/).
+
 ## Solution Structure
 
 ```text
