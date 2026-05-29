@@ -13,6 +13,45 @@ Proxima is a desktop portfolio management application built with .NET and Avalon
 - PDF portfolio report generation
 - PostgreSQL persistence with EF Core migrations
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/2.png" alt="Proxima dashboard with portfolio value, allocation, risk, and recent transactions" width="900">
+</p>
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="screenshots/3.png" alt="Assets screen with import, quote refresh, manual transaction entry, and holdings table">
+      <br>
+      <sub><strong>Assets</strong> - import reports, refresh quotes, and manage transactions.</sub>
+    </td>
+    <td width="50%">
+      <img src="screenshots/4.png" alt="Tax screen with annual tax summary, deductions, double tax notes, and calculation details">
+      <br>
+      <sub><strong>Taxes</strong> - calculate tax exposure with exchange-rate and profile context.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="screenshots/5.png" alt="Goals screen with long-term projection chart, goal list, risk, and monthly contribution panel">
+      <br>
+      <sub><strong>Goals</strong> - model long-term targets and contribution scenarios.</sub>
+    </td>
+    <td width="50%">
+      <img src="screenshots/6.png" alt="Profile screen with account details, role selection, tax profile, and client portfolios">
+      <br>
+      <sub><strong>Profile</strong> - configure account role, tax profile, and managed portfolios.</sub>
+    </td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="screenshots/1.png" alt="Proxima login screen" width="520">
+  <br>
+  <sub>Minimal local sign-in flow.</sub>
+</p>
+
 ## Solution Structure
 
 ```text
