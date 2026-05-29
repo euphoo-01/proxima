@@ -44,6 +44,18 @@ Proxima is a desktop portfolio management application built with .NET and Avalon
       <sub><strong>Profile</strong> - configure account role, tax profile, and managed portfolios.</sub>
     </td>
   </tr>
+  <tr>
+    <td width="50%">
+      <img src="screenshots/7.png" alt="Asset details screen with candlestick chart, market metrics, risk management, and technical indicators">
+      <br>
+      <sub><strong>Asset Details</strong> - review price action, liquidity, risk, and technical indicators.</sub>
+    </td>
+    <td width="50%">
+      <img src="screenshots/8.png" alt="Import screen with CSV report upload, manual transaction form, and transaction table">
+      <br>
+      <sub><strong>Import</strong> - upload CSV reports or enter transactions manually.</sub>
+    </td>
+  </tr>
 </table>
 
 <p align="center">
