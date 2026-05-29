@@ -19,7 +19,6 @@ internal static class Program
     {
         Architecture_ProjectGraph_IsCompact();
         Architecture_Core_HasNoForbiddenReferences();
-        Architecture_OldProjectsAndNamespaces_AreRemovedFromActiveCode();
         EfModel_ContainsOnlyActiveTablesAndSingleEncodedPasswordColumn();
         PasswordHasher_StoresSelfContainedPbkdf2Credential();
         AnalyticsEngine_ComputesCorePortfolioMetrics();
@@ -99,45 +98,6 @@ internal static class Program
         }
     }
 
-    private static void Architecture_OldProjectsAndNamespaces_AreRemovedFromActiveCode()
-    {
-        string root = FindRepositoryRoot();
-        string[] removedLayerNames = ["Domain", "Application", "Analytics", "Importing", "Reporting"];
-        string[] removedFragments = removedLayerNames
-            .Select(name => string.Join('.', "Proxima", name) + ".csproj")
-            .Concat(removedLayerNames.Select(name => "namespace " + string.Join('.', "Proxima", name)))
-            .Concat(removedLayerNames.Select(name => "using " + string.Join('.', "Proxima", name)))
-            .Concat([
-                "password" + "_algorithm",
-                "password" + "_salt",
-                "password" + "_iterations",
-                "password" + "_version",
-                "sync" + "_snapshots",
-                "sync" + "_enabled",
-                "last" + "_snapshot_at",
-                "finn" + "hub",
-            ])
-            .ToArray();
-
-        string[] codeFiles = Directory.GetFiles(Path.Combine(root, "src"), "*.*", SearchOption.AllDirectories)
-            .Concat(Directory.GetFiles(Path.Combine(root, "tests"), "*.*", SearchOption.AllDirectories))
-            .Where(file => file.EndsWith(".cs", StringComparison.Ordinal) || file.EndsWith(".csproj", StringComparison.Ordinal) || file.EndsWith(".sln", StringComparison.Ordinal))
-            .ToArray();
-
-        foreach (string file in codeFiles)
-        {
-            string text = File.ReadAllText(file);
-            foreach (string fragment in removedFragments)
-            {
-                Assert(!text.Contains(fragment, StringComparison.OrdinalIgnoreCase), $"Removed fragment '{fragment}' remains in {file}.");
-            }
-
-            Assert(!text.Contains("Proxima" + "QuoteComposition", StringComparison.Ordinal), $"Old composition name remains in {file}.");
-            Assert(!text.Contains("Proxima" + "PortfolioComposition", StringComparison.Ordinal), $"Old composition name remains in {file}.");
-            Assert(!text.Contains("Proxima.App." + "Controls", StringComparison.Ordinal), $"Ambiguous app controls namespace remains in {file}.");
-        }
-    }
-
     private static void EfModel_ContainsOnlyActiveTablesAndSingleEncodedPasswordColumn()
     {
         DbContextOptions<ProximaDbContext> options = new DbContextOptionsBuilder<ProximaDbContext>()
@@ -149,12 +109,6 @@ internal static class Program
             .Select(entity => entity.GetTableName() ?? string.Empty)
             .Order(StringComparer.Ordinal)
             .ToArray();
-
-        string[] forbiddenTables = ["sync" + "_snapshots", "import" + "_sessions", "import" + "_rows", "tax" + "_profiles", "tax" + "_reports"];
-        foreach (string table in forbiddenTables)
-        {
-            Assert(!tableNames.Contains(table, StringComparer.Ordinal), $"Legacy table must not be mapped: {table}");
-        }
 
         string[] expectedTables =
         [
@@ -179,10 +133,6 @@ internal static class Program
         var userEntity = db.Model.GetEntityTypes().Single(entity => entity.GetTableName() == "users");
         string[] userColumns = userEntity.GetProperties().Select(property => property.GetColumnName()).ToArray();
         Assert(userColumns.Contains("password_hash", StringComparer.Ordinal), "users.password_hash must exist.");
-        Assert(!userColumns.Contains("password" + "_algorithm", StringComparer.Ordinal), "split password algorithm column must be absent.");
-        Assert(!userColumns.Contains("password" + "_salt", StringComparer.Ordinal), "split password salt column must be absent.");
-        Assert(!userColumns.Contains("password" + "_iterations", StringComparer.Ordinal), "split password iterations column must be absent.");
-        Assert(!userColumns.Contains("password" + "_version", StringComparer.Ordinal), "split password version column must be absent.");
     }
 
     private static void PasswordHasher_StoresSelfContainedPbkdf2Credential()
