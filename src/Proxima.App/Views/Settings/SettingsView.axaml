@@ -2,6 +2,7 @@
     x:Class="Proxima.App.Views.Settings.SettingsView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:database="using:Proxima.App.Views.Database"
     xmlns:settings="using:Proxima.App.Views.Settings"
     x:DataType="settings:SettingsViewModel">
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
@@ -10,6 +11,8 @@
                 <TextBlock Classes="proxima-caption" Text="Настройки" />
                 <TextBlock Classes="proxima-page-title" Text="Настройки" />
             </StackPanel>
+
+            <database:DatabaseCatalogView DataContext="{Binding DatabaseCatalog}" />
 
             <Border Classes="proxima-card-surface" IsVisible="{Binding IsLoading}">
                 <StackPanel Spacing="8">

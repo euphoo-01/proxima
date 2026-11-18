@@ -1,5 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Proxima.App.Navigation;
+using Proxima.Core.Application.Database;
+using Proxima.Infrastructure.Oracle;
+using Proxima.App.Views.Database;
 using Proxima.App.Notifications;
 using Proxima.App.Profile;
 using Proxima.App.Shell;
@@ -102,6 +105,8 @@ public static class AppComposition
         services.AddScoped<GoalsViewModel>();
 
         services.AddScoped<TaxesViewModel>();
+        services.AddSingleton<IDatabaseCatalog, OracleDatabaseCatalog>();
+        services.AddScoped<DatabaseCatalogViewModel>();
         services.AddScoped<SettingsViewModel>();
         services.AddScoped<SupportViewModel>();
         services.AddScoped<NotificationsViewModel>();

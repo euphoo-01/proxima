@@ -1,4 +1,8 @@
 using System.Reflection;
+using Oracle.ManagedDataAccess.Client;
+using Proxima.Core.Application.Database;
+using Proxima.Infrastructure.Oracle;
+using Proxima.App.Views.Database;
 using System.Text;
 using Proxima.Core.Application.Analytics.AssetDetails;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +19,7 @@ namespace Proxima.Tests;
 
 internal static class Program
 {
-    private static async Task Main()
+    private static async Task Main(string[] args)
     {
         Architecture_ProjectGraph_IsCompact();
         Architecture_Core_HasNoForbiddenReferences();
@@ -25,6 +29,14 @@ internal static class Program
         AssetDetailsCalculator_ComputesRiskMetricsInCore();
         await Importing_CsvPreviewParsesRowsWithoutSavingAnything().ConfigureAwait(false);
         await Reporting_PdfExporterProducesNonEmptyFile().ConfigureAwait(false);
+
+        if (args.Contains("--oracle", StringComparer.OrdinalIgnoreCase)
+            || string.Equals(Environment.GetEnvironmentVariable("PROXIMA_TEST_ORACLE"), "true", StringComparison.OrdinalIgnoreCase))
+        {
+            await OracleCatalog_RealPackageReturnsSeededCatalogAndSettingsState().ConfigureAwait(false);
+            await OracleCatalog_AppAccountCannotSelectOwnerTables().ConfigureAwait(false);
+            Console.WriteLine("Oracle integration tests passed.");
+        }
 
         Console.WriteLine("Proxima.Tests passed.");
     }
@@ -223,6 +235,59 @@ internal static class Program
         string outputPath = result.OutputPath ?? throw new InvalidOperationException("PDF exporter did not return an output path.");
         Assert(File.Exists(outputPath), "PDF exporter should create a file.");
         Assert(new FileInfo(outputPath).Length > 0, "PDF exporter should create a non-empty file.");
+    }
+
+    private static async Task OracleCatalog_RealPackageReturnsSeededCatalogAndSettingsState()
+    {
+        Assert(!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PROXIMA_ORACLE_CONNECTION")),
+            "Oracle integration requires PROXIMA_ORACLE_CONNECTION.");
+        IDatabaseCatalog catalog = new OracleDatabaseCatalog();
+        using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(30));
+        DatabaseCatalogSnapshot snapshot = await catalog.ReadAsync(timeout.Token).ConfigureAwait(false);
+        Assert(new[] { "FREE", "FREEPDB1" }.Contains(snapshot.Server.DatabaseName, StringComparer.OrdinalIgnoreCase), "Adapter should return the Oracle Free database or PDB name.");
+        Assert(snapshot.Server.SessionUser == "PROXIMA_APP", "Package must run through the restricted PROXIMA_APP session.");
+        Assert(System.Text.RegularExpressions.Regex.IsMatch(snapshot.Server.ServerTime, @"[+-]\d{2}:\d{2}$"),
+            "Oracle TIMESTAMP WITH TIME ZONE must preserve its UTC offset in the displayed timestamp.");
+        Assert(snapshot.Currencies.Select(currency => currency.Code).Order(StringComparer.Ordinal)
+            .SequenceEqual(new[] { "BYN", "EUR", "USD" }), "Adapter must return exactly the three seeded currency codes.");
+        Assert(snapshot.Currencies.Single(currency => currency.Code == "EUR").Name == "Euro", "Currency name must map from Oracle.");
+        Assert(snapshot.Instruments.Select(instrument => instrument.Ticker).Order(StringComparer.Ordinal)
+            .SequenceEqual(new[] { "AAPL", "BTC", "MSFT", "SPY" }), "Adapter must return exactly the four seeded tickers.");
+        CatalogInstrument apple = snapshot.Instruments.Single(instrument => instrument.Ticker == "AAPL");
+        Assert(apple.Name == "Apple Inc." && apple.CurrencyCode == "USD" && apple.InstrumentType == "Stock",
+            "Instrument name, currency and type must map from Oracle columns.");
+
+        DatabaseCatalogViewModel viewModel = new(catalog);
+        await viewModel.RefreshAsync().ConfigureAwait(false);
+        Assert(!viewModel.IsBusy, "Settings must leave its loading state after the real Oracle read.");
+        Assert(viewModel.Status == "Соединение установлено. Загружено валют: 3, инструментов: 4.",
+            "Settings must display successful counts from the real Oracle response.");
+        Assert(viewModel.Server.Contains("База: FREE", StringComparison.OrdinalIgnoreCase)
+            && viewModel.Server.Contains("PROXIMA_APP", StringComparison.Ordinal), "Settings must display the actual database and session user.");
+        Assert(viewModel.Currencies.Select(currency => currency.Code).SequenceEqual(snapshot.Currencies.Select(currency => currency.Code)),
+            "Settings currency list must match the Oracle adapter response.");
+        Assert(viewModel.Instruments.SequenceEqual(snapshot.Instruments), "Settings instrument list must match the Oracle adapter response.");
+    }
+
+    private static async Task OracleCatalog_AppAccountCannotSelectOwnerTables()
+    {
+        string? connectionString = Environment.GetEnvironmentVariable("PROXIMA_ORACLE_CONNECTION");
+        using OracleConnection connection = new(connectionString);
+        await connection.OpenAsync().ConfigureAwait(false);
+        using OracleCommand command = connection.CreateCommand();
+        command.CommandText = "SELECT code FROM PROXIMA_OWNER.currencies";
+        command.CommandTimeout = 10;
+        bool accessDenied = false;
+        try
+        {
+            using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
+        }
+        catch (OracleException exception) when (exception.Number is 942 or 1031)
+        {
+            accessDenied = true;
+        }
+
+        Assert(accessDenied, "PROXIMA_APP must have package EXECUTE access without direct SELECT on owner tables.");
     }
 
     private static string FindRepositoryRoot()

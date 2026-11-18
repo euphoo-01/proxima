@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:db="using:Proxima.App.Views.Database"
+    xmlns:core="using:Proxima.Core.Application.Database"
+    x:Class="Proxima.App.Views.Database.DatabaseCatalogView"
+    x:DataType="db:DatabaseCatalogViewModel"
+    Background="{DynamicResource ProximaBrush.Page}">
+    <StackPanel Margin="0" Spacing="20">
+        <StackPanel Spacing="6">
+            <TextBlock Text="Хранилище Oracle" Classes="proxima-card-title" Foreground="{DynamicResource ProximaBrush.TextPrimary}" />
+            <TextBlock Text="Проверка подключения и справочники валют и инструментов из базы данных."
+                       TextWrapping="Wrap" Foreground="{DynamicResource ProximaBrush.TextSecondary}" />
+        </StackPanel>
+        <Border Padding="20" CornerRadius="12" Background="{DynamicResource ProximaBrush.Surface}" BorderBrush="{DynamicResource ProximaBrush.Border}" BorderThickness="1">
+            <StackPanel Spacing="12">
+                <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Foreground="{DynamicResource ProximaBrush.TextPrimary}" AutomationProperties.LiveSetting="Polite" />
+                <TextBlock Text="{Binding Server}" TextWrapping="Wrap" Foreground="{DynamicResource ProximaBrush.TextSecondary}" />
+                <ProgressBar IsVisible="{Binding IsBusy}" IsIndeterminate="True" Height="4" />
+                <Button Content="Проверить и обновить" Command="{Binding RefreshCommand}" HorizontalAlignment="Left" MinHeight="40" />
+            </StackPanel>
+        </Border>
+        <TextBlock Text="Валюты" Classes="proxima-card-title" />
+        <ItemsControl ItemsSource="{Binding Currencies}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="core:CatalogCurrency">
+                    <Grid ColumnDefinitions="90,*" Margin="0,0,0,10">
+                        <TextBlock Text="{Binding Code}" FontWeight="SemiBold" />
+                        <TextBlock Grid.Column="1" Text="{Binding Name}" TextWrapping="Wrap" />
+                    </Grid>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Text="Инструменты" Classes="proxima-card-title" />
+        <Grid ColumnDefinitions="90,*,80,120">
+            <TextBlock Text="Тикер" FontWeight="SemiBold" />
+            <TextBlock Grid.Column="1" Text="Название" FontWeight="SemiBold" />
+            <TextBlock Grid.Column="2" Text="Валюта" FontWeight="SemiBold" />
+            <TextBlock Grid.Column="3" Text="Тип" FontWeight="SemiBold" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Instruments}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="core:CatalogInstrument">
+                    <Grid ColumnDefinitions="90,*,80,120" Margin="0,0,0,12">
+                        <TextBlock Text="{Binding Ticker}" FontWeight="SemiBold" />
+                        <TextBlock Grid.Column="1" Text="{Binding Name}" TextWrapping="Wrap" Margin="0,0,12,0" />
+                        <TextBlock Grid.Column="2" Text="{Binding CurrencyCode}" />
+                        <TextBlock Grid.Column="3" Text="{Binding InstrumentType}" TextWrapping="Wrap" />
+                    </Grid>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+</UserControl>

@@ -27,7 +27,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -57,7 +58,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -91,7 +93,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -127,7 +130,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -161,7 +165,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -198,7 +203,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -231,7 +237,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -267,7 +274,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -303,7 +311,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -339,7 +348,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -374,7 +384,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -406,7 +417,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -440,7 +452,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -473,7 +486,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -508,7 +522,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -541,7 +556,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -576,7 +592,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -611,7 +628,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -646,7 +664,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -683,7 +702,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -723,7 +743,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",
@@ -788,7 +809,8 @@
           "dotnet",
           "build",
           "Proxima.sln",
-          "--no-restore"
+          "--no-restore",
+          "-m:1"
         ],
         [
           "dotnet",

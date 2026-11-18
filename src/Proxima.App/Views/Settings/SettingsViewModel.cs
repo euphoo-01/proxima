@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Proxima.App.Views.Database;
 using System.Windows.Input;
 using Proxima.App.Notifications;
 using Proxima.App.ViewModels;
@@ -29,8 +30,9 @@ public sealed class SettingsViewModel : ViewModelBase
     private string _errorMessage = string.Empty;
     private string _securityStatus = "Локальный пароль включен.";
 
-    public SettingsViewModel(ISettingsService settingsService, IRuntimeUserContext runtimeUserContext, IAppNotificationCenter notificationCenter)
+    public SettingsViewModel(ISettingsService settingsService, IRuntimeUserContext runtimeUserContext, IAppNotificationCenter notificationCenter, DatabaseCatalogViewModel databaseCatalog)
     {
+        DatabaseCatalog = databaseCatalog;
         _settingsService = settingsService;
         _runtimeUserContext = runtimeUserContext;
         _notificationCenter = notificationCenter;
@@ -45,6 +47,8 @@ public sealed class SettingsViewModel : ViewModelBase
 
         _ = LoadAsync();
     }
+
+    public DatabaseCatalogViewModel DatabaseCatalog { get; }
 
     public string PageTitle => "Настройки";
 
