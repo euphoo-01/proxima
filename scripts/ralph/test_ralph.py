@@ -26,6 +26,14 @@ def result(status='completed'):
 
 
 class BacklogTests(unittest.TestCase):
+    def test_model_override_is_passed_to_cli_without_changing_configuration(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(ralph, 'execute', return_value=0) as execute, \
+                patch.object(ralph, 'read_json', return_value=result()):
+            ralph.ask_agent(task(), Path(temp), 'worker', {}, 10, 'chosen-model')
+        argv = execute.call_args.args[0]
+        self.assertEqual(argv[argv.index('--model') + 1], 'chosen-model')
+        self.assertIn('workspace-write', argv)
+
     def load(self, tasks):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / 'backlog.json'
