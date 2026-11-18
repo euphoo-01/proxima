@@ -23,6 +23,7 @@ pp.xml
 .env
 .env.*
 !.env.example
+!.env.*.example
 secrets.json
 *.pfx
 *.key
@@ -32,6 +33,8 @@ appsettings.*.local.json
 # Logs and diagnostics
 logs/
 *.log
+.ralph/
+__pycache__/
 
 # PostgreSQL/local data directories
 pgdata/

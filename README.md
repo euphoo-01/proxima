@@ -1,6 +1,21 @@
 # Proxima
 
-Proxima is a desktop portfolio management application built with .NET and Avalonia. It tracks assets, transactions, goals, taxes, notifications, market data, imports, and PDF reports using a compact layered architecture.
+Proxima — настольная система учёта и анализа финансовых активов на .NET и Avalonia UI. Проект продолжает прошлогоднюю курсовую по ООП в том же репозитории. Текущий этап — курсовое проектирование по дисциплине «Базы данных», **пятый семестр**.
+
+Тема: «Разработка базы данных системы учета и анализа финансовых активов с применением средств продвинутой аналитики Oracle».
+
+## Переход к Oracle
+
+Рефакторинг выполняется вертикальными срезами с сохранением приложения и его внешнего вида. Целевая архитектура переносит бизнес-правила, финансовые расчёты, проверки доступа и CSV-обработку в PL/SQL; приложение обращается к данным через процедуры, репозитории и адаптеры источников котировок.
+
+Подготовлены физическая Oracle-модель и серверный API справочников; интеграция развивается внутри обычного приложения. Полный перенос финансовых сценариев, налогов РБ и ML ещё не завершён. Существующий PostgreSQL временно обслуживает неперенесённые функции. Ниже приведены исходные возможности и снимки интерфейса; они не являются доказательством уже выполненной миграции на Oracle.
+
+- [Согласованные требования](docs/oracle-requirements.md)
+- [Вертикальные задачи и Ralph loop](docs/implementation/README.md)
+- [Развёртывание и проверки Oracle](database/oracle/README.md)
+- [Лист задания](docs/spec/assignment.docx), [согласованная ER](docs/spec/er-model.drawio), [сценарии](docs/spec/use-cases.md)
+
+Ralph loop запускается из оболочки: `bash scripts/ralph.sh run --max-iterations 1 --push`. Перед запуском нужны согласованный план, команда `approve` и чистое Git-дерево. После каждой изменившейся итерации runner создаёт коммит в этом репозитории; незавершённые попытки помечаются WIP. Подробности и восстановление после остановки — в инструкции.
 
 ## Features
 
@@ -117,6 +132,8 @@ Run the desktop app:
 ```bash
 dotnet run --project src/Proxima.App/Proxima.App.csproj
 ```
+
+Для обычного запуска с локальными реквизитами Oracle из `.env.oracle` используйте `python3 scripts/run.py`. Откройте **Настройки → Хранилище Oracle → Проверить и обновить**: приложение получает справочники через `PKG_REFERENCE`. Это тот же исполняемый проект и обычный вход; PostgreSQL пока необходим для неперенесённых функций. Пароли остаются в локальном файле и не выводятся на экран.
 
 On first launch, create a local profile. The app applies EF Core migrations automatically during startup.
 
