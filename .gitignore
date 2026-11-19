@@ -34,6 +34,7 @@ appsettings.*.local.json
 logs/
 *.log
 .ralph/
+.tools/
 __pycache__/
 
 # PostgreSQL/local data directories

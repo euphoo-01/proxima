@@ -2,8 +2,8 @@ WHENEVER SQLERROR EXIT SQL.SQLCODE ROLLBACK
 DECLARE
   n PLS_INTEGER;
 BEGIN
-  SELECT COUNT(*) INTO n FROM user_tables; IF n <> 21 THEN RAISE_APPLICATION_ERROR(-20001, 'Expected 21 tables'); END IF;
-  SELECT COUNT(*) INTO n FROM user_tab_columns; IF n <> 148 THEN RAISE_APPLICATION_ERROR(-20002, 'Expected 148 columns'); END IF;
+  SELECT COUNT(*) INTO n FROM user_tables; IF n <> 22 THEN RAISE_APPLICATION_ERROR(-20001, 'Expected 22 tables'); END IF;
+  SELECT COUNT(*) INTO n FROM user_tab_columns; IF n <> 158 THEN RAISE_APPLICATION_ERROR(-20002, 'Expected 158 columns'); END IF;
   SELECT COUNT(*) INTO n FROM user_tab_columns WHERE table_name = 'USERS' AND column_name = 'ID'; IF n <> 1 THEN RAISE_APPLICATION_ERROR(-20003, 'Missing users.id'); END IF;
   SELECT COUNT(*) INTO n FROM user_tab_columns WHERE table_name = 'USERS' AND column_name = 'LOGIN'; IF n <> 1 THEN RAISE_APPLICATION_ERROR(-20003, 'Missing users.login'); END IF;
   SELECT COUNT(*) INTO n FROM user_tab_columns WHERE table_name = 'USERS' AND column_name = 'DISPLAY_NAME'; IF n <> 1 THEN RAISE_APPLICATION_ERROR(-20003, 'Missing users.display_name'); END IF;
@@ -153,6 +153,6 @@ BEGIN
   SELECT COUNT(*) INTO n FROM user_tab_columns WHERE table_name = 'ML_TRAINING_RUNS' AND column_name = 'QUALITY_METRICS'; IF n <> 1 THEN RAISE_APPLICATION_ERROR(-20003, 'Missing ml_training_runs.quality_metrics'); END IF;
   SELECT COUNT(*) INTO n FROM user_tab_columns WHERE table_name = 'ML_TRAINING_RUNS' AND column_name = 'STATUS'; IF n <> 1 THEN RAISE_APPLICATION_ERROR(-20003, 'Missing ml_training_runs.status'); END IF;
   SELECT COUNT(*) INTO n FROM user_objects WHERE status = 'INVALID'; IF n <> 0 THEN RAISE_APPLICATION_ERROR(-20004, 'Invalid objects'); END IF;
-  SELECT COUNT(*) INTO n FROM user_constraints WHERE constraint_type = 'R' AND status = 'ENABLED' AND validated = 'VALIDATED'; IF n <> 33 THEN RAISE_APPLICATION_ERROR(-20005, 'Expected 32 ER FKs plus portfolio consistency FK'); END IF;
+  SELECT COUNT(*) INTO n FROM user_constraints WHERE constraint_type = 'R' AND status = 'ENABLED' AND validated = 'VALIDATED'; IF n <> 35 THEN RAISE_APPLICATION_ERROR(-20005, 'Expected 32 ER FKs plus portfolio consistency FK'); END IF;
 END;
 /

@@ -19,6 +19,8 @@ CREATE TABLE user_settings (
   quote_provider_kind VARCHAR2(255 CHAR) NOT NULL,
   exchange_rate_provider_kind VARCHAR2(255 CHAR) NOT NULL,
   quote_api_key VARCHAR2(255 CHAR),
+  risk_free_rate_percent NUMBER(12,6),
+  risk_free_currency VARCHAR2(3 CHAR),
   CONSTRAINT pk_user_settings PRIMARY KEY (owner_user_id)
 );
 
@@ -74,6 +76,7 @@ CREATE TABLE import_batches (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT SYSTIMESTAMP NOT NULL,
   imported_count NUMBER(10) DEFAULT 0 NOT NULL,
   rejected_count NUMBER(10) DEFAULT 0 NOT NULL,
+  file_hash RAW(32),
   CONSTRAINT pk_import_batches PRIMARY KEY (id)
 );
 
@@ -123,6 +126,7 @@ CREATE TABLE transactions (
   tax_amount NUMBER(28,10) NOT NULL,
   broker VARCHAR2(255 CHAR),
   external_id VARCHAR2(255 CHAR),
+  operation_order NUMBER(18) DEFAULT 0 NOT NULL,
   CONSTRAINT pk_transactions PRIMARY KEY (id)
 );
 
@@ -384,5 +388,15 @@ ALTER TABLE portfolio_snapshots ADD CONSTRAINT fk_er_32 FOREIGN KEY (currency) R
 CREATE INDEX ix_fk_er_32 ON portfolio_snapshots (currency);
 
 ALTER TABLE transactions ADD CONSTRAINT fk_transaction_asset_portfolio FOREIGN KEY (asset_id, portfolio_id) REFERENCES assets (id, portfolio_id);
+
+CREATE INDEX ix_transactions_history ON transactions (portfolio_id, trade_date, operation_order, id);
+
+CREATE UNIQUE INDEX uq_transactions_order ON transactions (portfolio_id, SYS_EXTRACT_UTC(trade_date), operation_order);
+ALTER TABLE import_batches ADD CONSTRAINT uq_import_batches_file UNIQUE (portfolio_id,file_hash);
+ALTER TABLE transactions ADD CONSTRAINT ck_transactions_order CHECK (operation_order>=0 AND operation_order=TRUNC(operation_order));
+ALTER TABLE user_settings ADD CONSTRAINT fk_er_34 FOREIGN KEY (risk_free_currency) REFERENCES currencies(code);
+ALTER TABLE user_settings ADD CONSTRAINT ck_settings_risk CHECK (
+  (risk_free_rate_percent IS NULL AND risk_free_currency IS NULL)
+  OR (risk_free_rate_percent IS NOT NULL AND risk_free_currency IS NOT NULL AND risk_free_rate_percent>-100));
 
 ALTER TABLE exchange_rates ADD CONSTRAINT ck_exchange_rates_positive CHECK (rate > 0);

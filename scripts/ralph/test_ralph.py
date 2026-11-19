@@ -26,6 +26,22 @@ def result(status='completed'):
 
 
 class BacklogTests(unittest.TestCase):
+    def test_effort_override_is_passed_as_per_run_toml_configuration(self):
+        for role in ['worker', 'reviewer']:
+            with self.subTest(role=role), tempfile.TemporaryDirectory() as temp, \
+                    patch.object(ralph, 'execute', return_value=0) as execute, \
+                    patch.object(ralph, 'read_json', return_value=result()):
+                ralph.ask_agent(task(), Path(temp), role, {}, 10, 'gpt-6.1-sol', 'low')
+            argv = execute.call_args.args[0]
+            self.assertEqual(argv[argv.index('-c') + 1], 'model_reasoning_effort="low"')
+            self.assertEqual(argv[argv.index('--model') + 1], 'gpt-6.1-sol')
+
+    def test_unspecified_effort_preserves_cli_default(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(ralph, 'execute', return_value=0) as execute, \
+                patch.object(ralph, 'read_json', return_value=result()):
+            ralph.ask_agent(task(), Path(temp), 'worker', {}, 10)
+        self.assertNotIn('-c', execute.call_args.args[0])
+
     def test_model_override_is_passed_to_cli_without_changing_configuration(self):
         with tempfile.TemporaryDirectory() as temp, patch.object(ralph, 'execute', return_value=0) as execute, \
                 patch.object(ralph, 'read_json', return_value=result()):
@@ -131,6 +147,15 @@ class RunLoopTests(unittest.TestCase):
         self.assertEqual([call.args[2] for call in ask.call_args_list], ['worker', 'reviewer'])
         self.assertEqual(self.state['tasks']['S01']['status'], 'retry')
         self.assertEqual(ask.call_args.args[3]['checks'][0]['exit_code'], 0)
+
+    def test_run_loop_forwards_selected_model_and_effort_to_worker_and_reviewer(self):
+        self.args.model = 'gpt-6.1-sol'
+        self.args.effort = 'low'
+        with patch.object(ralph, 'ask_agent', side_effect=[result(), result()]) as ask, \
+                patch.object(ralph, 'execute', return_value=0):
+            self.assertEqual(ralph.run_loop([task()], self.state, self.args), 0)
+        self.assertEqual([call.args[5:] for call in ask.call_args_list],
+                         [('gpt-6.1-sol', 'low'), ('gpt-6.1-sol', 'low')])
 
     def test_run_loop_reviewed_completion_unlocks_dependent_task(self):
         self.args.max_iterations = 2

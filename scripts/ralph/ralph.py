@@ -119,7 +119,7 @@ def validate_result(result):
     return result
 
 
-def ask_agent(task, run_dir, role, feedback, timeout, model=None):
+def ask_agent(task, run_dir, role, feedback, timeout, model=None, effort=None):
     result_file = run_dir / f'{role}.json'
     prompt = (HERE / 'agent.md').read_text(encoding='utf-8')
     if role == 'reviewer':
@@ -131,6 +131,8 @@ def ask_agent(task, run_dir, role, feedback, timeout, model=None):
             '-o', str(result_file), '-']
     if model:
         argv[2:2] = ['--model', model]
+    if effort:
+        argv[2:2] = ['-c', f'model_reasoning_effort="{effort}"']
     if execute(argv, run_dir / f'{role}.log', timeout, prompt):
         raise RuntimeError(f'Codex завершился с ошибкой; см. {run_dir}')
     return validate_result(read_json(result_file))
@@ -232,7 +234,8 @@ def run_loop(tasks, state, args):
                      for key, value in state['tasks'].items() if value['status'] == 'completed'}
         feedback = {'previous_attempt': previous, 'completed_tasks': completed, 'iteration_start_head': start_head}
         try:
-            result = ask_agent(task, run_dir, 'worker', feedback, args.timeout, getattr(args, 'model', None))
+            result = ask_agent(task, run_dir, 'worker', feedback, args.timeout,
+                               getattr(args, 'model', None), getattr(args, 'effort', None))
             if digest() != state['approved_digest']:
                 raise ValueError('Агент изменил защищённые файлы плана/цикла; остановлено без отката')
             if result['status'] == 'completed':
@@ -247,7 +250,8 @@ def run_loop(tasks, state, args):
                         break
                 if result['status'] == 'completed':
                     result = ask_agent(task, run_dir, 'reviewer',
-                                       {'worker': result, 'checks': checks, 'iteration_start_head': start_head}, args.timeout, getattr(args, 'model', None))
+                                       {'worker': result, 'checks': checks, 'iteration_start_head': start_head},
+                                       args.timeout, getattr(args, 'model', None), getattr(args, 'effort', None))
             if digest() != state['approved_digest']:
                 raise ValueError('Защищённые файлы изменились во время проверки; остановлено без отката')
         except (ValueError, OSError, RuntimeError, subprocess.SubprocessError, KeyboardInterrupt) as error:
@@ -273,6 +277,8 @@ def main():
     parser.add_argument('--max-iterations', type=int, default=1)
     parser.add_argument('--timeout', type=int, default=1800)
     parser.add_argument('--model', help='Модель для этого запуска; глобальная конфигурация не меняется')
+    parser.add_argument('--effort', choices=['low', 'medium', 'high', 'xhigh'],
+                        help='Уровень рассуждений для этого запуска; глобальная конфигурация не меняется')
     parser.add_argument('--push', action='store_true', help='после каждой итерации push в origin текущей ветки')
     args = parser.parse_args()
     if args.max_iterations < 1 or args.timeout < 1:
